@@ -38,9 +38,9 @@
 | 类别 | 具体内容 | 交付物 |
 | --- | --- | --- |
 | 数据库设计 | 14 张表、主外键、CHECK、索引、ENUM、状态机、3NF 说明 | `database/schema.sql`、ER 图、报告第 2/3/4 章素材 |
-| 数据库对象 | 4 视图、5 存储过程、2 函数、5 触发器、1 事件、事务、权限 | `database/objects.sql`、测试 SQL、截图、报告第 6 章 |
+| 数据库对象 | 4 视图、5 存储过程、2 函数、5 触发器、事务、权限 | `database/objects.sql`、测试 SQL、截图、报告第 6 章 |
 | 后端基础设施 | Express 骨架、MySQL 连接池、统一响应、错误处理、鉴权中间件、上传 | `server/src/app.js`、`db.js`、`middleware/`、`utils/` |
-| 后端业务 | 认证、用户、二手商品、收藏、代取、跑腿匹配、上传接口 | `server/src/routes/auth.js`、`users.js`、`items.js`、`favorites.js`、`errands.js`、`upload.js` |
+| 后端业务 | 认证、用户、二手商品、收藏、代取、跑腿匹配、自动上下线、上传接口 | `server/src/routes/auth.js`、`users.js`、`items.js`、`favorites.js`、`errands.js`、`upload.js`、`jobs/runnerOnline.js` |
 | 聊天数据库对象 | 会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base` | 11-13 前交给 B 使用 |
 | 二手前端 | 二手首页、商品详情、发布商品、搜索结果、我的发布、我的收藏 | `miniprogram/pages/index/`、`pages/item/`、`pages/search/`、`pages/mine/items/`、`pages/mine/favorites/` |
 | 联调排错 | 二手闭环、代取前后端联调、数据库问题排查 | 测试记录、修复提交 |
@@ -175,11 +175,11 @@
 | 7 | 二手 | 我的发布 | `pages/mine/items` | P1 | A |
 | 8 | 二手 | 我的收藏 | `pages/mine/favorites` | P1 | A |
 | 9 | 代取 | 代取大厅（右下角圆形加号“找代取”） | `pages/errand/hall` | P0 | B |
-| 10 | 代取 | 发布代取（含“先找跑腿”入口） | `pages/errand/publish` | P0 | B |
+| 10 | 代取 | 发布代取（先选片区再选具体地标，含“先找跑腿”入口） | `pages/errand/publish` | P0 | B |
 | 11 | 代取 | 代取详情 | `pages/errand/detail` | P0 | B |
 | 12 | 代取 | 找跑腿匹配 | `pages/errand/runners` | P1 | B |
 | 13 | 代取 | 我的代取 | `pages/mine/errands` | P0 | B |
-| 14 | 代取 | 接单设置/上线（同一页两个入口；服务区域和时段必填，规格 / 报价 / 备注选填） | `pages/mine/runner` | P0 | B |
+| 14 | 代取 | 接单设置/上线（同一页两个入口；服务片区、具体地标可多选；按具体日期或星期循环的在线计划，或现在上线；规格 / 报价 / 备注选填；计划列表可改/删，进行中循环下线要询问范围） | `pages/mine/runner` | P0 | B |
 | 15 | 聊天 | 消息列表 | `pages/chat/list` | P0 | B |
 | 16 | 聊天 | 聊天页 | `pages/chat/detail` | P0 | B |
 | 17 | 个人中心 | 个人中心 | `pages/mine/index` | P0 | B |
@@ -190,6 +190,7 @@
 - 合计：A 6 页、B 14 页；P0 14 页、P1 6 页。
 - 底部 tabBar 仍是 4 个：首页、代取、消息、我的；不新增“上线”板块。
 - “上线”不是独立页面，而是 `pages/mine/runner?mode=online`；个人页进入同一页时是“接单设置”模式。
+- 页面 14 的在线计划：单次日期默认当天、可多选几天；按星期循环选周一至周日；未开始的计划可修改/取消；进行中的单次可直接提前下线；进行中的循环下线时弹窗问“只提前结束这一次 / 取消之后所有循环”；修改进行中的循环时弹窗提醒“只影响下一次，当前这次要结束请用提前下线”。
 
 ### 1.3 文件归属表
 
@@ -198,15 +199,17 @@
 | 文件 / 目录 | 负责人 | 说明 |
 | --- | --- | --- |
 | `database/schema.sql` | A | 建库建表；B 只读 |
-| `database/objects.sql` | A | 视图/过程/函数/触发器/事件；B 只读 |
+| `database/objects.sql` | A | 视图/过程/函数/触发器；B 只读 |
 | `database/seed.sql` | A | 分类、书目等静态数据 |
 | `database/campus_service_dump.sql` | A | 11-21、11-26 的最终 dump |
 | `server/src/app.js` | A | 所有路由挂载由 A 一次写好；B 不碰 |
 | `server/src/db.js` | A | 连接池 |
 | `server/src/middleware/auth.js` | A | JWT 鉴权 |
 | `server/src/utils/response.js` | A | 统一响应 |
+| `server/src/utils/campus.js` | A | 片区/地标清单与 `isValidZone`、`isValidPlace`、`zoneOfPlace` 校验 |
 | `server/src/routes/auth.js` | A | 注册/登录/me |
 | `server/src/routes/users.js` | A | 用户资料、跑腿设置、上下线、跑腿匹配列表 |
+| `server/src/jobs/runnerOnline.js` | A | `node-cron` 每分钟按在线计划自动切换跑腿上下线 |
 | `server/src/routes/items.js` | A | 二手商品 |
 | `server/src/routes/favorites.js` | A | 收藏 |
 | `server/src/routes/errands.js` | A | 代取 |
@@ -219,6 +222,7 @@
 | `server/uploads/` | 各自本地 | 用户上传；**不提交 Git**，只保留 `.gitkeep` |
 | `miniprogram/app.json` / `app.wxss` / `app.js` | B | A 只使用，不改 |
 | `miniprogram/config.js` / `utils/request.js` | B | A 只调用，不改 |
+| `miniprogram/utils/campus.js` | B | 片区与地标常量；A 提供清单内容，B 落地和维护文件 |
 | `miniprogram/components/` | B | A 只使用，不改 |
 | `miniprogram/pages/login/`、`register/`、`mine/index/`、`mine/errands/`、`mine/runner/`、`mine/profile/`、`mine/settings/`、`mine/help/` | B | A 不改 |
 | `miniprogram/pages/errand/`（大厅、发布、详情、找跑腿） | B | A 不改 |
@@ -254,7 +258,7 @@
 - 鉴权：请求头 `Authorization: Bearer <token>`。
 - 时间：数据库 `DATETIME`，接口返回 `YYYY-MM-DD HH:mm:ss` 字符串。
 - 金额：数据库 `DECIMAL(10,2)`，接口返回数字。
-- 枚举：数据库存英文（`on_sale`、`taken`），前端映射中文。
+- 状态/规格枚举：数据库存英文（`on_sale`、`taken`），前端映射中文；校区、片区等名称型字典直接存中文。
 - 命名：数据库表/字段 `snake_case`，接口字段 `camelCase`；在 SQL 里用 `AS` 转成 camelCase，减少 JS 映射。
 - 图片：接口返回相对路径（如 `/uploads/xxx.jpg`、`/demo/item-1.jpg`），前端用 `BASE_URL + url` 拼接。不要返回 `127.0.0.1` 绝对地址，否则真机演示会挂。
 - SQL：全部 `?` 占位符，禁止字符串拼接。
@@ -268,10 +272,11 @@
 | GET | `/api/books/search?keyword=` | A | 书名/ISBN/作者联想；返回 `bookId`、`isbn`、`title`、`author`、`publisher`、`coverUrl` |
 | POST | `/api/books` | A | 手动新增书目；ISBN 已存在则返回已有 `bookId` |
 | GET | `/api/items?keyword=&bookId=&categoryId=&sort=&page=&pageSize=` | A | `bookId` 用于搜索结果页“同书商品优先” |
-| GET | `/api/users/me/runner-profile` | A | 接单设置页回显；返回 `itemSizes: []`、`availabilityType`、`timeSlots: []`、`remark` |
-| GET | `/api/runners?area=&timeSlot=&itemSize=&page=&pageSize=` | A | 找跑腿匹配页；只返回 `is_online=1` 的跑腿，不直接改订单状态 |
-| GET | `/api/errands/:id` | A | 详情里返回 `canTake`、`canComplete`、`canHang`、`canCancel`，B 的页面据此显示按钮 |
-| POST | `/api/errands/:id/hang` | A | body `{ "action": "hang" \| "resume" }`；由接单者操作 |
+| GET | `/api/users/me/runner-profile` | A | 接单设置页回显；返回 `isOnline`、`availabilityType`、`serviceAreas: []`、`servicePlaces: []`、`itemSizes: []`、`timeSlots: []`、`manualUntil`、`remark` |
+| GET | `/api/runners?area=&place=&timeType=&timeStart=&deadline=&itemSize=&page=&pageSize=` | A | 找跑腿匹配页；`asap` 只返回在线，`deadline`/`range` 允许“未来计划重叠但当前不在线”的 `slot` 跑腿；按片区 + 具体地标 + 时间重叠筛选，不直接改订单状态 |
+| GET | `/api/errands/:id` | A | 详情里返回 `canTake`、`canComplete`、`canCancel`、`canRelease`，B 的页面据此显示按钮 |
+| POST | `/api/errands/:id/cancel` | A | 发布者撤回：`pending → cancelled`；`taken → pending`，清空接单人 |
+| POST | `/api/errands/:id/release` | A | 接单者释放：`taken → pending`，清空接单人 |
 | POST | `/api/feedback` | A | 帮助页意见反馈；body `{ "content": "..." }` |
 
 **跑腿资料与上线（B 的页面按这个传参）：**
@@ -279,9 +284,14 @@
 ```json
 PUT /api/users/me/runner-profile
 {
-  "serviceArea": "北校区",
+  "serviceAreas": ["桃园", "北区教学区"],
+  "servicePlaces": ["第16教学楼", "第25教学楼"],
   "availabilityType": "slot",
-  "timeSlots": ["08:00-12:00", "14:00-18:00"],
+  "timeSlots": [
+    { "id": "o1", "type": "once", "date": "2026-11-09", "start": "14:00", "end": "18:00" },
+    { "id": "o2", "type": "once", "date": "2026-11-10", "start": "14:00", "end": "18:00" },
+    { "id": "w1", "type": "weekly", "weekdays": [1, 3, 5], "start": "18:00", "end": "22:00", "from": "2026-11-09" }
+  ],
   "itemSizes": ["small", "medium"],
   "basePrice": 5.00,
   "remark": "可代取快递"
@@ -293,18 +303,42 @@ PUT /api/users/me/online
 { "isOnline": true, "availabilityType": "now" }
 ```
 
-- `availabilityType` 取 `slot`（时间段）、`long_term`（长期）、`now`（现在上线）。
-- `timeSlots` 是 `HH:mm-HH:mm` 字符串数组；`long_term` 和 `now` 可以为空数组。
+- `availabilityType` 只取 `slot`（按在线计划自动上下线）或 `now`（现在上线，手动保持），不再有 `long_term`。
+- `timeSlots` 是在线计划数组，不再用 `HH:mm-HH:mm` 字符串：
+  - `once`：`{ id, type:"once", date:"YYYY-MM-DD", start:"HH:mm", end:"HH:mm" }`，只在那一天生效；不选日期时前端传当天，多选几天就生成多条。
+  - `weekly`：`{ id, type:"weekly", weekdays:[1..7], start:"HH:mm", end:"HH:mm", from:"YYYY-MM-DD" }`，`1`=周一……`7`=周日，从 `from` 起长期有效，取消即结束。
+  - 每条计划有稳定 `id`；同一天内要求 `start < end`，暂不支持跨天；同一时间不允许两条计划重叠。
+- `slot` 模式至少要有一条未来计划；`now` 模式可以为空，已保存的计划保留但暂停，切回 `slot` 后恢复。
+- `GET` 还要返回 `isOnline`、`manualUntil`，B 用来显示“手动状态将在几点恢复自动”。
+- 手动上线/下线：`isOnline`；`slot` 模式下后端把 `manualUntil` 设为“下一个计划边界”和“当天 23:59”中较早者，到期自动计划接管。`now` 模式不设 `manualUntil`（切到 `now` 时清空），保持到用户手动切换。
+- 正在进行的循环计划点下线时，前端先弹窗问“只提前结束这一次 / 取消之后所有循环”，再传 `{ isOnline:false, scope:"once"|"future", scheduleId:"w1" }`：
+  - `scope:"once"`：`manualUntil` 设到本次结束，循环规则保留；
+  - `scope:"future"`：删除这条循环规则并立即下线。
+- 正在进行循环计划时修改计划，前端必须弹窗提醒“修改只影响下一次；当前这次要结束请用提前下线”。后端处理：若被修改/删除的 `weekly` 计划当前正处于 occurrence 中，先用旧计划算出本次结束时间，把 `manual_until` 设为该时间，再保存新计划；这样当前这次保持原状态到旧结束时间，下一次按新计划执行。保存资料时清空的是其他旧手动覆盖，不覆盖这条保护值。
 - `itemSizes` 是多选数组，取 `small` / `medium` / `large`，存 `runner_item_sizes` 关联表。
-- `serviceArea` 和 `availabilityType` 必填；`itemSizes`、`basePrice`、`remark` 选填，保存时保留上次填写值，下次进入直接回显。
+- `serviceAreas` 是片区数组，至少选一个，取值来自 25 个固定片区（见 1.4 下方清单）；`availabilityType` 必填；`itemSizes`、`basePrice`、`remark` 选填，保存时保留上次填写值，下次进入直接回显。
+- `servicePlaces` 是具体地标数组，可为空：空数组表示“只按片区接单，片区内哪栋楼都接”；非空时每个元素必须是受控地标名，或直接写片区名表示“整个片区”。后端校验每个元素所属的片区必须在 `serviceAreas` 内，避免保存出永远匹配不上的死设置。
+- 发布代取时 `pickupArea`、`pickupPlace` 都必填：用户先选片区，再选该片区下的具体地标；只选片区不选地标时，前端把 `pickupPlace` 直接传成片区名，细节写 `remark`。`pickupLocation` 是用户填的自由文本详细地址（如“第16教学楼 301 门口”）。
+
+**片区与地标清单（11-08 定稿，11-12 前落地）**
+
+- 三级模型：**分类**（前端分组标题，不落库、不参与匹配）→ **片区**（落库，匹配粗筛）→ **地标**（存受控名称，不建表，匹配细筛）。
+- 固定 25 个片区：桃园、李园、橘园、楠园、梅园、竹园、杏园、茶园、北区教学区、南区教学区、中心图书馆、北区图书馆、南区图书馆、第一运动场、第二运动场、第三运动场、第四运动场、第五运动场、北区校医院、南区校医院、一号门外/吾悦广场、二号门外、校外其他、北区其他、南区其他。
+- 地标共 52 条（北区教学区 27、南区教学区 20、北区其他/南区其他 5），完整清单见 **11.9**；每条形如 `{ name: "第16教学楼", zone: "北区教学区", aliases: ["16教", "求实楼", "药化大楼", ...] }`，搜索时名称和别名都要能命中。
+- 前端：`miniprogram/utils/campus.js`（B 建文件，A 提供清单），导出 `GROUPS`、`ZONES`、`LANDMARKS`；`GROUPS` 只负责选择器分组。
+- 后端：`server/src/utils/campus.js`（A 建），导出同一份 `GROUPS`、`ZONES`、`LANDMARKS`、`PLACE_TO_ZONE`、`isValidZone(value)`、`isValidPlace(value)`、`zoneOfPlace(value)`，用于 `PUT /api/users/me/runner-profile` 与 `POST /api/errands` 的白名单校验。
+- 数据库：`runner_profiles.service_areas` 存片区数组，`service_places` 存地标数组；`errand_orders.pickup_area` 存片区，`pickup_place` 存地标名（只选片区时等于片区名），`pickup_location` 存自由文本详细地址。不建地标表。
+- 改清单时三处一起改：11.9 的列表、前端 `campus.js`、后端 `campus.js`；地标可以新增，片区值和地标正式名一旦有订单使用就不要再改名（别名可以补）。
 - 再次进入 `pages/mine/runner?mode=online` 时显示“下线”，调用 `PUT /api/users/me/online` 传 `{ "isOnline": false }`。
 
 **角色规则（11-12 写进接口文档，B 的页面按这个显示按钮）：**
 
-- 接单：除发布者外的登录用户，订单状态必须是 `pending`。
-- 完成：只有发布者可以确认完成，状态 `taken` 或 `hung`。
-- 挂起/恢复：只有接单者可以操作，`taken ↔ hung`。
-- 取消：只有发布者可以操作，状态 `pending` 或 `hung`。
+- 接单：除发布者外的登录用户，订单状态必须是 `pending`；接单成功后变 `taken`，订单从大厅消失，别人不能再接。
+- 完成：只有发布者可以确认完成，状态必须是 `taken`。
+- 发布者撤回：`pending → cancelled`；`taken → pending`，清空 `runner_id`、`taken_at`，订单回大厅。
+- 接单者释放：`taken → pending`，清空 `runner_id`、`taken_at`，订单回大厅。
+- `taken` 不能直接变 `cancelled`；发布者必须先退回 `pending`，再取消。
+- 不再有单独的“挂起/恢复”状态和接口；`taken` 本身就是锁单。
 - 商品状态：只有卖家可以改；`on_sale → off_shelf / sold`，`off_shelf → on_sale`。
 
 **聊天页面参数（A 的详情页跳 B 的聊天页，必须一致）：**
@@ -320,7 +354,7 @@ B 的聊天页用这三个参数调 `POST /api/conversations`，body 为 `{ peer
 
 ```text
 /pages/search/result?keyword=高数
-/pages/errand/runners?area=北校区&timeSlot=08:00-12:00&itemSize=small
+/pages/errand/runners?area=北区教学区&place=第16教学楼&timeType=deadline&deadline=2026-11-20 18:00:00&itemSize=small
 /pages/mine/runner?mode=online
 ```
 
@@ -390,7 +424,7 @@ git switch -c feature/xxx
 
 | 工具 | 版本 | 结论 |
 | --- | --- | --- |
-| Node.js | v24.18.0 | 可用；Express/mysql2/bcryptjs 都能跑 |
+| Node.js | v24.18.0 | 可用；Express/mysql2/bcryptjs/node-cron 都能跑 |
 | npm | 11.6.2 | 可用 |
 | MySQL | 8.0.44 | 可用，支持 CHECK、JSON_TABLE、窗口函数 |
 | Git | 2.53.0.windows.2 | 可用，支持 `git switch` / `git restore` |
@@ -772,7 +806,7 @@ git fetch --prune
 | `feat` | 新功能 | `feat(item): 商品列表接口支持分页和筛选` |
 | `fix` | 修 bug | `fix(errand): 修复并发接单重复写入` |
 | `docs` | 文档 | `docs(report): 完成第 6 章数据库实施` |
-| `test` | 测试 | `test: 增加 22 条核心用例记录` |
+| `test` | 测试 | `test: 增加 26 条核心用例记录` |
 | `refactor` | 重构，不改功能 | `refactor(item): 抽取价格校验函数` |
 | `chore` | 杂项、配置 | `chore: 添加 .gitignore` |
 
@@ -885,16 +919,16 @@ commit 历史会出现在报告和答辩里（第 18 个问题“两个人怎么
 | 11-10 | `feature/item-detail` | 详情、收藏 API、收藏触发器、详情页 | `dev` | — |
 | 11-11 | `feature/item-mine` | 我的发布/收藏、状态修改、搜索结果页、两个页面 | `dev` | — |
 | 11-11 | `release/m1`（PR：`dev` → `main`） | M1 二手闭环 | `main` | `v0.2-m1` |
-| 11-12 | `feature/errand-core` | 跑腿资料（可接规格多选、时段 JSON）、上下线、发布、大厅、跑腿匹配 API | `dev` | — |
+| 11-12 | `feature/errand-core` | 跑腿资料（可接规格多选、在线计划 JSON、自动上下线）、发布、大厅、跑腿匹配 API | `dev` | — |
 | 11-13 | `feature/errand-take` | 接单事务、状态日志、我的代取 | `dev` | — |
 | 11-12~13 | `feature/chat-db-objects` | 聊天数据库对象，交付 B | `dev` | 给 B 发交接消息 |
-| 11-14 | `feature/errand-status` | 完成/挂起/取消、信用分 | `dev` | — |
+| 11-14 | `feature/errand-status` | 完成/撤回/释放/取消、信用分 | `dev` | — |
 | 11-15 | `fix/errand-integration` | 代取前后端联调修复 | `dev` | — |
-| 11-15 | `feature/db-objects-batch1` | `v_user_summary`、函数、游标、事件 | `dev` | — |
+| 11-15 | `feature/db-objects-batch1` | `v_user_summary`、函数、游标 | `dev` | — |
 | 11-16 | `fix/m2-integration` | M2 联调修复 | `dev` | — |
 | 11-16 | `release/m2`（PR：`dev` → `main`） | M2 代取 + 聊天闭环 | `main` | `v0.3-m2` |
 | 11-17 | `feature/db-objects` | 全部视图/过程/函数清点补齐 | `dev` | — |
-| 11-18 | `feature/triggers-perf` | 触发器、事件、性能、批量数据 | `dev` | — |
+| 11-18 | `feature/triggers-perf` | 触发器、性能、批量数据 | `dev` | — |
 | 11-19 | `feature/security` | 安全加固、权限、负向测试 | `dev` | — |
 | 11-20 | `test/regression` | 回归、Postman 集合、测试记录 | `dev` | — |
 | 11-21 | `release/m3`（PR：`dev` → `main`） | 功能冻结 | `main` | `v1.0-m3` |
@@ -961,6 +995,9 @@ git push origin dev
    - `items.price`、`errand_orders.reward`、`runner_profiles.base_price` 都用 `DECIMAL(10,2)`。
    - `favorites` 用复合主键 `(user_id, item_id)` 防重复。
    - `runner_item_sizes` 用复合主键 `(user_id, item_size)` 支持多选。
+   - `runner_profiles.service_areas` 至少一个片区，`service_places` 默认空数组（表示只按片区接单）。
+   - `runner_profiles.availability_type` 只能是 `slot/now`；`time_slots` 存 `once`/`weekly` 在线计划；`manual_until` 存手动覆盖截止时间；`slot` 至少一条未来计划。
+   - `errand_orders` 的 `pickup_area`（片区）、`pickup_place`（地标名）、`pickup_location`（自由文本地址）、`remark`（备注）四列不要混。
    - `conversations.biz_id` 用 `BIGINT NOT NULL DEFAULT 0`，否则唯一键对 NULL 不生效。
    - `messages` 有 `(conversation_id, message_id)` 索引，支撑增量拉取。
    - `item_status_logs`、`errand_status_logs` 的 `changed_by` 允许 NULL，避免触发器拿不到用户时外键报错。
@@ -1011,11 +1048,13 @@ git pull origin dev
    - 文件开头建库、`USE campus_service`。
    - 用 `SET FOREIGN_KEY_CHECKS = 0;` + 逆序 `DROP TABLE IF EXISTS ...;` + `SET FOREIGN_KEY_CHECKS = 1;`，保证可以重复执行。**注意：这会清空数据**，开发期可以用；有演示数据后先 dump 再跑。
    - 建表顺序：`users` → `books` → `categories` → `items` → `item_images` → `favorites` → `runner_profiles` → `runner_item_sizes` → `errand_orders` → `conversations` → `messages` → `item_status_logs` → `errand_status_logs` → `feedback`。
-   - `books` 增加 `cover_url VARCHAR(255) NULL`；`runner_profiles` 增加 `availability_type`、`service_area`、`time_slots JSON`、`base_price`、`remark`；可接规格存 `runner_item_sizes`。
+   - `books` 增加 `cover_url VARCHAR(255) NULL`；`runner_profiles` 增加 `availability_type ENUM('slot','now')`、`service_areas JSON`、`service_places JSON`、`time_slots JSON`、`manual_until DATETIME NULL`、`base_price`、`remark`；可接规格存 `runner_item_sizes`。
+   - `time_slots` 存在线计划数组：`once` 为 `{id,type,date,start,end}`，`weekly` 为 `{id,type,weekdays,start,end,from}`；`slot` 模式至少一条未来计划，`now` 模式可为空但保留原计划；同一时间不允许重叠，暂不支持跨天。
+   - `service_areas` 存多选片区 JSON（至少一个）；`service_places` 存多选地标 JSON（可为空数组，表示只按片区接单）；`errand_orders` 增加 `pickup_area`（片区）、`pickup_place`（地标名，只选片区时等于片区名）、`pickup_location`（自由文本详细地址）、`remark`（订单备注）。地标放前后端常量清单，存受控名称但不建第 15 张表；匹配用两级 `JSON_CONTAINS`。
    - 所有表 `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`。
    - 索引命名 `idx_表_字段`、`uk_表_字段`，报告里好写。
    - CHECK：价格/报酬 ≥ 0、`favorite_count >= 0`、`completed_count >= 0`。
-   - ENUM 值见《课程设计开发计划.md》3.5；不要用中文存数据库。
+   - ENUM 值见《课程设计开发计划.md》3.5；状态/规格枚举存英文，校区、片区等名称型字典直接存中文。
    - 外键动作：`items.seller_id` → `users` 用 `RESTRICT`；`item_images`、`favorites` 对 `items` 用 `CASCADE`；`runner_item_sizes` 对 `runner_profiles` 用 `CASCADE`；`messages` 对 `conversations` 用 `CASCADE`；日志表对应用 `CASCADE` 或 `RESTRICT`，报告里说明选择。
    - 建完在 Navicat 里执行，刷新左侧表列表，应看到 14 张表。
 2. **14:00-17:00 搭 Express**：
@@ -1023,7 +1062,7 @@ git pull origin dev
    ```bash
    cd server
    npm init -y
-   npm i express mysql2 dotenv bcryptjs jsonwebtoken multer cors
+   npm i express mysql2 dotenv bcryptjs jsonwebtoken multer cors node-cron
    npm i -D nodemon
    ```
 
@@ -1446,7 +1485,7 @@ git push -u origin feature/item-detail
    - 用 2023001 登录 → 首页搜索“数据结构” → 搜索结果页书籍卡片 → 点击卡片过滤同书商品 → 详情 → 收藏 → 我的收藏；
    - 用 2023002 登录 → 发布 → 我的发布 → 下架 → 重新上架 → 标记售出；
    - 2023001 的收藏列表里，已售出/下架商品如何显示？按产品决定：显示但置灰，或过滤。MVP 建议显示并带状态标签。
-   - 按 7.1 的 22 条用例挑二手相关先跑一遍。
+   - 按 7.1 的 26 条用例挑二手相关先跑一遍。
 4. **19:30-21:00 ER 图**：
    - 用 draw.io 画全局 ER 图（14 张表）和局部 ER 图（用户/商品/收藏、跑腿/规格）；导出 PNG 到 `report/assets/`；命名 `er_global.png`、`er_local_user_item.png`。
    - 画的时候对照实际 `schema.sql`，不要凭记忆；报告里要能解释每个联系（1:1、1:N、M:N）。
@@ -1507,29 +1546,34 @@ git push origin dev
 **今天必须完成**
 
 - `GET/PUT /api/users/me/runner-profile`、`PUT /api/users/me/online`。
-- `GET /api/runners?area=&timeSlot=&itemSize=&page=&pageSize=`（找跑腿匹配）。
+- `GET /api/runners?area=&place=&timeType=&timeStart=&deadline=&itemSize=&page=&pageSize=`（找跑腿匹配）。
 - `POST /api/errands`、`GET /api/errands`（大厅）。
 - `v_errand_hall` 视图。
 - 接口文档补充代取接口和角色规则。
 
 **怎么做**
 
-1. **09:00-12:00 跑腿资料 + 上下线**：
+1. **09:00-12:00 跑腿资料 + 上下线 + 自动计划**：
    - `runner_profiles` 与 `users` 一对一，`user_id` 主键 + 外键；可接规格存 `runner_item_sizes`（多选）。
-   - `GET /api/users/me/runner-profile`：查不到时返回默认值（`isOnline:false`、`availabilityType:'slot'`、`serviceArea:''`、`timeSlots:[]`、`itemSizes:[]`、`basePrice:null`、`remark:''`、`completedCount:0`），不要 404，方便 B 的页面回显。
-   - `PUT /api/users/me/runner-profile`：`INSERT ... ON DUPLICATE KEY UPDATE` 写主表；`runner_item_sizes` 在同一事务里先删后插；校验 `basePrice` 为空或 `>= 0`、`availabilityType` 枚举、`timeSlots` 每项符合 `HH:mm-HH:mm`、`itemSizes` 只能取 `small/medium/large`；服务区域和时段必填，规格 / 报价 / 备注选填。
-   - `PUT /api/users/me/online`：body `{ isOnline, availabilityType }`；upsert；返回最新状态。
-   - 测试：设置资料（多选规格、两个时段）→ 重新查询 → 上下线 → 再查。
+   - `GET /api/users/me/runner-profile`：查不到时返回默认值（`isOnline:false`、`availabilityType:'slot'`、`serviceAreas:[]`、`servicePlaces:[]`、`timeSlots:[]`、`manualUntil:null`、`itemSizes:[]`、`basePrice:null`、`remark:''`、`completedCount:0`），不要 404，方便 B 的页面回显。
+   - `PUT /api/users/me/runner-profile`：`INSERT ... ON DUPLICATE KEY UPDATE` 写主表；`runner_item_sizes` 在同一事务里先删后插；校验 `basePrice` 为空或 `>= 0`、`availabilityType` 只能是 `slot/now`、`timeSlots` 是数组且每项符合下面的结构、`itemSizes` 只能取 `small/medium/large`、`serviceAreas` 是非空数组且每个值在 25 个固定片区内、`servicePlaces` 是数组且每个元素是受控地标名或片区名、其所属片区必须在 `serviceAreas` 内；服务片区必填，具体地标 / 规格 / 报价 / 备注选填。
+   - `timeSlots` 校验：`once` 必须有 `date`（前端不选默认当天）、`start`、`end`；`weekly` 必须有 `weekdays`（1=周一……7=周日，非空且不重复）、`from`、`start`、`end`；同一天内 `start < end`，不支持跨天；同一时间不允许两条计划重叠；`slot` 模式至少要有一条未来计划，`now` 模式可以为空。
+   - `PUT /api/users/me/runner-profile` 保存后：清空旧的手动覆盖；`slot` 模式立即按当前时间重算一次 `is_online`，`now` 模式保持当前状态、后续由用户手动切换；下一次定时任务继续接管 `slot`。若本次修改/删除的 `weekly` 计划当前正处于 occurrence 中，先用旧计划算出本次结束时间并写入 `manual_until`，保证“修改只影响下一次”。
+   - `PUT /api/users/me/online`：body `{ isOnline, availabilityType?, scope?, scheduleId? }`；`slot` 模式下手动操作把 `manual_until` 设为“下一个计划边界”和“当天 23:59”中较早者；`now` 模式不设 `manual_until`（切到 `now` 时清空），保持到用户手动切换；正在进行的循环计划下线时，`scope:"once"` 只覆盖到本次结束，`scope:"future"` 删除该循环规则并立即下线。
+   - `server/src/jobs/runnerOnline.js`：用 `node-cron` 每分钟执行；扫描 `availability_type='slot'` 的用户，`manual_until > NOW()` 时跳过；否则判断当前时间是否落在任一 `once` 或 `weekly` occurrence 内，设置 `is_online`；过期 `manual_until` 清空；服务启动时先执行一次补算。
+   - 测试：单次计划（默认当天/多选几天）、循环计划、手动覆盖到边界、进行中循环的“只这一次/取消之后所有”、服务重启后补算。
 2. **14:00-16:00 找跑腿匹配 API**：
-   - `GET /api/runners`：只查 `runner_profiles.is_online = 1`；按 `service_area`、可接规格、时段过滤；分页。
-   - 时段匹配：`timeSlot` 传 `HH:mm-HH:mm`，用 `JSON_TABLE` 或应用层过滤 `time_slots` 数组；MVP 数据量小，应用层过滤也可以，报告里说明。
-   - 返回昵称、头像、校区、信用分、完成数、服务区域、时段、可接规格、报价、备注；**不返回手机号等敏感信息**。
+   - `GET /api/runners`：`asap` 只查 `is_online = 1`；`deadline`/`range` 查 `availability_type='slot'`（按计划重叠，不要求当前在线）或 `availability_type='now' AND is_online=1`；先按 `service_areas` 的 JSON 包含关系（`JSON_CONTAINS`）做片区粗筛，再按 `service_places` 做地标细筛——`service_places` 为空数组，或包含订单 `place`，或包含订单 `area`（表示跑腿勾了整个片区）；`place` 没传时按 `place = area` 处理（等价于用户只选了片区）；再叠加可接规格、时间重叠过滤；分页。
+   - 地标匹配真值表：只接某栋楼的跑腿，不匹配“只填片区”的订单；接整个片区（或只按片区）的跑腿，能匹配片区内任何具体地标。
+   - 时间匹配：参数与订单一致，`timeType=asap` 不筛时间；`timeType=deadline` 用 `[NOW(), deadline]`；`timeType=range` 用 `[timeStart, deadline]`。`slot` 跑腿的需求窗口与任一 `once`/`weekly` occurrence 重叠即可；`now` 跑腿只看在线状态。MVP 数据量小，应用层解析 JSON 过滤即可，报告里说明；不要再把 `time_slots` 当成“每天重复的 HH:mm”。
+   - 返回昵称、头像、校区、信用分、完成数、`serviceAreas`、`servicePlaces`、在线计划摘要、可接规格、报价、备注；**不返回手机号等敏感信息**。
    - 明确：匹配页只展示信息 + 联系 TA（跳聊天），**不直接改订单状态**；订单仍发布到大厅由 `sp_take_errand` 接单。
 3. **16:00-17:00 代取发布 + 大厅**：
-   - `POST /api/errands`：校验取件/送达地点、物品规格、描述、报酬 ≥ 0、截止时间 > 当前时间；插入 `status='pending'`；返回 `orderId`。
+   - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、取件详细地址 `pickupLocation`、送达地点、物品规格、描述、备注 `remark`（选填，≤255 字）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；插入 `status='pending'`；返回 `orderId`。
+   - 不校验“截止时间必须晚于当前时间”，也不做超时自动取消；`deadline` 只作参考和匹配用。
    - `GET /api/errands?status=pending&page=&pageSize=`：用 `v_errand_hall`；默认只查 `pending`；分页；按 `created_at DESC`；返回发布者昵称/头像/信用分。
-   - `v_errand_hall`：`errand_orders` + `users`（发布者）；字段 camelCase。
-   - 测试：seed 几条 pending 订单；大厅能看到；过期时间校验；报酬负数 400。
+   - `v_errand_hall`：`errand_orders` + `users`（发布者）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`pickupLocation`、`remark`。
+   - 测试：seed 几条 pending 订单；大厅能看到；三种时间模式都能发布，非法组合 400；报酬负数 400；`pickupPlace` 不在清单内 400；只传片区名作为 `pickupPlace` 能成功。
 4. **18:00-21:00 聊天数据库对象提前做**：
    - 今天先写 `conversations`、`messages` 相关对象（见 11-13 的清单），能写多少写多少；这样 B 的聊天后端不会等到 11-15。
    - 至少先交付 `v_conversation_base`、`sp_get_or_create_conversation` 的初版，让 B 可以开始。
@@ -1541,19 +1585,23 @@ git push origin dev
 git switch dev
 git pull origin dev
 git switch -c feature/errand-core
-git add server/src/routes/users.js server/src/routes/errands.js database/objects.sql docs/接口文档.md
-git commit -m "feat(errand): 跑腿资料、上下线与代取发布/大厅接口"
+git add server/src/routes/users.js server/src/routes/errands.js server/src/jobs/runnerOnline.js database/objects.sql docs/接口文档.md
+git commit -m "feat(errand): 跑腿资料、自动上下线与代取发布/大厅接口"
 git push -u origin feature/errand-core
 # PR → dev
 ```
 
 **验收**
 
-- [ ] 跑腿设置保存后能回显；可接规格多选、时段数组正确保存；上下线状态正确。
-- [ ] `GET /api/runners` 只返回在线跑腿，区域/规格/时段筛选有效，不泄露手机号。
+- [ ] 跑腿设置保存后能回显；可接规格多选、`once`/`weekly` 在线计划、`manualUntil`、片区与具体地标数组正确保存；上下线状态正确。
+- [ ] 自动任务到计划开始上线、结束下线；手动覆盖最晚到 23:59；服务重启后下一分钟补算。
+- [ ] 进行中循环下线：选“只这一次”规则保留、下次照常；选“取消之后所有”规则删除、立即下线。
+- [ ] 修改进行中的循环计划，前端弹窗提醒“只影响下一次，当前这次要结束用提前下线”。
+- [ ] `GET /api/runners` 按时间要求返回可接单跑腿（`asap` 在线；`deadline`/`range` 可含计划重叠的 `slot` 跑腿），按取件片区粗筛 + 具体地标细筛 + 规格 + 时间重叠筛选有效，不泄露手机号。
+- [ ] 地标匹配符合真值表：只接某栋楼的跑腿不匹配“只填片区”的订单；接整个片区的跑腿能匹配片区内具体地标订单。
 - [ ] 发布代取单成功；大厅显示 pending 订单；分页正常。
-- [ ] 报酬负数、截止时间过去、必填缺失都返回 400。
-- [ ] `v_errand_hall` 结果包含发布者昵称/头像。
+- [ ] 报酬负数、时间组合非法、必填缺失、地标不在清单内都返回 400。
+- [ ] `v_errand_hall` 结果包含发布者昵称/头像和 `pickupArea`、`pickupPlace`、`pickupLocation`、`remark`。
 
 **注意**
 
@@ -1636,33 +1684,43 @@ git push -u origin feature/chat-db-objects
 - `@current_user_id` 是会话变量，`SET` 和 `UPDATE` 必须在同一连接上。
 - 并发测试不要只点一次；多试几次，确认稳定。
 
-#### 11-14（六）完成/挂起/取消 + 信用分
+#### 11-14（六）完成/撤回/释放/取消 + 信用分
 
 **今天必须完成**
 
-- `POST /api/errands/:id/complete`、`/hang`、`/cancel`。
+- `POST /api/errands/:id/complete`、`/cancel`、`/release`。
 - `sp_complete_errand`：完成订单、更新跑腿完成数、信用分。
 - 状态机全路径测试。
 - 聊天对象如果 11-13 没交付完，今天上午必须交付。
 
 **怎么做**
 
-1. **09:00-12:00 完成/挂起/取消**：
-   - 完成：只有发布者；状态 `taken/hung`；调 `sp_complete_errand`（事务）：
+1. **09:00-12:00 完成/撤回/释放/取消**：
+   - 完成：只有发布者；状态必须是 `taken`；调 `sp_complete_errand`（事务）：
      - 更新订单 `completed`、`completed_at`；
-     - `runner_profiles.completed_count + 1`（不存在则插入）；
-     - `users.credit_score = LEAST(100, credit_score + 2)`；
+     - 接单者的 `runner_profiles.completed_count + 1`（不存在则插入）；
+     - 接单者的 `users.credit_score = LEAST(100, credit_score + 2)`；
      - 日志触发器记录。
-   - 挂起/恢复：只有接单者；`taken ↔ hung`；body `{ action }`；状态不对 409。
-   - 取消：只有发布者；`pending/hung → cancelled`；已接单后是否允许取消？按 1.4 的规则，`taken` 不允许取消；`hung` 允许发布者取消，接单者不能取消。
-   - 所有写操作先查订单，校验角色和状态；错误码 403/409。
+   - 发布者撤回 `/cancel`：
+     - `pending → cancelled`，订单结束；
+     - `taken → pending`，退回大厅，`runner_id = NULL`、`taken_at = NULL`。
+   - 接单者释放 `/release`：
+     - `taken → pending`，退回大厅，`runner_id = NULL`、`taken_at = NULL`。
+   - `taken` 不能一步变 `cancelled`；发布者要退回 `pending`，再取消。
+   - 没有单独的“挂起/恢复”状态和接口；`taken` 本身就是锁单，订单不在大厅、别人不能再接。
+   - 所有写操作先查订单，校验角色和状态；角色不符 403，状态不符 409。
+   - 撤回/释放和状态更新在同一连接上设置 `@current_user_id`，保证日志记录实际操作人。
 2. **14:00-17:00 状态机测试**：
-   - 发布 → 接单 → 挂起 → 恢复 → 完成；
+   - 发布 → 接单 → 完成；
    - 发布 → 取消；
-   - 发布 → 接单 → 完成（发布者操作）；
-   - 已完成再挂起/取消 → 409；
+   - 发布 → 接单 → 发布者撤回（变 `pending`，`runner_id` 为空）→ 再取消（变 `cancelled`）；
+   - 发布 → 接单 → 接单者释放（变 `pending`）→ 另一个跑腿重新接单 → 完成；
+   - 接单后发布者调 `/cancel` 只会回到 `pending`，不会一步变 `cancelled`；再调一次才变 `cancelled`；
+   - 接单后查大厅，确认该订单不出现；
+   - 已完成单再撤回/释放 → 409；
    - 接单者点完成 → 403；
-   - 发布者点挂起 → 403；
+   - 发布者点释放 → 403；
+   - 非接单者点释放 → 403；
    - 每一条截图或至少记录结果。
 3. **17:00-19:00 数据库对象第一批**（如果时间够，提前做 11-15 的内容）：
    - `v_user_summary`、`fn_completed_errands`、`sp_refresh_user_credit` 的初版。
@@ -1677,7 +1735,7 @@ git switch dev
 git pull origin dev
 git switch -c feature/errand-status
 git add database/objects.sql server/src/routes/errands.js
-git commit -m "feat(errand): 完成、挂起、取消与信用分更新"
+git commit -m "feat(errand): 完成、撤回、释放、取消与信用分更新"
 git push -u origin feature/errand-status
 # PR → dev
 ```
@@ -1686,13 +1744,16 @@ git push -u origin feature/errand-status
 
 - [ ] 状态机全路径正确；非法跳转 409。
 - [ ] 完成后 `runner_profiles.completed_count` +1，`users.credit_score` 增加（不超过 100）。
-- [ ] `errand_status_logs` 完整记录每次状态变化。
-- [ ] 角色权限：非发布者完成 403、非接单者挂起 403、非发布者取消 403。
+- [ ] `errand_status_logs` 完整记录每次状态变化，撤回/释放记录实际操作人。
+- [ ] 发布者撤回/接单者释放后，订单回到大厅，`runner_id`、`taken_at` 都为空。
+- [ ] 角色权限：非发布者完成 403、非接单者释放 403、非发布者撤回 403。
+- [ ] 接单后订单从大厅消失，别人不能再接。
 
 **注意**
 
 - `sp_complete_errand` 里更新 `runner_profiles` 用 `INSERT ... ON DUPLICATE KEY UPDATE`，防止跑腿没设置资料时更新 0 行。
 - 信用分规则写进报告（例如 60 基础 + 完成单数 ×2，最高 100），答辩可能问。
+- 撤回/释放不要删除订单行，也不要把日志删掉；只改状态、清空接单人，历史仍然可查。
 
 #### 11-15（日）代取联调 + 数据库对象第一批
 
@@ -1700,20 +1761,19 @@ git push -u origin feature/errand-status
 
 - 和 B 联调代取：大厅、发布、详情、我的代取、接单设置。
 - 修复代取接口问题。
-- `v_user_summary`、`fn_completed_errands`、`sp_refresh_user_credit`、`ev_cancel_overdue_errand` 至少完成初版。
+- `v_user_summary`、`fn_completed_errands`、`sp_refresh_user_credit` 至少完成初版。
 - 接口文档更新实际响应示例。
 
 **怎么做**
 
 1. **09:00-12:00 代取联调**：
-   - 用两个账号走：A 发布代取 → B 上线 → B 接单 → B 挂起/恢复 → A 完成；
-   - 检查 B 的页面按钮是否按 `canTake/canComplete/canHang/canCancel` 显示；
+   - 用两个账号走：A 发布代取 → B 上线 → B 接单（确认大厅里消失）→ A 完成；
+   - 再走一遍：A 发布 → B 接单 → B 释放 → 订单回大厅 → A 撤回；检查 B 的页面按钮是否按 `canTake/canComplete/canCancel/canRelease` 显示；
    - 修接口字段/错误码；不要改 B 的页面代码，除非 B 请你改（改之前说一声）。
 2. **14:00-17:00 数据库对象第一批**：
    - `v_user_summary`：用户 + 发布商品数、收藏数、完成跑腿数、发布代取数；用子查询或聚合，先保证结果对，再考虑性能。
    - `fn_completed_errands(user_id)`：查该用户作为跑腿完成的订单数；`READS SQL DATA`。
    - `sp_refresh_user_credit`：游标遍历有完成单的用户，`credit_score = LEAST(100, 60 + count*2)`；按计划 6.10。
-   - `ev_cancel_overdue_errand`：每小时把 `pending` 且 `deadline < NOW()` 的订单改成 `cancelled`；需要 `SET GLOBAL event_scheduler = ON;`。测试时可临时改成每分钟，测完改回每小时。
    - 每个对象写测试 SQL + 截图。
 3. **17:00-19:00 文档 + 截图**：把代取接口的实际响应示例补进 `docs/接口文档.md`；整理 `docs/screenshots/2026-11-15/`。
 4. **19:30-21:00 Git**：合并 `fix/errand-integration`、`feature/db-objects-batch1`。
@@ -1734,7 +1794,7 @@ git switch dev
 git pull origin dev
 git switch -c feature/db-objects-batch1
 git add database/objects.sql
-git commit -m "feat(db): 用户统计视图、完成数函数、信用分游标与超时事件"
+git commit -m "feat(db): 用户统计视图、完成数函数与信用分游标"
 git push -u origin feature/db-objects-batch1
 # PR → dev
 ```
@@ -1746,13 +1806,11 @@ git push -u origin feature/db-objects-batch1
 - [ ] `v_user_summary` 统计数与明细一致。
 - [ ] `fn_completed_errands` 返回值正确。
 - [ ] `sp_refresh_user_credit` 执行后信用分符合规则。
-- [ ] `SHOW EVENTS` 能看到 `ev_cancel_overdue_errand`。
 
 **注意**
 
-- 事件调度器默认可能是 OFF；`SET GLOBAL event_scheduler = ON;` 需要 root。
-- 事件里没有 `@current_user_id`，日志的 `changed_by` 为 NULL 是正常的，报告里说明“系统自动取消”。
 - `sp_refresh_user_credit` 游标写法容易死循环，先用 3 条数据测。
+- 代取订单没有超时定时事件，`deadline` 只作参考；过了时间订单不会被系统自动取消（跑腿自动上下线是另一条 `node-cron` 任务，不动订单状态）。
 
 #### 11-16（一）M2 联调 + 接口文档 + 性能初查
 
@@ -1830,7 +1888,7 @@ git push origin dev
 
 **今天必须完成**
 
-- 对照清单逐项检查：4 视图、5 存储过程、2 函数、5 触发器、1 事件。
+- 对照清单逐项检查：4 视图、5 存储过程、2 函数、5 触发器。
 - 补齐所有缺的视图、存储过程、函数。
 - 每个对象有测试 SQL + 结果截图。
 - `database/objects.sql` 可以从头重复执行。
@@ -1858,7 +1916,6 @@ git push origin dev
    | 触发器 | `trg_item_status_log` |  | 11-11 |
    | 触发器 | `trg_errand_status_log` |  | 11-13 |
    | 触发器 | `trg_message_after_insert` |  | 11-13 |
-   | 事件 | `ev_cancel_overdue_errand` |  | 11-15 初版 |
 
 2. **10:00-12:00 补齐视图/函数**：
    - `v_item_list`：商品 + 卖家 + 分类 + 书目 + 首图；字段 camelCase；`LEFT JOIN` 处理无分类/无书目。
@@ -1874,7 +1931,7 @@ git push origin dev
    - `sp_get_or_create_conversation`：重复调用返回同一 id；并发调用不重复。
    - `sp_refresh_user_credit`：游标遍历；空表、单条、多条都测。
 4. **17:00-19:00 让 `objects.sql` 可重复执行**：
-   - 文件开头按依赖逆序 `DROP VIEW IF EXISTS`、`DROP PROCEDURE IF EXISTS`、`DROP FUNCTION IF EXISTS`、`DROP TRIGGER IF EXISTS`、`DROP EVENT IF EXISTS`。
+   - 文件开头按依赖逆序 `DROP VIEW IF EXISTS`、`DROP PROCEDURE IF EXISTS`、`DROP FUNCTION IF EXISTS`、`DROP TRIGGER IF EXISTS`。
    - 注意：`DROP TRIGGER` 不需要表名前缀；`DROP PROCEDURE/FUNCTION` 带名字即可。
    - 重新跑一遍完整初始化：
 
@@ -1924,14 +1981,14 @@ git push -u origin feature/db-objects
 - 如果某个对象在接口里没用上，至少在答辩演示 SQL 里用一次，并说明用途。
 - `sp_refresh_user_credit` 是游标示例，答辩很可能问“游标怎么用、为什么不直接用 UPDATE”；准备好回答。
 
-#### 11-18（三）触发器、事件、性能与测试数据
+#### 11-18（三）触发器、状态机、性能与测试数据
 
 **今天必须完成**
 
 - 5 个触发器全部验证：收藏计数、商品状态日志、代取状态日志、消息最后一条。
-- 事件 `ev_cancel_overdue_errand` 验证。
+- 状态机撤回/释放路径验证，日志记录操作人。
 - 造 1000 商品、5000 消息；`EXPLAIN` 验证索引；记录耗时。
-- 截图：触发器前后对比、`EXPLAIN`、数据量。
+- 截图：触发器前后对比、状态机日志、`EXPLAIN`、数据量。
 
 **怎么做**
 
@@ -1956,25 +2013,17 @@ git push -u origin feature/db-objects
      ```
 
      预期：日志有 `on_sale → off_shelf`，`changed_by = 2`。
-   - 代取状态日志：接单/完成/挂起各测一次；确认每条状态变化都有记录。
+   - 代取状态日志：接单/完成/撤回/释放/取消各测一次；确认每条状态变化都有记录。
    - 消息触发器：插入一条消息，查 `conversations.last_message/last_time` 是否更新。
    - 每个触发器都测“状态没变时是否误写日志”：例如把 `on_sale` 再更新成 `on_sale`，日志不应增加。
-2. **14:00-15:30 事件**：
-   - 确认 `SHOW VARIABLES LIKE 'event_scheduler';` 为 ON；没有就 root 执行 `SET GLOBAL event_scheduler = ON;`。
-   - 插入一条 `pending` 且 `deadline` 已经过去的订单；把事件临时改成每分钟：
+2. **14:00-15:30 状态机撤回/释放 + 日志验证**：
+   - 准备一条 `taken` 订单；发布者调 `POST /api/errands/:id/cancel`，确认状态回到 `pending`，`runner_id`、`taken_at` 为空。
+   - 再接单，接单者调 `POST /api/errands/:id/release`，确认订单重新出现在大厅。
+   - 接单后发布者调 `/cancel`，确认只回到 `pending`，不会一步变成 `cancelled`；随后再调一次 `/cancel` 才变 `cancelled`。
+   - 查 `errand_status_logs`，确认每次变化都有记录，`changed_by` 是实际操作人。
+   - 造一条 `deadline` 已过的 `pending` 单，等几分钟再查，确认状态仍是 `pending`，系统没有自动取消。
+   - 截图：大厅重新出现订单 + 状态日志 + 过期订单未变。
 
-     ```sql
-     ALTER EVENT ev_cancel_overdue_errand ON SCHEDULE EVERY 1 MINUTE;
-     ```
-
-     等 1~2 分钟，查订单是否变成 `cancelled`，日志是否新增。
-   - 测完改回每小时：
-
-     ```sql
-     ALTER EVENT ev_cancel_overdue_errand ON SCHEDULE EVERY 1 HOUR;
-     ```
-
-   - 截图 `SHOW EVENTS` + 订单状态 + 日志。
 3. **15:30-18:00 造数据 + 性能**：
    - 写 `server/scripts/seed-bulk.js`：
      - 1000 个商品，分布在 3 个卖家、6 个分类；标题 `测试商品 1..1000`，价格随机；图片可以只给部分商品。
@@ -2004,7 +2053,7 @@ git switch dev
 git pull origin dev
 git switch -c feature/triggers-perf
 git add database/objects.sql server/scripts/seed-bulk.js
-git commit -m "feat(db): 触发器验证、超时事件与性能测试脚本"
+git commit -m "feat(db): 触发器验证、状态机撤回释放与性能测试脚本"
 git push -u origin feature/triggers-perf
 # PR → dev
 ```
@@ -2012,7 +2061,7 @@ git push -u origin feature/triggers-perf
 **验收**
 
 - [ ] 5 个触发器全部有效，状态未变化时不写日志。
-- [ ] 事件能自动取消超时订单。
+- [ ] 撤回/释放后订单回大厅，日志记录实际操作人；过期订单不会被自动取消。
 - [ ] 1000 商品/5000 消息插入成功。
 - [ ] 关键查询 `EXPLAIN` 使用索引；记录耗时。
 - [ ] 截图齐全。
@@ -2021,7 +2070,7 @@ git push -u origin feature/triggers-perf
 
 - 触发器测试用真实数据，但不要污染演示账号的关键数据；测试完可以重跑 seed 恢复。
 - 造数据前先 dump 一份，防止把演示数据弄乱。
-- 事件测试改回每小时，避免答辩时把正常订单误取消。
+- 没有 MySQL 事件调度器，不要写“超时自动取消”的测试；在线计划由 `node-cron` 维护，但订单 `deadline` 仍只作参考。
 
 #### 11-19（四）安全加固与权限演示
 
@@ -2041,8 +2090,7 @@ git push -u origin feature/triggers-perf
      - 商品状态：只有卖家能改。
      - 收藏：登录即可，但只能操作自己的收藏。
      - 代取接单：不能接自己的单、不能接非 pending。
-     - 完成/取消：只有发布者。
-     - 挂起/恢复：只有接单者。
+     - 完成/撤回/取消：只有发布者；接单者释放单独校验。
      - 上传：必须登录。
      - 聊天：B 的代码，A 一起 review 会话参与者校验。
    - 输入校验：必填、长度、数字范围、枚举白名单、分页上限；价格/报酬不能为负。
@@ -2081,7 +2129,7 @@ git push -u origin feature/triggers-perf
    - 用 A 的 token 改 B 的商品 → 403。
    - 发布者接自己的单 → 403。
    - 两个账号并发接单 → 一个 200、一个 409。
-   - 已完成订单再挂起/取消 → 409。
+   - 已完成订单再撤回/释放 → 409。
    - 上传 txt / 6MB 图片 → 400。
    - 搜索框输入 `' OR 1=1 --` → 按普通字符串处理，不返回全表。
    - 分页 `page=99999` → 空列表，不报错。
@@ -2125,7 +2173,7 @@ git push -u origin feature/security
 **今天必须完成**
 
 - Postman/Thunder Client 集合：Auth、Items、Favorites、Upload、Errands、Chat、DB。
-- 22 条核心测试用例跑完，记录结果。
+- 26 条核心测试用例跑完，记录结果。
 - 修 P0 bug；P1 记录不修。
 - 数据库 dump + 恢复测试。
 - 测试记录交给 B 合并。
@@ -2143,8 +2191,8 @@ git push -u origin feature/security
    - 每个请求加断言：状态码、`code`、关键字段存在。
    - 文件夹按模块分；每个请求保存一个成功示例，报告附录可以用。
    - 导出集合 JSON 到 `docs/postman/CampusService.postman_collection.json`，提交。
-2. **14:00-17:00 跑 22 条用例**：
-   - 按《课程设计开发计划.md》7.1 的 22 条逐条执行；A 负责后端相关（1~22 都要懂，聊天部分和 B 一起）。
+2. **14:00-17:00 跑 26 条用例**：
+   - 按《课程设计开发计划.md》7.1 的 26 条逐条执行；A 负责后端相关（1~26 都要懂，聊天部分和 B 一起）。
    - 结果写进 `docs/A测试记录.md`：用例号、操作、预期、实际、通过/失败、截图名。
    - 失败的按 P0/P1 分类：阻塞演示的是 P0，样式/文案是 P1。
    - P0 当天修；P1 记录，11-21 前有时间再修。
@@ -2152,7 +2200,7 @@ git push -u origin feature/security
    - 导出：
 
      ```bash
-     mysqldump -u root -p --databases campus_service --routines --triggers --events > database/campus_service_dump.sql
+     mysqldump -u root -p --databases campus_service --routines --triggers > database/campus_service_dump.sql
      ```
 
    - 恢复测试：新建 `campus_service_test` 库，导入 dump，检查表/视图/过程/触发器/数据都在；或者直接在干净环境重跑 schema/objects/seed。
@@ -2177,7 +2225,7 @@ git push -u origin test/regression
 
 **验收**
 
-- [ ] 22 条核心用例通过率 100%（P1 样式问题除外）。
+- [ ] 26 条核心用例通过率 100%（P1 样式问题除外）。
 - [ ] Postman 集合能一键跑通主要流程。
 - [ ] dump 能在空库恢复，表和对象齐全。
 - [ ] P0 bug 清零。
@@ -2260,7 +2308,7 @@ git push -u origin chore/release-readme
 
 - [ ] 干净环境能按 readme 跑起来。
 - [ ] 所有 P0 功能可用；数据库对象齐全。
-- [ ] 22 条用例通过。
+- [ ] 26 条用例通过。
 - [ ] `v1.0-m3` tag 存在。
 - [ ] 功能冻结公告发到群里。
 - [ ] 截图、测试记录、dump 齐全。
@@ -2338,7 +2386,7 @@ git push -u origin docs/report-a
 **今天必须完成**
 
 - 第 5 章 物理设计：存储引擎、字符集、索引、安全、权限。
-- 第 6 章 数据库实施：建库建表、视图、存储过程、函数、触发器、事务、事件、测试数据。
+- 第 6 章 数据库实施：建库建表、视图、存储过程、函数、触发器、事务、测试数据。
 - 每个数据库对象都有“作用 + 创建语句 + 测试结果截图”。
 
 **怎么做**
@@ -2355,7 +2403,6 @@ git push -u origin docs/report-a
    - 存储过程：5 个，每个写作用、参数、事务/锁、调用结果截图。
    - 函数：2 个，作用、SQL、调用结果。
    - 触发器：5 个，作用、SQL、触发前后对比截图。
-   - 事件：1 个，作用、调度、测试结果。
    - 事务：发布商品、接单、完成订单三处；写 ACID 体现。
    - 测试数据：账号、商品、订单、消息数量；批量数据截图。
    - 每个对象都要写“解决了什么问题”，不要只贴代码。
@@ -2525,7 +2572,7 @@ git pull origin dev
    - 最终 dump：
 
      ```bash
-     mysqldump -u root -p --databases campus_service --routines --triggers --events > database/campus_service_dump.sql
+     mysqldump -u root -p --databases campus_service --routines --triggers > database/campus_service_dump.sql
      ```
 
    - 打包目录按计划 8.7；zip 命名 `055艾奕含--Campus Service Platform.zip`。
@@ -2790,7 +2837,7 @@ git tag -l
 ```text
 database/
 ├─ schema.sql              # 建库、14 张表、索引、约束
-├─ objects.sql             # 视图、函数、存储过程、触发器、事件
+├─ objects.sql             # 视图、函数、存储过程、触发器
 ├─ seed.sql                # 分类、书目等静态数据
 ├─ campus_service_dump.sql # 最终备份（11-20/21 生成）
 └─ er_diagram.png          # ER 图导出（也可放 report/assets）
@@ -2828,7 +2875,6 @@ npm run seed
 ```sql
 USE campus_service;
 
-DROP EVENT IF EXISTS ev_cancel_overdue_errand;
 DROP TRIGGER IF EXISTS trg_message_after_insert;
 DROP TRIGGER IF EXISTS trg_errand_status_log;
 DROP TRIGGER IF EXISTS trg_item_status_log;
@@ -2888,13 +2934,17 @@ DROP VIEW IF EXISTS v_item_list;
 **几个容易踩的字段设计：**
 
 - `conversations.biz_id` 用 `BIGINT NOT NULL DEFAULT 0`。唯一键 `(user_a_id, user_b_id, biz_type, biz_id)` 里如果有 NULL，MySQL 不会按“相等”去重，会插入重复会话。
-- `runner_profiles.time_slots` 用 `JSON` 存 `["08:00-12:00","14:00-18:00"]`。这是应用层整体读写的复合属性，报告里要说明“为了简化 MVP，暂不拆 `runner_time_slots` 表；若严格按 1NF，可拆成一行一个时段”。
+- `runner_profiles.time_slots` 用 `JSON` 存具体日期/星期循环的在线计划，例如 `[{"id":"o1","type":"once","date":"2026-11-09","start":"14:00","end":"18:00"}]`。这是应用层整体读写的复合属性，报告里要说明“为了简化 MVP，暂不拆 `runner_online_schedules` 和 `runner_schedule_weekdays`；若严格按 1NF，可拆成一行一条计划 + 一行一个重复星期”。
+- `runner_profiles.service_areas` 存片区数组（至少一个），`service_places` 存具体地标数组（可为空，空数组表示只按片区接单）；两者都用受控名称，严格 1NF 可拆子表，这里是为了守住 14 张表做的权衡。
+- `errand_orders.pickup_area` 存片区、`pickup_place` 存地标名（只选片区时等于片区名）、`pickup_location` 存自由文本详细地址；`remark` 存订单备注，不要和 `item_desc` 混用。
 - `runner_item_sizes` 用复合主键 `(user_id, item_size)`，一个跑腿可同时接小/中/大件；`errand_orders.item_size` 仍是单值，因为一个订单只有一个规格。
 - `books.cover_url` 存相对路径，可为 `NULL`；前端用 `BASE_URL + coverUrl`，为空显示占位图。
 - `item_status_logs.changed_by`、`errand_status_logs.changed_by` 允许 `NULL`。触发器拿不到应用用户时插 NULL，避免外键报错；正常接口会通过 `@current_user_id` 写入真实用户。
 - `items.favorite_count` 用 `INT NOT NULL DEFAULT 0`（有符号），配合 `GREATEST(favorite_count - 1, 0)`，不会减成负数。
 - `messages.is_read` 用 `TINYINT(1) NOT NULL DEFAULT 0`；B 的已读接口按 `conversation_id + sender_id <> 当前用户` 更新。
 - `errand_orders.status` 用 ENUM，状态机在应用层校验；数据库层可以加 CHECK 限制枚举（ENUM 本身已限制）。
+- `errand_orders` 的时间用 `time_type + time_start + deadline` 三列：`asap` 两列都空，`deadline` 只填 `deadline`，`range` 两列都填且 `time_start < deadline`；用条件 CHECK 兜底。
+- `deadline` 只是参考时间，没有“超时自动取消”；发布者撤回/接单者释放都退回 `pending`，并清空 `runner_id`、`taken_at`。
 - 金额统一 `DECIMAL(10,2)`；不要用 `FLOAT`。
 - 所有表 `utf8mb4`；排序规则 `utf8mb4_0900_ai_ci`。
 
@@ -2909,7 +2959,7 @@ DROP VIEW IF EXISTS v_item_list;
 | `items` | `(category_id, price)` | 分类 + 价格筛选 |
 | `items` | `(seller_id, status)` | 我的发布 |
 | `item_images` | `(item_id, sort_no)` | 首图、详情图 |
-| `runner_profiles` | `(is_online, service_area)` | 找跑腿匹配 |
+| `runner_profiles` | `(is_online)`、`(availability_type)` | 找跑腿先筛在线；自动任务按类型扫描 `slot` 用户；片区与地标分别用 `JSON_CONTAINS(service_areas, ...)`、`JSON_CONTAINS(service_places, ...)` |
 | `runner_item_sizes` | `(item_size, user_id)` | 按规格筛选跑腿 |
 | `errand_orders` | `(status, created_at)` | 代取大厅 |
 | `errand_orders` | `(publisher_id, status)`、`(runner_id, status)` | 我的代取 |
@@ -2938,8 +2988,7 @@ DROP VIEW IF EXISTS v_item_list;
 | `sp_complete_errand` | 存储过程 | 11-14 | A 完成订单 | 完成数 + 信用分 |
 | `v_user_summary` | 视图 | 11-15/17 | 个人中心/报告 | 统计 |
 | `fn_completed_errands` | 函数 | 11-15/17 | 个人中心 | 完成单数 |
-| `sp_refresh_user_credit` | 存储过程 | 11-15/17 | 演示/定时 | 游标 |
-| `ev_cancel_overdue_errand` | 事件 | 11-15/18 | 数据库演示 | 超时取消 |
+| `sp_refresh_user_credit` | 存储过程 | 11-15/17 | 演示/维护 | 游标 |
 | `cs_app` / `cs_readonly` | 权限 | 11-19 | 安全演示 | GRANT |
 | 索引 | 索引 | 11-06 | 全局 | 建表时一起 |
 
@@ -2949,7 +2998,7 @@ DROP VIEW IF EXISTS v_item_list;
 
 **测试模板（每个对象都按这个来）：**
 
-1. 展示对象定义：`SHOW CREATE VIEW` / `SHOW CREATE PROCEDURE` / `SHOW CREATE FUNCTION` / `SHOW CREATE TRIGGER` / `SHOW CREATE EVENT`。
+1. 展示对象定义：`SHOW CREATE VIEW` / `SHOW CREATE PROCEDURE` / `SHOW CREATE FUNCTION` / `SHOW CREATE TRIGGER`。
 2. 执行一次真实调用/查询。
 3. 展示结果。
 4. 如果是触发器，展示“触发前 → 操作 → 触发后”的对比。
@@ -2977,10 +3026,6 @@ SHOW TRIGGERS;
 SELECT item_id, favorite_count FROM items WHERE item_id = 1;
 -- 执行收藏 SQL
 SELECT item_id, favorite_count FROM items WHERE item_id = 1;
-
--- 事件
-SHOW EVENTS;
-SHOW VARIABLES LIKE 'event_scheduler';
 
 -- 权限
 SHOW GRANTS FOR 'cs_readonly'@'localhost';
@@ -3032,8 +3077,8 @@ END;
 
 - `SET @current_user_id` 和 `UPDATE` 必须走同一个连接；`pool.query` 两次可能用不同连接，变量会丢。
 - 存储过程内部可以 `SET @current_user_id = p_runner_id;`，这样调用方不用管。
-- 事件里没有用户，`@current_user_id` 是 NULL，日志的 `changed_by` 为 NULL；报告里说明“系统自动取消”。
-- 触发器的 `changed_by` 外键要允许 NULL，否则事件执行会报外键错误。
+- 事件已删除：代取订单没有超时自动取消，`deadline` 只作参考；状态变化全部由用户操作触发。跑腿在线计划由 Node 定时任务维护，与 MySQL 事件无关。
+- 触发器的 `changed_by` 外键要允许 NULL，手工 SQL 没设置 `@current_user_id` 时也不会报外键错误。
 
 **这是答辩很好的素材**：老师问“触发器怎么知道谁操作的”，你能答出“应用层设置会话变量，触发器读取；因为触发器没有应用上下文”。
 
@@ -3192,10 +3237,10 @@ DB_PASSWORD=强密码
 **导出：**
 
 ```bash
-mysqldump -u root -p --databases campus_service --routines --triggers --events > database/campus_service_dump.sql
+mysqldump -u root -p --databases campus_service --routines --triggers > database/campus_service_dump.sql
 ```
 
-- `--routines` 包含存储过程/函数；`--triggers` 包含触发器；`--events` 包含事件。
+- `--routines` 包含存储过程/函数；`--triggers` 包含触发器；本项目没有事件，不需要 `--events`。
 - 不加这些参数，恢复后对象会丢。
 - 导出的文件可能包含演示账号密码哈希，但都是假账号；不要放真实个人信息。
 
@@ -3209,7 +3254,7 @@ mysql -u root -p < database/campus_service_dump.sql
 
 1. 新建空库 `campus_service_test`（或者先备份当前库）。
 2. 导入 dump。
-3. `SHOW TABLES`、`SHOW TRIGGERS`、`SHOW PROCEDURE STATUS`、`SHOW EVENTS` 检查对象。
+3. `SHOW TABLES`、`SHOW TRIGGERS`、`SHOW PROCEDURE STATUS` 检查对象。
 4. 启动后端指向测试库，登录/发布/接单。
 
 **什么时候备份：**
@@ -4103,7 +4148,7 @@ B 当前阻塞：
 | 11-11 | 我的发布/收藏接口、状态修改、搜索结果页 | 二手闭环 UI 测试 |
 | 11-12 | 跑腿资料/上下线/发布/大厅/找跑腿接口 | 代取页面字段确认 |
 | 11-13 | 接单事务、状态日志、**聊天数据库对象** | 聊天 API 进度、代取页面 |
-| 11-14 | 完成/挂起/取消接口、信用分 | 聊天页面联调 |
+| 11-14 | 完成/撤回/释放/取消接口、信用分 | 聊天页面联调 |
 | 11-15 | 数据库对象第一批、代取联调修复 | 代取页面完成 |
 | 11-16 | M2 联调、接口文档最终版 | 聊天全流程、M2 测试 |
 | 11-17~18 | 数据库对象、触发器、性能截图 | UI 走查、截图整理 |
@@ -4175,8 +4220,7 @@ B 当前阻塞：
 3. 多图上传（改成 1 张图）。
 4. 首页价格区间/校区筛选（保留关键词搜索和分类）。
 5. 商品浏览量 `view_count`。
-6. 事件 `ev_cancel_overdue_errand`（保留 SQL，答辩演示时说明）。
-7. 我的发布里的“标记售出”（保留下架/上架）。
+6. 我的发布里的“标记售出”（保留下架/上架）。
 
 **绝对不能砍：**
 
@@ -4222,7 +4266,7 @@ B 当前阻塞：
 | 答辩 PPT | B 排版，A 供第 5~8 页内容 | 11-25 | 11-26 | `report/答辩PPT.pptx` | 12 页左右 |
 | 系统视频 | B 剪辑，A 录数据库片段 | 11-26 | 11-29 | `report/系统演示.mp4` | 6~8 分钟 |
 | readme | A | 11-26 | 11-29 | `readme.txt` | 账号、启动步骤、对象清单 |
-| 数据库备份 | A | 11-26 | 11-29 | `database/campus_service_dump.sql` | 含例程、触发器、事件 |
+| 数据库备份 | A | 11-26 | 11-29 | `database/campus_service_dump.sql` | 含例程、触发器 |
 | 源码压缩包 | A 打包，B 检查 | 11-26 | 11-29 | `055艾奕含--Campus Service Platform.zip` | 不含 node_modules/.env |
 | 答辩讲稿 + 问答 | A 写数据库部分，B 写系统部分 | 11-25 | 11-27 | `docs/答辩讲稿.md` | A 的讲稿见 9.4 |
 | 三处备份 | A/B 各备一份 | — | 11-29 | U 盘 + 网盘 + 邮箱 | 断网也能放视频 |
@@ -4244,7 +4288,7 @@ B 当前阻塞：
 | 第 3 章 | 概念设计：局部/全局 ER 图、实体与联系 | A | 11-22 | `schema.sql`、draw.io |
 | 第 4 章 | 逻辑设计：关系模式、3NF 论证、表结构 | B | 11-22 | A 的 `schema.sql` |
 | 第 5 章 | 物理设计：存储引擎、字符集、数据类型、索引、安全 | A | 11-23 | `schema.sql`、`objects.sql` |
-| 第 6 章 | 数据库实施：DDL、视图、过程、函数、触发器、事件、事务、测试 | A | 11-23 | 全部 SQL + 截图 |
+| 第 6 章 | 数据库实施：DDL、视图、过程、函数、触发器、事务、测试 | A | 11-23 | 全部 SQL + 截图 |
 | 第 7 章 | 系统实现：架构、核心代码、界面 | B | 11-23 | `server/`、`miniprogram/` |
 | 第 8 章 | 系统测试：测试用例、结果、缺陷 | B | 11-23 | `docs/测试用例.md` |
 | 第 9 章 | 总结与展望：完成情况、难点、不足、未来工作 | A | 11-24 | 开发记录、bug 记录 |
@@ -4304,14 +4348,14 @@ B 当前阻塞：
 2.6 数据字典
 ```
 
-**2.1 用户角色**：游客、普通用户（买家/卖家）、跑腿、系统（定时事件）。用一张表写清“角色—能做什么—不能做什么”。
+**2.1 用户角色**：游客、普通用户（买家/卖家）、跑腿、系统维护（后台统计）。用一张表写清“角色—能做什么—不能做什么”。
 
 **2.2 业务流程**：至少 3 张流程图：
 
 - 图 2-1 二手交易流程：注册登录 → 发布/浏览 → 搜索（独立结果页，书籍卡片 + 同书商品优先） → 详情 → 收藏 → 联系卖家 → 线下交易 → 标记售出。
-- 图 2-2 代取流程：发布订单 → 先找跑腿（在线/区域/时段/规格匹配） → 没合适的发布大厅 → 接单 → 完成/挂起 → 取消/超时取消。
+- 图 2-2 代取流程：发布订单 → 先找跑腿（在线/片区+地标/时间要求/规格匹配） → 没合适的发布大厅 → 接单锁单 → 完成 / 撤回 / 释放 / 取消。
 - 图 2-3 聊天流程：从商品/订单发起 → 获取或创建会话 → 轮询拉消息 → 标记已读。
-- 图 2-4 上线流程：个人页接单设置/代取页上线入口 → 填写范围/时段/规格/报价 → 保存 → 上线/下线。
+- 图 2-4 上线流程：个人页接单设置/代取页上线入口 → 填写范围/在线计划（具体日期或星期循环）/规格/报价 → 保存 → 自动上下线或手动上线/下线；进行中循环下线要选“只这一次/取消之后所有”。
 
 **2.3 功能需求**：按模块列成表，标注 P0/P1/P2。不要只写“用户可以发布商品”，要落到数据：
 
@@ -4413,7 +4457,8 @@ favorites(user_id, item_id, created_at)   -- 主键 (user_id, item_id)
 | 时间 | DATETIME | 业务时间，不受时区转换影响 |
 | 长文本 | TEXT | 商品描述 |
 | 布尔 | TINYINT(1) | 是否议价、是否已读 |
-| 多图/时间段 | JSON | 存储过程内用 `JSON_TABLE` 展开 |
+| 多图 | JSON | 发布商品时在存储过程内用 `JSON_TABLE` 展开 |
+| 在线计划 | JSON | 存 `runner_profiles.time_slots`，Node 层解析 `once`/`weekly` 后做时间重叠匹配；`node-cron` 每分钟自动上下线 |
 
 **5.3 索引表**：和 3.5 一致，至少写 10 行，列“索引名、表、字段、用途、对应查询”。
 
@@ -4428,7 +4473,7 @@ SET favorite_count = (SELECT COUNT(*) FROM favorites f WHERE f.item_id = i.item_
 
 **5.6 权限**：`cs_app` 只有业务库 CRUD；`cs_readonly` 只有 SELECT；root 只用于建库和备份。贴 GRANT 语句和测试截图。
 
-**5.7 备份**：`mysqldump --routines --triggers --events`，说明备份频率、存放位置、恢复步骤。
+**5.7 备份**：`mysqldump --routines --triggers`，说明备份频率、存放位置、恢复步骤。
 
 **常见扣分点：**
 
@@ -4446,7 +4491,7 @@ SET favorite_count = (SELECT COUNT(*) FROM favorites f WHERE f.item_id = i.item_
 6.3 存储过程（5 个）
 6.4 函数（2 个）
 6.5 触发器（5 个）
-6.6 事件（1 个）
+6.6 代取状态机与撤回/释放
 6.7 事务与并发控制
 6.8 测试数据与性能测试
 6.9 权限验证与备份恢复
@@ -4468,10 +4513,9 @@ SET favorite_count = (SELECT COUNT(*) FROM favorites f WHERE f.item_id = i.item_
 | 类型 | 数量 | 名称 | 写作重点 |
 | --- | --- | --- | --- |
 | 视图 | 4 | `v_item_list`、`v_errand_hall`、`v_conversation_base`、`v_user_summary` | 解决了哪些多表 JOIN；列表页如何复用 |
-| 存储过程 | 5 | `sp_publish_item`、`sp_take_errand`、`sp_complete_errand`、`sp_get_or_create_conversation`、`sp_refresh_user_credit` | 事务边界、行锁、`JSON_TABLE`、游标 |
+| 存储过程 | 5 | `sp_publish_item`、`sp_take_errand`、`sp_complete_errand`、`sp_get_or_create_conversation`、`sp_refresh_user_credit` | 事务边界、行锁、游标 |
 | 函数 | 2 | `fn_unread_count`、`fn_completed_errands` | 确定性、返回值、在查询中的调用 |
 | 触发器 | 5 | 收藏 +1/-1、商品状态日志、代取状态日志、会话最后消息 | 触发器不知道“当前用户”，用会话变量补 |
-| 事件 | 1 | `ev_cancel_overdue_errand` | 调度周期、`event_scheduler`、超时取消 |
 | 事务 | 3 处 | 发布商品、接单、完成订单 | ACID 如何体现、回滚测试 |
 | 权限 | 2 个账号 | `cs_app`、`cs_readonly` | GRANT、允许/拒绝对比 |
 
@@ -4482,7 +4526,9 @@ SET favorite_count = (SELECT COUNT(*) FROM favorites f WHERE f.item_id = i.item_
 3. 完成订单：更新订单状态 + 跑腿完成数 + 信用分，同一事务。
 4. 贴两个会话的测试过程：一个成功、一个等待后失败。
 
-**测试数据**：3 个账号、20 条以上商品、10 条以上代取单、20 条以上消息、5 条以上在线跑腿资料（含多选规格/时段）；性能测试造 1000 商品、5000 消息，贴 `EXPLAIN` 和查询耗时。
+**状态机单独写**：`pending → taken → completed`；`pending → cancelled`；`taken → pending`（发布者撤回 / 接单者释放）；`taken → completed`（发布者确认）。说明 `taken` 本身就是锁单，订单从大厅消失、不能被重复接；`taken` 不能直接到 `cancelled`，撤回/释放会清空 `runner_id`、`taken_at`，日志表保留操作轨迹；`deadline` 只是参考，不做超时自动取消。
+
+**测试数据**：3 个账号、20 条以上商品、10 条以上代取单、20 条以上消息、5 条以上在线跑腿资料（含多选规格、`once` 和 `weekly` 在线计划）；性能测试造 1000 商品、5000 消息，贴 `EXPLAIN` 和查询耗时。
 
 **常见扣分点：**
 
@@ -4513,7 +4559,7 @@ SET favorite_count = (SELECT COUNT(*) FROM favorites f WHERE f.item_id = i.item_
 - 两人 Git 协作：分支、PR、冲突解决、文件归属。
 - 报告与开发并行：边开发边截图，避免最后补图。
 
-**9.3 不足**：搜索是 `LIKE`、聊天是轮询、没有支付/后台/实名认证、没有搭子模块、找跑腿只按区域/时段/规格筛选、没有按真实距离或评分排序。每条写“影响是什么、当前怎么规避”。
+**9.3 不足**：搜索是 `LIKE`、聊天是轮询、没有支付/后台/实名认证、没有搭子模块、找跑腿只按片区+地标+在线计划+规格筛选、自动上下线依赖 Node 服务常驻、没有按真实距离或评分排序。每条写“影响是什么、当前怎么规避”。
 
 **9.4 未来工作**：全文索引/Elasticsearch、WebSocket、平台担保交易、管理员后台与审核、按距离排序、AI 生成商品描述、移动端适配。
 
@@ -4615,10 +4661,10 @@ report/assets/
 | 22 | 商品状态日志 | 更新商品状态后查 `item_status_logs` | 新增一条日志 | 6.5 |
 | 23 | 代取状态日志 | 接单/完成后查 `errand_status_logs` | 状态变更记录 | 6.5 |
 | 24 | 消息触发器 | 插入消息后查 `conversations` | `last_message`/`last_time` 更新 | 6.5 |
-| 25 | 事件调度器 | `SHOW EVENTS; SHOW VARIABLES LIKE 'event_scheduler';` | 事件存在、调度器 ON | 6.6 |
-| 26 | 超时订单自动取消 | 临时 `EVERY 1 MINUTE`，插入过期 pending 单 | 自动变 cancelled | 6.6 |
+| 25 | 发布者撤回接单 | 接单后发布者调 `/cancel` | 状态回 `pending`，`runner_id`/`taken_at` 为空 | 6.6 |
+| 26 | 接单者释放 + 过期不取消 | 接单者调 `/release`；再造一条过期 pending 单 | 订单回大厅；过期单仍是 `pending` | 6.6 |
 | 27 | 列表查询走索引 | `EXPLAIN SELECT ... FROM items WHERE status='on_sale' ORDER BY created_at DESC;` | `key` 命中索引 | 6.8 |
-| 28 | 跑腿匹配查询走索引 | `EXPLAIN SELECT ... FROM runner_profiles WHERE is_online=1 AND service_area=?;` | `key` 命中索引 | 6.8 |
+| 28 | 跑腿匹配先按在线过滤 | `EXPLAIN SELECT ... FROM runner_profiles WHERE is_online=1;` | `key` 命中 `idx_runner_online`；片区和地标再用 `JSON_CONTAINS` 过滤 | 6.8 |
 | 29 | 批量测试数据 | `SELECT COUNT(*) FROM items; SELECT COUNT(*) FROM messages;` | 1000 / 5000 | 6.8 |
 | 30 | 权限对比 | `cs_app` 能增删改查；`cs_readonly` 只能 SELECT | DELETE 被拒绝 | 6.9 |
 | 31 | 备份与恢复 | dump 文件 + 恢复到新库后查表 | 对象齐全 | 6.9 |
@@ -4659,9 +4705,9 @@ report/assets/
 | 图 1-1 | 系统功能模块图 | 11-22 | 三层：小程序/后端/数据库 |
 | 图 1-2 | 技术架构图 | 11-22 | HTTP + JWT + mysql2 + 本地图片 |
 | 图 2-1 | 二手交易流程图 | 11-22 | 含发布、独立搜索页、收藏、售出 |
-| 图 2-2 | 代取流程图 | 11-22 | 含先找跑腿、发布大厅、挂起、恢复、超时取消 |
+| 图 2-2 | 代取流程图 | 11-22 | 含先找跑腿、发布大厅、接单锁单、撤回/释放、完成/取消 |
 | 图 2-3 | 聊天流程图 | 11-22 | 含轮询、已读 |
-| 图 2-4 | 上线/接单设置流程图 | 11-22 | 两个入口、上线/下线、回填上次数据 |
+| 图 2-4 | 上线/接单设置流程图 | 11-22 | 两个入口、自动/手动上下线、计划列表、循环下线弹窗、修改循环提醒、回填上次数据 |
 | 图 2-5 | 顶层 DFD | 11-22 | 用户 ↔ 系统 ↔ 数据库 |
 | 图 2-6 | 0 层 DFD | 11-22 | 6 个加工、4 个数据存储 |
 | 图 3-1 | 局部 ER（用户/商品/收藏） | 11-22 | 标基数 |
@@ -4700,7 +4746,7 @@ report/assets/
 | 1:40-2:20 | 技术架构与选型 | B | P4 |
 | 2:20-3:20 | 数据库概念设计：14 表、ER、3NF | A | P5 |
 | 3:20-4:20 | 逻辑/物理设计：字段、索引、冗余 | A | P6 |
-| 4:20-5:35 | 数据库对象：视图/过程/函数/触发器/事件 | A | P7 |
+| 4:20-5:35 | 数据库对象：视图/过程/函数/触发器 | A | P7 |
 | 5:35-6:50 | 核心业务与并发接单 | A | P8 |
 | 6:50-7:50 | 系统演示：二手、代取、聊天 | B（A 协助数据库部分） | P9 |
 | 7:50-8:30 | 测试与安全 | B | P10 |
@@ -4713,11 +4759,13 @@ report/assets/
 
 > 各位老师好，我是成员 A 艾奕含，负责数据库设计和后端主线。下面由我介绍数据库部分。
 >
-> 先看概念设计。系统一共 14 张表，围绕用户、二手商品、代取订单、聊天四条主线。我们先画局部 ER 图，再合并成全局 ER 图，消除了命名冲突和属性冲突。设计满足 3NF：书目信息拆到 `books`，商品图片拆到 `item_images`，跑腿设置拆到 `runner_profiles`，可接规格因为多选拆到 `runner_item_sizes`，状态变更拆到日志表，所以非主属性都完全依赖主键，没有传递依赖。`runner_profiles.time_slots` 用 JSON 存时段数组，是应用层整体读写的权衡，报告里会说明。
+> 先看概念设计。系统一共 14 张表，围绕用户、二手商品、代取订单、聊天四条主线。我们先画局部 ER 图，再合并成全局 ER 图，消除了命名冲突和属性冲突。设计满足 3NF：书目信息拆到 `books`，商品图片拆到 `item_images`，跑腿设置拆到 `runner_profiles`，可接规格因为多选拆到 `runner_item_sizes`，状态变更拆到日志表，所以非主属性都完全依赖主键，没有传递依赖。`runner_profiles.time_slots` 用 JSON 存单次/星期循环的在线计划，是应用层整体读写的权衡，报告里会说明。
 >
 > 逻辑和物理设计上，主键统一用 BIGINT 自增，金额用 DECIMAL(10,2)，状态用 ENUM，字符集是 utf8mb4，存储引擎是 InnoDB。索引按真实查询建：`items(status, created_at)` 支撑首页在售列表，`items(category_id, price)` 支撑分类和价格筛选，`items(seller_id, status)` 支撑我的发布，`messages(conversation_id, message_id)` 支撑增量拉消息。我们还保留了两个冗余字段：`items.favorite_count` 和 `conversations.last_message`，用触发器维护，避免列表页频繁 COUNT 和子查询。这是有意的反规范化，报告里写了权衡。
 >
-> 数据库对象方面，4 个视图分别支撑商品列表、代取大厅、会话列表和个人统计；5 个存储过程覆盖发布商品、接单、完成订单、获取会话和信用分刷新；2 个函数计算未读数和完成单数；5 个触发器维护收藏数、状态日志和会话最后消息；还有 1 个事件每小时取消超时代取单。所有对象都在系统里真实调用，不是只写在 SQL 文件里。
+> 数据库对象方面，4 个视图分别支撑商品列表、代取大厅、会话列表和个人统计；5 个存储过程覆盖发布商品、接单、完成订单、获取会话和信用分刷新；2 个函数计算未读数和完成单数；5 个触发器维护收藏数、状态日志和会话最后消息。所有对象都在系统里真实调用，不是只写在 SQL 文件里。
+>
+> 代取订单的时间要求用 `time_type + time_start + deadline` 三列表达“尽快 / 截止时间 / 时间范围”，`deadline` 只作参考，不判断超时、不自动取消，只用于找跑腿时和跑腿的在线计划做重叠匹配。发布者可以撤回接单，接单者也可以释放接单，订单都会退回大厅 `pending`；`taken` 不能直接变 `cancelled`，必须先回 `pending`，这样状态变化都有明确操作人，日志可追溯。
 >
 > 最关键的难点是并发接单。两个跑腿同时点接单，只能有一个成功。我们用事务加 `SELECT ... FOR UPDATE` 锁住订单行，检查状态必须是 pending，再用带 `status='pending'` 条件的 UPDATE，判断 `affectedRows` 是否为 1，最后提交。第二个请求会等待锁释放，然后看到状态已经变成 taken，返回 409。这个流程我们在答辩现场会用两个窗口演示。
 >
@@ -4796,13 +4844,13 @@ A：优点是把多表事务放在数据库端，减少网络往返，权限也�
 
 **Q10：SQL 注入和越权怎么防？**
 
-A：所有 SQL 用 `?` 占位符，禁止字符串拼接；输入做类型/长度校验；JWT 里带用户 ID，写操作校验资源归属，比如只有卖家能改商品、只有接单者能完成订单、只有会话参与者能看消息；数据库用最小权限账号 `cs_app`。
+A：所有 SQL 用 `?` 占位符，禁止字符串拼接；输入做类型/长度校验；JWT 里带用户 ID，写操作校验资源归属，比如只有卖家能改商品、只有发布者能确认完成/撤回/取消、只有接单者能释放、只有会话参与者能看消息；数据库用最小权限账号 `cs_app`。
 
 #### 9.4.5 5 个加分追问
 
-**追问 1：事件调度器在生产环境怎么用？**
+**追问 1：代取时间为什么设计成三列？为什么不做超时自动取消？**
 
-A：我们用它每小时取消 `pending` 且 `deadline < NOW()` 的订单。生产环境要配合监控和告警，或者放到应用侧定时任务/消息队列，避免数据库事件失败无人知道；`event_scheduler=ON` 也要写进部署检查。
+A：三种时间要求——“尽快”“截止时间”“时间范围”——只靠一个 `deadline` 表达不了，所以用 `time_type` 区分模式，`time_start` 只给范围用，`deadline` 给截止/范围用，再加一条条件 `CHECK` 锁死合法组合。不做超时自动取消，是因为代取受现实因素影响，硬性取消容易误伤进行中的订单；我们把 `deadline` 定为参考时间，只用于展示和找跑腿时的时间重叠匹配，是否继续由双方协商，不满意可以撤回或释放接单。
 
 **追问 2：EXPLAIN 你会看哪些列？**
 
@@ -4814,7 +4862,7 @@ A：先确认慢在哪条 SQL，用 EXPLAIN 和慢查询日志；索引覆盖高
 
 **追问 4：数据库怎么备份和恢复？**
 
-A：用 `mysqldump --databases campus_service --routines --triggers --events` 导出结构、数据、视图、过程、函数、触发器、事件；恢复时先建库再 `SOURCE` 文件。备份放在仓库外，U 盘和网盘各一份，答辩前在干净环境恢复一次验证。
+A：用 `mysqldump --databases campus_service --routines --triggers` 导出结构、数据、视图、过程、函数、触发器；恢复时先建库再 `SOURCE` 文件。备份放在仓库外，U 盘和网盘各一份，答辩前在干净环境恢复一次验证。
 
 **追问 5：为什么不用 ORM？**
 
@@ -4839,7 +4887,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 | P4 | 技术架构 | 小程序 → Express → MySQL、JWT、上传 | A（B 美化） | B |
 | P5 | 数据库概念设计 | 14 表、4 条主线、全局 ER、3NF | A | A |
 | P6 | 逻辑与物理设计 | 核心表字段、索引表、冗余字段 | A | A |
-| P7 | 数据库对象 | 4 视图 / 5 过程 / 2 函数 / 5 触发器 / 1 事件 | A | A |
+| P7 | 数据库对象 | 4 视图 / 5 过程 / 2 函数 / 5 触发器 | A | A |
 | P8 | 核心业务与并发 | 发布事务、`FOR UPDATE`、409 截图 | A | A |
 | P9 | 系统演示 | 二手、代取、聊天截图或现场操作 | B | B |
 | P10 | 测试与安全 | 测试用例通过率、越权、权限、注入防护 | B（A 供权限/并发） | B |
@@ -4868,13 +4916,14 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - 5 存储过程：发布商品、接单、完成、获取会话、信用分刷新。
 - 2 函数：未读数、完成单数。
 - 5 触发器：收藏 ±1、商品日志、代取日志、会话最后消息。
-- 1 事件：每小时取消超时单。
 - 一句总结：“所有对象都在系统接口中真实调用。”
 
 **P8 核心业务与并发：**
 
 - 发布商品：`items` + `item_images` 同事务，`JSON_TABLE` 展开多图。
 - 接单：`FOR UPDATE` → 校验 pending → 条件 UPDATE → `affectedRows=1` → COMMIT。
+- 状态机：`taken → pending`（发布者撤回 / 接单者释放）；`taken` 本身就是锁单，不能直接 `cancelled`。
+- 时间：`time_type + time_start + deadline` 三列，`deadline` 仅参考，不自动取消。
 - 截图：两个窗口，一个 200，一个 409。
 - 一句总结：“数据库层保证不重复接单。”
 
@@ -4984,7 +5033,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 | 待接单 | `pending` | 待处理、未接 |
 | 已接单 | `taken` | 已接、进行中 |
 | 已完成 | `completed` | 完成、已送达 |
-| 已挂起 | `hung` | 暂停、挂单 |
+| 已接单 | `taken` | 已有人接单，锁单并从大厅消失 |
 | 已取消 | `cancelled` | 取消、关闭 |
 
 #### 9.7.4 A 校对 B 的 docx 时看什么
@@ -5113,7 +5162,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - 2023003 / 123456  第三用户（并发接单演示）
 
 五、数据库对象
-- 14 张表、4 个视图、5 个存储过程、2 个函数、5 个触发器、1 个事件
+- 14 张表、4 个视图、5 个存储过程、2 个函数、5 个触发器
 - 事务：发布商品、接单、完成订单
 - 权限：cs_app（业务 CRUD）、cs_readonly（只读）
 - 详细说明见 report/报告.docx 第 5~6 章
@@ -5123,7 +5172,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 2. 图片不显示：确认 server/uploads 存在，图片 URL 拼接了 BASE_URL
 3. 中文乱码：确认数据库/表字符集 utf8mb4
 4. 接单报 409：订单已被别人接走，刷新大厅
-5. 事件不生效：SET GLOBAL event_scheduler = ON;
+5. 代取过了截止时间仍显示 `pending`：这是正常设计，`deadline` 只作参考，系统不会自动取消
 
 七、分工
 - A：数据库设计、DDL、视图/过程/函数/触发器/事务、Express 基础设施、鉴权、上传、二手模块前后端、代取后端、报告第 1/2/3/5/6/9 章
@@ -5137,7 +5186,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 2. **导出 dump**：
 
    ```bash
-   mysqldump -u root -p --databases campus_service --routines --triggers --events > database/campus_service_dump.sql
+   mysqldump -u root -p --databases campus_service --routines --triggers > database/campus_service_dump.sql
    ```
 
 3. **清理工作区**：确认 `.env`、`node_modules`、上传文件不在打包目录。
@@ -5205,12 +5254,14 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 
 #### M2（11-16）：代取 + 聊天闭环
 
-- [ ] 跑腿资料、上下线、接单设置保存/读取正常；可接规格多选、时段数组回填。
-- [ ] 上线/接单设置页两个入口可用：个人页进入为设置，代取页 `?mode=online` 进入可直接上线/下线。
+- [ ] 跑腿资料、上下线、接单设置保存/读取正常；可接规格多选、`once`/`weekly` 在线计划、`manualUntil` 回填。
+- [ ] 上线/接单设置页两个入口可用：个人页进入为设置，代取页 `?mode=online` 进入可直接上线/下线；计划列表能改/删未开始计划。
+- [ ] 自动任务到计划开始上线、结束下线；手动覆盖最晚到 23:59；服务重启后下一分钟补算。
+- [ ] 进行中循环下线弹窗二选一可用；修改进行中循环时前端弹窗提醒只影响下一次。
 - [ ] 发布代取单，大厅能看到 pending 订单。
-- [ ] 找跑腿匹配页（P1）能按区域/时段/规格筛选在线跑腿并联系 TA；不直接改订单状态。
+- [ ] 找跑腿匹配页（P1）能按取件片区 + 具体地标 + 在线计划 + 规格筛选可接单跑腿并联系 TA；不直接改订单状态。
 - [ ] `sp_take_errand` 并发接单：两个账号只有一个成功，另一个 409。
-- [ ] 完成/挂起/恢复/取消全路径可用，状态日志有记录。
+- [ ] 完成/撤回/释放/取消全路径可用，状态日志有记录；接单后订单从大厅消失。
 - [ ] `sp_complete_errand` 更新完成数/信用分。
 - [ ] 会话列表、聊天页、发送、3 秒轮询、已读、未读数可用。
 - [ ] `sp_get_or_create_conversation` 不会重复建会话。
@@ -5229,7 +5280,6 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 | 存储过程 | 5 |  | [ ] |
 | 函数 | 2 |  | [ ] |
 | 触发器 | 5 |  | [ ] |
-| 事件 | 1 |  | [ ] |
 | 事务 | 3 处 |  | [ ] |
 | 索引 | ≥ 10 |  | [ ] |
 | 权限账号 | 2 |  | [ ] |
@@ -5461,8 +5511,8 @@ Campus_Trading_Service_Platform/
 **演示数据建议：**
 
 - 商品 20 条以上：教材、电子设备、生活用品各若干；至少 1 条带 3 张图、1 条书籍模式；书籍 `cover_url` 至少有 3 条。
-- 代取单 10 条以上：pending 至少 3 条，taken/completed/hung/cancelled 各有 1 条。
-- 跑腿资料 5 条以上：至少 3 条在线，覆盖不同区域、时段、规格多选，用于找跑腿匹配演示。
+- 代取单 10 条以上：pending 至少 3 条，taken/completed/cancelled 各有 1 条。
+- 跑腿资料 5 条以上：至少 3 条在线，覆盖不同片区组合（单选/多选）、不同 `service_places` 组合（空数组/具体楼栋/整片区）、`once` 和 `weekly` 在线计划、规格多选，用于找跑腿匹配和自动上下线演示。
 - 消息 20 条以上：至少 2 个会话，包含未读消息。
 - 收藏 5 条以上：用于触发器演示。
 - 批量数据：1000 商品、5000 消息，用于性能测试（单独写批量插入脚本，不放进默认 `npm run seed`）。
@@ -5485,7 +5535,7 @@ cd server && npm run seed
 ```sql
 -- 当前库/字符集/引擎
 SELECT DATABASE(), @@character_set_database, @@collation_database;
-SELECT @@transaction_isolation, @@event_scheduler;
+SELECT @@transaction_isolation;
 
 -- 表清单与数据量
 SHOW TABLES;
@@ -5501,7 +5551,6 @@ SHOW FULL TABLES WHERE Table_type = 'VIEW';
 SHOW PROCEDURE STATUS WHERE Db = 'campus_service';
 SHOW FUNCTION STATUS WHERE Db = 'campus_service';
 SHOW TRIGGERS;
-SHOW EVENTS;
 
 -- 索引与外键
 SHOW INDEX FROM items;
@@ -5572,7 +5621,7 @@ mysql -u root -p < database/schema.sql              # 建库建表
 mysql -u root -p campus_service < database/objects.sql
 mysql -u root -p campus_service < database/seed.sql
 mysqldump -u root -p --databases campus_service \
-  --routines --triggers --events > database/campus_service_dump.sql
+  --routines --triggers > database/campus_service_dump.sql
 mysql -u root -p campus_service < database/campus_service_dump.sql
 ```
 
@@ -5593,7 +5642,7 @@ mysql -u root -p campus_service < database/campus_service_dump.sql
 | 11-05~11-07 | Express 路由、中间件、mysql2 连接池、JWT、bcrypt | Express 官方文档、mysql2 README |
 | 11-08~11-11 | 分页 SQL、JOIN、事务、`JSON_TABLE`、multer | MySQL 8.0 手册、multer README |
 | 11-12~11-16 | `FOR UPDATE`、隔离级别、触发器、轮询 | MySQL 手册、小程序 `wx.request` |
-| 11-17~11-21 | 视图、存储过程、函数、事件、EXPLAIN、权限 | MySQL 手册、`EXPLAIN` 官方说明 |
+| 11-17~11-21 | 视图、存储过程、函数、状态机、时间匹配、EXPLAIN、权限 | MySQL 手册、`EXPLAIN` 官方说明 |
 | 11-22~11-26 | Markdown 写作、draw.io、PPT 排版、录屏 | 学校模板、draw.io 教程 |
 
 **学习原则：**
@@ -5681,13 +5730,14 @@ SQL：
 | `docs/AI辅助开发记录.md` | AI 使用记录 | B 主笔，A 补数据库部分 |
 | `docs/A测试记录.md` | A 的联调、并发、性能测试记录 | A |
 | `database/schema.sql` | 建库、建表、索引、约束 | A |
-| `database/objects.sql` | 视图、过程、函数、触发器、事件 | A |
+| `database/objects.sql` | 视图、过程、函数、触发器 | A |
 | `database/seed.sql` | 分类、书目等静态数据 | A |
 | `database/demo_checks.sql` | 答辩演示 SQL | A |
 | `server/src/app.js` | Express 入口 | A |
 | `server/src/db.js` | MySQL 连接池 | A |
 | `server/src/middleware/auth.js` | JWT 鉴权 | A |
 | `server/src/routes/users.js` | 用户资料、跑腿设置、上下线、跑腿匹配 | A |
+| `server/src/jobs/runnerOnline.js` | `node-cron` 按在线计划自动上下线 | A |
 | `server/src/routes/items.js` | 二手接口 | A |
 | `server/src/routes/errands.js` | 代取接口 | A |
 | `server/src/routes/chat.js` | 聊天接口 | B |
@@ -5722,13 +5772,12 @@ SQL：
 | 存储过程 | 预编译的 SQL 过程，可带参数、控制事务 |
 | 函数 | 有返回值的数据库程序，可用于 SELECT |
 | 触发器 | 在 INSERT/UPDATE/DELETE 前后自动执行的程序 |
-| 事件 | 按调度周期自动执行的任务（需 `event_scheduler`） |
 | JWT | JSON Web Token，登录后放在 `Authorization` 头 |
 | bcrypt | 加盐密码哈希算法 |
 | ORM | 对象关系映射；本项目不用，手写 SQL |
 | 轮询 | 客户端定时请求服务器拉取新数据 |
-| 找跑腿匹配 | 按区域/时段/规格筛选在线跑腿，仅展示信息并联系，不直接指派订单 |
-| 上线 | 跑腿设置在线状态、可代取范围/时段/规格；可在个人页或代取页进入 |
+| 找跑腿匹配 | 按取件片区 + 具体地标/时间要求/规格筛选可接单跑腿（`asap` 在线；未来单可含计划重叠的 `slot` 跑腿），仅展示信息并联系，不直接指派订单 |
+| 上线 | 跑腿设置在线状态、可代取范围/在线计划/规格；按计划自动上下线或手动覆盖；可在个人页或代取页进入 |
 | 同书优先 | 搜索结果页先展示同一 `bookId` 的商品，再展示其他匹配商品 |
 | PR | Pull Request，GitHub 上的合并请求 |
 | 分支 | 独立开发线，如 `feature/items`、`fix/login` |
@@ -5736,9 +5785,96 @@ SQL：
 | 冲突 | 两人改了同一文件的同一处，Git 无法自动合并 |
 | tag | 给某个提交打的版本标记，如 `v1.0-m3` |
 
-### 11.9 最后 10 句话
+### 11.9 校园片区与地标清单（唯一口径）
 
-1. 数据库 40 分，先把 14 张表、4 视图、5 过程、2 函数、5 触发器、1 事件做实。
+**三级模型**
+
+| 层级 | 作用 | 是否落库 | 例子 |
+| --- | --- | --- | --- |
+| 分类 | 选择器分组标题 | 否 | 宿舍园、教学区、图书馆、运动场、校医院、校外、其他 |
+| 片区 | 匹配粗筛单位 | 是 | 桃园、北区教学区、中心图书馆 |
+| 地标 | 匹配细筛单位 | 存受控名称，不建表 | 第16教学楼、行署楼 |
+
+**25 个固定片区**
+
+| 分类 | 片区 |
+| --- | --- |
+| 宿舍园（8） | 桃园、李园、橘园、楠园、梅园、竹园、杏园、茶园 |
+| 教学区（2） | 北区教学区、南区教学区 |
+| 图书馆（3） | 中心图书馆、北区图书馆、南区图书馆 |
+| 运动场（5） | 第一运动场、第二运动场、第三运动场、第四运动场、第五运动场 |
+| 校医院（2） | 北区校医院、南区校医院 |
+| 校外（3） | 一号门外/吾悦广场、二号门外、校外其他 |
+| 其他（2） | 北区其他、南区其他 |
+
+**52 条地标**
+
+> 有编号的教学楼以“第 N 教学楼”为正式名；别名用于搜索，不改变正式名。A/B 栋合并为一条。
+
+| 所属片区 | 正式名称 | 别名 / 搜索词 |
+| --- | --- | --- |
+| 北区教学区 | 第1教学楼 | 1教、一教、雨僧楼、文学院 |
+| 北区教学区 | 第2教学楼 | 2教、二教、兰华楼、西塔学院 |
+| 北区教学区 | 第3教学楼 | 3教、三教、绩镛楼、国家治理学院、马克思主义学院、马院 |
+| 北区教学区 | 第4教学楼（A/B栋） | 4教、四教、咏修楼A/B栋、新闻传媒学院、新闻学院 |
+| 北区教学区 | 第5教学楼 | 5教、五教、弘礼楼、外国语学院、外院 |
+| 北区教学区 | 第6教学楼 | 6教、六教、师元楼、教师教育学院、教师院 |
+| 北区教学区 | 第7教学楼 | 7教、七教、修业楼、教师教育学院、教师院 |
+| 北区教学区 | 第8教学楼 | 8教、八教、敬德楼、公共教学楼、公共课 |
+| 北区教学区 | 第9教学楼 | 9教、九教、荟文楼A栋、历史文化学院、历院、民族学院 |
+| 北区教学区 | 第10教学楼 | 10教、十教、荟文楼B栋、公共教学楼、公共课 |
+| 北区教学区 | 第11教学楼 | 11教、十一教、田家炳教育书院、田家炳、教育学部、教育学 |
+| 北区教学区 | 第12教学楼 | 12教、十二教、弘学楼、数学与统计学院、数统院 |
+| 北区教学区 | 第13教学楼 | 13教、十三教、立惠楼、物理大楼、物理科学与技术学院、物理学院 |
+| 北区教学区 | 第14教学楼 | 14教、十四教、白南楼、生命科学学院、生科院 |
+| 北区教学区 | 第15教学楼 | 15教、十五教、至美楼、美术学院、美院 |
+| 北区教学区 | 第16教学楼 | 16教、十六教、求实楼、药化大楼、化学化工与药学实验楼、化学化工学院、化工学院、药学院、中医药学院 |
+| 北区教学区 | 第17教学楼 | 17教、十七教、漱溟楼、国家治理学院 |
+| 北区教学区 | 第19教学楼（A/B栋） | 19教、十九教、厚乐楼A/B栋、音乐厅、音乐学院、音院 |
+| 北区教学区 | 第20教学楼 | 20教、二十教、行健楼、体育学院、体院 |
+| 北区教学区 | 第22教学楼（A/B栋） | 22教、二十二教、实德楼A/B栋、材料与能源学院、材料学院 |
+| 北区教学区 | 第23教学楼 | 23教、二十三教、润心楼、心理大楼、心理学部、心理学院 |
+| 北区教学区 | 第24教学楼 | 24教、二十四教、启智楼、地理大楼、地理科学学院、地科院 |
+| 北区教学区 | 第25教学楼 | 25教、二十五教、明德楼、U盘大楼、理科大厦、计算机与信息科学学院、计信院、软件学院 |
+| 北区教学区 | 第26教学楼 | 26教、二十六教、弘诚楼、公共教学楼、公共课 |
+| 北区教学区 | 第27教学楼 | 27教、二十七教、弘信楼、公共教学楼、公共课 |
+| 北区教学区 | 第28教学楼 | 28教、二十八教、弘义楼、公共教学楼、公共课 |
+| 北区教学区 | 第29教学楼 | 29教、二十九教、伴月楼、半月楼 |
+| 南区教学区 | 第30教学楼 | 30教、三十教、阳初楼、南区理科楼、水产学院、水产 |
+| 南区教学区 | 第31教学楼 | 31教、三十一教、兆畦楼、公共教学楼、公共课、二号门入口 |
+| 南区教学区 | 第32教学楼 | 32教、三十二教、弘勤楼、公共教学楼、公共课、南区大屏幕 |
+| 南区教学区 | 第33教学楼 | 33教、三十三教、同庆楼、蚕桑纺织与生物质科学学院、蚕桑学院 |
+| 南区教学区 | 第34教学楼 | 34教、三十四教、书楠楼、植物保护学院、植保院 |
+| 南区教学区 | 第35教学楼 | 35教、三十五教、逸夫楼、资源环境学院、资环院 |
+| 南区教学区 | 第36教学楼 | 36教、三十六教、含弘楼、含弘学院 |
+| 南区教学区 | 第37教学楼 | 37教、三十七教、弘朴楼、动物科学技术学院、动科院 |
+| 南区教学区 | 第38教学楼 | 38教、三十八教、明辨楼、法学院、法学 |
+| 南区教学区 | 第39教学楼 | 39教、三十九教、弘忠楼、食品科学学院、食品院 |
+| 南区教学区 | 第40教学楼 | 40教、四十教、弘实楼、食品科学学院、食品院 |
+| 南区教学区 | 第41教学楼 | 41教、四十一教、世俊楼、国家重点实验室 |
+| 南区教学区 | 第42教学楼 | 42教、四十二教、博学楼、电子信息工程学院、电信院 |
+| 南区教学区 | 第43教学楼 | 43教、四十三教、隆平楼、农业科学研究院、农科院 |
+| 南区教学区 | 第44教学楼 | 44教、四十四教、蚕学宫、资源昆虫高效养殖与利用全国重点实验室、资源昆虫实验室 |
+| 南区教学区 | 第45教学楼 | 45教、四十五教、天予楼、蚕桑纺织与生物质科学学院、蚕桑学院 |
+| 南区教学区 | 第46教学楼 | 46教、四十六教、荟贤楼、经济管理学院、经管院 |
+| 南区教学区 | 第47教学楼 | 47教、四十七教、棉研楼、农学与生物科技学院、农生院 |
+| 南区教学区 | 第48教学楼 | 48教、四十八教、弘新楼、工科大楼、工程技术学院、工学院 |
+| 南区教学区 | 第49教学楼 | 49教、四十九教、勤学楼、动物医学院、动医院 |
+| 北区其他 | 行署楼 | 第一行政楼、北区行政楼、行署楼A/B栋、党政机关 |
+| 南区其他 | 文俊楼 | 南区行政楼、第二行政楼、行政楼、机关部门 |
+| 北区其他 | 圆顶学生活动中心 | 圆顶、北区学生活动中心、第一学生活动中心 |
+| 南区其他 | 厚生楼 | 南区学生活动中心、南活、第二学生活动中心、党委学工部 |
+| 南区其他 | 大学生创新创业中心 | 南区招聘大厅、大创中心 |
+
+说明：
+
+- 当前只有教学区和其他片区细分到单体楼；宿舍园、图书馆、运动场、校医院、校外片区暂不设下级地标，选中片区即视为 `pickupPlace = 片区名`，具体门牌和细节写 `remark`。以后要细分时按同样结构追加。
+- 数据形状：前端 `LANDMARKS = [{ name, zone, aliases }]`；后端额外导出 `PLACE_TO_ZONE` 映射，用于 `isValidPlace` 和 `zoneOfPlace`。
+- 修改清单时，11.9、前端 `campus.js`、后端 `campus.js` 三处同步；已有订单在用的正式名不改，只补别名。
+
+### 11.10 最后 10 句话
+
+1. 数据库 40 分，先把 14 张表、4 视图、5 过程、2 函数、5 触发器做实。
 2. 报告 30 分，边开发边截图，不要留到最后三天。
 3. 接口先定，前后端少吵架；数据库只有 A 能改。
 4. 每天 commit + push，不要把一周的代码攒成一次提交。
