@@ -1,0 +1,41 @@
+<!-- 注册页（B 成员） -->
+<view class="page reg-page">
+  <view class="head">
+    <view class="head-title">创建账号</view>
+    <view class="head-sub t-sub">使用学号注册，仅限本校学生</view>
+  </view>
+
+  <view class="form-wrap">
+    <view class="field">
+      <text class="field-label">学号</text>
+      <input class="field-input" type="number" maxlength="12" placeholder="请输入学号" placeholder-class="field-placeholder" value="{{form.studentNo}}" data-key="studentNo" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <text class="field-label">昵称</text>
+      <input class="field-input" maxlength="12" placeholder="2-12 个字符" placeholder-class="field-placeholder" value="{{form.nickname}}" data-key="nickname" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <text class="field-label">校区</text>
+      <picker mode="selector" range="{{campusList}}" value="{{campusIndex}}" bindchange="onCampusChange">
+        <view class="field-input {{form.campus ? '' : 'field-placeholder'}}">
+          {{form.campus || '请选择校区'}}
+        </view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">密码</text>
+      <input class="field-input" password="{{true}}" maxlength="20" placeholder="6-20 位" placeholder-class="field-placeholder" value="{{form.password}}" data-key="password" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <text class="field-label">确认密码</text>
+      <input class="field-input" password="{{true}}" maxlength="20" placeholder="再输入一次密码" placeholder-class="field-placeholder" value="{{form.password2}}" data-key="password2" bindinput="onInput" />
+    </view>
+
+    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmit">注册并登录</button>
+  </view>
+
+  <view class="row-center login-tip">
+    <text class="t-sub">已有账号？</text>
+    <text class="link" bindtap="onGoLogin">返回登录</text>
+  </view>
+</view>

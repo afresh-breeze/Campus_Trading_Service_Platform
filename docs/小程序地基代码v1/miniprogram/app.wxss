@@ -1,0 +1,268 @@
+/**
+ * 全局样式（B 成员：公共层）
+ * ------------------------------------------------------------------
+ * 设计令牌 + 通用原子类。页面样式只允许引用这里的变量/类，
+ * 不允许再出现魔法色值，方便后期统一改主题。
+ */
+
+page {
+  /* 主色 */
+  --color-primary: #3b7cff;
+  --color-primary-light: #eaf1ff;
+  --color-primary-dark: #2a63dd;
+
+  /* 辅助色 */
+  --color-accent: #ff7a45;
+  --color-success: #00b578;
+  --color-warning: #ff8f1f;
+  --color-danger: #fa5151;
+
+  /* 中性色 */
+  --color-text: #1a1a1a;
+  --color-text-2: #5a6069;
+  --color-text-3: #8a8f99;
+  --color-text-4: #b8bdc6;
+  --color-border: #ebedf0;
+  --color-divider: #f2f3f5;
+  --color-bg: #f5f6f8;
+  --color-bg-white: #ffffff;
+
+  /* 圆角 / 阴影 / 间距 */
+  --radius-sm: 8rpx;
+  --radius: 16rpx;
+  --radius-lg: 24rpx;
+  --radius-full: 999rpx;
+  --shadow-card: 0 4rpx 16rpx rgba(31, 41, 55, 0.06);
+  --shadow-float: 0 8rpx 24rpx rgba(59, 124, 255, 0.32);
+  --space-xs: 8rpx;
+  --space-sm: 16rpx;
+  --space: 24rpx;
+  --space-lg: 32rpx;
+  --space-xl: 48rpx;
+
+  /* 字号层级 */
+  --font-xs: 22rpx;
+  --font-sm: 24rpx;
+  --font-base: 28rpx;
+  --font-lg: 32rpx;
+  --font-xl: 36rpx;
+  --font-2xl: 44rpx;
+
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-base);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+view,
+text,
+input,
+textarea,
+button,
+scroll-view {
+  box-sizing: border-box;
+}
+
+/* ---------------- 布局 ---------------- */
+.row {
+  display: flex;
+  align-items: center;
+}
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------------- 容器 ---------------- */
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.page-body {
+  padding: var(--space);
+}
+.card {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--space);
+}
+.card + .card {
+  margin-top: var(--space-sm);
+}
+
+/* ---------------- 文字 ---------------- */
+.t-title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.t-base {
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.t-sub {
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+.t-price {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-danger);
+}
+.t-price::before {
+  content: '¥';
+  font-size: var(--font-sm);
+  margin-right: 2rpx;
+}
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ellipsis-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* ---------------- 按钮 ---------------- */
+.btn {
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: var(--radius-full);
+  font-size: var(--font-lg);
+  font-weight: 500;
+  background-color: var(--color-bg-white);
+  color: var(--color-text);
+  border: none;
+}
+.btn::after {
+  border: none;
+}
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-float);
+}
+.btn-primary[disabled] {
+  background-color: #a9c4ff;
+  color: #ffffff;
+  box-shadow: none;
+}
+.btn-ghost {
+  background-color: var(--color-bg-white);
+  color: var(--color-primary);
+  border: 1rpx solid var(--color-primary);
+}
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+.btn-block {
+  width: 100%;
+}
+.btn-sm {
+  height: 60rpx;
+  line-height: 58rpx;
+  font-size: var(--font-sm);
+  padding: 0 24rpx;
+}
+
+/* ---------------- 表单 ---------------- */
+.field {
+  display: flex;
+  align-items: center;
+  height: 96rpx;
+  padding: 0 var(--space);
+  background-color: var(--color-bg-white);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+.field-label {
+  width: 150rpx;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.field-input {
+  flex: 1;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.field-placeholder {
+  color: var(--color-text-4);
+}
+
+/* ---------------- 状态标签 ---------------- */
+.tag {
+  display: inline-block;
+  padding: 4rpx 14rpx;
+  font-size: var(--font-xs);
+  border-radius: var(--radius-sm);
+  line-height: 1.6;
+}
+.tag-primary {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+.tag-success {
+  color: var(--color-success);
+  background-color: rgba(0, 181, 120, 0.1);
+}
+.tag-warning {
+  color: var(--color-warning);
+  background-color: rgba(255, 143, 31, 0.12);
+}
+.tag-gray {
+  color: var(--color-text-3);
+  background-color: var(--color-divider);
+}
+.tag-danger {
+  color: var(--color-danger);
+  background-color: rgba(250, 81, 81, 0.1);
+}
+
+/* ---------------- 悬浮加号按钮（列表页右下角） ---------------- */
+.fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(48rpx + env(safe-area-inset-bottom));
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 56rpx;
+  line-height: 100rpx;
+  text-align: center;
+  box-shadow: var(--shadow-float);
+  z-index: 20;
+}
+
+/* ---------------- 分隔 / 安全区 ---------------- */
+.divider {
+  height: 1rpx;
+  background-color: var(--color-divider);
+}
+.safe-bottom {
+  height: calc(24rpx + env(safe-area-inset-bottom));
+}

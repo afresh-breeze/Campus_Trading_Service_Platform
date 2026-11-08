@@ -1,0 +1,13 @@
+.placeholder-note {
+  margin-top: 16rpx;
+}
+.placeholder-path {
+  margin-top: 12rpx;
+  font-family: Menlo, Consolas, monospace;
+}
+.placeholder-tip {
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--color-text-4);
+}
