@@ -349,7 +349,18 @@ PUT /api/users/me/online
 /pages/chat/detail?peerId=<对方userId>&bizType=errand&bizId=<订单id>
 ```
 
-B 的聊天页用这三个参数调 `POST /api/conversations`，body 为 `{ peerId, bizType, bizId }`。
+B 的聊天页用这三个参数调 `POST /api/conversations`，body 为 `{ peerId, bizType, bizId }`；拿到 `conversationId` 后再调 `GET /api/conversations/:id/context` 渲染顶部业务卡片。
+
+**聊天页顶部业务卡片（A/B 必须一致）：**
+
+- 卡片固定在消息列表上方，不随消息滚动；只展示和导航，不放状态按钮，聊天页仍只负责沟通。
+- 商品会话：封面、标题、价格、状态；点击跳 `/pages/item/detail?id=<bizId>`。
+- 代取会话：规格、取片区 / 地标、报酬、状态；点击跳 `/pages/errand/detail?id=<bizId>`。
+- `GET /api/conversations/:id/context` 只允许会话参与者调用，返回 `{ bizType, bizId, bizSummary }`；`bizSummary` 为 `null` 时显示“商品已下架 / 订单不存在”，不可跳转，但不影响聊天。
+- `bizSummary` 字段：item 会话返回 `title`、`price`、`status`、`coverUrl`；errand 会话返回 `itemSize`、`pickupArea`、`pickupPlace`、`reward`、`status`。
+- `onShow` 重新拉一次 context：卖家在商品详情页改状态、发布者 / 接单者在代取详情页改状态后返回，卡片立即显示新状态。
+- 卡片加载失败只影响卡片，不阻塞消息收发；`biz_id` 没有外键，后端查不到业务行时返回 `bizSummary: null`，不要 404。
+- B 手册 6.14 的聊天页初始化流程需要加 context 请求，由 B 同步；A 不改 B 的文件。
 
 **页面跳转参数（A/B 必须一致，11-07 写进接口文档）：**
 
@@ -807,7 +818,7 @@ git fetch --prune
 | `feat` | 新功能 | `feat(item): 商品列表接口支持分页和筛选` |
 | `fix` | 修 bug | `fix(errand): 修复并发接单重复写入` |
 | `docs` | 文档 | `docs(report): 完成第 6 章数据库实施` |
-| `test` | 测试 | `test: 增加 28 条核心用例记录` |
+| `test` | 测试 | `test: 增加 29 条核心用例记录` |
 | `refactor` | 重构，不改功能 | `refactor(item): 抽取价格校验函数` |
 | `chore` | 杂项、配置 | `chore: 添加 .gitignore` |
 
@@ -1410,15 +1421,15 @@ git push -u origin feature/item-publish
 
 **今天必须完成**
 
-- `GET /api/items/:id`：商品、卖家、图片、是否已收藏、浏览量 +1。
+- `GET /api/items/:id`：商品、卖家、图片、是否已收藏、`isOwner`、浏览量 +1。
 - `POST/DELETE /api/items/:id/favorite`；收藏/取消收藏触发器。
-- 详情页：轮播、价格、卖家卡片、收藏按钮、联系卖家入口。
-- 接口文档补充详情/收藏。
+- 详情页：轮播、价格、卖家卡片、收藏按钮、联系卖家入口；卖家本人可见状态管理。
+- 接口文档补充详情/收藏/卖家管理。
 
 **怎么做**
 
 1. **09:00-12:00 详情 + 收藏 API**：
-   - 详情：先查商品（用 `v_item_list` 或 JOIN），再查图片列表；卖家信息含昵称、头像、校区、信用分；`isFavorited` 用当前用户查 `favorites`；`UPDATE items SET view_count = view_count + 1`（可选，但报告有素材）。
+   - 详情：先查商品（用 `v_item_list` 或 JOIN），再查图片列表；卖家信息含昵称、头像、校区、信用分；`isFavorited` 用当前用户查 `favorites`；`isOwner` 由 `item.seller_id === req.user.userId` 计算；`UPDATE items SET view_count = view_count + 1`（可选，但报告有素材）。
    - 收藏：`INSERT IGNORE INTO favorites (user_id, item_id) VALUES (?, ?)`；`affectedRows=1` 说明新收藏，触发器加 1；重复收藏返回成功但不加。
    - 取消：`DELETE FROM favorites WHERE user_id=? AND item_id=?`；触发器减 1，用 `GREATEST(favorite_count - 1, 0)` 防负数。
    - 触发器放 `database/objects.sql`，先 `DROP TRIGGER IF EXISTS`。
@@ -1428,6 +1439,7 @@ git push -u origin feature/item-publish
    - 收藏：点击 → 调 API → 重新拉详情或本地更新计数；失败 toast。
    - 联系卖家：`wx.navigateTo({ url: '/pages/chat/detail?peerId=' + sellerId + '&bizType=item&bizId=' + itemId })`；B 的聊天页还没好时，先 toast“聊天功能开发中”，不要报错。
    - 状态：`on_sale` 显示“在售”，`reserved/off_shelf/sold` 显示对应标签；已预订/已下架/已售出商品详情仍可看，收藏/联系是否禁用按产品决定，MVP 可以都显示。
+   - 卖家管理：`isOwner` 为真时隐藏收藏/联系卖家，按当前状态显示标记预订、取消预订、标记售出、下架、重新上架；复用 `PUT /api/items/:id/status`，成功后重新拉详情。
    - 图片预览：`wx.previewImage`。
 3. **19:30-21:00 测试 + 截图**：收藏前后 `favorite_count` 截图；详情页截图；接口文档。
 4. **21:30 同步**：和 B 确认聊天页参数；B 的聊天页可能 11-15 才好，先留 toast。
@@ -1486,7 +1498,7 @@ git push -u origin feature/item-detail
    - 用 2023001 登录 → 首页搜索“数据结构” → 搜索结果页书籍卡片 → 点击卡片过滤同书商品 → 详情 → 收藏 → 我的收藏；
    - 用 2023002 登录 → 发布 → 我的发布 → 标记预订 → 取消预订 → 下架 → 重新上架 → 标记售出；
    - 2023001 的收藏列表里，已售出/已预订/下架商品如何显示？按产品决定：显示但置灰，或过滤。MVP 建议显示并带状态标签。
-   - 按《课程设计开发计划.md》7.1 的 28 条用例挑二手相关先跑一遍。
+   - 按《课程设计开发计划.md》7.1 的 29 条用例挑二手相关先跑一遍。
 4. **19:30-21:00 ER 图**：
    - 用 draw.io 画全局 ER 图（14 张表）和局部 ER 图（用户/商品/收藏、跑腿/规格）；导出 PNG 到 `report/assets/`；命名 `er_global.png`、`er_local_user_item.png`。
    - 画的时候对照实际 `schema.sql`，不要凭记忆；报告里要能解释每个联系（1:1、1:N、M:N）。
@@ -2174,7 +2186,7 @@ git push -u origin feature/security
 **今天必须完成**
 
 - Postman/Thunder Client 集合：Auth、Items、Favorites、Upload、Errands、Chat、DB。
-- 28 条核心测试用例跑完，记录结果。
+- 29 条核心测试用例跑完，记录结果。
 - 修 P0 bug；P1 记录不修。
 - 数据库 dump + 恢复测试。
 - 测试记录交给 B 合并。
@@ -2192,8 +2204,8 @@ git push -u origin feature/security
    - 每个请求加断言：状态码、`code`、关键字段存在。
    - 文件夹按模块分；每个请求保存一个成功示例，报告附录可以用。
    - 导出集合 JSON 到 `docs/postman/CampusService.postman_collection.json`，提交。
-2. **14:00-17:00 跑 28 条用例**：
-   - 按《课程设计开发计划.md》7.1 的 28 条逐条执行；A 负责后端相关（1~28 都要懂，聊天部分和 B 一起）。
+2. **14:00-17:00 跑 29 条用例**：
+   - 按《课程设计开发计划.md》7.1 的 29 条逐条执行；A 负责后端相关（1~29 都要懂，聊天部分和 B 一起）。
    - 结果写进 `docs/A测试记录.md`：用例号、操作、预期、实际、通过/失败、截图名。
    - 失败的按 P0/P1 分类：阻塞演示的是 P0，样式/文案是 P1。
    - P0 当天修；P1 记录，11-21 前有时间再修。
@@ -2226,7 +2238,7 @@ git push -u origin test/regression
 
 **验收**
 
-- [ ] 28 条核心用例通过率 100%（P1 样式问题除外）。
+- [ ] 29 条核心用例通过率 100%（P1 样式问题除外）。
 - [ ] Postman 集合能一键跑通主要流程。
 - [ ] dump 能在空库恢复，表和对象齐全。
 - [ ] P0 bug 清零。
@@ -2309,7 +2321,7 @@ git push -u origin chore/release-readme
 
 - [ ] 干净环境能按 readme 跑起来。
 - [ ] 所有 P0 功能可用；数据库对象齐全。
-- [ ] 28 条用例通过。
+- [ ] 29 条用例通过。
 - [ ] `v1.0-m3` tag 存在。
 - [ ] 功能冻结公告发到群里。
 - [ ] 截图、测试记录、dump 齐全。
@@ -3650,7 +3662,11 @@ uploadOne(filePath) {
   });
   ```
 
-- 状态：`on_sale` 在售、`reserved` 已预订、`sold` 已售出、`off_shelf` 已下架；已售出/下架时收藏/联系按钮是否禁用，按产品决定。详情页不提供「标记预订 / 取消预订」按钮，改状态只在「我的发布」做。
+- 状态：`on_sale` 在售、`reserved` 已预订、`sold` 已售出、`off_shelf` 已下架；已售出/下架时收藏/联系按钮是否禁用，按产品决定。
+- `isOwner=true`（`GET /api/items/:id` 返回）时，详情页显示「卖家管理」，隐藏收藏和联系卖家；买家只看到状态标签，不显示管理按钮。
+- 卖家管理按钮按状态显示：在售 → 标记预订 / 标记售出 / 下架；已预订 → 取消预订 / 标记售出；已下架 → 重新上架；已售出 → 无操作。点击调 `PUT /api/items/:id/status`，成功后 `loadDetail()`；403 / 409 用 toast 提示。
+- 从聊天页顶部卡片进入详情时，卖家可直接改状态；返回聊天页后聊天页 `onShow` 会重新拉 context，把卡片状态刷新成最新值。
+- 详情页和「我的发布」共用同一个状态接口，权限规则不能在前端复制一份判断；前端只决定按钮显隐，后端仍然校验卖家身份和非法跳转。
 - `onShow` 重新拉一次，防止从聊天/收藏返回后状态过期。
 - 图片 404：用本地占位图兜底。
 
@@ -3709,7 +3725,7 @@ uploadOne(filePath) {
 - [ ] 首页右下角圆形加号能进发布页。
 - [ ] 搜索结果页：书籍卡片字段完整；点击卡片按 `bookId` 过滤；同书商品优先；无书籍时仍显示商品。
 - [ ] 发布普通商品、书籍商品；图片上传、删除；表单校验。
-- [ ] 详情轮播、卖家信息、收藏/取消、联系卖家跳转。
+- [ ] 详情轮播、卖家信息、收藏/取消、联系卖家跳转；卖家本人可见状态管理，买家不可见。
 - [ ] 我的发布四个 tab、标记预订/取消预订、下架/上架/售出。
 - [ ] 我的收藏列表、取消收藏、进详情。
 
@@ -5253,7 +5269,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - [ ] 列表：分页、搜索、分类、价格、排序、下拉刷新、上拉加载。
 - [ ] 首页右下角圆形加号“我要卖”能进发布页。
 - [ ] 搜索结果页：书籍卡片、同书商品优先、点击书籍按 `bookId` 过滤。
-- [ ] 详情：轮播、卖家、收藏状态、联系卖家入口。
+- [ ] 详情：轮播、卖家、收藏状态、联系卖家入口；卖家本人可从详情页改状态，买家只读。
 - [ ] 收藏/取消收藏，`favorite_count` 触发器正确。
 - [ ] 我的发布/我的收藏可用，在售/已预订/已售/已下架能切换。
 - [ ] 空/加载/错误三态齐全。
@@ -5271,10 +5287,10 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - [ ] `sp_take_errand` 并发接单：两个账号只有一个成功，另一个 409。
 - [ ] 完成/撤回/释放/取消全路径可用，状态日志有记录；接单后订单从大厅消失。
 - [ ] `sp_complete_errand` 更新完成数/信用分。
-- [ ] 会话列表、聊天页、发送文字 / 图片消息、3 秒轮询、已读、未读数可用；图片先上传成功再发送，会话列表预览显示 `[图片]`。
+- [ ] 会话列表、聊天页、顶部商品/订单卡片、发送文字 / 图片消息、3 秒轮询、已读、未读数可用；图片先上传成功再发送，会话列表预览显示 `[图片]`；卖家从卡片进详情改状态后返回，卡片状态同步更新。
 - [ ] `sp_get_or_create_conversation` 不会重复建会话。
 - [ ] 两个账号 5 秒内能收到对方消息。
-- [ ] 商品/订单“联系 TA”能进入正确会话。
+- [ ] 商品/订单“联系 TA”能进入正确会话；聊天页顶部卡片显示对应商品/订单摘要，点击能回详情。
 - [ ] `main` 有 `v0.3-m2` tag。
 
 #### M3（11-21）：功能冻结与数据库对象齐全
