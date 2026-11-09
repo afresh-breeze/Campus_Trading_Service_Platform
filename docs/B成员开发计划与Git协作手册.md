@@ -885,7 +885,7 @@ git push -u origin feature/mp-components
 - 地标数据按 A 手册 11.9 那份清单抄，**别名只用于本地搜索，不改正式名**。
 - 片区选择器用一列“分类+片区”两级：第一列分类（宿舍园/教学区/图书馆/运动场/校医院/校外/其他），第二列该分类下的片区。
 - 选完片区自动带出该片区第一个地标；如果片区没有下级地标（宿舍园、图书馆、运动场、校医院、校外），`pickupPlace = 片区名`，页面显示“该片区无需选楼栋”。
-- 表单字段命名与后端一致：`pickupArea`、`pickupPlace`、`pickupLocation`、`remark`、`deliveryPlace`、`itemSize`、`timeType`、`timeStart`、`deadline`、`reward`、`description`。
+- 表单字段命名与后端一致：`pickupArea`、`pickupPlace`、`deliveryLocation`、`itemSize`、`itemDesc`、`remark`、`timeType`、`timeStart`、`deadline`、`reward`。**A 的 `errand_orders` 没有 `pickupLocation` 这一列**：取件楼栋门牌、取件时间、交付要求统一写 `remark`；`itemDesc` 对应 `item_desc`（物品说明），`deliveryLocation` 对应 `delivery_location`（送达地点）。
 
 **验收**
 
@@ -1008,8 +1008,8 @@ git push
 1. `POST /api/conversations`：`{peerId, bizType, bizId}` → 调 `sp_get_or_create_conversation` → 返回 `{conversationId, ...}`。
 2. `GET /api/conversations`：会话列表（用视图 `v_conversation_base`），带对方昵称、最后消息、未读数、时间。
 3. `GET /api/conversations/:id/messages?afterId=&limit=20`：增量拉取，按 `message_id` 升序。
-4. `POST /api/conversations/:id/messages`：`{content}`，插入消息（触发器负责更新会话最后消息），返回 `messageId`。
-5. `POST /api/conversations/:id/read`：标记已读（更新 `conversation_members.last_read_id` 或等价字段）。
+4. `POST /api/conversations/:id/messages`：`{content, msgType}`，插入消息（触发器负责更新会话最后消息），返回 `messageId`。`msgType` 取 `text`/`image`，缺省 `text`；不传会导致 `messages.msg_type` 取默认值，图片消息就退化成文本。
+5. `POST /api/conversations/:id/read`：标记已读（把 `messages.is_read` 置 1）。A 的 `messages` 表自带 `msg_type`、`is_read` 两列，**没有** `conversation_members` 表，也没有 `last_read_id` 这种游标字段。
 6. `GET /api/conversations/unread-count`：用 `fn_unread_count` 汇总总未读数。
 7. **越权校验**：非会话参与者一律 403，不能靠前端隐藏。
 
@@ -1651,7 +1651,7 @@ Page({
 | `studentNo` | 7 位数字，未注册过（后端校验） |
 | `password` / `confirmPassword` | ≥ 6 位，两次一致 |
 | `nickname` | 1~20 字，必填 |
-| `campus` | 从片区清单的“分类”里选一个校区名（或固定枚举），必选 |
+| `campus` | 固定枚举二选一：`南区` / `北区`（对应 `users.campus VARCHAR(50)`），必选。**不要写成东校区/西校区/南校区/北校区四个值**，本校只有南、北两个片区口径 |
 
 **交互要点**
 
@@ -1701,9 +1701,10 @@ Page({
 | --- | --- |
 | `errandId` | 主键 |
 | `pickupArea` / `pickupPlace` | 取件片区 / 地标 |
-| `pickupLocation` | 取件补充说明 |
-| `deliveryPlace` | 送达地点 |
+| `deliveryLocation` | 送达地点（必填） |
 | `itemSize` | `small/medium/large` |
+| `itemDesc` | 物品说明（可空） |
+| `remark` | 备注：取件楼栋门牌、取件时间、交付要求都在这里 |
 | `timeType` | `asap/deadline/range` |
 | `timeStart` / `deadline` | 时间 |
 | `reward` | 报酬（元） |
@@ -1729,14 +1730,14 @@ Page({
 | --- | --- | --- |
 | `pickupArea` | 分类+片区二级 picker | 必选 |
 | `pickupPlace` | 地标 picker（按已选片区联动） | 有下级地标时必选；无下级地标时 = 片区名 |
-| `pickupLocation` | input | ≤ 50 字，可空（楼栋门牌） |
-| `deliveryPlace` | input | 必填，≤ 50 字 |
+| `deliveryLocation` | input | 必填，≤ 100 字（对应 `delivery_location VARCHAR(100)`） |
+| `itemDesc` | textarea | 可空，≤ 200 字，显示计数（对应 `item_desc VARCHAR(500)`） |
+| `remark` | textarea | 可空，≤ 200 字；取件楼栋门牌、取件时间、交付要求写这里（对应 `remark VARCHAR(255)`） |
 | `itemSize` | radio（小/中/大） | 必选 |
 | `timeType` | radio（尽快/截止前/时间段） | 必选 |
 | `timeStart` | date+time picker | `range` 时必填，且 > 现在 |
 | `deadline` | date+time picker | `deadline/range` 时必填，且 > 现在（`range` 时 > `timeStart`） |
 | `reward` | input type=digit | 0 < reward ≤ 200，最多两位小数 |
-| `description` | textarea | 可空，≤ 200 字，显示计数 |
 
 **交互要点**
 
@@ -1774,7 +1775,7 @@ Page({
 
 **入参**：`area`、`place`、`timeType`、`timeStart`、`deadline`、`itemSize`（都可选，从发布页带入）。
 
-**数据字段（跑腿卡片）**：`nickname`、`avatarUrl`、`zones`（可接片区，数组）、`places`（可接地标）、`sizes`（规格数组）、`isOnline`、`basePrice`、`remark`、`completedCount`。
+**数据字段（跑腿卡片）**：`nickname`、`avatarUrl`、`serviceAreas`（可接片区数组，对应 `runner_profiles.service_areas`）、`servicePlaces`（可接地标数组，对应 `service_places`）、`itemSizes`（规格数组，来自 `runner_item_sizes`）、`isOnline`、`basePrice`、`remark`、`completedCount`。
 
 **交互要点**
 
@@ -1806,13 +1807,15 @@ Page({
 
 | 字段 | 控件 | 校验 |
 | --- | --- | --- |
-| `zones` | 片区多选（checkbox） | ≥ 1 |
-| `places` | 地标多选（随 zones 变化） | 可空（空=整个片区） |
-| `sizes` | 规格多选 | ≥ 1 |
+| `serviceAreas` | 片区多选（checkbox） | ≥ 1（落 `runner_profiles.service_areas`，A 的 CHECK 要求 JSON 数组且长度 ≥ 1） |
+| `servicePlaces` | 地标多选（随 `serviceAreas` 变化） | 可空（空数组=整个片区都接） |
+| `itemSizes` | 规格多选 | ≥ 1（落 `runner_item_sizes` 联合表，不是 JSON 列） |
 | `timeSlots` | 计划列表（once / weekly） | 可空 |
 | `basePrice` | input digit | 0~100 |
 | `remark` | input | ≤ 50 字 |
 | `isOnline` | switch | 仅 `mode=online` 显示 |
+
+**字段与后端对齐（A 的 `runner_profiles`）**：`serviceAreas`→`service_areas`、`servicePlaces`→`service_places`、`timeSlots`→`time_slots`、`basePrice`→`base_price`、`isOnline`→`is_online`、`remark`→`remark`、`completedCount`→`completed_count`；另外 A 多了 `availability_type ENUM('slot','now')`（接单模式）和 `manual_until`（手动上线到几点），上线按钮要同时传这两个字段，否则 `chk_runner_slot_requires_schedule` 会拦。规格不写在 `runner_profiles` 里，落到 `runner_item_sizes` 联合表。
 
 **交互要点**
 
@@ -1876,7 +1879,7 @@ onLoad(query)
 
 | 层 | 内容 | 谁做 |
 | --- | --- | --- |
-| 表结构 | `conversations`、`conversation_members`、`messages` | A（你只读） |
+| 表结构 | `conversations`、`messages`（**没有 `conversation_members`**，成员关系就是 `conversations.user_a_id / user_b_id` 两列） | A（你只读） |
 | 会话/未读对象 | `sp_get_or_create_conversation`、`fn_unread_count`、`v_conversation_base`、`trg_message_after_insert` | A（11-13 前交付） |
 | 路由 | `server/src/routes/chat.js` | **你** |
 | 挂载 | `app.use('/api/conversations', chatRouter)` | A（已挂好，你只改路由文件内部） |
@@ -1955,10 +1958,11 @@ const auth = require('../middleware/auth');  // A 的鉴权中间件
 router.use(auth);
 
 // 工具：确认当前用户属于该会话，否则 null
+// 没有 conversation_members 表，成员关系就在 conversations 的 user_a_id / user_b_id 上
 async function assertMember(conversationId, userId) {
   const [rows] = await db.query(
-    'SELECT conversation_id FROM conversation_members WHERE conversation_id = ? AND user_id = ? LIMIT 1',
-    [conversationId, userId]
+    'SELECT conversation_id FROM conversations WHERE conversation_id = ? AND (user_a_id = ? OR user_b_id = ?) LIMIT 1',
+    [conversationId, userId, userId]
   );
   return rows.length ? rows[0] : null;
 }
@@ -2004,7 +2008,7 @@ router.get('/', async (req, res, next) => {
         LIMIT ? OFFSET ?`, [me, pageSize, offset]
     );
     const [[{ total }]] = await db.query(
-      'SELECT COUNT(*) AS total FROM conversation_members WHERE user_id = ?', [me]
+      'SELECT COUNT(*) AS total FROM conversations WHERE user_a_id = ? OR user_b_id = ?', [me, me]
     );
     res.json({ code: 0, message: 'ok', data: { list: rows, total, page, pageSize } });
   } catch (e) { next(e); }
@@ -2060,19 +2064,15 @@ router.post('/:id/read', async (req, res, next) => {
     const cid = Number(req.params.id);
     if (!(await assertMember(cid, me))) return res.status(403).json({ code: 403, message: '无权操作该会话' });
 
+    // 已读状态落在 messages.is_read 上：把“对方发的、还没读的”消息置 1
     const lastMessageId = Number((req.body || {}).lastMessageId) || 0;
-    if (lastMessageId > 0) {
-      await db.query(
-        'UPDATE conversation_members SET last_read_id = GREATEST(COALESCE(last_read_id,0), ?) WHERE conversation_id = ? AND user_id = ?',
-        [lastMessageId, cid, me]
-      );
-    } else {
-      await db.query(
-        `UPDATE conversation_members cm
-            SET cm.last_read_id = (SELECT MAX(message_id) FROM messages WHERE conversation_id = cm.conversation_id)
-          WHERE cm.conversation_id = ? AND cm.user_id = ?`, [cid, me]
-      );
-    }
+    const sql = lastMessageId > 0
+      ? `UPDATE messages SET is_read = 1
+          WHERE conversation_id = ? AND sender_id <> ? AND message_id <= ?`
+      : `UPDATE messages SET is_read = 1
+          WHERE conversation_id = ? AND sender_id <> ?`;
+    const params = lastMessageId > 0 ? [cid, me, lastMessageId] : [cid, me];
+    await db.query(sql, params);
     const [[{ unread }]] = await db.query('SELECT fn_unread_count(?) AS unread', [me]);
     res.json({ code: 0, message: 'ok', data: { unreadCount: unread || 0 } });
   } catch (e) { next(e); }
@@ -2404,7 +2404,7 @@ git commit -m "chore: 忽略演示视频文件"
 | 4 | 接单怎么保证不被重复接？ | 数据库 `FOR UPDATE` + 条件更新 + `affectedRows` 判断，冲突返回 409（A 主讲） |
 | 5 | 聊天为什么用轮询不用 WebSocket？ | 实现简单、断网自恢复；代价是最长 3 秒延迟、空闲有请求；增量拉取控制开销 |
 | 6 | 聊天怎么保证安全？ | 每个接口校验会话成员，非成员 403；消息长度服务端再校验；参数化查询 |
-| 7 | 未读数怎么算的？ | `fn_unread_count` 函数按 `last_read_id` 统计，会话列表和 tabBar 共用 |
+| 7 | 未读数怎么算的？ | `fn_unread_count` 数 `messages` 里 `is_read = 0 且 sender_id <> 我` 的条数，会话列表和 tabBar 共用；没有 `last_read_id` 游标 |
 | 8 | 上线/计划是怎么实现的？ | `once`/`weekly` 计划存 JSON，Node 定时任务按分钟判断上下线；手动下线可只影响这一次 |
 | 9 | 找跑腿的匹配条件是什么？ | 取件片区 + 具体地标 + 在线状态 + 在线计划重叠 + 规格 |
 | 10 | 前端怎么统一管理请求和错误？ | `utils/request.js` 统一封装 token、401 跳登录、错误提示、超时；页面只关心业务 |
@@ -2454,23 +2454,25 @@ git commit -m "chore: 忽略演示视频文件"
 **4.1 关系模式**：14 张表全部列出，主键加粗：
 
 ```text
-users(**user_id**, student_no, password_hash, nickname, avatar_url, campus, credit_score, created_at)
+users(**user_id**, student_no, password_hash, nickname, avatar_url, campus, college, phone,
+      credit_score, status, created_at)
 categories(**category_id**, name, sort_order)
 books(**book_id**, isbn, title, author, publisher, cover_url)
-items(**item_id**, seller_id, category_id, book_id, title, description, price, original_price,
-      condition_level, campus, status, view_count, favorite_count, created_at)
+items(**item_id**, seller_id, category_id, book_id, item_type, title, description, price, original_price,
+      condition_level, negotiable, campus, location, status, view_count, favorite_count,
+      created_at, updated_at)
 item_images(**image_id**, item_id, url, sort_order)
 favorites(**user_id**, **item_id**, created_at)
-errand_orders(**errand_id**, publisher_id, runner_id, pickup_area, pickup_place, pickup_location,
-              delivery_place, item_size, time_type, time_start, deadline, reward, status,
-              description, created_at, taken_at, completed_at)
-runner_profiles(**user_id**, zones, places, sizes, time_slots, base_price, is_online, manual_until, remark)
+errand_orders(**order_id**, publisher_id, runner_id, pickup_area, pickup_place, delivery_location,
+              item_size, item_desc, remark, reward, time_type, time_start, deadline, status,
+              created_at, taken_at, completed_at)
+runner_profiles(**user_id**, is_online, availability_type, service_areas, service_places, time_slots,
+                manual_until, base_price, remark, completed_count)
 runner_item_sizes(**user_id**, **item_size**)
-conversations(**conversation_id**, user_a, user_b, biz_type, biz_id, last_message, last_time)
-conversation_members(**conversation_id**, **user_id**, last_read_id)
-messages(**message_id**, conversation_id, sender_id, content, created_at)
-item_status_logs(**log_id**, item_id, old_status, new_status, operator_id, created_at)
-errand_status_logs(**log_id**, errand_id, old_status, new_status, operator_id, created_at)
+conversations(**conversation_id**, user_a_id, user_b_id, biz_type, biz_id, last_message, last_time)
+messages(**message_id**, conversation_id, sender_id, msg_type, content, is_read, created_at)
+item_status_logs(**log_id**, item_id, old_status, new_status, changed_by, created_at)
+errand_status_logs(**log_id**, order_id, old_status, new_status, changed_by, created_at)
 feedback(**feedback_id**, user_id, type, content, status, created_at)
 ```
 
