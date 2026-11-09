@@ -261,6 +261,7 @@
 - 状态/规格枚举：数据库存英文（`on_sale`、`taken`），前端映射中文；校区、片区等名称型字典直接存中文。
 - 命名：数据库表/字段 `snake_case`，接口字段 `camelCase`；在 SQL 里用 `AS` 转成 camelCase，减少 JS 映射。
 - 图片：接口返回相对路径（如 `/uploads/xxx.jpg`、`/demo/item-1.jpg`），前端用 `BASE_URL + url` 拼接。不要返回 `127.0.0.1` 绝对地址，否则真机演示会挂。
+- 聊天图片：复用 `POST /api/upload`（5MB，jpg/png/webp），返回相对路径；发送消息时 `msgType='image'`、`content` 传该路径，**必须先上传成功再发消息**。服务端只接受以 `/uploads/` 开头的 `content`；`conversations.last_message` 由触发器固定写 `[图片]`。
 - SQL：全部 `?` 占位符，禁止字符串拼接。
 - 密钥：`.env` 不提交，仓库只有 `.env.example`。
 
@@ -274,7 +275,7 @@
 | GET | `/api/items?keyword=&bookId=&categoryId=&sort=&page=&pageSize=` | A | `bookId` 用于搜索结果页“同书商品优先” |
 | GET | `/api/users/me/runner-profile` | A | 接单设置页回显；返回 `isOnline`、`availabilityType`、`serviceAreas: []`、`servicePlaces: []`、`itemSizes: []`、`timeSlots: []`、`manualUntil`、`remark` |
 | GET | `/api/runners?area=&place=&timeType=&timeStart=&deadline=&itemSize=&page=&pageSize=` | A | 找跑腿匹配页；`asap` 只返回在线，`deadline`/`range` 允许“未来计划重叠但当前不在线”的 `slot` 跑腿；按片区 + 具体地标 + 时间重叠筛选，不直接改订单状态 |
-| GET | `/api/errands/:id` | A | 详情里返回 `canTake`、`canComplete`、`canCancel`、`canRelease`，B 的页面据此显示按钮 |
+| GET | `/api/errands/:id` | A | 返回订单完整字段（含 `deliveryLocation` 送达地点）和 `canTake`、`canComplete`、`canCancel`、`canRelease`，B 的页面据此显示按钮 |
 | POST | `/api/errands/:id/cancel` | A | 发布者撤回：`pending → cancelled`；`taken → pending`，清空接单人 |
 | POST | `/api/errands/:id/release` | A | 接单者释放：`taken → pending`，清空接单人 |
 | POST | `/api/feedback` | A | 帮助页意见反馈；body `{ "content": "..." }` |
@@ -318,7 +319,7 @@ PUT /api/users/me/online
 - `itemSizes` 是多选数组，取 `small` / `medium` / `large`，存 `runner_item_sizes` 关联表。
 - `serviceAreas` 是片区数组，至少选一个，取值来自 25 个固定片区（见 1.4 下方清单）；`availabilityType` 必填；`itemSizes`、`basePrice`、`remark` 选填，保存时保留上次填写值，下次进入直接回显。
 - `servicePlaces` 是具体地标数组，可为空：空数组表示“只按片区接单，片区内哪栋楼都接”；非空时每个元素必须是受控地标名，或直接写片区名表示“整个片区”。后端校验每个元素所属的片区必须在 `serviceAreas` 内，避免保存出永远匹配不上的死设置。
-- 发布代取时 `pickupArea`、`pickupPlace` 都必填：用户先选片区，再选该片区下的具体地标；只选片区不选地标时，前端把 `pickupPlace` 直接传成片区名，细节写 `remark`。`pickupLocation` 是用户填的自由文本详细地址（如“第16教学楼 301 门口”）。
+- 发布代取时 `pickupArea`、`pickupPlace` 都必填：用户先选片区，再选该片区下的具体地标；只选片区不选地标时，前端把 `pickupPlace` 直接传成片区名。取件详细地址（如“第16教学楼 301 门口”）、交付要求等统一写 `remark`（≤255 字，选填）；发布页备注框用灰色小字提示“填写取件详细地址、交付要求等”，不再单独设详细地址输入框。送达地点 `deliveryLocation` 是自由文本（如“桃园 3 栋 512”），不走片区/地标选择器：只有取件需要两级受控字段参与匹配，送达只用于展示和沟通。
 
 **片区与地标清单（11-08 定稿，11-12 前落地）**
 
@@ -327,7 +328,7 @@ PUT /api/users/me/online
 - 地标共 52 条（北区教学区 27、南区教学区 20、北区其他/南区其他 5），完整清单见 **11.9**；每条形如 `{ name: "第16教学楼", zone: "北区教学区", aliases: ["16教", "求实楼", "药化大楼", ...] }`，搜索时名称和别名都要能命中。
 - 前端：`miniprogram/utils/campus.js`（B 建文件，A 提供清单），导出 `GROUPS`、`ZONES`、`LANDMARKS`；`GROUPS` 只负责选择器分组。
 - 后端：`server/src/utils/campus.js`（A 建），导出同一份 `GROUPS`、`ZONES`、`LANDMARKS`、`PLACE_TO_ZONE`、`isValidZone(value)`、`isValidPlace(value)`、`zoneOfPlace(value)`，用于 `PUT /api/users/me/runner-profile` 与 `POST /api/errands` 的白名单校验。
-- 数据库：`runner_profiles.service_areas` 存片区数组，`service_places` 存地标数组；`errand_orders.pickup_area` 存片区，`pickup_place` 存地标名（只选片区时等于片区名），`pickup_location` 存自由文本详细地址。不建地标表。
+- 数据库：`runner_profiles.service_areas` 存片区数组，`service_places` 存地标数组；`errand_orders.pickup_area` 存片区，`pickup_place` 存地标名（只选片区时等于片区名），`delivery_location` 存自由文本送达地点（不参与匹配），取件详细地址和交付要求写 `remark`。不建地标表。
 - 改清单时三处一起改：11.9 的列表、前端 `campus.js`、后端 `campus.js`；地标可以新增，片区值和地标正式名一旦有订单使用就不要再改名（别名可以补）。
 - 再次进入 `pages/mine/runner?mode=online` 时显示“下线”，调用 `PUT /api/users/me/online` 传 `{ "isOnline": false }`。
 
@@ -339,7 +340,7 @@ PUT /api/users/me/online
 - 接单者释放：`taken → pending`，清空 `runner_id`、`taken_at`，订单回大厅。
 - `taken` 不能直接变 `cancelled`；发布者必须先退回 `pending`，再取消。
 - 不再有单独的“挂起/恢复”状态和接口；`taken` 本身就是锁单。
-- 商品状态：只有卖家可以改；`on_sale → off_shelf / sold`，`off_shelf → on_sale`。
+- 商品状态：只有卖家可以改；`on_sale → reserved / sold / off_shelf`，`reserved → on_sale / sold`，`off_shelf → on_sale`；`sold` 是终态。预订只改状态，不记录预订人。
 
 **聊天页面参数（A 的详情页跳 B 的聊天页，必须一致）：**
 
@@ -806,7 +807,7 @@ git fetch --prune
 | `feat` | 新功能 | `feat(item): 商品列表接口支持分页和筛选` |
 | `fix` | 修 bug | `fix(errand): 修复并发接单重复写入` |
 | `docs` | 文档 | `docs(report): 完成第 6 章数据库实施` |
-| `test` | 测试 | `test: 增加 26 条核心用例记录` |
+| `test` | 测试 | `test: 增加 28 条核心用例记录` |
 | `refactor` | 重构，不改功能 | `refactor(item): 抽取价格校验函数` |
 | `chore` | 杂项、配置 | `chore: 添加 .gitignore` |
 
@@ -997,7 +998,7 @@ git push origin dev
    - `runner_item_sizes` 用复合主键 `(user_id, item_size)` 支持多选。
    - `runner_profiles.service_areas` 至少一个片区，`service_places` 默认空数组（表示只按片区接单）。
    - `runner_profiles.availability_type` 只能是 `slot/now`；`time_slots` 存 `once`/`weekly` 在线计划；`manual_until` 存手动覆盖截止时间；`slot` 至少一条未来计划。
-   - `errand_orders` 的 `pickup_area`（片区）、`pickup_place`（地标名）、`pickup_location`（自由文本地址）、`remark`（备注）四列不要混。
+   - `errand_orders` 的 `pickup_area`（片区）、`pickup_place`（地标名）、`delivery_location`（自由文本送达地点）、`remark`（取件详细地址与交付要求等备注）四列不要混。
    - `conversations.biz_id` 用 `BIGINT NOT NULL DEFAULT 0`，否则唯一键对 NULL 不生效。
    - `messages` 有 `(conversation_id, message_id)` 索引，支撑增量拉取。
    - `item_status_logs`、`errand_status_logs` 的 `changed_by` 允许 NULL，避免触发器拿不到用户时外键报错。
@@ -1050,7 +1051,7 @@ git pull origin dev
    - 建表顺序：`users` → `books` → `categories` → `items` → `item_images` → `favorites` → `runner_profiles` → `runner_item_sizes` → `errand_orders` → `conversations` → `messages` → `item_status_logs` → `errand_status_logs` → `feedback`。
    - `books` 增加 `cover_url VARCHAR(255) NULL`；`runner_profiles` 增加 `availability_type ENUM('slot','now')`、`service_areas JSON`、`service_places JSON`、`time_slots JSON`、`manual_until DATETIME NULL`、`base_price`、`remark`；可接规格存 `runner_item_sizes`。
    - `time_slots` 存在线计划数组：`once` 为 `{id,type,date,start,end}`，`weekly` 为 `{id,type,weekdays,start,end,from}`；`slot` 模式至少一条未来计划，`now` 模式可为空但保留原计划；同一时间不允许重叠，暂不支持跨天。
-   - `service_areas` 存多选片区 JSON（至少一个）；`service_places` 存多选地标 JSON（可为空数组，表示只按片区接单）；`errand_orders` 增加 `pickup_area`（片区）、`pickup_place`（地标名，只选片区时等于片区名）、`pickup_location`（自由文本详细地址）、`remark`（订单备注）。地标放前后端常量清单，存受控名称但不建第 15 张表；匹配用两级 `JSON_CONTAINS`。
+   - `service_areas` 存多选片区 JSON（至少一个）；`service_places` 存多选地标 JSON（可为空数组，表示只按片区接单）；`errand_orders` 增加 `pickup_area`（片区）、`pickup_place`（地标名，只选片区时等于片区名）、`delivery_location`（自由文本送达地点，不参与匹配）、`remark`（订单备注，取件详细地址与交付要求写这里）。地标放前后端常量清单，存受控名称但不建第 15 张表；匹配用两级 `JSON_CONTAINS`。
    - 所有表 `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`。
    - 索引命名 `idx_表_字段`、`uk_表_字段`，报告里好写。
    - CHECK：价格/报酬 ≥ 0、`favorite_count >= 0`、`completed_count >= 0`。
@@ -1426,7 +1427,7 @@ git push -u origin feature/item-publish
    - `pages/item/detail`：`onLoad(options.id)` 加载详情；`swiper` 图片轮播；价格/原价；成色/校区/分类标签；描述；卖家卡片；收藏按钮（显示收藏数）；“联系卖家”按钮。
    - 收藏：点击 → 调 API → 重新拉详情或本地更新计数；失败 toast。
    - 联系卖家：`wx.navigateTo({ url: '/pages/chat/detail?peerId=' + sellerId + '&bizType=item&bizId=' + itemId })`；B 的聊天页还没好时，先 toast“聊天功能开发中”，不要报错。
-   - 状态：`on_sale` 显示“在售”，`off_shelf/sold` 显示对应标签；已下架商品详情仍可看，但不显示收藏/联系？按产品决定，MVP 可以都显示。
+   - 状态：`on_sale` 显示“在售”，`reserved/off_shelf/sold` 显示对应标签；已预订/已下架/已售出商品详情仍可看，收藏/联系是否禁用按产品决定，MVP 可以都显示。
    - 图片预览：`wx.previewImage`。
 3. **19:30-21:00 测试 + 截图**：收藏前后 `favorite_count` 截图；详情页截图；接口文档。
 4. **21:30 同步**：和 B 确认聊天页参数；B 的聊天页可能 11-15 才好，先留 toast。
@@ -1473,19 +1474,19 @@ git push -u origin feature/item-detail
 1. **09:00-12:00 我的发布/收藏 + 状态 API**：
    - `GET /api/items/mine?status=&page=&pageSize=`：`WHERE seller_id = ?`，可按状态筛选；返回所有状态。
    - `GET /api/favorites?page=&pageSize=`：`favorites JOIN v_item_list`，按收藏时间倒序。
-   - `PUT /api/items/:id/status`：body `{ status }`；只允许 `on_sale → off_shelf/sold`、`off_shelf → on_sale`；先查商品卖家，非卖家 403；非法跳转 409。
+   - `PUT /api/items/:id/status`：body `{ status }`；只允许 `on_sale → reserved/sold/off_shelf`、`reserved → on_sale/sold`、`off_shelf → on_sale`；先查商品卖家，非卖家 403；非法跳转 409。预订只改状态，不记录预订人，也不写预订时间。
    - `trg_item_status_log`：`AFTER UPDATE ON items`，`IF OLD.status <> NEW.status` 插入日志；`changed_by` 用 `@current_user_id`（见 5.5）。**路由里必须在同一连接上先 `SET @current_user_id = ?`，再 UPDATE**，否则日志里的操作人是 NULL。
-   - 测试：卖家下架/重新上架/标记售出；非卖家改 → 403；已售出再上架 → 409；日志表有记录。
+   - 测试：卖家下架/重新上架/标记预订/取消预订/标记售出；非卖家改 → 403；已售出再上架/再预订 → 409；日志表有记录。
 2. **14:00-18:00 三个页面**：
-   - `pages/mine/items`：顶部 tab “在售/已售/已下架”；列表；操作按钮（下架、重新上架、标记售出）；`wx.showModal` 确认；操作后刷新。
+   - `pages/mine/items`：顶部 tab “在售/已预订/已售/已下架”；列表；操作按钮（在售：标记预订、下架、标记售出；已预订：取消预订、标记售出；已下架：重新上架；已售：无）；`wx.showModal` 确认；操作后刷新。
    - `pages/mine/favorites`：列表；取消收藏（`wx.showModal` 确认）；点击进详情；空状态。
    - `pages/search/result`：独立搜索结果页。顶部搜索框；先请求 `GET /api/books/search?keyword=`，有匹配书籍时显示书籍卡片（封面、书名、出版社、作者、ISBN）；下方请求 `GET /api/items` 显示商品；同书商品优先（先 `GET /api/items?bookId=`，再请求普通关键词结果并去重）；点击书籍卡片按 `bookId` 过滤；空状态显示“没有找到相关书籍/商品”。
    - 三个页面都支持下拉刷新、加载更多；复用 B 的 `item-card` 或简化卡片。
 3. **18:00-19:30 全流程联调**：
    - 用 2023001 登录 → 首页搜索“数据结构” → 搜索结果页书籍卡片 → 点击卡片过滤同书商品 → 详情 → 收藏 → 我的收藏；
-   - 用 2023002 登录 → 发布 → 我的发布 → 下架 → 重新上架 → 标记售出；
-   - 2023001 的收藏列表里，已售出/下架商品如何显示？按产品决定：显示但置灰，或过滤。MVP 建议显示并带状态标签。
-   - 按 7.1 的 26 条用例挑二手相关先跑一遍。
+   - 用 2023002 登录 → 发布 → 我的发布 → 标记预订 → 取消预订 → 下架 → 重新上架 → 标记售出；
+   - 2023001 的收藏列表里，已售出/已预订/下架商品如何显示？按产品决定：显示但置灰，或过滤。MVP 建议显示并带状态标签。
+   - 按《课程设计开发计划.md》7.1 的 28 条用例挑二手相关先跑一遍。
 4. **19:30-21:00 ER 图**：
    - 用 draw.io 画全局 ER 图（14 张表）和局部 ER 图（用户/商品/收藏、跑腿/规格）；导出 PNG 到 `report/assets/`；命名 `er_global.png`、`er_local_user_item.png`。
    - 画的时候对照实际 `schema.sql`，不要凭记忆；报告里要能解释每个联系（1:1、1:N、M:N）。
@@ -1569,11 +1570,11 @@ git push origin dev
    - 返回昵称、头像、校区、信用分、完成数、`serviceAreas`、`servicePlaces`、在线计划摘要、可接规格、报价、备注；**不返回手机号等敏感信息**。
    - 明确：匹配页只展示信息 + 联系 TA（跳聊天），**不直接改订单状态**；订单仍发布到大厅由 `sp_take_errand` 接单。
 3. **16:00-17:00 代取发布 + 大厅**：
-   - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、取件详细地址 `pickupLocation`、送达地点、物品规格、描述、备注 `remark`（选填，≤255 字）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；插入 `status='pending'`；返回 `orderId`。
+   - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、送达地点 `deliveryLocation`（必填，自由文本，≤100 字，不做片区/地标校验）、物品规格、描述、备注 `remark`（选填，≤255 字，取件详细地址与交付要求写这里；前端输入框用灰色小字提示“填写取件详细地址、交付要求等”）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；插入 `status='pending'`；返回 `orderId`。
    - 不校验“截止时间必须晚于当前时间”，也不做超时自动取消；`deadline` 只作参考和匹配用。
    - `GET /api/errands?status=pending&page=&pageSize=`：用 `v_errand_hall`；默认只查 `pending`；分页；按 `created_at DESC`；返回发布者昵称/头像/信用分。
-   - `v_errand_hall`：`errand_orders` + `users`（发布者）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`pickupLocation`、`remark`。
-   - 测试：seed 几条 pending 订单；大厅能看到；三种时间模式都能发布，非法组合 400；报酬负数 400；`pickupPlace` 不在清单内 400；只传片区名作为 `pickupPlace` 能成功。
+   - `v_errand_hall`：`errand_orders` + `users`（发布者）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`。
+   - 测试：seed 几条 pending 订单；大厅能看到；三种时间模式都能发布，非法组合 400；报酬负数 400；`pickupPlace` 不在清单内 400；只传片区名作为 `pickupPlace` 能成功；送达地点为空或超过 100 字返回 400。
 4. **18:00-21:00 聊天数据库对象提前做**：
    - 今天先写 `conversations`、`messages` 相关对象（见 11-13 的清单），能写多少写多少；这样 B 的聊天后端不会等到 11-15。
    - 至少先交付 `v_conversation_base`、`sp_get_or_create_conversation` 的初版，让 B 可以开始。
@@ -1601,7 +1602,7 @@ git push -u origin feature/errand-core
 - [ ] 地标匹配符合真值表：只接某栋楼的跑腿不匹配“只填片区”的订单；接整个片区的跑腿能匹配片区内具体地标订单。
 - [ ] 发布代取单成功；大厅显示 pending 订单；分页正常。
 - [ ] 报酬负数、时间组合非法、必填缺失、地标不在清单内都返回 400。
-- [ ] `v_errand_hall` 结果包含发布者昵称/头像和 `pickupArea`、`pickupPlace`、`pickupLocation`、`remark`。
+- [ ] `v_errand_hall` 结果包含发布者昵称/头像和 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`。
 
 **注意**
 
@@ -1636,10 +1637,10 @@ git push -u origin feature/errand-core
    - 在 `database/objects.sql` 写：
      - `sp_get_or_create_conversation(p_user1, p_user2, p_biz_type, p_biz_id, OUT p_conversation_id)`：用户 ID 归一化（小的在前），用 `INSERT ... ON DUPLICATE KEY UPDATE conversation_id = LAST_INSERT_ID(conversation_id)` 防并发重复；返回 id。
      - `fn_unread_count(p_conversation_id, p_user_id)`：统计 `sender_id <> p_user_id AND is_read = 0`。
-     - `trg_message_after_insert`：更新 `conversations.last_message`（text 用内容，image 用 `[图片]`）和 `last_time`。
+     - `trg_message_after_insert`：更新 `conversations.last_message` 和 `last_time`；`text` 用 `LEFT(NEW.content, 255)` 截断，`image` 固定写 `[图片]`，避免会话列表出现 `/uploads/...` 长路径。
      - `v_conversation_base`：会话 + 双方昵称/头像。
    - 每个对象先在 MySQL 里测：创建会话两次返回同一个 id；插入消息后会话最后消息更新；未读数正确。
-   - 把测试 SQL、字段说明、调用示例整理成一条消息发给 B，并在群里说“聊天 DB 对象已合并，可以开始写 chat.js”。
+   - 把测试 SQL、字段说明、调用示例整理成一条消息发给 B（含发送消息 `msgType` 约定：`text` / `image`，图片 `content` 传 `/uploads/` 相对路径），并在群里说“聊天 DB 对象已合并，可以开始写 chat.js”。
    - **B 的 `chat.js` 不要由 A 写**；如果 B 卡住，A 可以帮忙看 SQL/权限，但代码由 B 提交，保证分工记录清楚。
 3. **17:00-19:00 并发测试**：
    - Postman 登录 2023002、2023003（两个跑腿），2023001 发布一单；
@@ -2014,7 +2015,7 @@ git push -u origin feature/db-objects
 
      预期：日志有 `on_sale → off_shelf`，`changed_by = 2`。
    - 代取状态日志：接单/完成/撤回/释放/取消各测一次；确认每条状态变化都有记录。
-   - 消息触发器：插入一条消息，查 `conversations.last_message/last_time` 是否更新。
+   - 消息触发器：分别插入一条 `text` 和一条 `image` 消息，查 `conversations.last_message`（截断文本 / `[图片]`）与 `last_time` 是否更新。
    - 每个触发器都测“状态没变时是否误写日志”：例如把 `on_sale` 再更新成 `on_sale`，日志不应增加。
 2. **14:00-15:30 状态机撤回/释放 + 日志验证**：
    - 准备一条 `taken` 订单；发布者调 `POST /api/errands/:id/cancel`，确认状态回到 `pending`，`runner_id`、`taken_at` 为空。
@@ -2173,7 +2174,7 @@ git push -u origin feature/security
 **今天必须完成**
 
 - Postman/Thunder Client 集合：Auth、Items、Favorites、Upload、Errands、Chat、DB。
-- 26 条核心测试用例跑完，记录结果。
+- 28 条核心测试用例跑完，记录结果。
 - 修 P0 bug；P1 记录不修。
 - 数据库 dump + 恢复测试。
 - 测试记录交给 B 合并。
@@ -2191,8 +2192,8 @@ git push -u origin feature/security
    - 每个请求加断言：状态码、`code`、关键字段存在。
    - 文件夹按模块分；每个请求保存一个成功示例，报告附录可以用。
    - 导出集合 JSON 到 `docs/postman/CampusService.postman_collection.json`，提交。
-2. **14:00-17:00 跑 26 条用例**：
-   - 按《课程设计开发计划.md》7.1 的 26 条逐条执行；A 负责后端相关（1~26 都要懂，聊天部分和 B 一起）。
+2. **14:00-17:00 跑 28 条用例**：
+   - 按《课程设计开发计划.md》7.1 的 28 条逐条执行；A 负责后端相关（1~28 都要懂，聊天部分和 B 一起）。
    - 结果写进 `docs/A测试记录.md`：用例号、操作、预期、实际、通过/失败、截图名。
    - 失败的按 P0/P1 分类：阻塞演示的是 P0，样式/文案是 P1。
    - P0 当天修；P1 记录，11-21 前有时间再修。
@@ -2225,7 +2226,7 @@ git push -u origin test/regression
 
 **验收**
 
-- [ ] 26 条核心用例通过率 100%（P1 样式问题除外）。
+- [ ] 28 条核心用例通过率 100%（P1 样式问题除外）。
 - [ ] Postman 集合能一键跑通主要流程。
 - [ ] dump 能在空库恢复，表和对象齐全。
 - [ ] P0 bug 清零。
@@ -2308,7 +2309,7 @@ git push -u origin chore/release-readme
 
 - [ ] 干净环境能按 readme 跑起来。
 - [ ] 所有 P0 功能可用；数据库对象齐全。
-- [ ] 26 条用例通过。
+- [ ] 28 条用例通过。
 - [ ] `v1.0-m3` tag 存在。
 - [ ] 功能冻结公告发到群里。
 - [ ] 截图、测试记录、dump 齐全。
@@ -2575,11 +2576,11 @@ git pull origin dev
      mysqldump -u root -p --databases campus_service --routines --triggers > database/campus_service_dump.sql
      ```
 
-   - 打包目录按计划 8.7；zip 命名 `055艾奕含--Campus Service Platform.zip`。
+   - 打包目录按计划 8.7；zip 命名 `<末三位><姓名>--Campus Service Platform.zip`。
    - 压缩包内：
 
      ```text
-     055艾奕含--Campus Service Platform/
+     <末三位><姓名>--Campus Service Platform/
      ├─ readme.txt
      ├─ database/        # schema.sql、objects.sql、seed.sql、campus_service_dump.sql、er_diagram.png
      ├─ server/          # 源码 + package.json + package-lock.json + .env.example
@@ -2807,10 +2808,10 @@ git tag -l
    - 两个账号登录状态；演示数据在。
    - U 盘/网盘/视频备份。
 2. 提交前最后检查文件名：
-   - `055艾奕含--Campus Service Platform.zip`
-   - `055艾奕含--Campus Service Platform.docx`
-   - `055艾奕含--Campus Service Platform.pptx`
-   - `055艾奕含--Campus Service Platform.mp4`
+   - `<末三位><姓名>--Campus Service Platform.zip`
+   - `<末三位><姓名>--Campus Service Platform.docx`
+   - `<末三位><姓名>--Campus Service Platform.pptx`
+   - `<末三位><姓名>--Campus Service Platform.mp4`
    - 如果老师要求每人一份，B 的那份改成 B 的学号姓名。
 3. 演示按 9.4 的流程；数据库部分 A 讲，UI/聊天 B 讲；遇到问题用备份视频/截图。
 4. 提交后不要在群里说“终于完了”之类；确认老师收到/拷贝成功再走。
@@ -2936,7 +2937,7 @@ DROP VIEW IF EXISTS v_item_list;
 - `conversations.biz_id` 用 `BIGINT NOT NULL DEFAULT 0`。唯一键 `(user_a_id, user_b_id, biz_type, biz_id)` 里如果有 NULL，MySQL 不会按“相等”去重，会插入重复会话。
 - `runner_profiles.time_slots` 用 `JSON` 存具体日期/星期循环的在线计划，例如 `[{"id":"o1","type":"once","date":"2026-11-09","start":"14:00","end":"18:00"}]`。这是应用层整体读写的复合属性，报告里要说明“为了简化 MVP，暂不拆 `runner_online_schedules` 和 `runner_schedule_weekdays`；若严格按 1NF，可拆成一行一条计划 + 一行一个重复星期”。
 - `runner_profiles.service_areas` 存片区数组（至少一个），`service_places` 存具体地标数组（可为空，空数组表示只按片区接单）；两者都用受控名称，严格 1NF 可拆子表，这里是为了守住 14 张表做的权衡。
-- `errand_orders.pickup_area` 存片区、`pickup_place` 存地标名（只选片区时等于片区名）、`pickup_location` 存自由文本详细地址；`remark` 存订单备注，不要和 `item_desc` 混用。
+- `errand_orders.pickup_area` 存片区、`pickup_place` 存地标名（只选片区时等于片区名）；`delivery_location` 也存自由文本，只用于展示、不参与匹配；取件详细地址与交付要求统一写 `remark`，不要和 `item_desc` 混用。
 - `runner_item_sizes` 用复合主键 `(user_id, item_size)`，一个跑腿可同时接小/中/大件；`errand_orders.item_size` 仍是单值，因为一个订单只有一个规格。
 - `books.cover_url` 存相对路径，可为 `NULL`；前端用 `BASE_URL + coverUrl`，为空显示占位图。
 - `item_status_logs.changed_by`、`errand_status_logs.changed_by` 允许 `NULL`。触发器拿不到应用用户时插 NULL，避免外键报错；正常接口会通过 `@current_user_id` 写入真实用户。
@@ -3026,6 +3027,11 @@ SHOW TRIGGERS;
 SELECT item_id, favorite_count FROM items WHERE item_id = 1;
 -- 执行收藏 SQL
 SELECT item_id, favorite_count FROM items WHERE item_id = 1;
+
+-- 聊天消息触发器：图片消息只写 [图片] 预览
+INSERT INTO messages (conversation_id, sender_id, msg_type, content)
+VALUES (1, 1, 'image', '/uploads/demo-chat.jpg');
+SELECT conversation_id, last_message, last_time FROM conversations WHERE conversation_id = 1;
 
 -- 权限
 SHOW GRANTS FOR 'cs_readonly'@'localhost';
@@ -3644,7 +3650,7 @@ uploadOne(filePath) {
   });
   ```
 
-- 状态：`on_sale` 在售、`sold` 已售出、`off_shelf` 已下架；已售出/下架时收藏/联系按钮是否禁用，按产品决定。
+- 状态：`on_sale` 在售、`reserved` 已预订、`sold` 已售出、`off_shelf` 已下架；已售出/下架时收藏/联系按钮是否禁用，按产品决定。详情页不提供「标记预订 / 取消预订」按钮，改状态只在「我的发布」做。
 - `onShow` 重新拉一次，防止从聊天/收藏返回后状态过期。
 - 图片 404：用本地占位图兜底。
 
@@ -3652,9 +3658,10 @@ uploadOne(filePath) {
 
 **我的发布：**
 
-- tabs：在售 `on_sale`、已售 `sold`、已下架 `off_shelf`。
+- tabs：在售 `on_sale`、已预订 `reserved`、已售 `sold`、已下架 `off_shelf`。
 - 列表复用卡片；每个卡片底部操作按钮：
-  - 在售：下架、标记售出。
+  - 在售：标记预订、下架、标记售出。
+  - 已预订：取消预订、标记售出。
   - 已下架：重新上架。
   - 已售出：无操作。
 - 操作前 `wx.showModal` 确认；操作后刷新当前 tab。
@@ -3665,7 +3672,7 @@ uploadOne(filePath) {
 
 - 列表用 `GET /api/favorites`；卡片显示商品状态。
 - 取消收藏：`wx.showModal` 确认 → `DELETE /api/items/:id/favorite` → 从列表移除。
-- 点击卡片进详情；如果商品已下架/售出，详情页仍可看。
+- 点击卡片进详情；如果商品已预订/下架/售出，详情页仍可看，状态标签照常显示。
 - 空状态：“还没有收藏，去逛逛吧”。
 
 ### 6.8 UI 与异常状态
@@ -3703,7 +3710,7 @@ uploadOne(filePath) {
 - [ ] 搜索结果页：书籍卡片字段完整；点击卡片按 `bookId` 过滤；同书商品优先；无书籍时仍显示商品。
 - [ ] 发布普通商品、书籍商品；图片上传、删除；表单校验。
 - [ ] 详情轮播、卖家信息、收藏/取消、联系卖家跳转。
-- [ ] 我的发布三个 tab、下架/上架/售出。
+- [ ] 我的发布四个 tab、标记预订/取消预订、下架/上架/售出。
 - [ ] 我的收藏列表、取消收藏、进详情。
 
 **边界：**
@@ -4218,9 +4225,9 @@ B 当前阻塞：
 1. 书籍 ISBN 联想（保留手动填写书目）。
 2. 我的收藏页（保留收藏按钮和数据库表/接口）。
 3. 多图上传（改成 1 张图）。
-4. 首页价格区间/校区筛选（保留关键词搜索和分类）。
+4. 首页价格区间筛选（保留关键词搜索和分类）。
 5. 商品浏览量 `view_count`。
-6. 我的发布里的“标记售出”（保留下架/上架）。
+6. 我的发布里的“标记预订 / 取消预订”（保留标记售出、下架/上架）。
 
 **绝对不能砍：**
 
@@ -4240,7 +4247,7 @@ B 当前阻塞：
 **如果 B 的页面/聊天落后：**
 
 - A 不要抢着写 B 的页面，先保证后端/数据库/报告；B 的模块延迟会影响 M2，但不影响 A 的 40 分。
-- 如果 B 在 11-16 还没完成聊天，和 B 一起决定：砍未读红点/图片消息，保留文字聊天和会话列表；或者 A 帮忙看服务端 bug，但代码由 B 提。
+- 如果 B 在 11-16 还没完成聊天，和 B 一起决定：砍未读红点，保留文字与图片聊天和会话列表；或者 A 帮忙看服务端 bug，但代码由 B 提。
 
 **里程碑底线：**
 
@@ -4267,7 +4274,7 @@ B 当前阻塞：
 | 系统视频 | B 剪辑，A 录数据库片段 | 11-26 | 11-29 | `report/系统演示.mp4` | 6~8 分钟 |
 | readme | A | 11-26 | 11-29 | `readme.txt` | 账号、启动步骤、对象清单 |
 | 数据库备份 | A | 11-26 | 11-29 | `database/campus_service_dump.sql` | 含例程、触发器 |
-| 源码压缩包 | A 打包，B 检查 | 11-26 | 11-29 | `055艾奕含--Campus Service Platform.zip` | 不含 node_modules/.env |
+| 源码压缩包 | A 打包，B 检查 | 11-26 | 11-29 | `<末三位><姓名>--Campus Service Platform.zip` | 不含 node_modules/.env |
 | 答辩讲稿 + 问答 | A 写数据库部分，B 写系统部分 | 11-25 | 11-27 | `docs/答辩讲稿.md` | A 的讲稿见 9.4 |
 | 三处备份 | A/B 各备一份 | — | 11-29 | U 盘 + 网盘 + 邮箱 | 断网也能放视频 |
 
@@ -4660,7 +4667,7 @@ report/assets/
 | 21 | 取消收藏触发器 -1 | 删除收藏前后查 | 数量 -1 | 6.5 |
 | 22 | 商品状态日志 | 更新商品状态后查 `item_status_logs` | 新增一条日志 | 6.5 |
 | 23 | 代取状态日志 | 接单/完成后查 `errand_status_logs` | 状态变更记录 | 6.5 |
-| 24 | 消息触发器 | 插入消息后查 `conversations` | `last_message`/`last_time` 更新 | 6.5 |
+| 24 | 消息触发器 | 分别插入 text / image 消息后查 `conversations` | 预览为截断文本 / `[图片]`，`last_time` 更新 | 6.5 |
 | 25 | 发布者撤回接单 | 接单后发布者调 `/cancel` | 状态回 `pending`，`runner_id`/`taken_at` 为空 | 6.6 |
 | 26 | 接单者释放 + 过期不取消 | 接单者调 `/release`；再造一条过期 pending 单 | 订单回大厅；过期单仍是 `pending` | 6.6 |
 | 27 | 列表查询走索引 | `EXPLAIN SELECT ... FROM items WHERE status='on_sale' ORDER BY created_at DESC;` | `key` 命中索引 | 6.8 |
@@ -4694,7 +4701,7 @@ report/assets/
 | 10 | 发布商品 | 普通模式 | 表单、图片上传、议价开关 | 7.4 |
 | 11 | 发布商品 | 书籍模式 | ISBN/书名/作者/出版社 | 7.4 |
 | 12 | 发布商品 | 校验失败 | 价格为空/图片未传的提示 | 7.4 |
-| 13 | 我的发布 | 正常 | 在售/已售/已下架标签、操作按钮 | 7.5 |
+| 13 | 我的发布 | 正常 | 在售/已预订/已售/已下架标签、操作按钮 | 7.5 |
 | 14 | 我的收藏 | 正常 | 收藏列表、取消收藏 | 7.5 |
 | 15 | 并发接单 | 失败提示 | 第二个账号点接单收到“已被接单” | 7.6/6.7 |
 
@@ -4757,7 +4764,7 @@ report/assets/
 
 #### 9.4.2 A 的讲稿（约 4 分钟，可直接背）
 
-> 各位老师好，我是成员 A 艾奕含，负责数据库设计和后端主线。下面由我介绍数据库部分。
+> 各位老师好，我是成员 A，负责数据库设计和后端主线。下面由我介绍数据库部分。
 >
 > 先看概念设计。系统一共 14 张表，围绕用户、二手商品、代取订单、聊天四条主线。我们先画局部 ER 图，再合并成全局 ER 图，消除了命名冲突和属性冲突。设计满足 3NF：书目信息拆到 `books`，商品图片拆到 `item_images`，跑腿设置拆到 `runner_profiles`，可接规格因为多选拆到 `runner_item_sizes`，状态变更拆到日志表，所以非主属性都完全依赖主键，没有传递依赖。`runner_profiles.time_slots` 用 JSON 存单次/星期循环的在线计划，是应用层整体读写的权衡，报告里会说明。
 >
@@ -4987,7 +4994,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 
 - B 剪辑、加字幕、加片头片尾，导出 `report/系统演示.mp4`。
 - 大小控制在 200MB 以内；超过就压缩码率或分段。
-- 文件名：`055艾奕含--校园服务平台-系统演示.mp4`（如果老师要求英文系统名，用 `Campus Service Platform`）。
+- 文件名：`<末三位><姓名>--校园服务平台-系统演示.mp4`（如果老师要求英文系统名，用 `Campus Service Platform`）。
 - 11-26 初版，11-29 定稿；U 盘、网盘、邮箱各一份，确保断网能播放。
 - 视频里演示的数据必须和报告截图一致，不要用另一套数据。
 
@@ -5028,6 +5035,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 | 会话 | `conversations` / conversation | 聊天室、对话 |
 | 消息 | `messages` / message | 信息、聊天记录 |
 | 在售 | `on_sale` | 上架中、售卖中 |
+| 已预订 | `reserved` | 预定、保留中 |
 | 已售出 | `sold` | 已卖出、完成 |
 | 已下架 | `off_shelf` | 下架、删除 |
 | 待接单 | `pending` | 待处理、未接 |
@@ -5065,21 +5073,21 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 
 | 材料 | 建议文件名 |
 | --- | --- |
-| 源码压缩包 | `055艾奕含--Campus Service Platform.zip` |
-| 报告 | `055艾奕含--Campus Service Platform.docx` |
-| PPT | `055艾奕含--Campus Service Platform-答辩PPT.pptx` |
-| 视频 | `055艾奕含--Campus Service Platform-系统演示.mp4` |
+| 源码压缩包 | `<末三位><姓名>--Campus Service Platform.zip` |
+| 报告 | `<末三位><姓名>--Campus Service Platform.docx` |
+| PPT | `<末三位><姓名>--Campus Service Platform-答辩PPT.pptx` |
+| 视频 | `<末三位><姓名>--Campus Service Platform-系统演示.mp4` |
 
 说明：
 
-- 系统名称用英文和仓库名一致；如果老师要求中文，改成 `055艾奕含--校园服务平台`，全套材料一起改。
+- 系统名称用英文和仓库名一致；如果老师要求中文，改成 `<末三位><姓名>--校园服务平台`，全套材料一起改。
 - 两人小组如果只交一套，文件名用谁的名字、是否加 B 的名字，**提前问老师**；默认用 A 的名字，readme 里写清两人分工。
 - 文件名不要有空格以外的特殊符号；交之前确认能正常解压、能打开。
 
 #### 9.8.2 压缩包结构
 
 ```text
-055艾奕含--Campus Service Platform/
+<末三位><姓名>--Campus Service Platform/
 ├─ readme.txt
 ├─ database/
 │  ├─ schema.sql
@@ -5124,7 +5132,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 ========================================
 校园服务平台（Campus Service Platform）
 《数据库原理与应用》课程设计
-成员：艾奕含（A，学号末三位 055）、XXX（B）
+成员：<姓名>（A，学号末三位 <末三位>）、<姓名>（B）
 日期：2026-11-30
 ========================================
 
@@ -5247,9 +5255,9 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - [ ] 搜索结果页：书籍卡片、同书商品优先、点击书籍按 `bookId` 过滤。
 - [ ] 详情：轮播、卖家、收藏状态、联系卖家入口。
 - [ ] 收藏/取消收藏，`favorite_count` 触发器正确。
-- [ ] 我的发布/我的收藏可用，状态能切换。
+- [ ] 我的发布/我的收藏可用，在售/已预订/已售/已下架能切换。
 - [ ] 空/加载/错误三态齐全。
-- [ ] 3 个账号能完成“注册 → 发布 → 搜索 → 详情 → 收藏 → 下架”。
+- [ ] 3 个账号能完成“注册 → 发布 → 搜索 → 详情 → 收藏 → 标记预订 → 取消预订 → 下架”。
 - [ ] 接口文档更新到 v0.2，`main` 有 `v0.2-m1` tag。
 
 #### M2（11-16）：代取 + 聊天闭环
@@ -5263,7 +5271,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - [ ] `sp_take_errand` 并发接单：两个账号只有一个成功，另一个 409。
 - [ ] 完成/撤回/释放/取消全路径可用，状态日志有记录；接单后订单从大厅消失。
 - [ ] `sp_complete_errand` 更新完成数/信用分。
-- [ ] 会话列表、聊天页、发送、3 秒轮询、已读、未读数可用。
+- [ ] 会话列表、聊天页、发送文字 / 图片消息、3 秒轮询、已读、未读数可用；图片先上传成功再发送，会话列表预览显示 `[图片]`。
 - [ ] `sp_get_or_create_conversation` 不会重复建会话。
 - [ ] 两个账号 5 秒内能收到对方消息。
 - [ ] 商品/订单“联系 TA”能进入正确会话。
@@ -5868,7 +5876,7 @@ SQL：
 
 说明：
 
-- 当前只有教学区和其他片区细分到单体楼；宿舍园、图书馆、运动场、校医院、校外片区暂不设下级地标，选中片区即视为 `pickupPlace = 片区名`，具体门牌和细节写 `remark`。以后要细分时按同样结构追加。
+- 当前只有教学区和其他片区细分到单体楼；宿舍园、图书馆、运动场、校医院、校外片区暂不设下级地标，选中片区即视为 `pickupPlace = 片区名`，具体门牌、详细地址和交付要求写 `remark`。以后要细分时按同样结构追加。
 - 数据形状：前端 `LANDMARKS = [{ name, zone, aliases }]`；后端额外导出 `PLACE_TO_ZONE` 映射，用于 `isValidPlace` 和 `zoneOfPlace`。
 - 修改清单时，11.9、前端 `campus.js`、后端 `campus.js` 三处同步；已有订单在用的正式名不改，只补别名。
 
