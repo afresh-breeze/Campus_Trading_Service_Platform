@@ -1,0 +1,30 @@
+<view class="card card--{{mode}}" bindtap="onTap" hover-class="card--hover">
+  <view class="card__cover">
+    <image wx:if="{{cover}}" class="card__img" src="{{cover}}" mode="aspectFill" lazy-load />
+    <view wx:else class="card__img card__img--empty">暂无图片</view>
+    <view class="card__tag" wx:if="{{mode === 'grid' && item.status && item.status !== 'on_sale'}}">
+      <status-tag domain="item" status="{{item.status}}" />
+    </view>
+  </view>
+
+  <view class="card__body">
+    <view class="card__title">{{item.title || '未命名商品'}}</view>
+
+    <view wx:if="{{conditionText || placeText}}" class="card__meta">
+      <text wx:if="{{conditionText}}" class="card__meta-item">{{conditionText}}</text>
+      <text wx:if="{{conditionText && placeText}}" class="card__dot">·</text>
+      <text wx:if="{{placeText}}" class="card__meta-item">{{placeText}}</text>
+    </view>
+
+    <view class="card__foot">
+      <view class="card__price">
+        <text class="card__yuan">¥</text>
+        <text class="card__num">{{priceText}}</text>
+      </view>
+      <text wx:if="{{originText}}" class="card__origin">{{originText}}</text>
+      <view wx:if="{{mode === 'list' && item.status}}" class="card__state">
+        <status-tag domain="item" status="{{item.status}}" />
+      </view>
+    </view>
+  </view>
+</view>
