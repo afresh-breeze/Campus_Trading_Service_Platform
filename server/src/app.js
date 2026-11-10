@@ -11,6 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/demo', express.static(path.join(__dirname, '../assets/demo')));
 
 app.get('/api/health', async (req, res, next) => {
   try {
@@ -23,6 +24,9 @@ app.get('/api/health', async (req, res, next) => {
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/runners', require('./routes/runners'));
+app.use('/api/categories', require('./routes/categories'));
+app.use('/api/books', require('./routes/books'));
 app.use('/api/items', require('./routes/items'));
 app.use('/api/favorites', require('./routes/favorites'));
 app.use('/api/errands', require('./routes/errands'));
