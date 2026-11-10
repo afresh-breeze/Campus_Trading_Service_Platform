@@ -1192,7 +1192,7 @@ git push -u origin docs/api-contract
 **怎么做**
 
 1. **09:00-12:00 认证接口**：
-   - 注册：校验学号（6~20 位）、密码（≥6 位）、昵称；先查学号是否存在；`bcrypt.hash(password, 10)`；插入；返回 token + user（注册后自动登录）。不采集校区，`campus` 留 `NULL`。
+   - 注册：校验学号（6~20 位）、密码（≥6 位）、昵称；先查学号是否存在；`bcrypt.hash(password, 10)`；插入；返回 token + userInfo（注册后自动登录）。不采集校区，`campus` 留 `NULL`。
    - 登录：按学号查用户；`bcrypt.compare`；失败统一返回“学号或密码错误”（不要提示“用户不存在”，避免被枚举）；成功 `jwt.sign({ userId, studentNo }, process.env.JWT_SECRET, { expiresIn: '7d' })`。
    - `GET /api/auth/me`：走鉴权中间件，返回当前用户（不要返回 `password_hash`）。
    - 鉴权中间件按计划 6.4；注意 `Authorization` 大小写和 `Bearer ` 前缀。
