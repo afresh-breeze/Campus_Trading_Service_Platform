@@ -91,14 +91,14 @@
 
 - [x] 1\. 建好 GitHub 仓库并邀请 B 为协作者。
 - [x] 2\. 和 B 对齐分工：A 数据库 + 后端主线 + 二手 6 页；B 公共层 + 登录/个人中心 + 代取 + 聊天 + 找跑腿/设置/帮助。
-- [x] 3\. 建好 `dev` 分支并设为默认分支，确认 `git ls-remote origin` 能连通。
+- [x] 3. 建好 `dev` 分支并设为默认分支，确认 `git ls-remote origin` 能连通。
 - [x] 4. 和 B 逐条确认 **14 张表**和 **20 个页面**清单，把接口文档 v0.1 发到群里。
 - [x] 5\. 确认本机 Node、npm、MySQL、Git、Navicat、VS Code 版本（见 1.6）。
-- [ ] 6. 用 Navicat 连接 MySQL，创建 `campus_service` 库和 `cs_app` 账号。
-- [ ] 7. 试跑 `users`、`items` 两张表的 DDL，确认能建、能删、能重跑。
-- [ ] 8. 写 `schema.sql` 的 14 张表 DDL（11-06 的任务顺延到今天，M0 里程碑不变）。
-- [ ] 9\. 搭 Express 骨架 + `/api/health` + 注册/登录/`/api/auth/me`；B 在 11-07 一次性注册 20 个页面，A 把 6 个页面路径发给 B。
-- [ ] 10\. 21:30 和 B 开 15 分钟同步会，确认 M0 验收和明天各自的任务。
+- [x] 6. 用 Navicat 连接 MySQL，创建 `campus_service` 库和 `cs_app` 账号。
+- [x] 7. 试跑 `users`、`items` 两张表的 DDL，确认能建、能删、能重跑。
+- [x] 8. 写 `schema.sql` 的 14 张表 DDL（11-06 的任务顺延到今天，M0 里程碑不变）。
+- [x] 9. 搭 Express 骨架 + `/api/health` + 注册/登录/`/api/auth/me`；B 在 11-07 一次性注册 20 个页面，A 把 6 个页面路径发给 B。
+- [x] 10\. 21:30 和 B 开 15 分钟同步会，确认 M0 验收和明天各自的任务。
 
 ### 0.5 每天建议节奏
 
@@ -258,7 +258,7 @@
 - 鉴权：请求头 `Authorization: Bearer <token>`。
 - 时间：数据库 `DATETIME`，接口返回 `YYYY-MM-DD HH:mm:ss` 字符串。
 - 金额：数据库 `DECIMAL(10,2)`，接口返回数字。
-- 状态/规格枚举：数据库存英文（`on_sale`、`taken`），前端映射中文；校区、片区等名称型字典直接存中文。
+- 状态/规格枚举：数据库存英文（`on_sale`、`taken`），前端映射中文；片区、地标等名称型字典直接存中文。
 - 命名：数据库表/字段 `snake_case`，接口字段 `camelCase`；在 SQL 里用 `AS` 转成 camelCase，减少 JS 映射。
 - 图片：接口返回相对路径（如 `/uploads/xxx.jpg`、`/demo/item-1.jpg`），前端用 `BASE_URL + url` 拼接。不要返回 `127.0.0.1` 绝对地址，否则真机演示会挂。
 - 聊天图片：复用 `POST /api/upload`（5MB，jpg/png/webp），返回相对路径；发送消息时 `msgType='image'`、`content` 传该路径，**必须先上传成功再发消息**。服务端只接受以 `/uploads/` 开头的 `content`；`conversations.last_message` 由触发器固定写 `[图片]`。
@@ -536,6 +536,8 @@ CREATE TABLE items (
 ```
 
 测试完可以保留，也可以 `DROP TABLE items, users;`，11-06 再由 `schema.sql` 正式建。**试跑的目的**是确认 MySQL 能连、字符集对、CHECK 生效。
+
+**校区口径**：`users.campus`、`items.campus` 是可空预留字段。MVP 只在西南大学北碚校区试点，注册和发布都不采集校区，也不按校区筛选或展示；南区/北区只用于代取时定位取件片区和地标，不是两个独立校区。
 
 **如果忘了 root 密码**：先问老师/助教，或者用 MySQL 官方的 `--skip-grant-tables` 重置流程；不要直接重装 MySQL，容易把数据目录弄丢。
 
@@ -1066,7 +1068,7 @@ git pull origin dev
    - 所有表 `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`。
    - 索引命名 `idx_表_字段`、`uk_表_字段`，报告里好写。
    - CHECK：价格/报酬 ≥ 0、`favorite_count >= 0`、`completed_count >= 0`。
-   - ENUM 值见《课程设计开发计划.md》3.5；状态/规格枚举存英文，校区、片区等名称型字典直接存中文。
+   - ENUM 值见《课程设计开发计划.md》3.5；状态/规格枚举存英文，片区、地标等名称型字典直接存中文。
    - 外键动作：`items.seller_id` → `users` 用 `RESTRICT`；`item_images`、`favorites` 对 `items` 用 `CASCADE`；`runner_item_sizes` 对 `runner_profiles` 用 `CASCADE`；`messages` 对 `conversations` 用 `CASCADE`；日志表对应用 `CASCADE` 或 `RESTRICT`，报告里说明选择。
    - 建完在 Navicat 里执行，刷新左侧表列表，应看到 14 张表。
 2. **14:00-17:00 搭 Express**：
@@ -1190,7 +1192,7 @@ git push -u origin docs/api-contract
 **怎么做**
 
 1. **09:00-12:00 认证接口**：
-   - 注册：校验学号（6~20 位）、密码（≥6 位）、昵称、校区；先查学号是否存在；`bcrypt.hash(password, 10)`；插入；返回 token + user（注册后自动登录）。
+   - 注册：校验学号（6~20 位）、密码（≥6 位）、昵称；先查学号是否存在；`bcrypt.hash(password, 10)`；插入；返回 token + user（注册后自动登录）。不采集校区，`campus` 留 `NULL`。
    - 登录：按学号查用户；`bcrypt.compare`；失败统一返回“学号或密码错误”（不要提示“用户不存在”，避免被枚举）；成功 `jwt.sign({ userId, studentNo }, process.env.JWT_SECRET, { expiresIn: '7d' })`。
    - `GET /api/auth/me`：走鉴权中间件，返回当前用户（不要返回 `password_hash`）。
    - 鉴权中间件按计划 6.4；注意 `Authorization` 大小写和 `Bearer ` 前缀。
@@ -1199,7 +1201,7 @@ git push -u origin docs/api-contract
    - 用 `bcrypt.hashSync('123456', 10)` 生成 3 个账号的哈希：`2023001`（买家）、`2023002`（卖家/跑腿）、`2023003`（第三用户）。
    - 插入分类：图书教材、数码电子、生活用品、服饰鞋包、运动户外、其他。
    - 插入书目：高等数学、数据结构、计算机网络、大学英语等 5~8 本，含 ISBN、作者、出版社。
-   - 插入 8~10 个商品：普通商品 + 书籍商品，价格、成色、校区、卖家不同；每个商品 1~3 张图片。
+   - 插入 8~10 个商品：普通商品 + 书籍商品，价格、成色、卖家不同；每个商品 1~3 张图片。
    - **演示图片方案**：在 `server/assets/demo/` 放 4~6 张演示图片（可用手机拍的书/物品照片，或网上找的可商用图片），`app.js` 加 `app.use('/demo', express.static(path.join(__dirname, '../assets/demo')))`，seed 里图片 URL 写 `/demo/item-1.jpg`。`server/uploads/` 仍然只放用户上传，Git 忽略。
    - `npm run seed` 成功后，用 `SELECT` 检查用户、商品、图片数量。
 3. **19:30-21:00 验证 + M0**：
@@ -1269,7 +1271,7 @@ git push origin dev
 1. **09:00-12:00 后端**：
    - `GET /api/categories`：`SELECT category_id AS categoryId, name, sort_no AS sortNo FROM categories ORDER BY sort_no`。
    - `GET /api/books/search?keyword=`：`WHERE title LIKE ? OR isbn LIKE ? OR author LIKE ?`，`LIMIT 10`；返回 `bookId/isbn/title/author/publisher/coverUrl/edition/priceRef`。
-   - `GET /api/items`：参数 `keyword/bookId/categoryId/campus/minPrice/maxPrice/sort/page/pageSize`。
+   - `GET /api/items`：参数 `keyword/bookId/categoryId/minPrice/maxPrice/sort/page/pageSize`。
      - `bookId` 用于搜索结果页“同书商品优先”；传了 `bookId` 就只查该书商品。
      - 动态 WHERE 用条件数组 + 参数数组，禁止拼接用户输入。
      - `sort` 白名单：`latest` → `created_at DESC`；`price_asc` → `price ASC`；`price_desc` → `price DESC`。
@@ -1302,7 +1304,7 @@ git push origin dev
    - `onReachBottom`：`hasMore && !loading` 时加载下一页。
    - 搜索：`bindconfirm` 或 `bindinput` + 防抖 300ms；搜索时重置页码。
    - 分类横向滚动 tab；排序下拉（最新/价格升/价格降）。
-   - 卡片：封面、标题、价格、成色、校区、卖家昵称、收藏数。优先用 B 的 `item-card`；没有就先用页面内简单 WXML。
+   - 卡片：封面、标题、价格、成色、卖家昵称、收藏数。优先用 B 的 `item-card`；没有就先用页面内简单 WXML。
    - 空状态：没有数据时显示“暂无商品，换个关键词试试”；错误状态显示“加载失败，点击重试”。
    - 图片 URL：`{{BASE_URL + item.coverUrl}}`；`coverUrl` 为空时显示本地占位图。
 3. **19:30-21:00 联调 + 文档**：和 B 对一下 `request.js` 的用法；把 3 个接口写进 `docs/接口文档.md`；截图首页。
@@ -1356,7 +1358,7 @@ git push -u origin feature/item-list
    - 测试：上传 jpg 成功；上传 txt 失败；上传 6MB 图片失败。
 2. **14:00-17:00 发布接口 + 存储过程**：
    - 在 `database/objects.sql` 写 `sp_publish_item`，按计划 6.7；先 `DROP PROCEDURE IF EXISTS`，再 `DELIMITER $$` 创建，最后 `DELIMITER ;`。
-   - 入参：`p_seller_id, p_category_id, p_book_id, p_item_type, p_title, p_description, p_price, p_condition_level, p_campus, p_images JSON, OUT p_item_id`。
+   - 入参：`p_seller_id, p_category_id, p_book_id, p_item_type, p_title, p_description, p_price, p_condition_level, p_images JSON, OUT p_item_id`。
    - 事务内插 `items`，`LAST_INSERT_ID()` 拿 `item_id`，用 `JSON_TABLE` 插 `item_images`；`EXIT HANDLER FOR SQLEXCEPTION` 回滚并 `RESIGNAL`。
    - **在 Navicat 查询窗口先用假数据测通**：`CALL sp_publish_item(..., '[{"url":"/demo/item-1.jpg","sortNo":1}]', @id); SELECT @id;`。
    - Node 调用**必须用同一个连接**拿 `@item_id`（否则 `@item_id` 是会话变量，可能落到另一个连接上）：
@@ -1365,8 +1367,8 @@ git push -u origin feature/item-list
      const conn = await pool.getConnection();
      try {
        await conn.query(
-         'CALL sp_publish_item(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @item_id)',
-         [sellerId, categoryId, bookId, itemType, title, description, price, conditionLevel, campus, JSON.stringify(images)]
+         'CALL sp_publish_item(?, ?, ?, ?, ?, ?, ?, ?, ?, @item_id)',
+         [sellerId, categoryId, bookId, itemType, title, description, price, conditionLevel, JSON.stringify(images)]
        );
        const [[{ item_id }]] = await conn.query('SELECT @item_id AS item_id');
        return item_id;
@@ -1379,7 +1381,7 @@ git push -u origin feature/item-list
    - 返回 `{ itemId }` 或完整详情。
 3. **18:00-21:00 发布页**：
    - `pages/item/publish`：顶部“普通商品 / 书籍”切换。
-   - 公共字段：标题、描述、价格、原价、成色 picker、是否可议价 switch、校区 picker、分类 picker、位置、图片（最多 3 张）。
+   - 公共字段：标题、描述、价格、原价、成色 picker、是否可议价 switch、分类 picker、位置、图片（最多 3 张）。
    - 书籍模式：书名/ISBN 搜索 → 选中书目后自动带出作者/出版社；没有匹配时显示“手动填写书籍信息”表单，提交前调 `POST /api/books` 拿 `bookId`。
    - 图片：`wx.chooseMedia({ count: 3 - images.length, mediaType: ['image'] })`；逐张 `wx.uploadFile`；用 `BASE_URL` 和 token；成功后把 `url` 收进表单；支持删除。
    - 提交：校验 → `wx.showLoading` → `POST /api/items` → 成功 toast → 跳转详情或“我的发布”；失败 toast 具体原因。
@@ -1429,13 +1431,13 @@ git push -u origin feature/item-publish
 **怎么做**
 
 1. **09:00-12:00 详情 + 收藏 API**：
-   - 详情：先查商品（用 `v_item_list` 或 JOIN），再查图片列表；卖家信息含昵称、头像、校区、信用分；`isFavorited` 用当前用户查 `favorites`；`isOwner` 由 `item.seller_id === req.user.userId` 计算；`UPDATE items SET view_count = view_count + 1`（可选，但报告有素材）。
+   - 详情：先查商品（用 `v_item_list` 或 JOIN），再查图片列表；卖家信息含昵称、头像、信用分；`isFavorited` 用当前用户查 `favorites`；`isOwner` 由 `item.seller_id === req.user.userId` 计算；`UPDATE items SET view_count = view_count + 1`（可选，但报告有素材）。
    - 收藏：`INSERT IGNORE INTO favorites (user_id, item_id) VALUES (?, ?)`；`affectedRows=1` 说明新收藏，触发器加 1；重复收藏返回成功但不加。
    - 取消：`DELETE FROM favorites WHERE user_id=? AND item_id=?`；触发器减 1，用 `GREATEST(favorite_count - 1, 0)` 防负数。
    - 触发器放 `database/objects.sql`，先 `DROP TRIGGER IF EXISTS`。
    - 测试：两个账号收藏同一商品 → 计数 2；重复收藏 → 仍 2；取消一个 → 1；取消未收藏 → 不变、不报错。
 2. **14:00-18:00 详情页**：
-   - `pages/item/detail`：`onLoad(options.id)` 加载详情；`swiper` 图片轮播；价格/原价；成色/校区/分类标签；描述；卖家卡片；收藏按钮（显示收藏数）；“联系卖家”按钮。
+   - `pages/item/detail`：`onLoad(options.id)` 加载详情；`swiper` 图片轮播；价格/原价；成色/分类标签；描述；卖家卡片；收藏按钮（显示收藏数）；“联系卖家”按钮。
    - 收藏：点击 → 调 API → 重新拉详情或本地更新计数；失败 toast。
    - 联系卖家：`wx.navigateTo({ url: '/pages/chat/detail?peerId=' + sellerId + '&bizType=item&bizId=' + itemId })`；B 的聊天页还没好时，先 toast“聊天功能开发中”，不要报错。
    - 状态：`on_sale` 显示“在售”，`reserved/off_shelf/sold` 显示对应标签；已预订/已下架/已售出商品详情仍可看，收藏/联系是否禁用按产品决定，MVP 可以都显示。
@@ -1579,7 +1581,7 @@ git push origin dev
    - `GET /api/runners`：`asap` 只查 `is_online = 1`；`deadline`/`range` 查 `availability_type='slot'`（按计划重叠，不要求当前在线）或 `availability_type='now' AND is_online=1`；先按 `service_areas` 的 JSON 包含关系（`JSON_CONTAINS`）做片区粗筛，再按 `service_places` 做地标细筛——`service_places` 为空数组，或包含订单 `place`，或包含订单 `area`（表示跑腿勾了整个片区）；`place` 没传时按 `place = area` 处理（等价于用户只选了片区）；再叠加可接规格、时间重叠过滤；分页。
    - 地标匹配真值表：只接某栋楼的跑腿，不匹配“只填片区”的订单；接整个片区（或只按片区）的跑腿，能匹配片区内任何具体地标。
    - 时间匹配：参数与订单一致，`timeType=asap` 不筛时间；`timeType=deadline` 用 `[NOW(), deadline]`；`timeType=range` 用 `[timeStart, deadline]`。`slot` 跑腿的需求窗口与任一 `once`/`weekly` occurrence 重叠即可；`now` 跑腿只看在线状态。MVP 数据量小，应用层解析 JSON 过滤即可，报告里说明；不要再把 `time_slots` 当成“每天重复的 HH:mm”。
-   - 返回昵称、头像、校区、信用分、完成数、`serviceAreas`、`servicePlaces`、在线计划摘要、可接规格、报价、备注；**不返回手机号等敏感信息**。
+   - 返回昵称、头像、信用分、完成数、`serviceAreas`、`servicePlaces`、在线计划摘要、可接规格、报价、备注；**不返回手机号等敏感信息**。
    - 明确：匹配页只展示信息 + 联系 TA（跳聊天），**不直接改订单状态**；订单仍发布到大厅由 `sp_take_errand` 接单。
 3. **16:00-17:00 代取发布 + 大厅**：
    - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、送达地点 `deliveryLocation`（必填，自由文本，≤100 字，不做片区/地标校验）、物品规格、描述、备注 `remark`（选填，≤255 字，取件详细地址与交付要求写这里；前端输入框用灰色小字提示“填写取件详细地址、交付要求等”）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；插入 `status='pending'`；返回 `orderId`。
@@ -3542,7 +3544,7 @@ Page({
       <view class="info">
         <view class="title">{{item.title}}</view>
         <view class="price">￥{{item.price}}</view>
-        <view class="meta">{{item.campus}} · {{item.sellerNickname}}</view>
+        <view class="meta">{{item.sellerNickname}}</view>
       </view>
     </view>
   </view>
@@ -3586,7 +3588,7 @@ Page({
 **表单字段：**
 
 - 模式：普通 / 书籍。
-- 普通：标题、描述、价格、原价、成色、可议价、分类、校区、位置、图片。
+- 普通：标题、描述、价格、原价、成色、可议价、分类、位置、图片。
 - 书籍：先搜索书目（书名/ISBN/作者），选中后带出作者/出版社；没有匹配则手动填写书名、作者、出版社、ISBN、版次，提交前调 `POST /api/books`。
 - 图片：最多 3 张；上传后显示缩略图；可删除；提交时传 `[{ url, sortNo }]`。
 
@@ -3651,7 +3653,7 @@ uploadOne(filePath) {
 
 - `onLoad(options.id)` 保存 `itemId`，`loadDetail()`。
 - 轮播：`swiper` + `image`，`mode="aspectFill"`；点击 `wx.previewImage`。
-- 价格：`￥{{detail.price}}`；原价加删除线；成色/校区/分类用标签。
+- 价格：`￥{{detail.price}}`；原价加删除线；成色/分类用标签。
 - 卖家卡片：头像、昵称、信用分；点击可进主页（MVP 可不做）。
 - 收藏按钮：显示 `favoriteCount`；点击调 `POST/DELETE /api/items/:id/favorite`；成功后重新拉详情或本地更新。
 - 联系卖家：
@@ -4384,7 +4386,7 @@ B 当前阻塞：
 
 | 编号 | 功能 | 输入 | 处理 | 输出 | 优先级 |
 | --- | --- | --- | --- | --- | --- |
-| F-01 | 发布商品 | 标题、价格、分类、图片、校区 | 校验 → 调 `sp_publish_item` → 写 items/item_images | 商品 ID | P0 |
+| F-01 | 发布商品 | 标题、价格、分类、图片 | 校验 → 调 `sp_publish_item` → 写 items/item_images | 商品 ID | P0 |
 | F-02 | 接单 | 订单 ID、当前用户 | 校验状态 → `sp_take_errand` 行锁 → 更新 runner_id | 新状态 taken | P0 |
 | F-03 | 发送消息 | 会话 ID、内容 | 校验参与者 → 插入 messages → 触发器更新会话 | 消息 ID | P0 |
 
@@ -4405,7 +4407,7 @@ B 当前阻塞：
 | `price` | 售价 | DECIMAL(10,2) | ≥ 0 | `items.price` |
 | `status` | 商品状态 | ENUM | on_sale/reserved/sold/off_shelf | `items.status` |
 
-数据存储示例：`items` = 商品编号 + 卖家编号 + 分类编号 + 书目编号 + 标题 + 描述 + 价格 + 原价 + 成色 + 校区 + 状态 + 浏览量 + 收藏数 + 发布时间。
+数据存储示例：`items` = 商品编号 + 卖家编号 + 分类编号 + 书目编号 + 标题 + 描述 + 价格 + 原价 + 成色 + 状态 + 浏览量 + 收藏数 + 发布时间（`campus` 为多校区预留字段，MVP 不采集）。
 
 **常见扣分点：**
 
@@ -4705,7 +4707,7 @@ report/assets/
 
 | # | 页面 | 状态 | 截图内容 | 用在哪 |
 | --- | --- | --- | --- | --- |
-| 1 | 二手首页 | 正常 | 卡片列表、价格、成色、校区、收藏数、右下角圆形加号 | 7.1 |
+| 1 | 二手首页 | 正常 | 卡片列表、价格、成色、收藏数、右下角圆形加号 | 7.1 |
 | 2 | 二手首页 | 加载中 | 骨架屏/加载提示 | 7.1 |
 | 3 | 二手首页 | 空 | 无商品提示 + 去发布按钮 | 7.1 |
 | 4 | 二手首页 | 错误 | 网络失败 + 重试按钮 | 7.1 |
@@ -5732,7 +5734,7 @@ SQL：
 - 分类只用 1~5
 - 价格 5~500 元，DECIMAL(10,2)
 - 状态 80% on_sale，10% sold，10% off_shelf
-- 校区只用“北校区/南校区”
+- `campus` 全部填 `NULL`（MVP 不采集校区）
 - 输出 INSERT 语句，不要解释
 ```
 
