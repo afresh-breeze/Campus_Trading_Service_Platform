@@ -108,9 +108,11 @@ function request(options) {
           return;
         }
         if (status < 200 || status >= 300) {
-          const msg = '服务异常（' + status + '）';
+          // 非 2xx 时后端仍会返回 { code, message }，业务原因必须透出，
+          // 否则「报酬不能低于 2 元」「该单已被别人接走」这类校验文案会被吞掉。
+          const msg = (body && body.message) || '服务异常（' + status + '）';
           if (!opts.silent) wx.showToast({ title: msg, icon: 'none' });
-          reject({ code: status, message: msg });
+          reject({ code: (body && body.code) || status, message: msg, status });
           return;
         }
         // 兼容后端直接返回裸数据的情况
@@ -127,7 +129,9 @@ function request(options) {
         reject(body);
       },
       fail(err) {
-        const msg = /timeout/i.test(err.errMsg || '') ? '请求超时，请检查网络' : '网络连接失败';
+        const msg = /timeout/i.test(err.errMsg || '')
+          ? '请求超时，请检查网络'
+          : '无法连接后端，请确认服务已启动';
         if (!opts.silent) wx.showToast({ title: msg, icon: 'none' });
         reject({ code: -1, message: msg, raw: err });
       },
