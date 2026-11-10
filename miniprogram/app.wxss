@@ -6,13 +6,15 @@
  */
 
 page {
-  /* 主色 */
-  --color-primary: #3b7cff;
-  --color-primary-light: #eaf1ff;
-  --color-primary-dark: #2a63dd;
+  /* 主色：按 A 手册 §12.2 统一为明亮橙黄系（原蓝色 #3b7cff 作废） */
+  --color-primary: #FFA726;
+  --color-primary-light: #FFF4E5;
+  --color-primary-dark: #F57C00;
 
   /* 辅助色 */
-  --color-accent: #ff7a45;
+  --color-accent: #FF8A3D;
+  /* 价格色：比主色深一档，保证在白底上的可读性 */
+  --color-price: #FF5A3D;
   --color-success: #00b578;
   --color-warning: #ff8f1f;
   --color-danger: #fa5151;
@@ -166,7 +168,7 @@ scroll-view {
   box-shadow: var(--shadow-float);
 }
 .btn-primary[disabled] {
-  background-color: #a9c4ff;
+  background-color: #FFD9A0;
   color: #ffffff;
   box-shadow: none;
 }
