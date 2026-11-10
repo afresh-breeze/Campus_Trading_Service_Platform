@@ -1,17 +1,14 @@
 // 注册页（B 成员）
+// 口径：A 的 users 表虽有 campus 列，但注册流程不采集校区，发布也不采集。
+// 因此本页不出现任何校区字段，杜绝前后端字段口径冲突。
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 
-const CAMPUS_LIST = ['东校区', '西校区', '南校区', '北校区'];
-
 Page({
   data: {
-    campusList: CAMPUS_LIST,
-    campusIndex: 0,
     form: {
       studentNo: '',
       nickname: '',
-      campus: '',
       password: '',
       password2: ''
     },
@@ -23,17 +20,11 @@ Page({
     this.setData({ ['form.' + key]: e.detail.value });
   },
 
-  onCampusChange(e) {
-    const index = Number(e.detail.value);
-    this.setData({ campusIndex: index, 'form.campus': CAMPUS_LIST[index] });
-  },
-
   validate() {
     const f = this.data.form;
     if (!f.studentNo) return '请输入学号';
     if (!util.REGEX.studentNo.test(f.studentNo)) return '学号应为 6-12 位数字';
     if (!f.nickname || f.nickname.trim().length < 2) return '昵称至少 2 个字符';
-    if (!f.campus) return '请选择校区';
     if (!util.REGEX.password.test(f.password)) return '密码需 6-20 位';
     if (f.password !== f.password2) return '两次输入的密码不一致';
     return '';
@@ -45,10 +36,10 @@ Page({
 
     this.setData({ submitting: true });
     try {
+      // 只提交后端声明的三个字段，不多传
       const payload = {
-        studentNo: this.data.form.studentNo,
+        studentNo: this.data.form.studentNo.trim(),
         nickname: this.data.form.nickname.trim(),
-        campus: this.data.form.campus,
         password: this.data.form.password
       };
       const data = await http.post('/api/auth/register', payload);
@@ -57,6 +48,7 @@ Page({
       util.toast('注册成功', 'success');
       setTimeout(() => wx.switchTab({ url: '/pages/index/index' }), 500);
     } catch (err) {
+      // 错误文案已由 request 统一 toast（含后端 message），这里只留日志
       console.warn('注册失败', err);
     } finally {
       this.setData({ submitting: false });
