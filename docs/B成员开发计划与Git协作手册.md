@@ -91,16 +91,54 @@
 
 **最危险的拖法**：10 个页面一起开工，每个都写一半。正确做法是**一个页面一个分支，写完接口联调通过再开下一个**；公共层和组件必须 11-08 前定型，否则 A 的 6 个页面会跟着返工。
 
-### 0.4 当前进度与今天（11-08）要做的 8 件事
+### 0.4 当前进度（更新至 11-11）与接下来的事
 
-- [x] 1. 已被邀请为 collaborator，能 clone、能 push。
-- [x] 2. 和 A 对齐分工：B 公共层 + 登录/个人中心 + 代取 + 聊天全栈 + 材料。
-- [x] 3. clone 仓库、切到 `dev`、`git ls-remote origin` 连通。
-- [x] 4. `app.json` 注册全部 20 个页面，`config.js`、`utils/request.js` 初版，能请求 `/api/health`。
-- [x] 5. 登录/注册页可用，token 存 `wx.setStorageSync`，401 跳登录。
-- [ ] 6. **今天**：公共层出稳定版（`request.js` 支持 loading/错误提示/401/超时），`app.wxss` 抽出颜色/字号/间距变量。
-- [ ] 7. **今天**：`item-card`、`empty-state`、`status-tag` 三个组件交付初版，通知 A 可以引用（A 11-08 要写二手首页）。
-- [ ] 8. 21:30 与 A 同步：确认 M0 已过、组件怎么用、11-09 代取发布页字段清单。
+> 这一节每完成一个阶段就改写一次。**只写有证据的进度**：代码入库、编译通过、A 确认，三者之一才算数。
+
+#### 1）里程碑状态
+
+| 里程碑 | 日期 | 状态 | 依据 |
+| --- | --- | --- | --- |
+| M0 环境与登录打通 | 11-07 | ✅ 已过 | `app.json` 注册 20 页；`/api/health`、`/api/auth/me` 可通；登录页渲染成功，开发者工具 **0 错误 0 警告** |
+| M1 二手闭环（配合 A） | 11-11 | 🟡 配合中 | 公共层与组件已交付，A 可引用；B 侧页面尚未开始 |
+| M2 代取 + 聊天闭环 | 11-16 | ⬜ 未开始 | 依赖公共层收尾与 A 的 `routes/errands.js`、`routes/chat.js` |
+
+#### 2）公共层遗留项（A 11-10 评审提出的 7 项，已全部闭环）
+
+| # | 问题 | 处理 | 状态 |
+| --- | --- | --- | --- |
+| 1 | 缺片区/地标常量 | 新增 `utils/campus.js`，落地 **25 个固定片区 + 52 条地标**，导出 `zonesByCategory/isValidZone/placesOfZone/isValidPlace/zoneOfPlace/searchLandmarks/displayArea` | ✅ |
+| 2 | mock 路由键与后端不一致 | 改为后端真实路径（`/api/items/:id`、`/api/auth/me`、`/api/conversations/:id/messages`），并加 `:param` 通配匹配 `match()` | ✅ |
+| 3 | `MOCK` 开关未成体系 | `config.MOCK = true`，`onLaunch` 打印提示；联调时改 `false` 即切真实后端，页面代码不动 | ✅ |
+| 4 | 非 2xx 响应吞掉后端 `message` | `request.js` 在非 2xx 分支透出 `body.message`；`fail` 分支区分**超时**与**连不上后端** | ✅ |
+| 5 | `app.js` 无启动引导 | 补 `bootstrap()`（冷启动用 `/api/auth/me` 校验 token，401 才清登录态，网络异常保留缓存）、`setSession/clearSession/isLogin/requireLogin` | ✅ |
+| 6 | 注册页采集校区，与后端冲突 | 删除 `register.js` 的 `CAMPUS_LIST`/`onCampusChange` 与 `register.wxml` 的校区 picker，只提交 `studentNo/nickname/password` | ✅ |
+| 7 | 未读数无统一刷新入口 | `app.js` 补 `refreshUnread()` + `setUnreadBadge()`，`onShow` 与 `bootstrap` 后各调一次；未读数按 `messages.is_read = 0` 聚合，**表内不存** | ✅ |
+
+#### 3）公共组件（3 个，各 4 文件）
+
+| 组件 | 用途 | 关键约束 |
+| --- | --- | --- |
+| `status-tag` | 状态标签，item/errand 两域 | 枚举严格对齐 `schema.sql`：item 用 `on_sale/reserved/sold/off_shelf`，errand 用 `pending/taken/completed/cancelled` |
+| `empty-state` | 空状态，几何图形拼空盒子 | **不依赖图片资源**；只在真无内容时用，加载中用骨架屏 |
+| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus` |
+
+#### 4）口径修正（与 A 对齐后统一）
+
+- **主色**：`app.wxss` 从 `#3b7cff` 改为 **`#FFA726`**（A 手册 §12.2 橙黄系），价格色 `#FF5A3D`，禁用态 `#FFD9A0`。
+- **校区/片区**：全部改为 25 个固定片区，代码与假数据中**禁止出现"东校区/西校区"**（已清零）。
+- **字段命名**：`items.campus → items.location`；`areaName/landmark → pickupArea/pickupPlace`；`relateType/relateId → bizType/bizId`；`lastMessageAt → lastTime`；`sellerName → sellerNickname`；`messages.msg_type` 仅 `text/image`，已读状态在 `messages.is_read`。
+
+#### 5）今天（11-11）要做的 3 件事
+
+- [ ] 1. 在微信开发者工具重新编译，确认引入新组件后仍是 **0 错误**；把 `status-tag` 接到登录页或我的页试渲染一次。
+- [ ] 2. 写「我的」页（tab 4）：用户信息卡 + 六大入口（我的发布/我的收藏/我的代取/接单设置/消息/设置）+ 退出登录。
+- [ ] 3. 21:30 与 A 同步：组件是否可用、`routes/errands.js` 与 `routes/chat.js` 何时能出、11-12 代取详情页的字段确认。
+
+#### 6）已知阻塞（写在这里，避免口头遗忘）
+
+- A 的 `server/src/routes/errands.js`、`chat.js` 仍为占位文件，**联调前 B 侧只能用 mock**。
+- 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
 
 ### 0.5 每天建议节奏
 
