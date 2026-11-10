@@ -15,14 +15,6 @@
       <input class="field-input" maxlength="12" placeholder="2-12 个字符" placeholder-class="field-placeholder" value="{{form.nickname}}" data-key="nickname" bindinput="onInput" />
     </view>
     <view class="field">
-      <text class="field-label">校区</text>
-      <picker mode="selector" range="{{campusList}}" value="{{campusIndex}}" bindchange="onCampusChange">
-        <view class="field-input {{form.campus ? '' : 'field-placeholder'}}">
-          {{form.campus || '请选择校区'}}
-        </view>
-      </picker>
-    </view>
-    <view class="field">
       <text class="field-label">密码</text>
       <input class="field-input" password="{{true}}" maxlength="20" placeholder="6-20 位" placeholder-class="field-placeholder" value="{{form.password}}" data-key="password" bindinput="onInput" />
     </view>
