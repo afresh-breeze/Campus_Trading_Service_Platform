@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1660" viewBox="0 0 1120 1660" font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
+  <defs>
+    <marker id="arrow-right" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="0">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-down" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="90">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-left" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="180">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1120" height="1660" fill="#F4F1E7"/>
+
+  <text x="40" y="58" font-size="30" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 二手商品交易流程图</text>
+  <text x="40" y="86" font-size="13" fill="#806E5C">发布 · 浏览 / 搜索 · 收藏 · 联系卖家 · 线下交易　|　二手商品</text>
+  <line x1="40" y1="98" x2="640" y2="98" stroke="#E6A874" stroke-width="2"/>
+  <text x="40" y="126" font-size="13" fill="#806E5C">胶囊 = 开始 / 结束　灰色矩形 = 操作步骤　蓝色矩形 = 商品状态　紫色菱形 = 判断</text>
+  <text x="40" y="147" font-size="13" fill="#806E5C">实线 = 正常流转　on_sale / reserved / sold / off_shelf = items.status 枚举</text>
+
+  <rect x="380" y="178" width="160" height="44" rx="22" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="200" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">开始</text>
+
+  <line x1="460" y1="222" x2="460" y2="266" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <rect x="340" y="268" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="292" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">注册 / 登录</text>
+  <text x="460" y="316" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">登录后可发布 / 收藏 / 聊天</text>
+
+  <line x1="460" y1="332" x2="460" y2="372" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <polygon points="460,374 570,430 460,486 350,430" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="460" y="430" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#0f172a">是否发布商品？</text>
+
+  <line x1="570" y1="430" x2="758" y2="430" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="610" y="418" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">是（卖家）</text>
+
+  <rect x="760" y="398" width="220" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="870" y="422" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">填写商品信息</text>
+  <text x="870" y="446" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">分类 / 书目 / 价格 / 图片</text>
+
+  <line x1="870" y1="462" x2="870" y2="518" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <rect x="760" y="520" width="220" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="870" y="544" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">发布商品</text>
+  <text x="870" y="568" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">生成 on_sale 在售商品</text>
+
+  <line x1="870" y1="584" x2="870" y2="640" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <rect x="760" y="642" width="220" height="64" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="870" y="666" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">在售</text>
+  <text x="870" y="690" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">on_sale · 首页 / 搜索可见</text>
+
+  <line x1="870" y1="706" x2="870" y2="762" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <rect x="760" y="764" width="220" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="870" y="788" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">我的发布</text>
+  <text x="870" y="812" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">在售 / 已预订 / 已售 / 已下架</text>
+
+  <path d="M980,796 H1050 V1328 H582" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
+  <text x="700" y="1316" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">等待买家联系</text>
+
+  <line x1="460" y1="486" x2="460" y2="536" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="472" y="516" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">否（买家）</text>
+
+  <rect x="340" y="538" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="562" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">浏览首页 / 搜索</text>
+  <text x="460" y="586" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">首页卡片 / 关键词搜索</text>
+
+  <line x1="460" y1="602" x2="460" y2="646" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <polygon points="460,648 570,704 460,760 350,704" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="460" y="704" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#0f172a">是否搜索商品？</text>
+
+  <line x1="460" y1="760" x2="460" y2="800" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="474" y="780" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">是，搜索</text>
+
+  <rect x="340" y="802" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="826" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">搜索结果页</text>
+  <text x="460" y="850" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">关键词 / 分类 / 价格排序</text>
+
+  <line x1="460" y1="866" x2="460" y2="906" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <rect x="340" y="908" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="932" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">商品详情</text>
+  <text x="460" y="956" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">图片 / 成色 / 卖家信息</text>
+
+  <path d="M350,704 H260 V940 H338" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="300" y="692" text-anchor="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">否，只浏览首页</text>
+
+  <line x1="460" y1="972" x2="460" y2="1016" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <polygon points="460,1018 570,1074 460,1130 350,1074" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="460" y="1074" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#0f172a">是否收藏？</text>
+
+  <line x1="570" y1="1074" x2="758" y2="1074" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="610" y="1062" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">是</text>
+
+  <rect x="760" y="1042" width="220" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="870" y="1066" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">收藏商品</text>
+  <text x="870" y="1090" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">可随时取消收藏</text>
+
+  <path d="M870,1106 V1216 H582" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
+
+  <line x1="460" y1="1130" x2="460" y2="1182" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="472" y="1156" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">否</text>
+
+  <rect x="340" y="1184" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="1208" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">联系卖家</text>
+  <text x="460" y="1232" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">创建 / 进入商品会话</text>
+
+  <line x1="460" y1="1248" x2="460" y2="1294" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="472" y="1274" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">谈妥</text>
+
+  <rect x="340" y="1296" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="1320" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">线下交易</text>
+  <text x="460" y="1344" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">自行约定时间与地点</text>
+
+  <line x1="460" y1="1360" x2="460" y2="1406" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="472" y="1386" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">交易完成</text>
+
+  <rect x="340" y="1408" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="1432" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">卖家标记售出</text>
+  <text x="460" y="1456" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">sold · 终态，不能再改</text>
+
+  <line x1="460" y1="1472" x2="460" y2="1512" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+
+  <rect x="380" y="1514" width="160" height="44" rx="22" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text x="460" y="1536" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">结束</text>
+
+  <text x="40" y="1608" font-size="12" fill="#806E5C">注：买家不搜索时从首页卡片直接进入商品详情，不经过搜索结果页；卖家可在「我的发布」标记预订（reserved）/ 下架（off_shelf）/ 重新上架。</text>
+  <text x="40" y="1630" font-size="12" fill="#806E5C">已预订商品从首页与搜索隐藏，详情仍可查看；sold 为终态。</text>
+</svg>

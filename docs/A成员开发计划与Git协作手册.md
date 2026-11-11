@@ -1587,8 +1587,8 @@ git push origin dev
 3. **16:00-17:00 代取发布 + 大厅**：
    - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、送达地点 `deliveryLocation`（必填，自由文本，≤100 字，不做片区/地标校验）、物品规格、描述、备注 `remark`（选填，≤255 字，取件详细地址与交付要求写这里；前端输入框用灰色小字提示“填写取件详细地址、交付要求等”）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；插入 `status='pending'`；返回 `orderId`。
    - 不校验“截止时间必须晚于当前时间”，也不做超时自动取消；`deadline` 只作参考和匹配用。
-   - `GET /api/errands?status=pending&page=&pageSize=`：用 `v_errand_hall`；默认只查 `pending`；分页；按 `created_at DESC`；返回发布者昵称/头像/信用分。
-   - `v_errand_hall`：`errand_orders` + `users`（发布者）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`。
+   - `GET /api/errands?status=pending&page=&pageSize=`：直查 `errand_orders` + `users`（发布者）；默认只查 `pending`；分页；按 `created_at DESC`；返回发布者昵称/头像/信用分。
+   - `v_errand_hall`：已创建；结构与大厅直查结果一致（`errand_orders` + `users`）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`；接口未接入，可在 Navicat 中查询演示。
    - 测试：seed 几条 pending 订单；大厅能看到；三种时间模式都能发布，非法组合 400；报酬负数 400；`pickupPlace` 不在清单内 400；只传片区名作为 `pickupPlace` 能成功；送达地点为空或超过 100 字返回 400。
 4. **18:00-21:00 聊天数据库对象提前做**：
    - 今天先写 `conversations`、`messages` 相关对象（见 11-13 的清单），能写多少写多少；这样 B 的聊天后端不会等到 11-15。
@@ -1789,7 +1789,7 @@ git push -u origin feature/errand-status
 2. **14:00-17:00 数据库对象第一批**：
    - `v_user_summary`：用户 + 发布商品数、收藏数、完成跑腿数、发布代取数；用子查询或聚合，先保证结果对，再考虑性能。
    - `fn_completed_errands(user_id)`：查该用户作为跑腿完成的订单数；`READS SQL DATA`。
-   - `sp_refresh_user_credit`：游标遍历有完成单的用户，`credit_score = LEAST(100, 60 + count*2)`；按计划 6.10。
+   - `sp_refresh_user_credit`：游标遍历全部用户（`SELECT user_id FROM users`），按各自的完成单数重算 `credit_score = LEAST(100, 60 + count*2)`；按计划 6.10。
    - 每个对象写测试 SQL + 截图。
 3. **17:00-19:00 文档 + 截图**：把代取接口的实际响应示例补进 `docs/接口文档.md`；整理 `docs/screenshots/2026-11-15/`。
 4. **19:30-21:00 Git**：合并 `fix/errand-integration`、`feature/db-objects-batch1`。
@@ -1988,7 +1988,7 @@ git push -u origin feature/db-objects
 - [ ] 清单里所有视图/过程/函数都有实现。
 - [ ] `objects.sql` 从空库执行成功。
 - [ ] 每个对象都有测试 SQL 和截图。
-- [ ] 至少一个接口或演示脚本真实调用了每个对象（不能只建不用）。
+- [ ] 每个对象至少有一个使用它的接口或演示查询（接口未接入的，用 Navicat 执行并截图）。
 - [ ] `SHOW CREATE VIEW`、`SHOW PROCEDURE STATUS`、`SHOW FUNCTION STATUS` 能看到对象。
 
 **注意**
@@ -2846,7 +2846,7 @@ git tag -l
 
 ## 5. 数据库实施手册（40 分核心）
 
-这一章是 A 的“主战场”，也是答辩最容易被问的部分。原则：**每个对象都要在系统里真实使用，不能只建不用。**
+这一章是 A 的“主战场”，也是答辩最容易被问的部分。原则：**每个对象都要有明确的使用或演示场景，不能只建不用。**
 
 ### 5.1 文件与执行顺序
 
@@ -2990,7 +2990,7 @@ DROP VIEW IF EXISTS v_item_list;
 | 对象 | 类型 | 最晚完成 | 谁使用 | 备注 |
 | --- | --- | --- | --- | --- |
 | `v_item_list` | 视图 | 11-08 | A 首页/我的发布/收藏 | 首图子查询 |
-| `v_errand_hall` | 视图 | 11-12 | B 代取大厅 | 含发布者信息 |
+| `v_errand_hall` | 视图 | 11-12 | A 演示（大厅接口直查表） | 含发布者信息；可在 Navicat 查询 |
 | `sp_publish_item` | 存储过程 | 11-09 | A 发布接口 | JSON_TABLE 多图 |
 | `trg_fav_after_insert` | 触发器 | 11-10 | A 收藏 | `favorite_count + 1` |
 | `trg_fav_after_delete` | 触发器 | 11-10 | A 取消收藏 | `GREATEST(...-1,0)` |
@@ -3002,9 +3002,9 @@ DROP VIEW IF EXISTS v_item_list;
 | `sp_take_errand` | 存储过程 | 11-13 | A 接单 | 事务 + `FOR UPDATE` |
 | `trg_errand_status_log` | 触发器 | 11-13 | A 代取状态 | `@current_user_id` |
 | `sp_complete_errand` | 存储过程 | 11-14 | A 完成订单 | 完成数 + 信用分 |
-| `v_user_summary` | 视图 | 11-15/17 | 个人中心/报告 | 统计 |
-| `fn_completed_errands` | 函数 | 11-15/17 | 个人中心 | 完成单数 |
-| `sp_refresh_user_credit` | 存储过程 | 11-15/17 | 演示/维护 | 游标 |
+| `v_user_summary` | 视图 | 11-15/17 | A 演示（报告可截图） | 个人中心接口当前分接口查询；可在 Navicat 查询 |
+| `fn_completed_errands` | 函数 | 11-15/17 | `sp_refresh_user_credit` 调用 | 完成单数；可在 Navicat 查询 |
+| `sp_refresh_user_credit` | 存储过程 | 11-15/17 | A 演示/维护 | 游标；未接入接口 |
 | `cs_app` / `cs_readonly` | 权限 | 11-19 | 安全演示 | GRANT |
 | 索引 | 索引 | 11-06 | 全局 | 建表时一起 |
 
@@ -4637,7 +4637,11 @@ report/assets/
 ├─ ch1/fig1-1_module.png
 ├─ ch1/fig1-2_architecture.png
 ├─ ch2/fig2-1_item-flow.png
-├─ ch2/fig2-4_dfd-top.png
+├─ ch2/fig2-2_errand-flow.png
+├─ ch2/fig2-3_chat-flow.png
+├─ ch2/fig2-4_runner-online-flow.png
+├─ ch2/fig2-5_dfd-top.png
+├─ ch2/fig2-6_dfd-level0.png
 ├─ ch3/fig3-1_local-er-user-item.png
 ├─ ch3/fig3-2_local-er-runner-errand.png
 ├─ ch3/fig3-3_local-er-chat-feedback.png
@@ -4648,13 +4652,21 @@ report/assets/
 ├─ ch6/fig6-2_v_item_list.png
 ├─ ch7/fig7-a-01_index.png         # A 的小程序截图，加 a_ 前缀
 ├─ ch7/fig7-b-01_login.png         # B 的截图，加 b_ 前缀
-└─ source/                          # ER 图 SVG 源文件
+└─ source/                          # 图 SVG 源文件
+   ├─ fig2-1_item-flow.svg
+   ├─ fig2-2_errand-flow.svg
+   ├─ fig2-3_chat-flow.svg
+   ├─ fig2-4_runner-online-flow.svg
+   ├─ fig2-5_dfd-top.svg
+   ├─ fig2-6_dfd-level0.svg
    ├─ fig3-1_local-er-user-item.svg
    ├─ fig3-2_local-er-runner-errand.svg
    ├─ fig3-3_local-er-chat-feedback.svg
    ├─ fig3-4_global-er.svg
    └─ fig3-4_global-er-overview.svg
 ```
+
+> `ch2/` 的 6 张流程图/DFD 和 `ch3/` 的 5 张 ER 图已产出；`ch1/`、`ch5/`、`ch6/`、`ch7/` 为后续截图预留。
 
 规则：
 
@@ -4794,7 +4806,7 @@ report/assets/
 >
 > 逻辑和物理设计上，主键统一用 BIGINT 自增，金额用 DECIMAL(10,2)，状态用 ENUM，字符集是 utf8mb4，存储引擎是 InnoDB。索引按真实查询建：`items(status, created_at)` 支撑首页在售列表，`items(category_id, price)` 支撑分类和价格筛选，`items(seller_id, status)` 支撑我的发布，`messages(conversation_id, message_id)` 支撑增量拉消息。我们还保留了两个冗余字段：`items.favorite_count` 和 `conversations.last_message`，用触发器维护，避免列表页频繁 COUNT 和子查询。这是有意的反规范化，报告里写了权衡。
 >
-> 数据库对象方面，4 个视图分别支撑商品列表、代取大厅、会话列表和个人统计；5 个存储过程覆盖发布商品、接单、完成订单、获取会话和信用分刷新；2 个函数计算未读数和完成单数；5 个触发器维护收藏数、状态日志和会话最后消息。所有对象都在系统里真实调用，不是只写在 SQL 文件里。
+> 数据库对象方面，4 个视图覆盖商品列表、代取大厅、会话列表和个人统计场景：`v_item_list` 和 `v_conversation_base` 已接入后端查询，`v_errand_hall` 和 `v_user_summary` 已创建，可在 Navicat 中直接查询演示。5 个存储过程中，发布商品、接单、完成订单、获取会话这 4 个已接入接口，`sp_refresh_user_credit` 作为游标示例用于维护演示；2 个函数中 `fn_unread_count` 已用于未读数，`fn_completed_errands` 供信用分刷新过程调用。5 个触发器维护收藏数、状态日志和会话最后消息，都随业务写入自动执行。核心业务对象均已接入系统，统计和演示对象也都能在数据库里直接执行验证。
 >
 > 代取订单的时间要求用 `time_type + time_start + deadline` 三列表达“尽快 / 截止时间 / 时间范围”，`deadline` 只作参考，不判断超时、不自动取消，只用于找跑腿时和跑腿的在线计划做重叠匹配。发布者可以撤回接单，接单者也可以释放接单，订单都会退回大厅 `pending`；`taken` 不能直接变 `cancelled`，必须先回 `pending`，这样状态变化都有明确操作人，日志可追溯。
 >
@@ -4947,7 +4959,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - 5 存储过程：发布商品、接单、完成、获取会话、信用分刷新。
 - 2 函数：未读数、完成单数。
 - 5 触发器：收藏 ±1、商品日志、代取日志、会话最后消息。
-- 一句总结：“所有对象都在系统接口中真实调用。”
+- 一句总结：“核心对象都在系统接口中调用，统计/演示对象可在数据库中直接执行验证。”
 
 **P8 核心业务与并发：**
 
@@ -5027,7 +5039,7 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 #### 9.7.1 Markdown 写作约定
 
 - 章标题用 `## 第 1 章 项目概况`，节标题用 `### 1.1 ...`，小节用 `#### 1.1.1 ...`。
-- 图片：`![图 3-1 局部 ER 图](assets/ch3/fig3-1_local-er.png)`，图片下一行写图题。
+- 图片：`![图 3-1 局部 ER 图](assets/ch3/fig3-1_local-er-user-item.png)`，图片下一行写图题。
 - 表格：表题写在表格上方，格式 `表 5-1 索引设计`。
 - SQL 代码块标注 `sql`，JavaScript 标注 `js`，Shell 标注 `bash`。
 - 每个图/表在正文都要被引用；不要出现“孤图”。
