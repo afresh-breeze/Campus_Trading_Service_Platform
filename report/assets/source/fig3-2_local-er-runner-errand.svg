@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1193" viewBox="-34.34974522350245 -52.933208493809104 1480 1193" font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
+<rect x="-34.34974522350245" y="-52.933208493809104" width="1480" height="1193" fill="#ffffff"/>
+<text x="-14.349745223502453" y="-7.933208493809104" font-size="31" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 跑腿代取局部 ER 图（Chen 记法）</text>
+<text x="-14.349745223502453" y="23.066791506190896" font-size="13" fill="#806E5C">4 个实体 · 5 个联系　|　跑腿设置 / 代取订单</text>
+<line x1="-14.349745223502453" y1="33.066791506190896" x2="605.6502547764976" y2="33.066791506190896" stroke="#E6A874" stroke-width="2"/>
+<text x="-14.349745223502453" y="72.0667915061909" font-size="13" fill="#806E5C">矩形 / 双矩形 = 强实体 / 弱实体　菱形 / 双菱形 = 联系 / 标识联系　椭圆 / 双椭圆 = 属性 / 多值属性</text>
+<text x="-14.349745223502453" y="93.0667915061909" font-size="13" fill="#806E5C">下划线 = 主键（虚线 = 弱实体部分键）　1 / N / M = 基数　双线 = 完全参与　虚线椭圆 = 派生属性</text>
+<line x1="643.1615330643922" y1="389.2676726921684" x2="579.5664434013363" y2="358.55746669857416" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="689.9486687604515" y1="388.4469762437893" x2="684.3094997576076" y2="276.85983856604764" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="725.6530777551668" y1="388.4469762437893" x2="776.9360734242672" y2="352.7631033673273" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="739.1615330643922" y1="417.0983264966286" x2="812.6849705454111" y2="424.2229777365651" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="702.8864325877537" y1="388.4469762437893" x2="750.1829205811608" y2="291.63457204534876" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="676.2673751252441" y1="388.4469762437893" x2="620.6217622297929" y2="298.78130229651725" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="668.7060078006327" y1="436.4469762437893" x2="585.12748294508" y2="525.7739714029954" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="686.5008829128057" y1="436.4469762437893" x2="665.325592677034" y2="545.4890517330905" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="722.6054955131731" y1="436.4469762437893" x2="793.7425812735775" y2="490.74325207196176" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="700.2919795743176" y1="436.4469762437893" x2="739.1438826934492" y2="538.5718475570965" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="643.1615330643922" y1="423.03841767409835" x2="578.6474051719941" y2="437.27378448659425" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1125.537777000186" y1="312.04732714223405" x2="1165.6702110597564" y2="432.29957472144423" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1170.2481269785078" y1="289.8030007938193" x2="1245.985925143116" y2="292.3252097594241" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1097.302658834413" y1="264.04732714223405" x2="1021.7061675206426" y2="174.34281308082691" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1083.543104707541" y1="312.04732714223405" x2="1001.8756167145011" y2="369.7203719384231" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1109.5184769568295" y1="312.04732714223405" x2="1069.3860428972591" y2="432.2995747214443" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1064.8081269785077" y1="280.9917785369052" x2="999.9994648925826" y2="272.31839717511497" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1115.0804679008716" y1="264.04732714223405" x2="1102.025832708946" y2="136.0428809884038" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1127.8542194451281" y1="264.04732714223405" x2="1177.529817048989" y2="148.59084189899548" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1150.4400640482727" y1="264.04732714223405" x2="1230.5981019210087" y2="205.5945868836552" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="304.5315926906832" y1="858.8355332741025" x2="375.0810941704569" y2="1044.6839040796501" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="348.14100415996023" y1="853.4004491904441" x2="492.36978595796774" y2="904.1894326274013" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="303.3637153337871" y1="810.8355332741025" x2="353.16174320129375" y2="660.363906815058" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="288.1411807377357" y1="810.8355332741025" x2="229.38414612404603" y2="617.1263251052" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="248.69551035016025" y1="810.8355332741025" x2="105.91505059023712" y2="737.4980304499067" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="269.2478473277956" y1="858.8355332741025" x2="133.82569486722102" y2="983.0135863800102" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="284.00441808839935" y1="858.8355332741025" x2="199.12708489551204" y2="1037.2650553624671" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="242.70100415996026" y1="854.5255480542789" x2="94.04402334232876" y2="910.0463779001736" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="242.70100415996026" y1="833.3994908575859" x2="94.44299905906156" y2="829.3610844859423" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="276.939806517364" y1="810.8355332741025" x2="161.46964699045856" y2="660.8840051188951" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="348.1410041599603" y1="819.7458752340499" x2="556.4244000147727" y2="760.130449989929" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="340.05491326754657" y1="810.8355332741025" x2="486.68215019718525" y2="731.9929278050421" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="348.1410041599603" y1="829.083010368697" x2="496.30413667220245" y2="812.9162460759562" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="319.3994279467524" y1="858.8355332741025" x2="450.909700183913" y2="990.4641407987718" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="293.99517371884" y1="858.8355332741025" x2="282.05394643015944" y2="1059.8338053429488" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="230.27060027490205" y1="335.31518766012965" x2="183.91471311065555" y2="382.29684739852206" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="228.3032525874056" y1="287.31518766012965" x2="181.27304610751622" y2="243.30633472286692" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="277.02040463122125" y1="335.31518766012965" x2="323.42783016047434" y2="383.5944975068463" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="277.63126390989794" y1="287.31518766012965" x2="323.75249110773626" y2="240.5713556361966" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1063.6317546268838" y1="299.39738546177443" x2="920.1300893661032" y2="341.26641802375286" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1065.9844993301317" y1="307.4611682193479" x2="922.4828340693512" y2="349.3302007813263" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="857.7431527668596" y1="363.8439774780607" x2="739.1615330643922" y2="398.4421661997889" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="315.00520308267284" y1="813.1749290888941" x2="473.54838095648086" y2="576.7791816478216" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="308.028892532895" y1="808.496137459311" x2="466.572070406703" y2="572.1003900182384" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="506.5536736871323" y1="538.239860619252" x2="655.9402353967915" y2="436.4469762437893" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="326.6085373774003" y1="810.8355332741025" x2="542.7148834302265" y2="644.533432075297" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="576.5976212030046" y1="606.6308697531957" x2="677.0020997819397" y2="436.4469762437893" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="251.66518041489311" y1="335.64684698298333" x2="263.36187722873876" y2="483.3065556169692" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="260.0389494811056" y1="334.98352833727597" x2="271.73564629495127" y2="482.64323697126184" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="272.0681184268744" y1="540.0274897734442" x2="293.51987130436095" y2="810.8355332741025" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="325.0309320924" y1="327.7568007329724" x2="423.46623349887597" y2="350.52600639467653" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="491.3790785661608" y1="366.23502048122987" x2="643.1615330643922" y2="401.3440298805866" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="1170.2481269785078" y1="271.77463311493506" x2="1324.1206349772694" y2="224.27993960437036" stroke="#4B5563" stroke-width="1.4"/>
+<text x="1032.1690062930913" y="312.9522911156124" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="787.1602399547103" y="384.4377334423606" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="340.05481982506933" y="768.2842987347095" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="588.1765924871505" y="482.6215222579588" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="378.91394705795705" y="770.584519396821" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="643.4652705785704" y="493.291334688441" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="259.8003902200673" y="385.1590511494896" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="289.6585557864134" y="762.0900854439841" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="358.1562935267068" y="335.41907388436437" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="610.0361716300854" y="393.68175672919466" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<rect x="643.1615330643922" y="388.4469762437893" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="691.1615330643922" y="413.4469762437893" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">用户</text>
+<ellipse cx="552.6862158569566" cy="345.57694682799456" rx="38.800000000000004" ry="18" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+<text x="552.6862158569566" y="346.57694682799456" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#1f2937">用户ID</text>
+<line x1="528.8862158569566" y1="355.57694682799456" x2="576.4862158569565" y2="355.57694682799456" stroke="#334155" stroke-width="1.2"/>
+<ellipse cx="683.4002188351038" cy="258.8671067582235" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="683.4002188351038" y="259.8671067582235" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">学号</text>
+<ellipse cx="799.0248072422934" cy="337.3932608048856" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="799.0248072422934" y="338.3932608048856" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">密码哈希</text>
+<ellipse cx="844.2204414227225" cy="427.27886357903566" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="844.2204414227225" y="428.27886357903566" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">昵称</text>
+<ellipse cx="758.6622574685823" cy="274.27799812395676" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="758.6622574685823" y="275.27799812395676" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">头像</text>
+<ellipse cx="610.0752648271244" cy="281.7869922658206" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="610.0752648271244" y="282.7869922658206" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">校区</text>
+<ellipse cx="570.2239167712809" cy="541.7025940457461" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="570.2239167712809" y="542.7025940457461" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">学院</text>
+<ellipse cx="661.8468526210481" cy="563.4028102492156" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="661.8468526210481" y="564.4028102492156" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">手机号</text>
+<ellipse cx="813.3996705883368" cy="505.7467728375997" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="813.3996705883368" y="506.7467728375997" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">信用分</text>
+<ellipse cx="745.8401109670313" cy="556.1733392685114" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="745.8401109670313" y="557.1733392685114" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">状态</text>
+<ellipse cx="540.9978627225162" cy="445.5813453976688" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="540.9978627225162" y="446.5813453976688" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">注册时间</text>
+<rect x="1064.8081269785077" y="264.04732714223405" width="105.44" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="1070.8081269785077" y="270.04732714223405" width="93.44" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="1117.5281269785078" y="289.04732714223405" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">跑腿设置</text>
+<ellipse cx="1171.6181592001685" cy="450.1219208893204" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1171.6181592001685" y="451.1219208893204" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">在线状态</text>
+<ellipse cx="1288.2957028199255" cy="293.73420372512226" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1288.2957028199255" y="294.73420372512226" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">接单方式</text>
+<ellipse cx="1007.4220645182484" cy="157.39297193919904" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<ellipse cx="1007.4220645182484" cy="157.39297193919904" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1007.4220645182484" y="158.39297193919904" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">服务片区</text>
+<ellipse cx="980.0248072422934" cy="385.15127038397145" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<ellipse cx="980.0248072422934" cy="385.15127038397145" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="980.0248072422934" y="386.15127038397145" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">服务地标</text>
+<ellipse cx="1063.4380947568472" cy="450.12192088932045" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<ellipse cx="1063.4380947568472" cy="450.12192088932045" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1063.4380947568472" y="451.12192088932045" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">时间计划</text>
+<ellipse cx="948.1757584206641" cy="265.38280005977134" rx="56.16" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="948.1757584206641" y="266.38280005977134" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">手动在线截止</text>
+<ellipse cx="1100.1925269338817" cy="118.0667915061909" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1100.1925269338817" y="119.0667915061909" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">起步价</text>
+<ellipse cx="1185.0570775529984" cy="131.09591313671652" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1185.0570775529984" y="132.09591313671652" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">备注</text>
+<ellipse cx="1251.9354733614255" cy="190.03497659743948" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4"/>
+<text x="1251.9354733614255" y="191.03497659743948" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">完成单数</text>
+<rect x="242.70100415996026" y="810.8355332741025" width="105.44" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="295.42100415996026" y="835.8355332741025" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">代取订单</text>
+<ellipse cx="381.81048113643755" cy="1062.4111109048627" rx="38.800000000000004" ry="18" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+<text x="381.81048113643755" y="1063.4111109048627" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#1f2937">订单ID</text>
+<line x1="358.01048113643753" y1="1072.4111109048627" x2="405.61048113643756" y2="1072.4111109048627" stroke="#334155" stroke-width="1.2"/>
+<ellipse cx="525.022202383537" cy="915.6877134583206" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="525.022202383537" y="916.6877134583206" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">取件片区</text>
+<ellipse cx="359.0609471066206" cy="642.538646569616" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="359.0609471066206" y="643.538646569616" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">取件地标</text>
+<ellipse cx="223.96890735389036" cy="599.273456574493" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="223.96890735389036" y="600.273456574493" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">送达地点</text>
+<ellipse cx="78.89268207672265" cy="723.6183088794023" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="78.89268207672265" y="724.6183088794023" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">物品规格</text>
+<ellipse cx="116.00931495557177" cy="999.3506725260003" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="116.00931495557177" y="1000.3506725260003" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">物品描述</text>
+<ellipse cx="190.8556326726872" cy="1054.6533404508004" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="190.8556326726872" y="1055.6533404508004" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">备注</text>
+<ellipse cx="67.38527410827896" cy="920.0029629995564" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="67.38527410827896" y="921.0029629995564" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">报酬</text>
+<ellipse cx="52.090254776497545" cy="828.207436207383" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="52.090254776497545" y="829.207436207383" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">时间类型</text>
+<ellipse cx="148.29367076452803" cy="643.773456574493" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="148.29367076452803" y="644.773456574493" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">开始时间</text>
+<ellipse cx="591.6031942896223" cy="750.0614823141163" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="591.6031942896223" y="751.0614823141163" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">截止时间</text>
+<ellipse cx="509.8135841548816" cy="719.5549758961793" rx="32" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="509.8135841548816" y="720.5549758961793" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">状态</text>
+<ellipse cx="537.4057355252021" cy="808.4314606273472" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="537.4057355252021" y="809.4314606273472" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">发布时间</text>
+<ellipse cx="467.468223902028" cy="1007.0375641717318" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="467.468223902028" y="1008.0375641717318" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">接单时间</text>
+<ellipse cx="280.98491291189083" cy="1077.8280939333144" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="280.98491291189083" y="1078.8280939333144" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">完成时间</text>
+<rect x="182.87093209239998" y="287.31518766012965" width="142.16" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="188.87093209239998" y="293.31518766012965" width="130.16" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="253.9509320924" y="312.31518766012965" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">代取状态日志</text>
+<ellipse cx="167.76585841646693" cy="398.6637005172837" rx="38.800000000000004" ry="18" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+<text x="167.76585841646693" y="399.6637005172837" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#1f2937">日志ID</text>
+<line x1="143.96585841646692" y1="408.6637005172837" x2="191.56585841646694" y2="408.6637005172837" stroke="#334155" stroke-width="1.2" stroke-dasharray="4 3"/>
+<ellipse cx="164.35188503439412" cy="227.4722369178063" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="164.35188503439412" y="228.4722369178063" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">原状态</text>
+<ellipse cx="338.98770818105527" cy="399.7819968900907" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="338.98770818105527" y="400.7819968900907" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">新状态</text>
+<ellipse cx="340.136005768333" cy="223.9666748029756" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="340.136005768333" y="224.9666748029756" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">变更时间</text>
+<polygon points="889.5248072422934,324.57114344030015 935.5248072422934,354.57114344030015 889.5248072422934,384.57114344030015 843.5248072422934,354.57114344030015" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="889.5248072422934,331.57114344030015 928.5248072422934,354.57114344030015 889.5248072422934,377.57114344030015 850.5248072422934,354.57114344030015" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="889.5248072422934" y="355.57114344030015" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">配置</text>
+<polygon points="484.05783224607364,523.5686596794311 530.0578322460736,553.5686596794311 484.05783224607364,583.5686596794311 438.05783224607364,553.5686596794311" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="484.05783224607364" y="554.5686596794311" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">发布</text>
+<polygon points="563.8162009822837,598.2951609135952 609.8162009822837,628.2951609135952 563.8162009822837,658.2951609135952 517.8162009822837,628.2951609135952" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="563.8162009822837" y="629.2951609135952" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">接单</text>
+<polygon points="269.8084400943597,481.5011930337799 315.8084400943597,511.5011930337799 269.8084400943597,541.5011930337798 223.8084400943597,511.5011930337799" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="269.8084400943597,488.5011930337799 308.8084400943597,511.5011930337799 269.8084400943597,534.5011930337798 230.8084400943597,511.5011930337799" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="269.8084400943597" y="512.5011930337798" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">生成</text>
+<polygon points="457.4226560325184,328.3805134379532 503.4226560325184,358.3805134379532 457.4226560325184,388.3805134379532 411.4226560325184,358.3805134379532" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="457.4226560325184" y="359.3805134379532" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">操作</text>
+<ellipse cx="1358.4354733614255" cy="213.68823122763317" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<ellipse cx="1358.4354733614255" cy="213.68823122763317" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1358.4354733614255" y="214.68823122763317" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可接规格</text>
+</svg>

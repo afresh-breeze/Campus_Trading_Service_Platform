@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const pool = require('./db');
 const { ok, fail } = require('./utils/response');
+const { start: startRunnerOnlineJob } = require('./jobs/runnerOnline');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/favorites', require('./routes/favorites'));
 app.use('/api/errands', require('./routes/errands'));
 app.use('/api/conversations', require('./routes/chat'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/feedback', require('./routes/feedback'));
 
 app.use((req, res) => fail(res, 404, '接口不存在'));
 
@@ -50,4 +52,5 @@ app.use((err, req, res, next) => {
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {
   console.log(`server running on http://127.0.0.1:${port}`);
+  startRunnerOnlineJob();
 });

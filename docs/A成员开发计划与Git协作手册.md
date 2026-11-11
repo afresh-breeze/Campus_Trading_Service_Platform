@@ -1503,7 +1503,7 @@ git push -u origin feature/item-detail
    - 2023001 的收藏列表里，已售出/已预订/下架商品如何显示？按产品决定：显示但置灰，或过滤。MVP 建议显示并带状态标签。
    - 按《课程设计开发计划.md》7.1 的 29 条用例挑二手相关先跑一遍。
 4. **19:30-21:00 ER 图**：
-   - 用 draw.io 画全局 ER 图（14 张表）和局部 ER 图（用户/商品/收藏、跑腿/规格）；导出 PNG 到 `report/assets/`；命名 `er_global.png`、`er_local_user_item.png`。
+   - 用 sql2er（Chen 记法）画全局 ER 图和 3 张局部 ER 图（用户/商品/收藏、跑腿/代取、会话/反馈）；导出 PNG 到 `report/assets/ch3/`，命名 `fig3-1_local-er-user-item.png`、`fig3-2_local-er-runner-errand.png`、`fig3-3_local-er-chat-feedback.png`、`fig3-4_global-er.png`。
    - 画的时候对照实际 `schema.sql`，不要凭记忆；报告里要能解释每个联系（1:1、1:N、M:N）。
 5. **21:00-21:20 Git + M1**：
    - 合并 `feature/item-mine`；
@@ -4638,17 +4638,22 @@ report/assets/
 ├─ ch1/fig1-2_architecture.png
 ├─ ch2/fig2-1_item-flow.png
 ├─ ch2/fig2-4_dfd-top.png
-├─ ch3/fig3-1_local-er.png
-├─ ch3/fig3-2_global-er.png
+├─ ch3/fig3-1_local-er-user-item.png
+├─ ch3/fig3-2_local-er-runner-errand.png
+├─ ch3/fig3-3_local-er-chat-feedback.png
+├─ ch3/fig3-4_global-er.png
+├─ ch3/fig3-4_global-er-overview.png  # 可选：全局总览
 ├─ ch5/table5-1_index.png          # 可选：索引设计表截图
 ├─ ch6/fig6-1_tables.png
 ├─ ch6/fig6-2_v_item_list.png
 ├─ ch7/fig7-a-01_index.png         # A 的小程序截图，加 a_ 前缀
 ├─ ch7/fig7-b-01_login.png         # B 的截图，加 b_ 前缀
-└─ source/                          # draw.io 源文件
-   ├─ module.drawio
-   ├─ er-local.drawio
-   └─ er-global.drawio
+└─ source/                          # ER 图 SVG 源文件
+   ├─ fig3-1_local-er-user-item.svg
+   ├─ fig3-2_local-er-runner-errand.svg
+   ├─ fig3-3_local-er-chat-feedback.svg
+   ├─ fig3-4_global-er.svg
+   └─ fig3-4_global-er-overview.svg
 ```
 
 规则：
