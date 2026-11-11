@@ -150,8 +150,14 @@ scroll-view {
 
 /* ---------------- 按钮 ---------------- */
 .btn {
+  /* 小程序原生 button 自带默认内边距，单靠 line-height 居中会被顶偏，
+     改用 flex 双向居中并清零内边距（登录按钮文字偏下的修复） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 88rpx;
-  line-height: 88rpx;
+  padding: 0;
+  line-height: 1;
   text-align: center;
   border-radius: var(--radius-full);
   font-size: var(--font-lg);
