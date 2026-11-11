@@ -42,14 +42,14 @@
 
 .empty__title {
   font-size: 30rpx;
-  color: #6B5B4D;
+  color: var(--color-text-2, #6B5B4D);
   font-weight: 500;
 }
 
 .empty__desc {
   margin-top: 14rpx;
   font-size: 26rpx;
-  color: #9A8875;
+  color: var(--color-text-3, #9A8875);
   line-height: 1.6;
   text-align: center;
 }
@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #fff;
   background: var(--color-primary-dark, #79513D);
 }

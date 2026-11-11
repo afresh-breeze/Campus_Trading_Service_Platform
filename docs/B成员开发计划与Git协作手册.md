@@ -125,7 +125,7 @@
 
 #### 4）口径修正（与 A 对齐后统一）
 
-- **主色**：`app.wxss` 从 `#3b7cff` 改为 **`#FFA726`**（A 手册 §12.2 橙黄系），价格色 `#FF5A3D`，禁用态 `#FFD9A0`。
+- **主色**：`app.wxss` 从 `#3b7cff` 改为 `#FFA726`（A 手册 §12.2 橙黄系）后，**11-11 再按用户提供的奶茶色板改为 `#E6A874`**：页面底 `#F4F1E7`、浅底 `#FCDBA9`、辅色 `#A7724F`、白字按钮 `#79513D`、最深 `#6A4431`。价格色 `#A7724F`。**红线不变：`#E6A874` 上不放白字**（对比度仅约 2:1）。细节见 `docs/UI走查记录-B.md`。
 - **校区/片区**：全部改为 25 个固定片区，代码与假数据中**禁止出现"东校区/西校区"**（已清零）。
 - **字段命名**：`items.campus → items.location`；`areaName/landmark → pickupArea/pickupPlace`；`relateType/relateId → bizType/bizId`；`lastMessageAt → lastTime`；`sellerName → sellerNickname`；`messages.msg_type` 仅 `text/image`，已读状态在 `messages.is_read`。
 - **图片字段**：后端商品卡片返回 **`firstImage`**（`v_item_list` 的子查询），组件对外叫 `coverUrl`，两者由 `utils/adapter.js` 的 `toItem()` 统一转换，**转换只在这一处**；`mock.js` 也按 `firstImage` 返回，和后端同构。
@@ -133,15 +133,19 @@
 
 #### 5）今天（11-11）要做的 3 件事
 
-- [ ] 1. 在微信开发者工具重新编译，确认引入新组件后仍是 **0 错误**；把 `status-tag` 接到登录页或我的页试渲染一次。
-- [ ] 2. 写「我的」页（tab 4）：用户信息卡 + 六大入口（我的发布/我的收藏/我的代取/接单设置/消息/设置）+ 退出登录。
-- [ ] 3. 21:30 与 A 同步：组件是否可用、**`routes/errands.js` 何时能出**（`chat.js` 归 B，不再问）、11-12 代取详情页的字段确认。
+- [x] 1. `status-tag` 已接到「我的」页用户卡做**试渲染**（新增 `user` 域，`active`→正常 / `disabled`→已禁用）。⚠️ 微信开发者工具的编译验证需在本机执行，尚未留证。
+- [x] 2. 「我的」页（tab 4）已实现：用户信息卡（头像/昵称/学号/信用分/账号状态）、四项统计（发布/收藏/代取/完成）、两组入口（我的发布/我的收藏/我的代取/接单设置 + 设置/帮助与反馈/关于）、退出登录；含下拉刷新与 `onShow` 刷新。
+- [ ] 3. 21:30 与 A 同步：组件是否可用、**`routes/errands.js` 何时能出**（`chat.js` 归 B，不再问）、11-12 代取详情页的字段确认。**（人工待办）**
+- [x] 4. UI 走查第一遍：产出 `docs/UI走查记录-B.md`（22 条，B 侧 19 条已修）。**A 的 6 个页面仍是占位骨架，页面级走查被阻塞**，已在该文档 §3 留了落地后要复查的清单。
+- [x] 5. 组件问题修复（对应当日 §4.3 要求）：网格卡片等高、图片占位底色、压图标签改实心、标签字号与灰标签对比度、空态颜色变量化；同时修掉 `app.wxss` 里 `.btn-primary` / `.fab` 白字压亮橙的**红线违规**。
 
 #### 6）已知阻塞（写在这里，避免口头遗忘）
 
 - A 的 `server/src/routes/errands.js` 仍为占位文件，**代取联调前 B 侧只能用 mock**。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
+- **A 的 6 个二手页面仍为占位骨架**（wxml 11 行），M1 的 UI 走查与 B 侧配合验收都要等页面落地（记录见 `docs/UI走查记录-B.md` #18）。
+- **后端无 stats 聚合接口**：个人中心四项统计用 `items/mine`、`favorites`、`errands/mine` 的 `total` 派生，`/api/errands/mine` 必须支持 `status` 筛选（mock 已对齐）。
 
 ### 0.5 每天建议节奏
 

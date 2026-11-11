@@ -164,7 +164,8 @@ scroll-view {
   border: none;
 }
 .btn-primary {
-  background-color: var(--color-primary);
+  /* 白字只能压 primary-dark；primary(#E6A874) 上白字约 2:1，红线禁止 */
+  background-color: var(--color-primary-dark);
   color: #ffffff;
   box-shadow: var(--shadow-float);
 }
@@ -175,8 +176,8 @@ scroll-view {
 }
 .btn-ghost {
   background-color: var(--color-bg-white);
-  color: var(--color-primary);
-  border: 1rpx solid var(--color-primary);
+  color: var(--color-primary-dark);
+  border: 1rpx solid var(--color-primary-dark);
 }
 .btn-danger {
   background-color: var(--color-danger);
@@ -253,7 +254,7 @@ scroll-view {
   width: 104rpx;
   height: 104rpx;
   border-radius: 50%;
-  background-color: var(--color-primary);
+  background-color: var(--color-primary-dark);
   color: #ffffff;
   font-size: 56rpx;
   line-height: 100rpx;

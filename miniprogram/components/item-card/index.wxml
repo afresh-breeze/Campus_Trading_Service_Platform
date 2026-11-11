@@ -2,15 +2,17 @@
   <view class="card__cover">
     <image wx:if="{{cover}}" class="card__img" src="{{cover}}" mode="aspectFill" lazy-load />
     <view wx:else class="card__img card__img--empty">暂无图片</view>
+    <!-- 压在图片上：用实心标签，浅底标签压图会糊（走查记录 #4） -->
     <view class="card__tag" wx:if="{{mode === 'grid' && item.status && item.status !== 'on_sale'}}">
-      <status-tag domain="item" status="{{item.status}}" />
+      <status-tag domain="item" status="{{item.status}}" plain="{{false}}" />
     </view>
   </view>
 
   <view class="card__body">
     <view class="card__title">{{item.title || '未命名商品'}}</view>
 
-    <view wx:if="{{conditionText || placeText}}" class="card__meta">
+    <!-- meta 容器恒渲染：成色/地点都为空时也占一行，否则网格卡片高度差 34rpx（走查记录 #1） -->
+    <view class="card__meta {{conditionText || placeText ? '' : 'card__meta--empty'}}">
       <text wx:if="{{conditionText}}" class="card__meta-item">{{conditionText}}</text>
       <text wx:if="{{conditionText && placeText}}" class="card__dot">·</text>
       <text wx:if="{{placeText}}" class="card__meta-item">{{placeText}}</text>

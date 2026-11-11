@@ -17,6 +17,10 @@
 
 .card--grid .card__body {
   padding: 16rpx 18rpx 20rpx;
+  /* flex 列 + foot 的 margin-top:auto：标题一行还是两行，价格都贴底对齐（走查记录 #1） */
+  display: flex;
+  flex-direction: column;
+  min-height: 172rpx;
 }
 
 .card--grid .card__title {
@@ -68,7 +72,8 @@
   width: 100%;
   height: 100%;
   display: block;
-  background: var(--color-primary-light, #FCDBA9);
+  /* 原为浅焦糖 #FCDBA9，图片未加载时整块偏重，改浅中性底（走查记录 #3） */
+  background: var(--color-divider, #F1EAE0);
 }
 
 .card__img--empty {
@@ -90,7 +95,14 @@
   display: flex;
   align-items: center;
   font-size: 24rpx;
-  color: #9A8875;
+  color: var(--color-text-3, #9A8875);
+  /* 恒占一行：成色与地点都为空时不塌陷，网格卡片才能等高（走查记录 #1） */
+  min-height: 34rpx;
+}
+
+.card__meta--empty {
+  /* 空行不显示内容，但保留高度 */
+  visibility: hidden;
 }
 
 .card__meta-item {
@@ -137,6 +149,8 @@
 
 .card__state {
   margin-left: auto;
+  /* 父级 align-items: baseline，标签要自己回正，否则贴到价格基线以下（走查记录 #9） */
+  align-self: center;
 }
 
 .card--hover {

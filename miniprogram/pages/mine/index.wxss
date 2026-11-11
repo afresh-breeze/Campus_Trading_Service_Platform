@@ -1,13 +1,210 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 我的（B 成员：个人中心，tab 4）——只引用 app.wxss 变量，不写魔法色值 */
+.mine {
+  /* 注意：padding 简写会覆盖 .page 的 padding-bottom，这里必须显式补回悬浮 tabBar 的避让高度 */
+  padding: 24rpx 24rpx calc(150rpx + env(safe-area-inset-bottom));
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
+
+/* ---------- 用户卡 ---------- */
+.mine-hero {
+  display: flex;
+  align-items: center;
+  padding: 32rpx 28rpx;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
-.placeholder-tip {
-  margin-top: 24rpx;
+
+.mine-hero--hover {
+  background-color: var(--color-divider);
+}
+
+.mine-hero__avatar {
+  width: 112rpx;
+  height: 112rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 浅焦糖 → 主色，头像占位也有层次 */
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+}
+
+.mine-hero__avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.mine-hero__avatar-text {
+  font-size: 44rpx;
+  font-weight: 600;
+  /* 深棕压在浅焦糖上，对比度 4.1:1；不用白字（红线） */
+  color: #6A4431;
+}
+
+.mine-hero__info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 24rpx;
+}
+
+.mine-hero__row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.mine-hero__name {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text);
+  max-width: 320rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mine-hero__sub {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--color-text-3);
+}
+
+.mine-hero__arrow {
+  font-size: 38rpx;
+  line-height: 1;
+  color: var(--color-text-4);
+}
+
+/* ---------- 四项统计 ---------- */
+.mine-stats {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: stretch;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.mine-stats__item {
+  flex: 1;
+  padding: 24rpx 0 22rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  position: relative;
+}
+
+/* 分隔线用伪元素，避免每格都加 border 造成首尾多一条 */
+.mine-stats__item::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 30rpx;
+  bottom: 30rpx;
+  width: 1px;
+  background-color: var(--color-divider);
+}
+
+.mine-stats__item:last-child::after {
+  display: none;
+}
+
+.mine-stats__item--hover {
+  background-color: var(--color-divider);
+}
+
+.mine-stats__num {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.1;
+}
+
+.mine-stats__label {
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
+
+/* ---------- 入口分组 ---------- */
+.mine-group {
+  margin-top: 20rpx;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.mine-group__title {
+  padding: 22rpx 28rpx 10rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+  letter-spacing: 1rpx;
+}
+
+.mine-cell {
+  display: flex;
+  align-items: center;
+  height: 96rpx;
+  padding: 0 28rpx;
+  position: relative;
+}
+
+.mine-cell::after {
+  content: '';
+  position: absolute;
+  left: 28rpx;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: var(--color-divider);
+}
+
+.mine-cell:last-child::after {
+  display: none;
+}
+
+.mine-cell--hover {
+  background-color: var(--color-divider);
+}
+
+.mine-cell__text {
+  flex: 1;
+  font-size: 30rpx;
+  color: var(--color-text);
+}
+
+.mine-cell__arrow {
+  font-size: 34rpx;
+  line-height: 1;
+  color: var(--color-text-4);
+}
+
+/* ---------- 退出登录 / 版本 ---------- */
+.mine-logout {
+  margin-top: 20rpx;
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: var(--color-danger);
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.mine-logout--hover {
+  background-color: var(--color-divider);
+}
+
+.mine-footer {
+  padding: 32rpx 0 16rpx;
   text-align: center;
-  font-size: var(--font-xs);
+  font-size: 22rpx;
   color: var(--color-text-4);
 }

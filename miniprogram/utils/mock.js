@@ -97,6 +97,25 @@ const items = [
     createdAt: '2026-11-08 12:41:00',
     isBook: false,
     description: '搬宿舍出，桌面无划痕。'
+  },
+  {
+    // 归属当前登录用户（sellerId = 1），让「我的发布」和个人中心统计有数据
+    itemId: 1006,
+    title: '小米台灯（可调色温）',
+    price: 35,
+    originalPrice: 89,
+    coverUrl: '',
+    categoryId: 3,
+    categoryName: '生活用品',
+    conditionLevel: 'like_new',
+    status: 'on_sale',
+    location: '桃园',
+    sellerId: 1,
+    sellerNickname: '小 B',
+    viewCount: 17,
+    createdAt: '2026-11-09 20:15:00',
+    isBook: false,
+    description: '用了一个学期，灯罩无划痕，插头完好。'
   }
 ];
 
@@ -154,6 +173,48 @@ const errands = [
     publisherName: '周同学',
     remark: '比较重的箱子，麻烦小心',
     createdAt: '2026-11-08 14:10:00'
+  },
+  {
+    // 当前用户发布（publisherId = 1），个人中心「代取」计数用
+    orderId: 2004,
+    title: '取快递（桃园 → 2 号宿舍楼）',
+    pickupArea: '桃园',
+    pickupPlace: '桃园',
+    deliveryLocation: '2 号宿舍楼 416',
+    itemSize: 'small',
+    itemDesc: '一个小快递盒',
+    itemSizeName: '小号',
+    reward: 3,
+    timeType: 'asap',
+    deadlineText: '尽快',
+    status: 'pending',
+    publisherId: 1,
+    publisherName: '小 B',
+    runnerId: null,
+    remark: '驿站取件码 5-1-2266，到楼下打电话',
+    createdAt: '2026-11-09 19:40:00'
+  },
+  {
+    // 当前用户接单并已完成（runnerId = 1），个人中心「完成」计数用
+    orderId: 2005,
+    title: '打印店取资料（中心图书馆 → 第25教学楼）',
+    pickupArea: '中心图书馆',
+    pickupPlace: '中心图书馆',
+    deliveryLocation: '第25教学楼 208',
+    itemSize: 'small',
+    itemDesc: '一沓课件',
+    itemSizeName: '小号',
+    reward: 4,
+    timeType: 'deadline',
+    deadlineText: '昨天 18:00 前',
+    status: 'completed',
+    publisherId: 6,
+    publisherName: '孙同学',
+    runnerId: 1,
+    remark: '已交付',
+    createdAt: '2026-11-08 09:30:00',
+    takenAt: '2026-11-08 09:35:00',
+    completedAt: '2026-11-08 10:20:00'
   }
 ];
 
@@ -232,6 +293,8 @@ const messages = {
 };
 
 const currentUser = {
+  // 接口文档 §2 的字段名是 userId；只保留 id 会让个人中心读到 undefined（走查记录 #11）
+  userId: 1,
   id: 1,
   studentNo: '2023210101',
   nickname: '小 B',
@@ -275,6 +338,32 @@ const routes = {
   'GET /api/items/:id': (data) => {
     const found = items.find((i) => String(i.itemId) === String(data.id));
     return found ? delay(Object.assign({}, found, { isFavorited: false })) : Promise.reject({ code: 404, message: '商品不存在' });
+  },
+
+  // 我的发布：GET /api/items/mine（接口文档 §5，个人中心统计与我的发布页都用）
+  'GET /api/items/mine': (data) => {
+    const page = Number(data.page) || 1;
+    const pageSize = Number(data.pageSize) || 10;
+    const mine = items.filter((i) => String(i.sellerId) === String(currentUser.userId));
+    return delay({
+      list: mine.slice((page - 1) * pageSize, page * pageSize),
+      total: mine.length,
+      page,
+      pageSize
+    });
+  },
+
+  // 我的收藏：GET /api/favorites（接口文档 §6）
+  'GET /api/favorites': (data) => {
+    const page = Number(data.page) || 1;
+    const pageSize = Number(data.pageSize) || 10;
+    const fav = [items[0]];
+    return delay({
+      list: fav.slice((page - 1) * pageSize, page * pageSize),
+      total: fav.length,
+      page,
+      pageSize
+    });
   },
 
   'POST /api/items': (data) => {
@@ -328,7 +417,9 @@ const routes = {
 
   'GET /api/errands/mine': (data) => {
     const isTaken = data.role === 'runner';
-    const list = errands.filter((i) => (isTaken ? i.status !== 'pending' : i.publisherId === 1));
+    let list = errands.filter((i) => (isTaken ? i.status !== 'pending' : i.publisherId === currentUser.userId));
+    // status 是接口文档 §7.7 支持的筛选项，个人中心统计「完成」要用它
+    if (data.status) list = list.filter((i) => i.status === data.status);
     return delay({ list, total: list.length, page: 1, pageSize: 10 });
   },
 

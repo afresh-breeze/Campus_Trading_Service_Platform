@@ -36,6 +36,6 @@
 }
 .link {
   font-size: var(--font-sm);
-  color: var(--color-primary);
+  color: var(--color-primary-dark);
   margin-left: 8rpx;
 }
