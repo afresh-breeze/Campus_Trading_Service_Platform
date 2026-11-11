@@ -89,7 +89,7 @@ function confirm(content, title) {
     wx.showModal({
       title: title || '提示',
       content: content,
-      confirmColor: '#3b7cff',
+      confirmColor: '#A94A00',
       success: (res) => resolve(!!res.confirm),
       fail: () => resolve(false)
     });

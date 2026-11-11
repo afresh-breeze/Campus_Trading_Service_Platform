@@ -6,5 +6,11 @@ Page({
 
   onLoad(options) {
     console.log('[二手市场] options:', options);
+  },
+
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 0 });
+    }
   }
 });

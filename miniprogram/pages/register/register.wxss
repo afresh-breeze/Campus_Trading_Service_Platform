@@ -1,7 +1,7 @@
 .reg-page {
   min-height: 100vh;
   padding: 0 48rpx 48rpx;
-  background: linear-gradient(180deg, #eaf1ff 0%, #f5f6f8 36%);
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 36%);
 }
 .head {
   padding: 72rpx 8rpx 40rpx;

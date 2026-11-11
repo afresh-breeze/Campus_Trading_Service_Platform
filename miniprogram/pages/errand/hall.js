@@ -6,5 +6,11 @@ Page({
 
   onLoad(options) {
     console.log('[代取大厅] options:', options);
+  },
+
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 1 });
+    }
   }
 });

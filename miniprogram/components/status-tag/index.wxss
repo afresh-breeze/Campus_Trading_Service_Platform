@@ -10,14 +10,14 @@
   white-space: nowrap;
 }
 
-/* 实心（plain = false） */
-.tag--primary { color: #fff; background: var(--color-primary, #FFA726); }
-.tag--warning { color: #fff; background: var(--color-warning, #FF8A3D); }
-.tag--success { color: #fff; background: var(--color-success, #4CAF50); }
-.tag--muted   { color: #fff; background: #BDBDBD; }
+/* 实心（plain = false）——白字压深色底，亮橙上不放白字 */
+.tag--primary { color: #fff; background: var(--color-primary-dark, #A94A00); }
+.tag--warning { color: #fff; background: var(--color-warning, #B45309); }
+.tag--success { color: #fff; background: var(--color-success, #1F7A45); }
+.tag--muted   { color: #fff; background: var(--color-text-2, #6B6259); }
 
-/* 描边浅底（默认） */
-.tag--plain.tag--primary { color: var(--color-primary, #FFA726); background: rgba(255,167,38,0.12); }
-.tag--plain.tag--warning { color: var(--color-warning, #FF8A3D); background: rgba(255,138,61,0.12); }
-.tag--plain.tag--success { color: var(--color-success, #4CAF50); background: rgba(76,175,80,0.12); }
-.tag--plain.tag--muted   { color: #9E9E9E; background: #F2F2F2; }
+/* 描边浅底（默认）——浅橙底上文字用深橙，保证可读 */
+.tag--plain.tag--primary { color: var(--color-primary-dark, #A94A00); background: rgba(255,167,38,0.14); }
+.tag--plain.tag--warning { color: var(--color-warning, #B45309); background: rgba(180,83,9,0.12); }
+.tag--plain.tag--success { color: var(--color-success, #1F7A45); background: rgba(31,122,69,0.12); }
+.tag--plain.tag--muted   { color: var(--color-text-3, #9C9288); background: var(--color-divider, #F7EEE1); }

@@ -23,14 +23,15 @@
   ],
   "window": {
     "backgroundTextStyle": "dark",
-    "backgroundColor": "#F5F6F8",
+    "backgroundColor": "#FFF9F0",
     "navigationBarBackgroundColor": "#FFFFFF",
     "navigationBarTitleText": "校园易站",
     "navigationBarTextStyle": "black"
   },
   "tabBar": {
-    "color": "#8A8F99",
-    "selectedColor": "#3B7CFF",
+    "custom": true,
+    "color": "#6B6259",
+    "selectedColor": "#A94A00",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",
     "list": [

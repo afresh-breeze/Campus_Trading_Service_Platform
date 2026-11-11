@@ -1,12 +1,12 @@
 .card {
-  background: #fff;
+  background: var(--color-bg-white, #FFFFFF);
   overflow: hidden;
 }
 
 /* ---------- grid：两列瀑布流 ---------- */
 .card--grid {
   border-radius: 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2rpx 12rpx rgba(120, 80, 20, 0.08);
 }
 
 .card--grid .card__cover {
@@ -21,7 +21,7 @@
 
 .card--grid .card__title {
   font-size: 28rpx;
-  color: #212121;
+  color: var(--color-text, #2B2622);
   line-height: 1.45;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -55,7 +55,7 @@
 
 .card--list .card__title {
   font-size: 30rpx;
-  color: #212121;
+  color: var(--color-text, #2B2622);
   line-height: 1.45;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -68,7 +68,7 @@
   width: 100%;
   height: 100%;
   display: block;
-  background: #F5F5F5;
+  background: var(--color-primary-light, #FFF3E0);
 }
 
 .card__img--empty {
@@ -76,7 +76,7 @@
   align-items: center;
   justify-content: center;
   font-size: 24rpx;
-  color: #BDBDBD;
+  color: var(--color-text-4, #C4B8AA);
 }
 
 .card__tag {
@@ -114,7 +114,7 @@
 .card__price {
   display: flex;
   align-items: baseline;
-  color: var(--color-price, #FF5A3D);
+  color: var(--color-price, #D84315);
 }
 
 .card__yuan {
@@ -131,7 +131,7 @@
 .card__origin {
   margin-left: 10rpx;
   font-size: 22rpx;
-  color: #BDBDBD;
+  color: var(--color-text-4, #C4B8AA);
   text-decoration: line-through;
 }
 

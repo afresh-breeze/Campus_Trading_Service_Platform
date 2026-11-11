@@ -6,36 +6,36 @@
  */
 
 page {
-  /* 主色：按 A 手册 §12.2 统一为明亮橙黄系（原蓝色 #3b7cff 作废） */
+  /* 主色：按 A 手册 §12.2 明亮橙黄系（11-11 B 按 §12.2 建议值校准） */
   --color-primary: #FFA726;
-  --color-primary-light: #FFF4E5;
-  --color-primary-dark: #F57C00;
+  --color-primary-light: #FFF3E0;
+  --color-primary-dark: #A94A00;
 
   /* 辅助色 */
-  --color-accent: #FF8A3D;
-  /* 价格色：比主色深一档，保证在白底上的可读性 */
-  --color-price: #FF5A3D;
-  --color-success: #00b578;
-  --color-warning: #ff8f1f;
-  --color-danger: #fa5151;
+  --color-accent: #FFD54F;
+  /* 价格色：暖调深橙红，白底大字号可读（对比度约 4.3:1） */
+  --color-price: #D84315;
+  --color-success: #1F7A45;
+  --color-warning: #B45309;
+  --color-danger: #C62828;
 
-  /* 中性色 */
-  --color-text: #1a1a1a;
-  --color-text-2: #5a6069;
-  --color-text-3: #8a8f99;
-  --color-text-4: #b8bdc6;
-  --color-border: #ebedf0;
-  --color-divider: #f2f3f5;
-  --color-bg: #f5f6f8;
-  --color-bg-white: #ffffff;
+  /* 中性色（暖色系） */
+  --color-text: #2B2622;
+  --color-text-2: #6B6259;
+  --color-text-3: #9C9288;
+  --color-text-4: #C4B8AA;
+  --color-border: #F2E4D0;
+  --color-divider: #F7EEE1;
+  --color-bg: #FFF9F0;
+  --color-bg-white: #FFFFFF;
 
   /* 圆角 / 阴影 / 间距 */
   --radius-sm: 8rpx;
   --radius: 16rpx;
   --radius-lg: 24rpx;
   --radius-full: 999rpx;
-  --shadow-card: 0 4rpx 16rpx rgba(31, 41, 55, 0.06);
-  --shadow-float: 0 8rpx 24rpx rgba(59, 124, 255, 0.32);
+  --shadow-card: 0 4rpx 16rpx rgba(120, 80, 20, 0.08);
+  --shadow-float: 0 8rpx 24rpx rgba(255, 167, 38, 0.32);
   --space-xs: 8rpx;
   --space-sm: 16rpx;
   --space: 24rpx;
@@ -223,16 +223,16 @@ scroll-view {
   line-height: 1.6;
 }
 .tag-primary {
-  color: var(--color-primary);
+  color: var(--color-primary-dark);
   background-color: var(--color-primary-light);
 }
 .tag-success {
   color: var(--color-success);
-  background-color: rgba(0, 181, 120, 0.1);
+  background-color: rgba(31, 122, 69, 0.1);
 }
 .tag-warning {
   color: var(--color-warning);
-  background-color: rgba(255, 143, 31, 0.12);
+  background-color: rgba(180, 83, 9, 0.12);
 }
 .tag-gray {
   color: var(--color-text-3);
@@ -240,7 +240,7 @@ scroll-view {
 }
 .tag-danger {
   color: var(--color-danger);
-  background-color: rgba(250, 81, 81, 0.1);
+  background-color: rgba(198, 40, 40, 0.1);
 }
 
 /* ---------------- 悬浮加号按钮（列表页右下角） ---------------- */

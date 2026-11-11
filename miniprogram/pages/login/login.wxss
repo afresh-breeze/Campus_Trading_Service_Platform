@@ -1,7 +1,7 @@
 .login-page {
   min-height: 100vh;
   padding: 0 48rpx;
-  background: linear-gradient(180deg, #eaf1ff 0%, #f5f6f8 42%);
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 42%);
 }
 
 .hero {
@@ -14,7 +14,7 @@
   width: 128rpx;
   height: 128rpx;
   border-radius: 32rpx;
-  background-color: var(--color-primary);
+  background-color: var(--color-primary-dark);
   color: #fff;
   font-size: 64rpx;
   font-weight: 700;
