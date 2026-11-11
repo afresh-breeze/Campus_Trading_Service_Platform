@@ -1,10 +1,13 @@
 // 商品卡片（B 成员：公共层）
 // 二手列表、我的发布、我的收藏、首页推荐共用。
-// 字段口径严格对齐后端 items / item_images / users：
-//   itemId / title / price / originalPrice / conditionLevel / status
-//   coverUrl（item_images 第一张）/ location（items.location）/ sellerNickname
+// 字段口径：组件对外只认 coverUrl，**由 utils/adapter.js 统一转换**。
+// 后端商品卡片返回的是 firstImage，不是 coverUrl；页面必须传 adapter.toItem() 的结果进来。
+// 不要在页面里手写 item.coverUrl = raw.firstImage —— 转换只有 adapter 一处，
+// 否则后端再次改名时又要全量翻页。
 // 字段缺失时降级显示，不报错、不出现 undefined。
 // 枚举严格对齐 database/schema.sql：items.condition_level ENUM('new','like_new','good','fair')
+const adapter = require('../../utils/adapter');
+
 const CONDITION_TEXT = {
   new: '全新',
   like_new: '几乎全新',
@@ -28,9 +31,11 @@ Component({
   },
 
   observers: {
-    item(item) {
-      if (!item) return;
-      const price = Number(item.price || 0);
+    item(raw) {
+      if (!raw) return;
+      // 双保险：即使页面漏了 adapter，这里也能拿到 firstImage
+      const item = adapter.toItem(raw);
+      const price = item.price;
       const origin = Number(item.originalPrice || 0);
 
       this.setData({
