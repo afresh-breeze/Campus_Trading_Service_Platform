@@ -71,7 +71,16 @@ function request(options) {
   );
 
   // ---- 本地模拟数据（后端未就绪时启用，config.MOCK = true）----
-  if (config.MOCK && mock.has(opts.url, opts.method)) {
+  // MOCK 模式下**只走 mock**：路由没登记就明确报错，绝不回落到真实网络。
+  // 否则会出现"本地看着正常、其实是在打一个连不上的后端"，问题被掩盖到联调才暴露。
+  if (config.MOCK) {
+    if (!mock.has(opts.url, opts.method)) {
+      const key = (opts.method || 'GET').toUpperCase() + ' ' + opts.url.split('?')[0];
+      const message = 'mock 未登记该接口：' + key;
+      console.warn('[request] ' + message + '（请在 utils/mock.js 补一条，或关掉 config.MOCK）');
+      if (!opts.silent) wx.showToast({ title: message, icon: 'none' });
+      return Promise.reject({ code: 404, message: message });
+    }
     return mock
       .run(opts.url, opts.method, opts.data)
       .then((res) => res)

@@ -80,21 +80,18 @@ App({
 
   /**
    * 同步未读数到 tabBar。
-   * 口径：未读数由后端按 messages.is_read = 0 且非本人发送统计，前端只负责累加展示。
-   * 会话接口未就绪时静默失败，不打扰用户。
+   * 口径：直接调 GET /api/conversations/unread-count（后端按 messages.is_read = 0
+   * 且非本人发送聚合），**不再拉会话列表自己累加** —— 列表分页只有 10/20 条，
+   * 会话超过一页时角标会少算。接口异常时静默失败，不打扰用户。
    */
   refreshUnread() {
     if (!this.globalData.token) {
       this.setUnreadBadge(0);
       return Promise.resolve(0);
     }
-    return http.get('/api/conversations', {}, { silent: true })
+    return http.get('/api/conversations/unread-count', {}, { silent: true })
       .then((data) => {
-        const list = (data && (data.list || data.items)) || [];
-        let total = 0;
-        for (let i = 0; i < list.length; i++) {
-          total += Number(list[i].unreadCount || 0);
-        }
+        const total = Number((data && data.count) || 0);
         this.globalData.unreadCount = total;
         this.setUnreadBadge(total);
         return total;
