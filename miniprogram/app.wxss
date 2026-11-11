@@ -6,27 +6,27 @@
  */
 
 page {
-  /* 主色：按 A 手册 §12.2 明亮橙黄系（11-11 B 按 §12.2 建议值校准） */
-  --color-primary: #FFA726;
-  --color-primary-light: #FFF3E0;
-  --color-primary-dark: #A94A00;
+  /* 主色：奶茶色系（#F4F1E7/#FCDBA9/#E6A874/#A7724F/#79513D/#6A4431） */
+  --color-primary: #E6A874;
+  --color-primary-light: #FCDBA9;
+  --color-primary-dark: #79513D;
 
   /* 辅助色 */
-  --color-accent: #FFD54F;
-  /* 价格色：暖调深橙红，白底大字号可读（对比度约 4.3:1） */
-  --color-price: #D84315;
+  --color-accent: #A7724F;
+  /* 价格色：焦糖棕，白底大字号可读 */
+  --color-price: #A7724F;
   --color-success: #1F7A45;
   --color-warning: #B45309;
   --color-danger: #C62828;
 
-  /* 中性色（暖色系） */
-  --color-text: #2B2622;
-  --color-text-2: #6B6259;
-  --color-text-3: #9C9288;
-  --color-text-4: #C4B8AA;
-  --color-border: #F2E4D0;
-  --color-divider: #F7EEE1;
-  --color-bg: #FFF9F0;
+  /* 中性色（暖奶茶调） */
+  --color-text: #2E2119;
+  --color-text-2: #6B5B4D;
+  --color-text-3: #9A8875;
+  --color-text-4: #C7B9A8;
+  --color-border: #E9DFD0;
+  --color-divider: #F1EAE0;
+  --color-bg: #F4F1E7;
   --color-bg-white: #FFFFFF;
 
   /* 圆角 / 阴影 / 间距 */
@@ -34,8 +34,8 @@ page {
   --radius: 16rpx;
   --radius-lg: 24rpx;
   --radius-full: 999rpx;
-  --shadow-card: 0 4rpx 16rpx rgba(120, 80, 20, 0.08);
-  --shadow-float: 0 8rpx 24rpx rgba(255, 167, 38, 0.32);
+  --shadow-card: 0 4rpx 16rpx rgba(122, 93, 64, 0.08);
+  --shadow-float: 0 8rpx 24rpx rgba(230, 168, 116, 0.35);
   --space-xs: 8rpx;
   --space-sm: 16rpx;
   --space: 24rpx;
@@ -169,8 +169,8 @@ scroll-view {
   box-shadow: var(--shadow-float);
 }
 .btn-primary[disabled] {
-  background-color: #FFD9A0;
-  color: #ffffff;
+  background-color: #EBDCC3;
+  color: #9A8875;
   box-shadow: none;
 }
 .btn-ghost {

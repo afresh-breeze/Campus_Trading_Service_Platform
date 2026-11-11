@@ -12,25 +12,25 @@ const TAB_LIST = [
     pagePath: '/pages/index/index',
     text: '二手',
     icon: '/assets/tabicons/home-gray.png',
-    iconActive: '/assets/tabicons/home-white.png'
+    iconActive: '/assets/tabicons/home-dark.png'
   },
   {
     pagePath: '/pages/errand/hall',
     text: '代取',
     icon: '/assets/tabicons/bag-gray.png',
-    iconActive: '/assets/tabicons/bag-white.png'
+    iconActive: '/assets/tabicons/bag-dark.png'
   },
   {
     pagePath: '/pages/chat/list',
     text: '消息',
     icon: '/assets/tabicons/chat-gray.png',
-    iconActive: '/assets/tabicons/chat-white.png'
+    iconActive: '/assets/tabicons/chat-dark.png'
   },
   {
     pagePath: '/pages/mine/index',
     text: '我的',
     icon: '/assets/tabicons/user-gray.png',
-    iconActive: '/assets/tabicons/user-white.png'
+    iconActive: '/assets/tabicons/user-dark.png'
   }
 ];
 

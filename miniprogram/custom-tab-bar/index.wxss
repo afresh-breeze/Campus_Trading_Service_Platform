@@ -12,13 +12,14 @@
   z-index: 100;
 }
 
-/* 滑动选中胶囊：过渡写在类里，切页同步时由内联 transition:none 覆盖掉 */
+/* 滑动选中胶囊：过渡写在类里，切页同步时由内联 transition:none 覆盖掉
+   #E6A874 偏浅，白字对比度仅约 2:1，选中态文字/图标一律用深棕 #6A4431 */
 .tab-bar__pill {
   position: absolute;
   top: 8rpx;
   bottom: 8rpx;
   width: calc(25% - 16rpx);
-  background-color: var(--color-primary-dark, #A94A00);
+  background-color: #E6A874;
   border-radius: var(--radius-full, 999rpx);
   transition: left 0.24s cubic-bezier(0.3, 1.15, 0.6, 1);
 }
@@ -70,7 +71,7 @@
   font-size: 26rpx;
   font-weight: 500;
   line-height: 1.2;
-  color: var(--color-text-2, #6B6259);
+  color: var(--color-text-2, #6B5B4D);
 }
 
 .tab-bar__item--active .tab-bar__text {
