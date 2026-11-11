@@ -101,7 +101,7 @@
 | --- | --- | --- | --- |
 | M0 环境与登录打通 | 11-07 | ✅ 已过 | `app.json` 注册 20 页；`/api/health`、`/api/auth/me` 可通；登录页渲染成功，开发者工具 **0 错误 0 警告** |
 | M1 二手闭环（配合 A） | 11-11 | 🟡 配合中 | 公共层与组件已交付，A 可引用；B 侧页面尚未开始 |
-| M2 代取 + 聊天闭环 | 11-16 | ⬜ 未开始 | 依赖公共层收尾与 A 的 `routes/errands.js`、`routes/chat.js` |
+| M2 代取 + 聊天闭环 | 11-16 | ⬜ 未开始 | 依赖公共层收尾与 **A 的 `routes/errands.js`**；`routes/chat.js` 由 B 自己实现（数据库对象已由 A 于 11-10 交付） |
 
 #### 2）公共层遗留项（A 11-10 评审提出的 7 项，已全部闭环）
 
@@ -121,23 +121,26 @@
 | --- | --- | --- |
 | `status-tag` | 状态标签，item/errand 两域 | 枚举严格对齐 `schema.sql`：item 用 `on_sale/reserved/sold/off_shelf`，errand 用 `pending/taken/completed/cancelled` |
 | `empty-state` | 空状态，几何图形拼空盒子 | **不依赖图片资源**；只在真无内容时用，加载中用骨架屏 |
-| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus` |
+| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus`。**`coverUrl` 是组件对外名，后端返回的是 `firstImage`，必须经 `utils/adapter.js` 的 `toItem()` 转换后再传入**，页面里不要手写字段映射 |
 
 #### 4）口径修正（与 A 对齐后统一）
 
 - **主色**：`app.wxss` 从 `#3b7cff` 改为 **`#FFA726`**（A 手册 §12.2 橙黄系），价格色 `#FF5A3D`，禁用态 `#FFD9A0`。
 - **校区/片区**：全部改为 25 个固定片区，代码与假数据中**禁止出现"东校区/西校区"**（已清零）。
 - **字段命名**：`items.campus → items.location`；`areaName/landmark → pickupArea/pickupPlace`；`relateType/relateId → bizType/bizId`；`lastMessageAt → lastTime`；`sellerName → sellerNickname`；`messages.msg_type` 仅 `text/image`，已读状态在 `messages.is_read`。
+- **图片字段**：后端商品卡片返回 **`firstImage`**（`v_item_list` 的子查询），组件对外叫 `coverUrl`，两者由 `utils/adapter.js` 的 `toItem()` 统一转换，**转换只在这一处**；`mock.js` 也按 `firstImage` 返回，和后端同构。
+- **跑腿字段**：`GET /api/runners` 返回 **`serviceAreas` / `servicePlaces` / `itemSizes`（全部数组）**，且 **`area` + `timeType` 为必填参数**，缺参后端直接 400；mock 已按同样规则拒绝缺参，字段也不再是旧稿的 `pickupArea / pickupPlace / sizes`。
 
 #### 5）今天（11-11）要做的 3 件事
 
 - [ ] 1. 在微信开发者工具重新编译，确认引入新组件后仍是 **0 错误**；把 `status-tag` 接到登录页或我的页试渲染一次。
 - [ ] 2. 写「我的」页（tab 4）：用户信息卡 + 六大入口（我的发布/我的收藏/我的代取/接单设置/消息/设置）+ 退出登录。
-- [ ] 3. 21:30 与 A 同步：组件是否可用、`routes/errands.js` 与 `routes/chat.js` 何时能出、11-12 代取详情页的字段确认。
+- [ ] 3. 21:30 与 A 同步：组件是否可用、**`routes/errands.js` 何时能出**（`chat.js` 归 B，不再问）、11-12 代取详情页的字段确认。
 
 #### 6）已知阻塞（写在这里，避免口头遗忘）
 
-- A 的 `server/src/routes/errands.js`、`chat.js` 仍为占位文件，**联调前 B 侧只能用 mock**。
+- A 的 `server/src/routes/errands.js` 仍为占位文件，**代取联调前 B 侧只能用 mock**。
+- ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
 
 ### 0.5 每天建议节奏
