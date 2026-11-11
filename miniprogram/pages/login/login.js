@@ -33,7 +33,7 @@ Page({
     const { studentNo, password } = this.data;
 
     if (!studentNo) return util.toast('请输入学号');
-    if (!util.REGEX.studentNo.test(studentNo)) return util.toast('学号应为 6-12 位数字');
+    if (!util.REGEX.studentNo.test(studentNo)) return util.toast('学号应为 6-15 位数字');
     if (!password) return util.toast('请输入密码');
     if (!util.REGEX.password.test(password)) return util.toast('密码需 6-20 位');
 

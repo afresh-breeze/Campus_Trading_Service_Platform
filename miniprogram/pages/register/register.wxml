@@ -8,7 +8,7 @@
   <view class="form-wrap">
     <view class="field">
       <text class="field-label">学号</text>
-      <input class="field-input" type="number" maxlength="12" placeholder="请输入学号" placeholder-class="field-placeholder" value="{{form.studentNo}}" data-key="studentNo" bindinput="onInput" />
+      <input class="field-input" type="number" maxlength="15" placeholder="请输入 15 位学号" placeholder-class="field-placeholder" value="{{form.studentNo}}" data-key="studentNo" bindinput="onInput" />
     </view>
     <view class="field">
       <text class="field-label">昵称</text>

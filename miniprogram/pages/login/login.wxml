@@ -12,8 +12,8 @@
       <input
         class="field-input"
         type="number"
-        maxlength="12"
-        placeholder="请输入学号"
+        maxlength="15"
+        placeholder="请输入 15 位学号"
         placeholder-class="field-placeholder"
         value="{{studentNo}}"
         bindinput="onStudentNoInput"

@@ -23,7 +23,7 @@ Page({
   validate() {
     const f = this.data.form;
     if (!f.studentNo) return '请输入学号';
-    if (!util.REGEX.studentNo.test(f.studentNo)) return '学号应为 6-12 位数字';
+    if (!util.REGEX.studentNo.test(f.studentNo)) return '学号应为 6-15 位数字';
     if (!f.nickname || f.nickname.trim().length < 2) return '昵称至少 2 个字符';
     if (!util.REGEX.password.test(f.password)) return '密码需 6-20 位';
     if (f.password !== f.password2) return '两次输入的密码不一致';

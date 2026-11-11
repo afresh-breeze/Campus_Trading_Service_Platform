@@ -296,7 +296,8 @@ const currentUser = {
   // 接口文档 §2 的字段名是 userId；只保留 id 会让个人中心读到 undefined（走查记录 #11）
   userId: 1,
   id: 1,
-  studentNo: '2023210101',
+  // 演示数据按本校 15 位学号格式（原来是 10 位，和输入上限不匹配）
+  studentNo: '202321010100001',
   nickname: '小 B',
   avatarUrl: '',
   campus: '桃园',
