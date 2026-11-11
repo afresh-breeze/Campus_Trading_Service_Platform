@@ -74,9 +74,6 @@
   color: var(--color-text-2, #6B5B4D);
 }
 
-.tab-bar__item--active .tab-bar__text {
-  color: #ffffff;
-}
 
 /* 未读红点 */
 .tab-bar__badge {
