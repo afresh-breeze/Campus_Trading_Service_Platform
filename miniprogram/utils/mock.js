@@ -19,14 +19,21 @@ function uid() {
 }
 
 // ---------------- 假数据 ----------------
-// 口径说明（与后端 schema 对齐）：
+// 口径说明（**必须复刻后端真实返回，不是复刻命名习惯**）：
 //   items：itemId / title / price / originalPrice / conditionLevel / status
-//          coverUrl / location（不是 campus）/ sellerNickname / description
+//          firstImage（后端 v_item_card 的字段名，不是 coverUrl）/ location / sellerNickname
 //   errand_orders：orderId / title / pickupArea / pickupPlace / deliveryLocation
-//          itemSize / itemSizeName / reward / timeType / deadlineText / remark
-//   conversations：conversationId / peerId / peerName / peerAvatar
-//          lastMessage / lastTime / bizType / bizId（不是 relateType / relateId）
-// 所有地区值均取自 utils/campus.js 的 25 个固定片区，禁止出现"东校区/西校区"。
+//          itemSize（small / medium / large，不是 S/M/L）/ reward / timeType / deadlineText / remark
+//   conversations：conversationId / peerId / peerNickname / peerAvatar
+//          lastMessage / lastTime / unreadCount / bizType / bizId（不是 relateType / relateId）
+//   runners：serviceAreas / servicePlaces / itemSizes（全部是数组），且 area + timeType 必填
+//
+// 为什么要和后端字段一致：mock 故意"长得不一样"等于给联调埋雷 ——
+// 本地一路通过，切 config.MOCK = false 后才发现图片全空、跑腿页 400。
+// 页面统一经 utils/adapter.js 做一次字段转换，mock 只负责和后端同构。
+//
+// 地标约束：pickupArea / pickupPlace 必须取自 utils/campus.js 的 25 片区 / 52 地标，
+// 文件末尾有开发期自检，出现清单外的值会在控制台 warn。
 const cat = [
   { id: 1, name: '教材书籍', code: 'book' },
   { id: 2, name: '数码电子', code: 'digital' },
@@ -41,7 +48,7 @@ const items = [
     title: '高等数学 第七版 上册',
     price: 18,
     originalPrice: 46,
-    coverUrl: '',
+    firstImage: '/demo/book-calculus.png',
     categoryId: 1,
     categoryName: '教材书籍',
     conditionLevel: 'good',
@@ -96,11 +103,13 @@ const items = [
 const errands = [
   {
     orderId: 2001,
-    title: '帮取一个中号外卖（东门 → 1 号宿舍楼）',
+    title: '帮取一个中号快递（桃园 → 1 号宿舍楼）',
     pickupArea: '桃园',
-    pickupPlace: '东门菜鸟驿站',
+    // 必须取自 utils/campus.js 的 52 地标；桃园属于宿舍园，地标即片区名
+    pickupPlace: '桃园',
     deliveryLocation: '1 号宿舍楼 302',
-    itemSize: 'M',
+    // item_size 是 ENUM('small','medium','large')，不是 S/M/L
+    itemSize: 'medium',
     itemSizeName: '中号',
     reward: 4,
     timeType: 'deadline',
@@ -108,16 +117,17 @@ const errands = [
     status: 'pending',
     publisherId: 5,
     publisherName: '赵同学',
-    remark: '在驿站 3 号货架，取件码 8-2-1033',
+    remark: '在桃园 3 号驿站货架，取件码 8-2-1033',
     createdAt: '2026-11-08 15:02:00'
   },
   {
     orderId: 2002,
-    title: '打印店取资料（中心图书馆 → 实验楼 A）',
+    title: '打印店取资料（中心图书馆 → 第16教学楼）',
     pickupArea: '中心图书馆',
-    pickupPlace: '图书馆一楼打印店',
-    deliveryLocation: '实验楼 A 栋 501',
-    itemSize: 'S',
+    // 图书馆片区未细分到单体楼，地标即片区名
+    pickupPlace: '中心图书馆',
+    deliveryLocation: '第16教学楼 501',
+    itemSize: 'small',
     itemSizeName: '小号',
     reward: 3,
     timeType: 'asap',
@@ -125,16 +135,16 @@ const errands = [
     status: 'pending',
     publisherId: 6,
     publisherName: '孙同学',
-    remark: '一沓 A4 纸，用文件袋装好了',
+    remark: '一沓 A4 纸，用文件袋装好了，在一楼打印店',
     createdAt: '2026-11-08 15:20:00'
   },
   {
     orderId: 2003,
-    title: '快递代取（丰巢 → 5 号宿舍楼）',
+    title: '快递代取（李园 → 5 号宿舍楼）',
     pickupArea: '李园',
-    pickupPlace: '南门丰巢柜',
+    pickupPlace: '李园',
     deliveryLocation: '5 号宿舍楼 108',
-    itemSize: 'L',
+    itemSize: 'large',
     itemSizeName: '大号',
     reward: 6,
     timeType: 'range',
@@ -147,12 +157,47 @@ const errands = [
   }
 ];
 
+// 跑腿档案：字段严格对齐后端 runner_profiles 的返回口径（全部数组）
+// 地标必须能在 utils/campus.js 的 52 条清单里查到，见文件末尾自检
+const runnerProfiles = [
+  {
+    userId: 8,
+    nickname: '跑腿小李',
+    avatarUrl: '',
+    creditScore: 96,
+    completedCount: 32,
+    serviceAreas: ['桃园', '北区教学区'],
+    servicePlaces: ['第16教学楼', '第4教学楼（A/B栋）'],
+    itemSizes: ['small', 'medium', 'large'],
+    availabilityType: 'now',
+    isOnline: true,
+    timeSlots: [],
+    basePrice: 3,
+    remark: '中午和晚上都在北区，顺路可带'
+  },
+  {
+    userId: 9,
+    nickname: '阿杰',
+    avatarUrl: '',
+    creditScore: 88,
+    completedCount: 18,
+    serviceAreas: ['中心图书馆', '南区教学区'],
+    servicePlaces: ['第30教学楼', '第31教学楼'],
+    itemSizes: ['small', 'medium'],
+    availabilityType: 'slot',
+    isOnline: false,
+    timeSlots: [],
+    basePrice: 4,
+    remark: '工作日 18:00 之后接单'
+  }
+];
+
 // unreadCount 为派生字段：后端按 messages.is_read = 0 聚合得出，表内不存储。
 const conversations = [
   {
     conversationId: 3001,
     peerId: 2,
-    peerName: '林同学',
+    peerNickname: '林同学',
     peerAvatar: '',
     lastMessage: '好的，那我们五点在图书馆门口见',
     lastTime: '2026-11-08 15:31:00',
@@ -163,7 +208,7 @@ const conversations = [
   {
     conversationId: 3002,
     peerId: 5,
-    peerName: '赵同学',
+    peerNickname: '赵同学',
     peerAvatar: '',
     lastMessage: '取件码发你了，麻烦快点哦',
     lastTime: '2026-11-08 14:58:00',
@@ -287,13 +332,27 @@ const routes = {
     return delay({ list, total: list.length, page: 1, pageSize: 10 });
   },
 
-  'GET /api/runners': () =>
-    delay({
-      list: [
-        { userId: 8, nickname: '跑腿小李', pickupArea: '桃园', pickupPlace: '东门菜鸟驿站', sizes: ['S', 'M', 'L'], rating: 4.9, completedCount: 32 },
-        { userId: 9, nickname: '阿杰', pickupArea: '中心图书馆', pickupPlace: '图书馆一楼打印店', sizes: ['S', 'M'], rating: 4.7, completedCount: 18 }
-      ]
-    }),
+  // 找跑腿匹配：**字段与必填参数都复刻后端 GET /api/runners**（server/src/routes/runners.js）
+  //   必填 area + timeType（asap / deadline / range），否则后端直接 400；
+  //   返回 serviceAreas / servicePlaces / itemSizes 三个数组，不是 pickupArea / sizes 单值。
+  //   mock 若对缺参放行，本地永远发现不了 400，联调时才炸。
+  'GET /api/runners': (data) => {
+    const area = (data.area || '').trim();
+    if (!area) {
+      return Promise.reject({ code: 400, message: '取件片区不能为空' });
+    }
+    const timeType = (data.timeType || '').trim();
+    if (['asap', 'deadline', 'range'].indexOf(timeType) < 0) {
+      return Promise.reject({ code: 400, message: '时间类型不合法' });
+    }
+    let list = runnerProfiles.filter((r) => r.serviceAreas.indexOf(area) > -1);
+    if (data.itemSize) {
+      list = list.filter(
+        (r) => !r.itemSizes.length || r.itemSizes.indexOf(data.itemSize) > -1
+      );
+    }
+    return delay({ list, total: list.length, page: 1, pageSize: 10 });
+  },
 
   'GET /api/conversations': () => delay({ list: conversations, total: conversations.length, page: 1, pageSize: 10 }),
 
@@ -384,4 +443,55 @@ function run(url, method, data) {
   }
 }
 
-module.exports = { has, run };
+// ---------------- 开发期数据自检 ----------------
+// 地标只能来自 utils/campus.js 的 25 片区 / 52 地标，手写数据必然会漂。
+// 这里在开发环境跑一次校验，出现清单外的值立刻 warn，避免演示时被追问
+// 「东门菜鸟驿站是哪个片区」。
+const campus = require('./campus');
+
+function selfCheck() {
+  const warnings = [];
+
+  const checkPlace = (zone, place, where) => {
+    if (!zone || !campus.isValidZone(zone)) {
+      warnings.push(where + ' 片区「' + zone + '」不在 25 片区清单内');
+      return;
+    }
+    if (place && !campus.isValidPlace(zone, place)) {
+      warnings.push(where + ' 地标「' + place + '」不在片区「' + zone + '」的 52 地标清单内');
+    }
+  };
+
+  errands.forEach((e) => checkPlace(e.pickupArea, e.pickupPlace, '订单 ' + e.orderId));
+
+  runnerProfiles.forEach((r) => {
+    r.serviceAreas.forEach((z) => {
+      if (!campus.isValidZone(z)) {
+        warnings.push('跑腿 ' + r.userId + ' 服务片区「' + z + '」不在 25 片区清单内');
+      }
+    });
+    r.servicePlaces.forEach((pl) => {
+      // 地标本身能反查所属片区，能查到就合法
+      if (!campus.zoneOfPlace(pl)) {
+        warnings.push('跑腿 ' + r.userId + ' 服务地标「' + pl + '」不在 52 地标清单内');
+      }
+    });
+  });
+
+  if (warnings.length) {
+    console.warn('[mock] 地标数据不合规，共 ' + warnings.length + ' 处：\n' + warnings.join('\n'));
+  }
+  return warnings;
+}
+
+// 只在本地 mock 模式下自检，不影响真机
+try {
+  const config = require('../config');
+  if (config && config.MOCK) {
+    selfCheck();
+  }
+} catch (e) {
+  // config 缺失时忽略，不阻塞启动
+}
+
+module.exports = { has, run, selfCheck };
