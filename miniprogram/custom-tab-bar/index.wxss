@@ -1,49 +1,95 @@
 .tab-bar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(20rpx + env(safe-area-inset-bottom));
   display: flex;
   align-items: stretch;
-  height: calc(110rpx + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
-  border-top: 1rpx solid var(--color-divider, #F7EEE1);
+  height: 108rpx;
+  background-color: var(--color-bg-white, #FFFFFF);
+  border-radius: var(--radius-full, 999rpx);
+  box-shadow: 0 8rpx 28rpx rgba(120, 80, 20, 0.16);
   z-index: 100;
 }
 
+/* 滑动选中胶囊：过渡写在类里，切页同步时由内联 transition:none 覆盖掉 */
+.tab-bar__pill {
+  position: absolute;
+  top: 8rpx;
+  bottom: 8rpx;
+  width: calc(25% - 16rpx);
+  background-color: var(--color-primary-dark, #A94A00);
+  border-radius: var(--radius-full, 999rpx);
+  transition: left 0.24s cubic-bezier(0.3, 1.15, 0.6, 1);
+}
+
 .tab-bar__item {
+  position: relative;
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
+  gap: 10rpx;
+  z-index: 1;
 }
 
-.tab-bar__dot {
-  width: 10rpx;
-  height: 10rpx;
-  border-radius: 50%;
-  background-color: transparent;
+/* 双图层：灰/白图标同时加载，只切换透明度，避免 <image> 换 src 造成闪白 */
+.tab-bar__icon-wrap {
+  position: relative;
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
 }
 
-.tab-bar__dot--show {
-  background-color: var(--color-primary, #FFA726);
+.tab-bar__icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40rpx;
+  height: 40rpx;
 }
 
-/* 文字 40rpx：原生 tabBar 文字为 20rpx（10px），放大两倍 */
+/* 白色图层默认隐藏 */
+.tab-bar__icon--on {
+  opacity: 0;
+}
+
+/* 顺序很重要：先隐藏两张，再单独点亮白色图层，否则同权重下后写的 hide 会赢 */
+.tab-bar__item--active .tab-bar__icon {
+  opacity: 0;
+}
+
+.tab-bar__item--active .tab-bar__icon.tab-bar__icon--on {
+  opacity: 1;
+}
+
+/* 文字略缩：40rpx -> 26rpx，图标承担辨识
+   不加 color 过渡、不改字重：过渡会在「胶囊未到位」的窗口里闪，字重变化会让文字抖动 */
 .tab-bar__text {
-  font-size: 40rpx;
-  line-height: 1.1;
+  font-size: 26rpx;
+  font-weight: 500;
+  line-height: 1.2;
   color: var(--color-text-2, #6B6259);
 }
 
 .tab-bar__item--active .tab-bar__text {
-  color: var(--color-primary-dark, #A94A00);
-  font-weight: 600;
+  color: #ffffff;
 }
 
-.tab-bar__item:active {
-  opacity: 0.8;
+/* 未读红点 */
+.tab-bar__badge {
+  position: absolute;
+  top: 14rpx;
+  left: 50%;
+  margin-left: 22rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 16rpx;
+  background-color: var(--color-danger, #C62828);
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  text-align: center;
 }

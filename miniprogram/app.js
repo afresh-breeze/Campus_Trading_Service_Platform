@@ -11,6 +11,8 @@ App({
     userInfo: null,
     unreadCount: 0,
     baseUrl: config.BASE_URL,
+    // 自定义 tabBar 当前选中索引（各页面实例据此初始化，避免切换时胶囊跳位）
+    tabIndex: 0,
     // bootstrap 完成前为 false，页面可据此避免"空数据闪一下"
     ready: false
   },
@@ -103,6 +105,14 @@ App({
   /** 写 tabBar 红点；消息 tab 索引固定为 2 */
   setUnreadBadge(count) {
     const index = 2;
+    // 启用自定义 tabBar 后 wx.setTabBarBadge 不生效，优先让组件自己画
+    const pages = getCurrentPages();
+    const current = pages[pages.length - 1];
+    const bar = current && typeof current.getTabBar === 'function' && current.getTabBar();
+    if (bar && typeof bar.setBadge === 'function') {
+      bar.setBadge(count);
+      return;
+    }
     if (count > 0) {
       wx.setTabBarBadge({
         index: index,

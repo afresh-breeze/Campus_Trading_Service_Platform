@@ -9,8 +9,9 @@ Page({
   },
 
   onShow() {
+    // 切页同步选中态：走 syncSelected，避免胶囊播放「瞬移后滑动」的动画
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 1 });
+      this.getTabBar().syncSelected(1);
     }
   }
 });

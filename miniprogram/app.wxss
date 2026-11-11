@@ -96,7 +96,8 @@ scroll-view {
 .page {
   min-height: 100vh;
   background-color: var(--color-bg);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* 悬浮胶囊 tabBar 会遮挡底部内容，预留高度 */
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 .page-body {
   padding: var(--space);
@@ -247,7 +248,8 @@ scroll-view {
 .fab {
   position: fixed;
   right: 32rpx;
-  bottom: calc(48rpx + env(safe-area-inset-bottom));
+  /* 上移避开悬浮胶囊 tabBar */
+  bottom: calc(150rpx + env(safe-area-inset-bottom));
   width: 104rpx;
   height: 104rpx;
   border-radius: 50%;
