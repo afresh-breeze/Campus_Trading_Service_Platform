@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2376" height="1705" viewBox="-28.95257180025535 -139.9778387716251 2376 1705" font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
-<rect x="-28.95257180025535" y="-139.9778387716251" width="2376" height="1705" fill="#ffffff"/>
+<rect x="-28.95257180025535" y="-139.9778387716251" width="2376" height="1705" fill="#F4F1E7"/>
 <text x="-8.952571800255349" y="-79.9778387716251" font-size="46" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 全局 ER 图（Chen 记法）</text>
 <text x="-8.952571800255349" y="-45.9778387716251" font-size="16" fill="#806E5C">12 个实体 · 17 个联系　|　完整属性视图</text>
 <line x1="-8.952571800255349" y1="-35.9778387716251" x2="611.0474281997447" y2="-35.9778387716251" stroke="#E6A874" stroke-width="2"/>
