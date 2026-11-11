@@ -1,4 +1,5 @@
 <!-- 我的（B 成员：个人中心，tab 4） -->
+<nav-top />
 <view class="page mine">
   <!-- 用户卡：未登录整卡可点，跳登录 -->
   <view class="mine-hero" bindtap="onTapProfile" hover-class="mine-hero--hover">

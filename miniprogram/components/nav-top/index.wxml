@@ -1,0 +1,6 @@
+<view class="nav-top" style="height:{{spacerH}}px">
+  <view wx:if="{{canBack}}" class="nav-top__back" bindtap="onBack" hover-class="nav-top__back--hover" aria-label="返回">
+    <view class="nav-top__chevron"></view>
+  </view>
+  <text wx:if="{{title}}" class="nav-top__title">{{title}}</text>
+</view>

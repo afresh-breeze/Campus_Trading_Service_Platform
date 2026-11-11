@@ -1,4 +1,5 @@
 <!-- 消息（B 成员负责） -->
+<nav-top />
 <view class="page page-body">
   <view class="card">
     <view class="t-title">消息</view>

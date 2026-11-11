@@ -1,4 +1,5 @@
 <!-- 搜索结果（A 成员负责） -->
+<nav-top back />
 <view class="page page-body">
   <view class="card">
     <view class="t-title">搜索结果</view>

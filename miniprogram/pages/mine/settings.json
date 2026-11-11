@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "设置",
-  "usingComponents": {}
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
 }

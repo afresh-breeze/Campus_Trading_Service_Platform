@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "聊天",
-  "usingComponents": {}
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
 }

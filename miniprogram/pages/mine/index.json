@@ -3,6 +3,7 @@
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
   "usingComponents": {
-    "status-tag": "/components/status-tag/index"
+    "status-tag": "/components/status-tag/index",
+    "nav-top": "/components/nav-top/index"
   }
 }

@@ -26,7 +26,8 @@
     "backgroundColor": "#F4F1E7",
     "navigationBarBackgroundColor": "#FFFFFF",
     "navigationBarTitleText": "校园易站",
-    "navigationBarTextStyle": "black"
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "custom"
   },
   "tabBar": {
     "custom": true,

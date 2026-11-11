@@ -1,4 +1,5 @@
 <!-- 我的收藏（A 成员负责） -->
+<nav-top back />
 <view class="page page-body">
   <view class="card">
     <view class="t-title">我的收藏</view>

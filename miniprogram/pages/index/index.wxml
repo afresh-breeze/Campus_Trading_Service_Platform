@@ -1,4 +1,5 @@
 <!-- 二手市场（A 成员负责） -->
+<nav-top />
 <view class="page page-body">
   <view class="card">
     <view class="t-title">二手市场</view>

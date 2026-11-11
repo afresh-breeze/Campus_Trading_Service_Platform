@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "发布商品",
-  "usingComponents": {}
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
 }
