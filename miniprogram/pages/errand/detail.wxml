@@ -1,12 +1,136 @@
-<!-- 代取详情（B 成员负责） -->
+<!-- 代取详情（B 成员，11-12）：展示 + 状态机操作，按钮全部由后端 can* 决定 -->
 <nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">代取详情</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/errand/detail</view>
+
+<view class="detail {{actions.length ? 'detail--bar' : ''}}">
+  <!-- 加载中 / 加载失败互斥；404 说明无权可见，单独给「回大厅」出路 -->
+  <view wx:if="{{loading}}" class="detail-state">
+    <text class="t-sub">加载中…</text>
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+  <view wx:elif="{{error}}" class="detail-state">
+    <view class="card detail-state__card">
+      <text class="t-title">{{error}}</text>
+      <text class="t-sub detail-state__desc">{{errorDesc}}</text>
+      <button class="btn btn-primary btn-block detail-state__btn" bindtap="onBackHall">回代取大厅</button>
+    </view>
+  </view>
+  <block wx:else>
+    <!-- ① 头部：状态 / 报酬 / 时间 -->
+    <view class="card detail-head">
+      <view class="detail-head__tags">
+        <view class="detail-head__tag">
+          <status-tag domain="errand" status="{{order.status}}" plain="{{false}}" />
+        </view>
+        <view wx:if="{{order.visibility === 'private'}}" class="detail-head__tag">
+          <text class="tag tag-gray">私单 · 未进大厅</text>
+        </view>
+        <view wx:if="{{isPublisher}}" class="detail-head__tag">
+          <text class="tag tag-primary">我发布的</text>
+        </view>
+        <view wx:elif="{{isRunner}}" class="detail-head__tag">
+          <text class="tag tag-primary">我接的单</text>
+        </view>
+      </view>
+
+      <view class="detail-head__reward">
+        <text class="detail-head__price">¥{{rewardText}}</text>
+        <text class="detail-head__label">跑腿报酬</text>
+      </view>
+      <text class="detail-head__time">{{timeText}}</text>
+    </view>
+
+    <!-- ② 路线：取件 → 送达 -->
+    <view class="card detail-route">
+      <view class="detail-route__line">
+        <view class="detail-route__dot detail-route__dot--from"></view>
+        <view class="flex-1 detail-route__body">
+          <text class="detail-route__label">取件</text>
+          <text class="detail-route__value">{{areaText}}</text>
+          <text wx:if="{{order.remark}}" class="detail-route__remark">备注：{{order.remark}}</text>
+        </view>
+      </view>
+
+      <view class="detail-route__dash"></view>
+
+      <view class="detail-route__line">
+        <view class="detail-route__dot detail-route__dot--to"></view>
+        <view class="flex-1 detail-route__body">
+          <text class="detail-route__label">送达</text>
+          <text class="detail-route__value">{{order.deliveryLocation}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ③ 物品与订单信息 -->
+    <view class="card detail-info">
+      <view class="detail-info__row">
+        <text class="detail-info__k">物品规格</text>
+        <text class="detail-info__v">{{sizeText}}</text>
+      </view>
+      <view class="detail-info__row">
+        <text class="detail-info__k">物品描述</text>
+        <text class="detail-info__v">{{order.itemDesc || '未填写'}}</text>
+      </view>
+      <view class="detail-info__row" bindtap="onCopyOrderId" hover-class="detail-info__row--hover">
+        <text class="detail-info__k">订单编号</text>
+        <text class="detail-info__v">#{{order.orderId}}<text class="detail-info__copy">复制</text></text>
+      </view>
+      <view class="detail-info__row">
+        <text class="detail-info__k">发布时间</text>
+        <text class="detail-info__v">{{createdText}}</text>
+      </view>
+    </view>
+
+    <!-- ④ 发布人 / 接单人 -->
+    <view class="card detail-people">
+      <view class="detail-people__row">
+        <image wx:if="{{publisherAvatarUrl}}" class="detail-people__avatar" src="{{publisherAvatarUrl}}" mode="aspectFill" />
+        <view wx:else class="detail-people__avatar detail-people__avatar--text">{{publisherInitial}}</view>
+        <view class="flex-1 detail-people__info">
+          <text class="detail-people__name ellipsis">{{order.publisherNickname || '发布者'}}</text>
+          <text class="detail-people__sub">信用分 {{order.publisherCreditScore || '暂无'}}</text>
+        </view>
+        <text class="detail-people__role">发布人</text>
+      </view>
+
+      <block wx:if="{{order.runnerId}}">
+        <view class="divider"></view>
+        <view class="detail-people__row">
+          <image wx:if="{{runnerAvatarUrl}}" class="detail-people__avatar" src="{{runnerAvatarUrl}}" mode="aspectFill" />
+          <view wx:else class="detail-people__avatar detail-people__avatar--text">{{runnerInitial}}</view>
+          <view class="flex-1 detail-people__info">
+            <text class="detail-people__name ellipsis">{{order.runnerNickname || '跑腿同学'}}</text>
+            <text class="detail-people__sub">{{takenText}}</text>
+          </view>
+          <text class="detail-people__role">接单人</text>
+        </view>
+      </block>
+
+      <button
+        wx:if="{{chatPeerId && (order.status === 'taken' || order.status === 'completed')}}"
+        class="btn btn-ghost detail-people__chat"
+        bindtap="onContact"
+      >联系 TA</button>
+    </view>
+
+    <!-- ⑤ 状态说明：订单已无可用操作时告诉用户为什么 -->
+    <view wx:if="{{!actions.length}}" class="detail-hint">
+      <text wx:if="{{order.status === 'completed'}}">订单已完成，如需沟通请点「联系 TA」。</text>
+      <text wx:elif="{{order.status === 'cancelled'}}">订单已取消，不会再出现在大厅。</text>
+      <text wx:elif="{{order.status === 'taken'}}">订单进行中，等待发布者确认完成。</text>
+      <text wx:else>当前身份对该订单没有可执行的操作。</text>
+    </view>
+  </block>
+</view>
+
+<!-- 底部操作栏：按钮与文案全部来自 js 的 buildActions（源头是后端 can*） -->
+<view wx:if="{{actions.length}}" class="detail-bar">
+  <button
+    wx:for="{{actions}}"
+    wx:key="key"
+    class="btn detail-bar__btn {{item.primary ? 'btn-primary' : 'btn-ghost'}}"
+    data-key="{{item.key}}"
+    disabled="{{submitting}}"
+    loading="{{submitting && actionKey === item.key}}"
+    bindtap="onAction"
+  >{{item.text}}</button>
 </view>
