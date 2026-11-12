@@ -101,7 +101,7 @@
 | --- | --- | --- | --- |
 | M0 环境与登录打通 | 11-07 | ✅ 已过 | `app.json` 注册 20 页；`/api/health`、`/api/auth/me` 可通；登录页渲染成功，开发者工具 **0 错误 0 警告** |
 | M1 二手闭环（配合 A） | 11-11 | 🟡 配合中 | 公共层与组件已交付，A 可引用；B 侧页面尚未开始 |
-| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中 | 后端已就绪：A 的 `routes/errands.js` 8 个接口 11-11 已推送、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；剩小程序侧代取详情/聊天页 |
+| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中 | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；剩小程序侧代取详情/聊天页 |
 
 #### 2）公共层遗留项（A 11-10 评审提出的 7 项，已全部闭环）
 
@@ -135,15 +135,15 @@
 
 - [x] 1. `status-tag` 已接到「我的」页用户卡做**试渲染**（新增 `user` 域，`active`→正常 / `disabled`→已禁用）。⚠️ 微信开发者工具的编译验证需在本机执行，尚未留证。
 - [x] 2. 「我的」页（tab 4）已实现：用户信息卡（头像/昵称/学号/信用分/账号状态）、四项统计（发布/收藏/代取/完成）、两组入口（我的发布/我的收藏/我的代取/接单设置 + 设置/帮助与反馈/关于）、退出登录；含下拉刷新与 `onShow` 刷新。
-- [ ] 3. 21:30 与 A 同步：组件是否可用、**`routes/errands.js` 字段确认**（8 个接口 A 已于 11-11 推送，不再是排期问题）、11-12 代取详情页的状态机字段对齐。**（人工待办）**
+- [ ] 3. 21:30 与 A 同步：组件是否可用、**`routes/errands.js` 字段确认**（10 个接口 A 已于 11-11 推送，含 `PUT /:id`、`POST /:id/publish`，不再是排期问题）、11-12 代取详情页的状态机字段对齐。**（人工待办）**
 - [x] 4. UI 走查第一遍：产出 `docs/UI走查记录-B.md`（22 条，B 侧 19 条已修）。**A 的 6 个页面仍是占位骨架，页面级走查被阻塞**，已在该文档 §3 留了落地后要复查的清单。
 - [x] 5. 组件问题修复（对应当日 §4.3 要求）：网格卡片等高、图片占位底色、压图标签改实心、标签字号与灰标签对比度、空态颜色变量化；同时修掉 `app.wxss` 里 `.btn-primary` / `.fab` 白字压亮橙的**红线违规**。
 
 #### 6）已知阻塞（写在这里，避免口头遗忘）
 
-- ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，513 行、8 个接口全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
+- ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
-- ~~mock 与后端字段/校验不一致~~ → **已整改（11-11 复盘）**：`utils/mock.js` 重写为 37 条路由，入参校验、返回字段、失败码逐条对齐 `server/src/routes/*.js`；新增 `scripts/mock-contract-test.js`（`node scripts/mock-contract-test.js`，50 项断言全过）作为回归门槛。**后端新增接口必须同步 mock 与断言**，否则 MOCK 模式会直接报「mock 未登记该接口」。
+- ~~mock 与后端字段/校验不一致~~ → **已整改（11-11 复盘）**：`utils/mock.js` 经两轮对齐后共 **39 条路由**（服务端 40 条 − `POST /api/upload` 文件上传接口，该接口不适合 mock），入参校验、返回字段、失败码逐条对齐 `server/src/routes/*.js`；`scripts/mock-contract-test.js` 已扩到 **88 项断言全过**，作为回归门槛。**后端新增接口必须同步 mock 与断言**，否则 MOCK 模式会直接报「mock 未登记该接口」。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
 - **A 的 6 个二手页面仍为占位骨架**（wxml 11 行），M1 的 UI 走查与 B 侧配合验收都要等页面落地（记录见 `docs/UI走查记录-B.md` #18）。
 - **后端无 stats 聚合接口**：个人中心四项统计用 `items/mine`、`favorites`、`errands/mine` 的 `total` 派生，`/api/errands/mine` 必须支持 `status` 筛选（mock 已对齐）。
@@ -298,13 +298,15 @@
 | --- | --- | --- | --- |
 | POST | `/api/auth/register` | A | 注册页 |
 | POST | `/api/auth/login` | A | 登录页 |
-| GET | `/api/auth/me` | A | 启动时校验登录态 |
-| GET/PUT | `/api/users/me` | A | 个人资料 |
+| GET | `/api/auth/me` | A | 启动校验登录态 / 读个人资料 |
+| PUT | `/api/users/me` | A | 保存个人资料（**不接受 `campus`**）|
 | GET/PUT | `/api/users/me/runner-profile` | A | 接单设置回显/保存 |
 | PUT | `/api/users/me/online` | A | 上线/下线 |
 | GET | `/api/runners?area=&place=&timeType=&timeStart=&deadline=&itemSize=` | A | 找跑腿匹配页 |
 | GET/POST | `/api/errands` | A | 代取大厅 / 发布代取 |
-| GET | `/api/errands/:id` | A | 代取详情（含 `canTake`/`canComplete`/`canCancel`/`canRelease`） |
+| GET | `/api/errands/:id` | A | 代取详情（含 `canTake`/`canEdit`/`canPublish`/`canComplete`/`canCancel`/`canRelease`） |
+| PUT | `/api/errands/:id` | A | 修改未发布的私单（不接受 `visibility`）|
+| POST | `/api/errands/:id/publish` | A | 私单发布到大厅 |
 | POST | `/api/errands/:id/take` | A | 接单 |
 | POST | `/api/errands/:id/complete` | A | 完成 |
 | POST | `/api/errands/:id/cancel` | A | 发布者撤回 |
@@ -313,7 +315,7 @@
 | GET/POST | `/api/conversations` | **B** | 会话列表 / 获取或创建会话 |
 | GET | `/api/conversations/:id/messages?afterId=` | **B** | 增量拉消息 |
 | POST | `/api/conversations/:id/messages` | **B** | 发送消息 |
-| POST | `/api/conversations/:id/read` | **B** | 标记已读 |
+| PUT | `/api/conversations/:id/read` | **B** | 标记已读 |
 | GET | `/api/conversations/unread-count` | **B** | tabBar 未读红点 |
 
 **页面跳转参数（A/B 必须一致）：**
@@ -844,7 +846,7 @@ git push -u origin feature/mp-base
 **今天完成**
 
 1. 登录页：学号 + 密码，`POST /api/auth/login`，token + user 存本地，跳 tabBar 首页。
-2. 注册页：学号、密码、确认密码、昵称、校区，`POST /api/auth/register`，成功后自动登录或回登录页。
+2. 注册页：学号、密码、确认密码、昵称（**不采集校区**，与接口文档一致），`POST /api/auth/register`，成功后自动登录或回登录页。
 3. `app.js` 启动时若有 token，调 `GET /api/auth/me` 校验；401 静默清 token，不弹错误。
 4. 个人中心骨架页：头像、昵称、学号、四个入口占位（我的发布/我的收藏/我的代取/接单设置）。
 5. 退出登录：清 storage + `reLaunch` 登录页。
@@ -1055,7 +1057,7 @@ git push
 2. `GET /api/conversations`：会话列表（用视图 `v_conversation_base`），带对方昵称、最后消息、未读数、时间。
 3. `GET /api/conversations/:id/messages?afterId=&limit=20`：增量拉取，按 `message_id` 升序。
 4. `POST /api/conversations/:id/messages`：`{content, msgType}`，插入消息（触发器负责更新会话最后消息），返回 `messageId`。`msgType` 取 `text`/`image`，缺省 `text`；不传会导致 `messages.msg_type` 取默认值，图片消息就退化成文本。
-5. `POST /api/conversations/:id/read`：标记已读（把 `messages.is_read` 置 1）。A 的 `messages` 表自带 `msg_type`、`is_read` 两列，**没有** `conversation_members` 表，也没有 `last_read_id` 这种游标字段。
+5. `PUT /api/conversations/:id/read`：标记已读（把 `messages.is_read` 置 1）。A 的 `messages` 表自带 `msg_type`、`is_read` 两列，**没有** `conversation_members` 表，也没有 `last_read_id` 这种游标字段。
 6. `GET /api/conversations/unread-count`：用 `fn_unread_count` 汇总总未读数。
 7. **越权校验**：非会话参与者一律 403，不能靠前端隐藏。
 
@@ -1113,13 +1115,13 @@ git push
 
 1. 我的代取：两个 tab（我发布的 / 我接的），列表按状态分组，操作按钮（撤回/释放/完成/联系）。
 2. 找跑腿匹配页：`GET /api/runners?area=&place=&timeType=&itemSize=`，跑腿卡片（片区、可接规格、在线状态、报价、备注）。
-3. 从发布页“先找跑腿”入口带上表单参数跳过来；页面顶部显示筛选条件，可修改后重新查。
+3. 从发布页“先找跑腿”入口跳过来时，**发布页已用 `visibility='private'` 建好私单**，这里带的是 `orderId` + 表单筛选条件；页面顶部显示筛选条件，可修改后重新查。
 4. 点“联系 TA”进聊天页；**不直接改订单状态**。
 
 **怎么做**
 
 - 我的代取用 `status` 分组（待接单/已接单/已完成/已取消），每组显示数量。
-- 找跑腿只做“展示 + 联系”，页面上明确写一句“联系后由对方接单”，避免用户以为点了就指派。
+- 找跑腿只做“展示 + 联系”，页面上明确写一句“谈妥后由对方在详情页接单”，避免用户以为点了就指派；私单不需要先发布到大厅。
 - 空态要给出路：“当前没有符合条件的跑腿，去发布大厅试试？” → 按钮跳发布页。
 
 **验收**：两个 tab 数据正确；跑腿卡片能跳到聊天；无结果时提示清晰。
@@ -1694,10 +1696,10 @@ Page({
 
 | 字段 | 校验 |
 | --- | --- |
-| `studentNo` | 7 位数字，未注册过（后端校验） |
+| `studentNo` | 6-20 位数字（本校 15 位），未注册过（格式由 `auth.js` 校验） |
 | `password` / `confirmPassword` | ≥ 6 位，两次一致 |
-| `nickname` | 1~20 字，必填 |
-| `campus` | 固定枚举二选一：`南区` / `北区`（对应 `users.campus VARCHAR(50)`），必选。**不要写成东校区/西校区/南校区/北校区四个值**，本校只有南、北两个片区口径 |
+| `nickname` | 2~12 字，必填（与 `auth.js` 同口径） |
+| `campus` | **不采集**：注册表单已删校区（v0.5），`users.campus` 恒为 NULL，接口文档固定返回 `null`。片区概念只用于二手/代取的 `pickupArea`，不要与注册混在一起 |
 
 **交互要点**
 
@@ -1711,21 +1713,21 @@ Page({
 
 ### 6.3 个人中心 `pages/mine/index`（P0，tabBar）
 
-**数据字段**：`user`（头像、昵称、学号、校区、信用分）、`stats`（发布数、收藏数、代取数、完成数——有接口就用，没有就用本地占位并标注）。
+**数据字段**：`user`（头像、昵称、学号、信用分；**无校区**）、`stats`（发布数、收藏数、代取数、完成数——有接口就用，没有就用本地占位并标注）。
 
 **交互要点**
 
 1. 顶部头像卡：点击进个人资料；未登录显示“点击登录”。
 2. 四个入口：我的发布、我的收藏、我的代取、接单设置。
 3. 第二组：设置、帮助与反馈、关于。
-4. 下拉刷新拉 `/api/users/me`。
+4. 下拉刷新拉 `GET /api/auth/me`（保存资料才用 `PUT /api/users/me`）。
 5. `onShow` 刷新（从资料页改完昵称回来要变）。
 
 **验收**：四个入口都能跳对；改昵称后返回立即更新；未登录点入口跳登录。
 
 ### 6.4 个人资料 `pages/mine/profile`（P1）
 
-**交互**：头像（`wx.chooseMedia` → `POST /api/upload` → 保存相对路径）、昵称、校区、手机号（可选）、简介；保存 `PUT /api/users/me`。
+**交互**：头像（`wx.chooseMedia` → `POST /api/upload` → 保存相对路径）、昵称、学院（`college`）、手机号（可选，11 位数字即可，后端不校验号段）、简介；保存 `PUT /api/users/me`。**没有校区字段**（后端不接受 `campus`）。
 
 **边界**：图片 > 5MB 先压缩（`wx.compressImage`）；上传失败保留旧头像并提示；昵称清空不允许保存。
 
@@ -1735,7 +1737,7 @@ Page({
 
 ### 6.6 帮助与反馈 `pages/mine/help`（P1）
 
-**内容**：常见问题折叠列表（8 条，写你踩过的坑）、意见反馈表单（类型 + 内容 ≤ 200 字）→ `POST /api/feedback`。
+**内容**：常见问题折叠列表（8 条，写你踩过的坑）、意见反馈表单（只有内容，≤ 200 字；`feedback` 表**没有** `type`/`status` 列）→ `POST /api/feedback`。
 
 ### 6.7 代取大厅 `pages/errand/hall`（P0，tabBar）
 
@@ -1777,8 +1779,8 @@ Page({
 | `pickupArea` | 分类+片区二级 picker | 必选 |
 | `pickupPlace` | 地标 picker（按已选片区联动） | 有下级地标时必选；无下级地标时 = 片区名 |
 | `deliveryLocation` | input | 必填，≤ 100 字（对应 `delivery_location VARCHAR(100)`） |
-| `itemDesc` | textarea | 可空，≤ 200 字，显示计数（对应 `item_desc VARCHAR(500)`） |
-| `remark` | textarea | 可空，≤ 200 字；取件楼栋门牌、取件时间、交付要求写这里（对应 `remark VARCHAR(255)`） |
+| `itemDesc` | textarea | 可空，≤ 500 字，显示计数（对应 `item_desc VARCHAR(500)`） |
+| `remark` | textarea | 可空，≤ 255 字；取件楼栋门牌、取件时间、交付要求写这里（对应 `remark VARCHAR(255)`） |
 | `itemSize` | radio（小/中/大） | 必选 |
 | `timeType` | radio（尽快/截止前/时间段） | 必选 |
 | `timeStart` | date+time picker | `range` 时必填，且 > 现在 |
@@ -1791,7 +1793,7 @@ Page({
 2. `timeType=asap` 时隐藏时间选择器，提交不传 `timeStart/deadline`。
 3. 报酬输入实时过滤非数字字符。
 4. 提交成功 `wx.redirectTo('/pages/errand/detail?id=' + orderId)`（用 redirect 防止返回到空表单）。
-5. 页面底部有“先找跑腿”按钮 → 带当前表单参数跳 `/pages/errand/runners`（P1）。
+5. 页面底部有“先找跑腿”按钮 → **先以 `visibility='private'` 调 `POST /api/errands` 建私单**，拿到 `orderId` 后带 `orderId` + 表单条件跳 `/pages/errand/runners`（P1）。私单不进大厅；谈妥由对方在详情页接单，若始终没人接，发布者可在详情页点“发布到大厅”（`POST /api/errands/:id/publish`）。
 
 **验收**：12 种非法输入全部被拦住；片区切换地标联动正确；成功后详情页能看到刚发的单。
 
@@ -1799,7 +1801,7 @@ Page({
 
 **入参**：`id`（必填，缺失时提示并 `navigateBack`）。
 
-**数据字段**：订单全字段 + `publisher`（发布人）+ `runner`（接单人头像昵称，可空）+ `canTake/canComplete/canCancel/canRelease`。
+**数据字段**：订单全字段（含 `visibility`）+ `publisher`（发布人）+ `runner`（接单人头像昵称，可空）+ `canTake/canEdit/canPublish/canComplete/canCancel/canRelease`。私单若非发布者/接单者/聊过该单，详情接口直接 404。
 
 **交互要点**
 
@@ -1807,7 +1809,7 @@ Page({
 2. 每个操作二次确认，文案写后果：
    - 接单：“接单后订单将从大厅消失，确认接单？”
    - 完成：“确认已完成送达？”
-   - 撤回：“撤回后订单回到大厅，确认？”
+   - 撤回：“撤回后订单退回待接单（大厅单回大厅、私单仍为私单），确认？”
    - 释放：“释放后订单回到大厅，你可能被其他人接走，确认？”
 3. `taken/completed` 显示“联系 TA” → 聊天页（`bizType=errand`）。
 4. `onShow` 重新拉取（从聊天返回要看最新状态）。
@@ -1827,8 +1829,8 @@ Page({
 
 1. 顶部筛选条显示当前条件，点“修改”展开筛选面板。
 2. 卡片显示“可接：桃园、北区教学区 / 小件·中件”。
-3. “联系 TA” → 聊天页（`bizType=errand`，`bizId` 可空则传 0）。
-4. 页面必须有一句说明：“联系后由对方在大厅接单”，避免误解为指派。
+3. “联系 TA” → 聊天页（`bizType=errand`、`bizId=<orderId>`）。**必须带私单的真实 `orderId`**，谈妥后对方才能在详情页直接接单。
+4. 页面必须有一句说明：“谈妥后由对方在详情页直接接单（私单不必先发大厅）”，避免误解为指派。
 
 **验收**：按片区筛选生效；无结果有空态 + 回大厅按钮；联系能进正确会话。
 
@@ -1891,7 +1893,7 @@ onLoad(query)
   → 若无 conversationId：POST /api/conversations {peerId,bizType,bizId} 拿 conversationId
   → GET /api/conversations/:id/messages?afterId=0 拉最近 20 条
   → 渲染 + 滚到底
-  → POST /api/conversations/:id/read 标记已读
+  → PUT /api/conversations/:id/read 标记已读
   → onShow: 启动 3 秒轮询
   → onHide/onUnload: clearInterval
 ```
@@ -1934,7 +1936,7 @@ onLoad(query)
 
 **接口前缀**：`/api/conversations`（不是 `/api/chat`，与 A 的挂载点一致）。
 
-### 7.2 五个接口的详细契约
+### 7.2 七个接口的详细契约
 
 #### 7.2.1 `POST /api/conversations` 获取或创建会话
 
@@ -1946,7 +1948,7 @@ onLoad(query)
 
 - `peerId` 必填，正整数，且不能等于当前用户（等于自己返回 400）。
 - `bizType` 只能是 `item` / `errand`。
-- `bizId` 商品或订单 ID；来自找跑腿页时可传 `0`。
+- `bizId` 商品或订单 ID。**私单流程必须传真实 `orderId`**：发布页先以 `visibility='private'` 建单，拿返回的 `orderId` 建会话，后端才能用 `isErrandChatPeer` 认出「这个跑腿聊过这单」，否则详情页 `canTake` 恒为 false、接单返回 403。`0` 仅为兼容历史数据保留。
 
 返回：
 
@@ -1992,6 +1994,11 @@ onLoad(query)
 #### 7.2.6 `GET /api/conversations/unread-count`
 
 返回 `{ "count": 3 }`，用于 tabBar 红点。
+
+#### 7.2.7 `GET /api/conversations/:id/context` 会话业务卡片
+
+返回 `{ bizType, bizId, bizSummary }`：商品会话给封面/标题/价格/状态，代取会话给规格、取片区/地标、报酬、状态；记录不存在时 `bizSummary = null`。
+卡片只负责展示与跳转，接单动作仍在代取详情页完成（`canTake` 由后端算）。
 
 ### 7.3 `routes/chat.js` 参考实现
 
@@ -2502,24 +2509,24 @@ git commit -m "chore: 忽略演示视频文件"
 ```text
 users(**user_id**, student_no, password_hash, nickname, avatar_url, campus, college, phone,
       credit_score, status, created_at)
-categories(**category_id**, name, sort_order)
-books(**book_id**, isbn, title, author, publisher, cover_url)
+categories(**category_id**, name, sort_no)
+books(**book_id**, isbn, title, author, publisher, edition, price_ref, cover_url)
 items(**item_id**, seller_id, category_id, book_id, item_type, title, description, price, original_price,
       condition_level, negotiable, campus, location, status, view_count, favorite_count,
       created_at, updated_at)
-item_images(**image_id**, item_id, url, sort_order)
+item_images(**image_id**, item_id, url, sort_no)
 favorites(**user_id**, **item_id**, created_at)
 errand_orders(**order_id**, publisher_id, runner_id, pickup_area, pickup_place, delivery_location,
-              item_size, item_desc, remark, reward, time_type, time_start, deadline, status,
+              item_size, item_desc, remark, reward, time_type, time_start, deadline, status, visibility,
               created_at, taken_at, completed_at)
 runner_profiles(**user_id**, is_online, availability_type, service_areas, service_places, time_slots,
                 manual_until, base_price, remark, completed_count)
 runner_item_sizes(**user_id**, **item_size**)
 conversations(**conversation_id**, user_a_id, user_b_id, biz_type, biz_id, last_message, last_time)
 messages(**message_id**, conversation_id, sender_id, msg_type, content, is_read, created_at)
-item_status_logs(**log_id**, item_id, old_status, new_status, changed_by, created_at)
-errand_status_logs(**log_id**, order_id, old_status, new_status, changed_by, created_at)
-feedback(**feedback_id**, user_id, type, content, status, created_at)
+item_status_logs(**log_id**, item_id, old_status, new_status, changed_by, changed_at)
+errand_status_logs(**log_id**, order_id, old_status, new_status, changed_by, changed_at)
+feedback(**feedback_id**, user_id, content, created_at)
 ```
 
 > 字段名以 `database/schema.sql` 为准；A 改过结构就同步改本文，**不要凭记忆写**。
@@ -2937,7 +2944,7 @@ report/assets/（B 的图）
 | 发布代取 | `POST /api/errands` | `pages/errand/publish/` |
 | 代取详情 | `GET /api/errands/:id` + `take/complete/cancel/release` | `pages/errand/detail/` |
 | 找跑腿 | `GET /api/runners` | `pages/errand/runners/` |
-| 我的代取 | `GET /api/errands?role=publisher|runner` | `pages/mine/errands/` |
+| 我的代取 | `GET /api/errands/mine?role=publisher|runner` | `pages/mine/errands/` |
 | 接单设置/上线 | `GET/PUT /api/users/me/runner-profile`、`PUT /api/users/me/online` | `pages/mine/runner/` |
 | 消息列表 | `GET /api/conversations`、`GET /api/conversations/unread-count` | `pages/chat/list/` |
 | 聊天页 | `POST /api/conversations`、`GET/POST /api/conversations/:id/messages`、`POST /api/conversations/:id/read` | `pages/chat/detail/` |

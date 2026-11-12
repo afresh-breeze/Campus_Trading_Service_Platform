@@ -5,7 +5,9 @@
  * 对接真实后端时：把 config.js 里的 MOCK 改成 false 即可，无需改页面代码。
  * 约定：键为 `METHOD url`，值为处理函数 (data) => Promise<resolvedData>
  *
- * ★ 同构原则（2026-11-11 A 复盘后重写）
+ * ★ 同构原则（2026-11-11 A 复盘后重写；2026-11-12 按 A 全面排查再对齐）
+ *   当前登记 39 条路由 = 服务端 40 条 − 1 条不适合 mock 的 POST /api/upload（真机文件上传）。
+ *   服务端新增接口必须同步这里 + scripts/mock-contract-test.js，否则 MOCK 模式直接报错。
  *   本文件不是"随便造点假数据"，而是**复刻后端契约**：
  *     · 入参校验与 400 文案 → 对齐 server/src/routes/*.js
  *     · 返回字段名与层级     → 对齐 docs/接口文档.md（不是对齐旧命名习惯）
@@ -352,6 +354,7 @@ const errands = [
     timeStart: null,
     deadline: '2026-11-12 18:30:00',
     status: 'pending',
+    visibility: 'hall',
     createdAt: '2026-11-08 15:02:00',
     runnerId: null,
     runnerNickname: null,
@@ -376,6 +379,7 @@ const errands = [
     timeStart: null,
     deadline: null,
     status: 'pending',
+    visibility: 'hall',
     createdAt: '2026-11-08 15:20:00',
     runnerId: null,
     runnerNickname: null,
@@ -400,6 +404,7 @@ const errands = [
     timeStart: '2026-11-12 16:00:00',
     deadline: '2026-11-12 18:00:00',
     status: 'taken',
+    visibility: 'hall',
     createdAt: '2026-11-08 14:10:00',
     runnerId: 9,
     runnerNickname: '阿杰',
@@ -408,7 +413,8 @@ const errands = [
     completedAt: null
   },
   {
-    // 当前用户发布、待接单：canCancel = true，canTake = false（不能接自己的单）
+    // 当前用户发布的**私单**（未发布到大厅）：canEdit/canPublish = true，canCancel = true，canTake = false
+    // 私单不出现在 GET /api/errands（大厅），只可能从「我的代取」「详情页」「会话卡片」进入
     orderId: 2004,
     publisherId: 1,
     publisherNickname: '小 B',
@@ -425,6 +431,7 @@ const errands = [
     timeStart: null,
     deadline: null,
     status: 'pending',
+    visibility: 'private',
     createdAt: '2026-11-09 19:40:00',
     runnerId: null,
     runnerNickname: null,
@@ -450,6 +457,7 @@ const errands = [
     timeStart: null,
     deadline: '2026-11-09 18:00:00',
     status: 'completed',
+    visibility: 'hall',
     createdAt: '2026-11-08 09:30:00',
     runnerId: 1,
     runnerNickname: '小 B',
@@ -458,7 +466,7 @@ const errands = [
     completedAt: '2026-11-08 10:20:00'
   },
   {
-    // 当前用户发布、已被别人接单：canComplete = true、canCancel = true —— A 指出原来 canComplete 恒为 false
+    // 当前用户发布、已被别人接单：canComplete = true、canCancel = true
     orderId: 2006,
     publisherId: 1,
     publisherNickname: '小 B',
@@ -475,6 +483,7 @@ const errands = [
     timeStart: null,
     deadline: '2026-11-12 18:00:00',
     status: 'taken',
+    visibility: 'hall',
     createdAt: '2026-11-10 11:20:00',
     runnerId: 8,
     runnerNickname: '跑腿小李',
@@ -500,14 +509,43 @@ const errands = [
     timeStart: null,
     deadline: null,
     status: 'taken',
+    visibility: 'hall',
     createdAt: '2026-11-10 16:00:00',
     runnerId: 1,
     runnerNickname: '小 B',
     runnerAvatar: '',
     takenAt: '2026-11-10 16:05:00',
     completedAt: null
+  },
+  {
+    // 别人发布的**私单**，当前用户与发布者（5）就该单建过会话 3003：
+    // 非发布者也能看到详情，且 canTake = true（对齐后端 isErrandChatPeer 分支）
+    orderId: 2008,
+    publisherId: 5,
+    publisherNickname: '赵同学',
+    publisherAvatar: '',
+    publisherCreditScore: 85,
+    pickupArea: '桃园',
+    pickupPlace: '桃园',
+    deliveryLocation: '3 号宿舍楼 214',
+    itemSize: 'small',
+    itemDesc: '一份打印材料',
+    remark: '桃园驿站，取件码 6-3-1180',
+    reward: 4.0,
+    timeType: 'asap',
+    timeStart: null,
+    deadline: null,
+    status: 'pending',
+    visibility: 'private',
+    createdAt: '2026-11-11 18:40:00',
+    runnerId: null,
+    runnerNickname: null,
+    runnerAvatar: '',
+    takenAt: null,
+    completedAt: null
   }
 ];
+
 
 // 跑腿档案：字段对齐 runner_profiles + runner_item_sizes（数组字段全部是数组）
 // 地标必须能在 utils/campus.js 的 52 条清单里查到，见文件末尾自检
@@ -554,7 +592,9 @@ const runnerProfiles = [
 // 会话：表结构 userAId / userBId，接口层再按当前用户取「对方」信息（对齐 chat.js peerOf）
 const conversations = [
   { conversationId: 3001, userAId: 1, userBId: 2, bizType: 'item', bizId: 1001, lastMessage: '好的，那我们五点在图书馆门口见', lastTime: '2026-11-08 15:31:00' },
-  { conversationId: 3002, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2001, lastMessage: '取件码发你了，麻烦快点哦', lastTime: '2026-11-08 14:58:00' }
+  { conversationId: 3002, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2001, lastMessage: '取件码发你了，麻烦快点哦', lastTime: '2026-11-08 14:58:00' },
+  // 私单会话：当前用户（跑腿）与发布者就 2008 这张私单聊过 → 详情 canTake = true
+  { conversationId: 3003, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2008, lastMessage: '这单我接了，马上到', lastTime: '2026-11-11 19:05:00' }
 ];
 
 // 消息：字段对齐 chat.js（message_id / sender_id / msg_type / content / is_read / created_at）
@@ -574,7 +614,7 @@ const feedbacks = [];
 const currentUser = Object.assign({}, users[0], {
   // 接口文档 §2 的字段名是 userId；只保留 id 会让个人中心读到 undefined
   userId: 1,
-  campus: '桃园',
+  campus: null, // 注册不采集校区，users.campus 恒为 NULL（接口文档 §2）
   completedErrands: 7
 });
 
@@ -647,6 +687,148 @@ function backendIsValidPlace(place) {
   return campusUtil.isValidZone(place) || !!campusUtil.zoneOfPlace(place);
 }
 
+// ---------------- 与后端逐字对齐的小工具 ----------------
+const MAX_PRICE = 99999999.99;
+const MAX_REWARD = 99999999.99;
+const ERRAND_VISIBILITIES = ['private', 'hall'];
+
+/** 对齐 server/src/utils/item.js toNumber：数字或纯数字字符串，其它一律 null（null / '' 也算 null） */
+function toNumberStrict(value) {
+  if (typeof value === 'number' && isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '' && isFinite(Number(value))) return Number(value);
+  return null;
+}
+
+/** 对齐 server/src/utils/item.js parseBoolean：undefined/null → false，非法值 → null */
+function parseBooleanStrict(value) {
+  if (value === undefined || value === null) return false;
+  if (value === true || value === 1 || value === '1') return true;
+  if (value === false || value === 0 || value === '0') return false;
+  return null;
+}
+
+/** 对齐 errands.js readOptionalText：非字符串 → 参数错误；超长 → 指定文案；空串 → null */
+function readOptionalText(value, maxLength, label) {
+  if (value === undefined || value === null) return { value: null, error: '' };
+  if (typeof value !== 'string') return { value: null, error: '参数错误' };
+  const s = value.trim();
+  if (s.length > maxLength) return { value: null, error: label + '不能超过 ' + maxLength + ' 字' };
+  return { value: s || null, error: '' };
+}
+
+/** 对齐 errands.js readTime：只认 'YYYY-MM-DD HH:mm:ss' */
+function readTimeField(value) {
+  const s = readTrimmed(value);
+  if (!s) return { text: '', date: null, empty: true };
+  return { text: s, date: parseDateTime(s), empty: false };
+}
+
+/** 对齐 errands.js parseErrandPayload（POST / PUT 共用） */
+function parseErrandPayload(body) {
+  const pickupArea = readTrimmed(body.pickupArea);
+  if (!pickupArea) return { error: '取件片区不能为空' };
+  if (!campusUtil.isValidZone(pickupArea)) return { error: '取件片区不在可选范围内' };
+
+  const pickupPlace = readTrimmed(body.pickupPlace);
+  if (!pickupPlace) return { error: '取件地标不能为空' };
+  if (!backendIsValidPlace(pickupPlace) || backendZoneOfPlace(pickupPlace) !== pickupArea) {
+    return { error: '地标与片区不匹配' };
+  }
+
+  const deliveryLocation = readTrimmed(body.deliveryLocation);
+  if (!deliveryLocation) return { error: '送达地点不能为空' };
+  if (deliveryLocation.length > 100) return { error: '送达地点不能超过 100 字' };
+
+  const itemSize = readTrimmed(body.itemSize);
+  if (ITEM_SIZES.indexOf(itemSize) < 0) return { error: '物品规格不合法' };
+
+  const itemDesc = readOptionalText(body.itemDesc, 500, '物品描述');
+  if (itemDesc.error) return { error: itemDesc.error };
+
+  const remark = readOptionalText(body.remark, 255, '备注');
+  if (remark.error) return { error: remark.error };
+
+  if (body.reward === undefined || body.reward === null || body.reward === '') {
+    return { error: '报酬不能为空' };
+  }
+  const reward = toNumberStrict(body.reward);
+  if (reward === null) return { error: '报酬格式不正确' };
+  if (reward < 0) return { error: '报酬不能为负数' };
+  if (reward > MAX_REWARD) return { error: '报酬超出范围' };
+
+  const timeType = readTrimmed(body.timeType);
+  if (TIME_TYPES.indexOf(timeType) < 0) return { error: '时间类型不合法' };
+
+  const timeStart = readTimeField(body.timeStart);
+  const deadline = readTimeField(body.deadline);
+  let timeStartValue = null;
+  let deadlineValue = null;
+
+  if (timeType === 'asap') {
+    // asap 不允许携带任何时间：后端判定标准是「字符串非空即报错」
+    if (!timeStart.empty || !deadline.empty) return { error: '时间参数不完整' };
+  } else if (timeType === 'deadline') {
+    if (!timeStart.empty || deadline.empty || !deadline.date) return { error: '时间参数不完整' };
+    deadlineValue = deadline.text;
+  } else {
+    if (timeStart.empty || deadline.empty || !timeStart.date || !deadline.date) {
+      return { error: '时间参数不完整' };
+    }
+    if (timeStart.date >= deadline.date) return { error: '时间参数不完整' };
+    timeStartValue = timeStart.text;
+    deadlineValue = deadline.text;
+  }
+
+  return {
+    error: '',
+    data: {
+      pickupArea: pickupArea,
+      pickupPlace: pickupPlace,
+      deliveryLocation: deliveryLocation,
+      itemSize: itemSize,
+      itemDesc: itemDesc.value,
+      remark: remark.value,
+      reward: reward,
+      timeType: timeType,
+      timeStart: timeStartValue,
+      deadline: deadlineValue
+    }
+  };
+}
+
+/** 对齐 items.js parseImages：最多 3 张，必须是 /uploads/ 开头的对象数组 */
+function parseImages(value) {
+  if (value === undefined || value === null) return { images: [], error: '' };
+  if (!Array.isArray(value)) return { images: [], error: '参数错误' };
+  if (value.length > 3) return { images: [], error: '最多上传 3 张图片' };
+
+  const list = [];
+  for (let i = 0; i < value.length; i++) {
+    const image = value[i];
+    if (!image || typeof image !== 'object' || typeof image.url !== 'string') {
+      return { images: [], error: '图片地址不合法' };
+    }
+    const url = image.url.trim();
+    if (url.indexOf('/uploads/') !== 0 || url.length > 255) {
+      return { images: [], error: '图片地址不合法' };
+    }
+    list.push({ url: url, sortNo: parsePositiveInt(image.sortNo) || i + 1 });
+  }
+  list.sort((a, b) => a.sortNo - b.sortNo);
+  return { images: list.map((im, idx) => ({ url: im.url, sortNo: idx + 1 })), error: '' };
+}
+
+/** 对齐 errands.js isErrandChatPeer：当前用户与发布者是否就该单建过会话 */
+function hasErrandConversation(orderId, publisherId, userId) {
+  return conversations.some(
+    (c) =>
+      c.bizType === 'errand' &&
+      Number(c.bizId) === Number(orderId) &&
+      ((Number(c.userAId) === Number(publisherId) && Number(c.userBId) === Number(userId)) ||
+        (Number(c.userBId) === Number(publisherId) && Number(c.userAId) === Number(userId)))
+  );
+}
+
 function itemCard(item) {
   return Object.assign({}, item);
 }
@@ -665,7 +847,8 @@ const routes = {
     const studentNo = readTrimmed(data.studentNo);
     const password = typeof data.password === 'string' ? data.password : '';
     if (!studentNo || !password) return fail(400, '请输入学号和密码');
-    if (!/^\d{6,20}$/.test(studentNo)) return fail(400, '学号应为 6-20 位数字');
+    // 对齐 auth.js：登录只校验非空，**不校验学号格式**（格式不对走后端 401「学号或密码错误」）。
+    // mock 没有密码库，无法复刻 401，因此这里放行任意非空学号，方便演示。
     return delay({
       token: 'mock_token_' + Date.now(),
       userInfo: Object.assign({}, currentUser, { studentNo: studentNo })
@@ -690,11 +873,55 @@ const routes = {
 
   // ---------------- 用户（对照 users.js） ----------------
   'PUT /api/users/me': (data) => {
-    const nickname = data.nickname === undefined ? currentUser.nickname : readTrimmed(data.nickname);
-    if (nickname.length < 2 || nickname.length > 12) return fail(400, '昵称需 2-12 个字符');
-    const phone = data.phone === undefined ? currentUser.phone : readTrimmed(data.phone);
-    if (phone && !/^1[3-9]\d{9}$/.test(phone)) return fail(400, '手机号格式不正确');
-    Object.assign(currentUser, data, { nickname: nickname, phone: phone });
+    const body = data || {};
+    const has = (key) => Object.prototype.hasOwnProperty.call(body, key);
+    const next = {};
+
+    if (has('nickname')) {
+      const nickname = readTrimmed(body.nickname);
+      if (nickname.length < 2 || nickname.length > 12) return fail(400, '昵称需 2-12 个字符');
+      next.nickname = nickname;
+    }
+
+    if (has('avatarUrl')) {
+      const raw = body.avatarUrl;
+      if (raw === null || raw === '') {
+        next.avatarUrl = null;
+      } else {
+        if (typeof raw !== 'string') return fail(400, '头像地址不合法');
+        const url = raw.trim();
+        if (url.indexOf('/uploads/') !== 0 || url.length > 255) return fail(400, '头像地址不合法');
+        next.avatarUrl = url;
+      }
+    }
+
+    if (has('college')) {
+      const raw = body.college;
+      if (raw === null || raw === '') {
+        next.college = null;
+      } else {
+        if (typeof raw !== 'string') return fail(400, '学院名称不合法');
+        const college = raw.trim();
+        if (college.length > 100) return fail(400, '学院名称过长');
+        next.college = college || null;
+      }
+    }
+
+    if (has('phone')) {
+      const raw = body.phone;
+      if (raw === null || raw === '') {
+        next.phone = null;
+      } else {
+        // 对齐 users.js：只要求 11 位数字，不校验 1[3-9] 号段
+        if (typeof raw !== 'string' || !/^\d{11}$/.test(raw.trim())) {
+          return fail(400, '手机号格式不正确');
+        }
+        next.phone = raw.trim();
+      }
+    }
+
+    // campus 不在可改字段内（注册不采集、接口文档固定返回 null），即使传了也忽略
+    Object.assign(currentUser, next);
     return delay({ userInfo: Object.assign({}, currentUser) });
   },
 
@@ -827,17 +1054,45 @@ const routes = {
     const body = data || {};
     const itemType = readTrimmed(body.itemType);
     if (ITEM_TYPES.indexOf(itemType) < 0) return fail(400, '商品类型不合法');
+
     const categoryId = parsePositiveInt(body.categoryId);
-    if (!categoryId || !categories.some((c) => c.categoryId === categoryId)) {
-      return fail(400, '分类不存在');
-    }
+    if (!categoryId) return fail(400, '分类不存在');
+    if (!categories.some((c) => c.categoryId === categoryId)) return fail(400, '分类不存在');
+
     const title = readTrimmed(body.title);
     if (!title) return fail(400, '标题不能为空');
     if (title.length > 100) return fail(400, '标题不能超过 100 字');
-    const price = Number(body.price);
-    if (!(price > 0)) return fail(400, '售价必须大于 0');
-    const conditionLevel = readTrimmed(body.conditionLevel);
+
+    const description = readOptionalText(body.description, 2000, '描述');
+    if (description.error) return fail(400, description.error);
+
+    const price = toNumberStrict(body.price);
+    if (price === null || price <= 0) return fail(400, '售价必须大于 0');
+    if (price > MAX_PRICE) return fail(400, '售价超出范围');
+
+    let originalPrice = null;
+    if (body.originalPrice !== undefined && body.originalPrice !== null && body.originalPrice !== '') {
+      originalPrice = toNumberStrict(body.originalPrice);
+      if (originalPrice === null) return fail(400, '原价格式不正确');
+      if (originalPrice < 0) return fail(400, '原价不能为负数');
+      if (originalPrice > MAX_PRICE) return fail(400, '原价超出范围');
+    }
+
+    // 后端缺省成色是 good（items.js:49），不是必填
+    const conditionLevel =
+      body.conditionLevel === undefined || body.conditionLevel === null
+        ? 'good'
+        : readTrimmed(body.conditionLevel);
     if (CONDITION_LEVELS.indexOf(conditionLevel) < 0) return fail(400, '成色不合法');
+
+    const negotiable = parseBooleanStrict(body.negotiable);
+    if (negotiable === null) return fail(400, '参数错误');
+
+    const location = readOptionalText(body.location, 100, '交易地点');
+    if (location.error) return fail(400, location.error);
+
+    const parsedImages = parseImages(body.images);
+    if (parsedImages.error) return fail(400, parsedImages.error);
 
     let bookId = null;
     if (itemType === 'book') {
@@ -848,11 +1103,14 @@ const routes = {
 
     const cat = categories.find((c) => c.categoryId === categoryId);
     const book = bookId ? books.find((b) => b.bookId === bookId) : null;
+    // firstImage 只存**字符串 url**（后端 v_item_list 是子查询取 url），不能把 {url,sortNo} 对象塞进去
+    const firstImage = parsedImages.images.length ? parsedImages.images[0].url : '';
+
     const item = {
       itemId: uid(),
       sellerId: CURRENT_USER_ID,
       sellerNickname: currentUser.nickname,
-      sellerAvatar: currentUser.avatarUrl,
+      sellerAvatar: currentUser.avatarUrl || '',
       sellerCreditScore: currentUser.creditScore,
       categoryId: categoryId,
       categoryName: cat.name,
@@ -860,20 +1118,20 @@ const routes = {
       bookTitle: book ? book.title : null,
       itemType: itemType,
       title: title,
-      description: readTrimmed(body.description),
+      description: description.value,
       price: price,
-      originalPrice: body.originalPrice === undefined || body.originalPrice === '' ? null : Number(body.originalPrice),
+      originalPrice: originalPrice,
       conditionLevel: conditionLevel,
-      negotiable: body.negotiable === true || body.negotiable === 1 || body.negotiable === '1',
-      location: readTrimmed(body.location),
+      negotiable: negotiable,
+      location: location.value,
       status: 'on_sale',
       viewCount: 0,
       favoriteCount: 0,
       createdAt: fmtDate(new Date()),
-      firstImage: (Array.isArray(body.images) && body.images[0]) || ''
+      firstImage: firstImage
     };
     items.unshift(item);
-    // 发布接口只回 { itemId }（对齐 items.js），别把整条商品回给前端
+    // 发布接口只回 { itemId }（对齐 items.js）
     return delay({ itemId: item.itemId });
   },
 
@@ -968,40 +1226,82 @@ const routes = {
         (b.author || '').indexOf(keyword) > -1 ||
         (b.isbn || '').indexOf(keyword) > -1
     );
-    return delay({ list: list });
+    return delay({ list: list.slice(0, 10) });
   },
 
   'POST /api/books': (data) => {
     const body = data || {};
     const title = readTrimmed(body.title);
     if (!title) return fail(400, '书名不能为空');
-    if (title.length > 100) return fail(400, '书名不能超过 100 字');
-    const dup = books.find(
-      (b) => b.title === title && (b.isbn || '') === readTrimmed(body.isbn)
-    );
-    if (dup) return delay(Object.assign({}, dup, { created: false }));
+    if (title.length > 200) return fail(400, '书名不能超过 200 字');
+
+    let isbn = null;
+    if (body.isbn !== undefined && body.isbn !== null && body.isbn !== '') {
+      if (typeof body.isbn !== 'string') return fail(400, '参数错误');
+      isbn = body.isbn.trim() || null;
+      if (isbn && isbn.length > 20) return fail(400, 'ISBN 不能超过 20 位');
+    }
+
+    const textRules = [
+      ['author', 100, '作者'],
+      ['publisher', 100, '出版社'],
+      ['edition', 50, '版次'],
+      ['coverUrl', 255, '封面地址']
+    ];
+    const values = {};
+    for (let i = 0; i < textRules.length; i++) {
+      const field = textRules[i][0];
+      const maxLength = textRules[i][1];
+      const label = textRules[i][2];
+      const raw = body[field];
+      if (raw === undefined || raw === null || raw === '') {
+        values[field] = null;
+        continue;
+      }
+      if (typeof raw !== 'string') return fail(400, '参数错误');
+      const trimmed = raw.trim();
+      if (trimmed.length > maxLength) {
+        return fail(400, label + '不能超过 ' + maxLength + ' 字');
+      }
+      values[field] = trimmed || null;
+    }
+
+    let priceRef = null;
+    if (body.priceRef !== undefined && body.priceRef !== null && body.priceRef !== '') {
+      priceRef = toNumberStrict(body.priceRef);
+      if (priceRef === null) return fail(400, '参考价格式不正确');
+      if (priceRef < 0) return fail(400, '参考价不能为负数');
+    }
+
+    // 后端按 isbn 去重（books.js），不是 title+isbn
+    if (isbn) {
+      const existing = books.find((b) => (b.isbn || '') === isbn);
+      if (existing) return delay(Object.assign({}, existing, { created: false }));
+    }
+
     const book = {
       bookId: uid(),
-      isbn: readTrimmed(body.isbn) || null,
+      isbn: isbn,
       title: title,
-      author: readTrimmed(body.author) || null,
-      publisher: readTrimmed(body.publisher) || null,
-      edition: readTrimmed(body.edition) || null,
-      priceRef: body.priceRef === undefined || body.priceRef === '' ? null : Number(body.priceRef),
-      coverUrl: readTrimmed(body.coverUrl) || ''
+      author: values.author,
+      publisher: values.publisher,
+      edition: values.edition,
+      priceRef: priceRef,
+      coverUrl: values.coverUrl || ''
     };
     books.unshift(book);
     return delay(Object.assign({}, book, { created: true }));
   },
 
   // ---------------- 代取（对照 errands.js） ----------------
+  // 大厅只出 visibility='hall'（后端 SQL 硬编码），私单只能从详情页 / 会话卡片进入
   'GET /api/errands': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
     const status = readTrimmed(data.status) || 'pending';
     if (ERRAND_STATUSES.indexOf(status) < 0) return fail(400, '订单状态不合法');
     const list = errands
-      .filter((e) => e.status === status)
+      .filter((e) => e.status === status && e.visibility === 'hall')
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.orderId - a.orderId));
     return delay({
       list: pageOf(list, pg),
@@ -1011,7 +1311,7 @@ const routes = {
     });
   },
 
-  // 我的代取：role 必填；publisher 看 publisher_id，runner 看 runner_id（A 指出原实现用 status!=='pending' 是错的）
+  // 我的代取：role 必填；publisher 看 publisher_id，runner 看 runner_id
   'GET /api/errands/mine': (data) => {
     const role = readTrimmed(data.role);
     if (['publisher', 'runner'].indexOf(role) < 0) return fail(400, 'role 只能是 publisher 或 runner');
@@ -1020,6 +1320,7 @@ const routes = {
     const status = readTrimmed(data.status);
     if (status && ERRAND_STATUSES.indexOf(status) < 0) return fail(400, '订单状态不合法');
 
+    // 我的代取**不过滤 visibility**：自己发的私单也要能看到（对齐后端）
     let list = errands.filter((e) =>
       role === 'publisher' ? Number(e.publisherId) === CURRENT_USER_ID : Number(e.runnerId) === CURRENT_USER_ID
     );
@@ -1034,57 +1335,34 @@ const routes = {
     });
   },
 
+  // 发布代取：visibility 缺省 hall；传 private 则只建私单，不进大厅
   'POST /api/errands': (data) => {
     const body = data || {};
-    const pickupArea = readTrimmed(body.pickupArea);
-    if (!pickupArea) return fail(400, '取件片区不能为空');
-    if (!campusUtil.isValidZone(pickupArea)) return fail(400, '取件片区不在可选范围内');
-    const pickupPlace = readTrimmed(body.pickupPlace);
-    if (!pickupPlace) return fail(400, '取件地标不能为空');
-    if (!backendIsValidPlace(pickupPlace) || backendZoneOfPlace(pickupPlace) !== pickupArea) {
-      return fail(400, '地标与片区不匹配');
-    }
-    const deliveryLocation = readTrimmed(body.deliveryLocation);
-    if (!deliveryLocation) return fail(400, '送达地点不能为空');
-    if (deliveryLocation.length > 100) return fail(400, '送达地点不能超过 100 字');
+    const visibility = readTrimmed(body.visibility) || 'hall';
+    if (ERRAND_VISIBILITIES.indexOf(visibility) < 0) return fail(400, '可见性不合法');
 
-    const itemSize = readTrimmed(body.itemSize);
-    if (ITEM_SIZES.indexOf(itemSize) < 0) return fail(400, '物品规格不合法');
-
-    const reward = Number(body.reward);
-    if (body.reward === undefined || body.reward === '' || isNaN(reward)) return fail(400, '报酬不能为空');
-    if (reward < 0) return fail(400, '报酬不能为负数');
-
-    const timeType = readTrimmed(body.timeType);
-    if (TIME_TYPES.indexOf(timeType) < 0) return fail(400, '时间类型不合法');
-    let timeStart = null;
-    let deadline = null;
-    if (timeType === 'deadline') {
-      deadline = parseDateTime(readTrimmed(body.deadline));
-      if (!deadline) return fail(400, '时间参数不完整');
-    } else if (timeType === 'range') {
-      timeStart = parseDateTime(readTrimmed(body.timeStart));
-      deadline = parseDateTime(readTrimmed(body.deadline));
-      if (!timeStart || !deadline || timeStart >= deadline) return fail(400, '时间参数不完整');
-    }
+    const parsed = parseErrandPayload(body);
+    if (parsed.error) return fail(400, parsed.error);
+    const d = parsed.data;
 
     const errand = {
       orderId: uid(),
       publisherId: CURRENT_USER_ID,
       publisherNickname: currentUser.nickname,
-      publisherAvatar: currentUser.avatarUrl,
+      publisherAvatar: currentUser.avatarUrl || '',
       publisherCreditScore: currentUser.creditScore,
-      pickupArea: pickupArea,
-      pickupPlace: pickupPlace,
-      deliveryLocation: deliveryLocation,
-      itemSize: itemSize,
-      itemDesc: readTrimmed(body.itemDesc),
-      remark: readTrimmed(body.remark),
-      reward: reward,
-      timeType: timeType,
-      timeStart: timeStart ? fmtDate(timeStart) : null,
-      deadline: deadline ? fmtDate(deadline) : null,
+      pickupArea: d.pickupArea,
+      pickupPlace: d.pickupPlace,
+      deliveryLocation: d.deliveryLocation,
+      itemSize: d.itemSize,
+      itemDesc: d.itemDesc,
+      remark: d.remark,
+      reward: d.reward,
+      timeType: d.timeType,
+      timeStart: d.timeStart,
+      deadline: d.deadline,
       status: 'pending',
+      visibility: visibility,
       createdAt: fmtDate(new Date()),
       runnerId: null,
       runnerNickname: null,
@@ -1093,10 +1371,11 @@ const routes = {
       completedAt: null
     };
     errands.unshift(errand);
-    return delay({ orderId: errand.orderId });
+    // 后端返回 { orderId, visibility }，文案区分私单/大厅，前端可据此提示
+    return delay({ orderId: errand.orderId, visibility: visibility });
   },
 
-  // 代取详情：can* 全部按「当前用户身份 + 订单状态」算（对齐 errands.js GET /:id）
+  // 代取详情：私单只有发布者/接单者/聊过该单的跑腿可见；can* 六个字段全部返回
   'GET /api/errands/:id': (data) => {
     const orderId = parsePositiveInt(data.id);
     if (!orderId) return fail(400, '订单 ID 不合法');
@@ -1105,15 +1384,74 @@ const routes = {
 
     const isPublisher = Number(order.publisherId) === CURRENT_USER_ID;
     const isRunner = order.runnerId !== null && Number(order.runnerId) === CURRENT_USER_ID;
+    const isChatPeer =
+      order.visibility === 'private' && !isPublisher
+        ? hasErrandConversation(orderId, order.publisherId, CURRENT_USER_ID)
+        : false;
+
+    if (order.visibility === 'private' && !isPublisher && !isRunner && !isChatPeer) {
+      return fail(404, '订单不存在');
+    }
+
+    const editable = isPublisher && order.status === 'pending' && order.visibility === 'private';
 
     return delay(
       Object.assign({}, order, {
-        canTake: !isPublisher && order.status === 'pending',
+        canTake:
+          !isPublisher &&
+          order.status === 'pending' &&
+          (order.visibility === 'hall' || isChatPeer),
+        canEdit: editable,
+        canPublish: editable,
         canComplete: isPublisher && order.status === 'taken',
         canCancel: isPublisher && (order.status === 'pending' || order.status === 'taken'),
         canRelease: isRunner && order.status === 'taken'
       })
     );
+  },
+
+  // 改私单：只有发布者、pending、private 三条件同时成立；不接受 visibility
+  'PUT /api/errands/:id': (data) => {
+    const orderId = parsePositiveInt(data.id);
+    if (!orderId) return fail(400, '订单 ID 不合法');
+    const order = errands.find((e) => e.orderId === orderId);
+    if (!order) return fail(404, '订单不存在');
+    if (Number(order.publisherId) !== CURRENT_USER_ID) return fail(403, '只有发布者可以修改订单');
+    if (order.status !== 'pending' || order.visibility !== 'private') {
+      return fail(409, '只有未发布的待接单私单可以修改');
+    }
+
+    const parsed = parseErrandPayload(data);
+    if (parsed.error) return fail(400, parsed.error);
+    const d = parsed.data;
+
+    Object.assign(order, {
+      pickupArea: d.pickupArea,
+      pickupPlace: d.pickupPlace,
+      deliveryLocation: d.deliveryLocation,
+      itemSize: d.itemSize,
+      itemDesc: d.itemDesc,
+      remark: d.remark,
+      reward: d.reward,
+      timeType: d.timeType,
+      timeStart: d.timeStart,
+      deadline: d.deadline
+    });
+    return delay({ orderId: orderId, visibility: 'private' });
+  },
+
+  // 私单发布到大厅：只改 visibility，状态仍 pending
+  'POST /api/errands/:id/publish': (data) => {
+    const orderId = parsePositiveInt(data.id);
+    if (!orderId) return fail(400, '订单 ID 不合法');
+    const order = errands.find((e) => e.orderId === orderId);
+    if (!order) return fail(404, '订单不存在');
+    if (Number(order.publisherId) !== CURRENT_USER_ID) return fail(403, '只有发布者可以发布订单');
+    if (order.status !== 'pending') return fail(409, '当前订单不能发布到大厅');
+    if (order.visibility === 'hall') return fail(409, '订单已在大厅');
+
+    order.visibility = 'hall';
+    return delay({ orderId: orderId, status: 'pending', visibility: 'hall' });
   },
 
   'POST /api/errands/:id/take': (data) => {
@@ -1123,9 +1461,17 @@ const routes = {
     if (!order) return fail(404, '订单不存在');
     if (Number(order.publisherId) === CURRENT_USER_ID) return fail(403, '不能接自己发布的订单');
     if (order.status !== 'pending') return fail(409, '该订单已被接单');
+    // 私单：只有与该单建过会话的跑腿能接（后端 sp_take_errand 返回 4031）
+    if (
+      order.visibility === 'private' &&
+      !hasErrandConversation(orderId, order.publisherId, CURRENT_USER_ID)
+    ) {
+      return fail(403, '该订单尚未发布到大厅，只有与发布者聊过该订单的跑腿可以接');
+    }
     order.status = 'taken';
     order.runnerId = CURRENT_USER_ID;
     order.runnerNickname = currentUser.nickname;
+    order.runnerAvatar = currentUser.avatarUrl || '';
     order.takenAt = fmtDate(new Date());
     return delay({ orderId: orderId, status: 'taken' });
   },
@@ -1153,12 +1499,14 @@ const routes = {
       return delay({ orderId: orderId, status: 'cancelled' });
     }
     if (order.status === 'taken') {
-      // 已接单撤回：退回大厅并清空接单人（对齐后端行为）
+      // 已接单撤回：退回待接单并清空接单人；**必须回 visibility**，
+      // 前端据此区分文案「已退回大厅」/「已退回待接单」（后端 errands.js:637 一致）
       order.status = 'pending';
       order.runnerId = null;
       order.runnerNickname = null;
+      order.runnerAvatar = '';
       order.takenAt = null;
-      return delay({ orderId: orderId, status: 'pending' });
+      return delay({ orderId: orderId, status: 'pending', visibility: order.visibility });
     }
     return fail(409, '当前订单不能撤回');
   },
@@ -1175,6 +1523,7 @@ const routes = {
     order.status = 'pending';
     order.runnerId = null;
     order.runnerNickname = null;
+    order.runnerAvatar = '';
     order.takenAt = null;
     return delay({ orderId: orderId, status: 'pending' });
   },

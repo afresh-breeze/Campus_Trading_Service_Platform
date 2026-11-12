@@ -89,6 +89,6 @@
 
 ## 5. 21:30 同步要问 A 的三件事（对应 §0.4）
 
-1. ~~`routes/errands.js` 何时可联调~~ → **已就绪**：A 于 11-11 推送 8 个接口（`GET /api/errands`、`/mine`、`POST /`、`GET /:id`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`），B 侧代取详情 11-12 可直接对真实接口开发，仅需核对字段。
+1. ~~`routes/errands.js` 何时可联调~~ → **已就绪**：A 已推送 10 个接口（`GET /api/errands`、`/mine`、`POST /`、`GET /:id`、`PUT /:id`、`POST /:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`），B 侧代取详情 11-12 可直接对真实接口开发，仅需核对字段。
 2. A 的 6 个页面落地时间，落地后 B 立即执行 §3 的页面级走查。
 3. `.page` 拆成 `.page` / `.page--tab` 需改 `pages/index/index.wxml` 一行 class，是否由 A 自己加（B 不擅自动 A 的文件）。

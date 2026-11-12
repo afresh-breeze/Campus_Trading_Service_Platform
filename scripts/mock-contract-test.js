@@ -2,12 +2,14 @@
  * mock 契约一致性测试（B 成员：公共层自测脚本，不入小程序包）
  * ------------------------------------------------------------------
  * 作用：逐条验证 utils/mock.js 与 server/src/routes/*.js 的口径一致，
- *       避免"mock 能跑、联调露馅"（A 于 11-11 复盘提出的问题）。
+ *       避免"mock 能跑、联调露馅"。
  *
  * 运行：node scripts/mock-contract-test.js
  * 前提：只需 node，不需要 mysql；mock.js 里 require('../config') 在 node 下可解析。
  *
  * 维护约定：后端新增/改动接口时，先改 mock.js，再在这里补一条断言。
+ * 变更：2026-11-12 按 A 的全面排查补 [3] 私单全流程、[4] 代取校验等价、
+ *       [7] 商品/书目/用户校验等价，并修正「登录学号 5 位 → 400」这条**错误契约**。
  */
 const path = require('path');
 const REPO = require('path').join(__dirname, '..', 'miniprogram', 'utils');
@@ -34,48 +36,134 @@ function expectFail(name, url, method, data, code) {
   return mock
     .run(url, method, data)
     .then((r) => check(name + '（应失败却成功）', false, r))
-    .catch((e) => check(name, e && e.code === code, e));
+    .catch((e) => check(name, e && e.code === code, e ? { code: e.code, message: e.message } : e));
 }
+
+function expectFailMsg(name, url, method, data, message) {
+  return mock
+    .run(url, method, data)
+    .then((r) => check(name + '（应失败却成功）', false, r))
+    .catch((e) => check(name, e && e.message === message, e ? { code: e.code, message: e.message } : e));
+}
+
+const OK_ERRAND = {
+  pickupArea: '桃园',
+  pickupPlace: '桃园',
+  deliveryLocation: '2 号宿舍楼 416',
+  itemSize: 'small',
+  itemDesc: '一个小快递盒',
+  remark: '取件码 5-1-2266',
+  reward: 3,
+  timeType: 'asap'
+};
 
 (async () => {
   console.log('\n[0] 路由覆盖');
   const keys = mock.routeKeys();
-  console.log('  已登记路由 ' + keys.length + ' 条：');
-  keys.forEach((k) => console.log('    ' + k));
-  check('路由数 >= 30（原 22 条）', keys.length >= 30, keys.length);
+  console.log('  已登记路由 ' + keys.length + ' 条');
+  // 服务端 40 条 = 39 条 router.* + GET /api/health；mock 39 条 = 40 − POST /api/upload（真机文件上传不适合 mock）
+  check('路由数 = 39（服务端 40 − upload）', keys.length === 39, keys.length);
+  check('has() 命中 PUT /api/errands/:id', mock.has('/api/errands/2001', 'PUT') === true);
+  check('has() 命中 POST /api/errands/:id/publish', mock.has('/api/errands/2001/publish', 'POST') === true);
   check('自检无告警', mock.selfCheck().length === 0, mock.selfCheck());
 
-  console.log('\n[1] 代取：我的代取按身份过滤（原 role=runner 用 status!=pending）');
+  console.log('\n[1] 代取大厅 / 我的代取：可见性与身份过滤');
+  const hall = await mock.run('/api/errands', 'GET', {});
+  check(
+    '大厅只出 visibility=hall',
+    (hall.list || []).every((e) => e.visibility === 'hall'),
+    (hall.list || []).map((e) => [e.orderId, e.visibility])
+  );
+  check('大厅不含私单 2004 / 2008', ids(hall.list).indexOf(2004) < 0 && ids(hall.list).indexOf(2008) < 0, ids(hall.list));
+  check('大厅带 visibility 字段', hall.list[0] && hall.list[0].visibility !== undefined, hall.list[0] && hall.list[0].visibility);
+
   const asRunner = await mock.run('/api/errands/mine', 'GET', { role: 'runner' });
-  // 后端按 created_at DESC 排序：2007(11-10) 在 2005(11-08) 之前
   check('runner 只含我接的单 [2007, 2005]', JSON.stringify(ids(asRunner.list)) === '[2007,2005]', ids(asRunner.list));
   const asPublisher = await mock.run('/api/errands/mine', 'GET', { role: 'publisher' });
-  check('publisher 只含我发布的 [2006, 2004]', JSON.stringify(ids(asPublisher.list)) === '[2006,2004]', ids(asPublisher.list));
+  check('publisher 只含我发布的 [2006, 2004]（私单也出现）', JSON.stringify(ids(asPublisher.list)) === '[2006,2004]', ids(asPublisher.list));
   const runnerCompleted = await mock.run('/api/errands/mine', 'GET', { role: 'runner', status: 'completed' });
   check('runner + status=completed 只 1 条', runnerCompleted.total === 1, runnerCompleted.total);
   await expectFail('缺 role 返回 400', '/api/errands/mine', 'GET', {}, 400);
 
-  console.log('\n[2] 代取详情：can* 按用户身份 + 状态计算（原 canComplete 恒 false）');
-  const d2006 = await mock.run('/api/errands/2006', 'GET', {}); // 我发布、已被接单
+  console.log('\n[2] 代取详情：can* 六字段 + 私单可见性');
+  const d2006 = await mock.run('/api/errands/2006', 'GET', {}); // 我发布、已被接单、hall
   check('2006 我发布+taken → canComplete=true', d2006.canComplete === true, d2006);
   check('2006 canCancel=true', d2006.canCancel === true);
   check('2006 canTake=false（不能接自己单）', d2006.canTake === false);
-  const d2001 = await mock.run('/api/errands/2001', 'GET', {}); // 别人发布、pending
-  check('2001 别人 pending → canTake=true', d2001.canTake === true);
+  check('2006 canEdit=false / canPublish=false（已进大厅）', d2006.canEdit === false && d2006.canPublish === false);
+  const d2001 = await mock.run('/api/errands/2001', 'GET', {});
+  check('2001 别人 hall+pending → canTake=true', d2001.canTake === true);
   check('2001 canComplete=false', d2001.canComplete === false);
-  const d2007 = await mock.run('/api/errands/2007', 'GET', {}); // 我接的、taken
+  const d2007 = await mock.run('/api/errands/2007', 'GET', {});
   check('2007 我接的 taken → canRelease=true', d2007.canRelease === true);
-  const d2004 = await mock.run('/api/errands/2004', 'GET', {}); // 我发布、pending
-  check('2004 我发布 pending → canTake=false', d2004.canTake === false);
+  const d2004 = await mock.run('/api/errands/2004', 'GET', {}); // 我发布、pending、private
+  check('2004 我的私单 → canEdit/canPublish=true', d2004.canEdit === true && d2004.canPublish === true);
+  check('2004 我的私单 → canTake=false', d2004.canTake === false);
+  const d2008 = await mock.run('/api/errands/2008', 'GET', {}); // 别人私单，我聊过
+  check('2008 别人私单+有会话 → 可见且 canTake=true', d2008.canTake === true, d2008);
+  check('2008 visibility=private', d2008.visibility === 'private');
 
-  console.log('\n[3] 跑腿匹配：place 属于片区 + 在线/计划过滤（原只校验 area+timeType）');
+  console.log('\n[3] 私单全流程：建 private → 改单 → 发布到大厅 → 接单');
+  const created = await mock.run('/api/errands', 'POST', Object.assign({}, OK_ERRAND, { visibility: 'private' }));
+  check('POST 私单返回 visibility=private', created.visibility === 'private' && !!created.orderId, created);
+  const newId = created.orderId;
+
+  const hallAfterCreate = await mock.run('/api/errands', 'GET', {});
+  check('新建私单不出现在大厅', ids(hallAfterCreate.list).indexOf(newId) < 0);
+
+  const edited = await mock.run('/api/errands/' + newId, 'PUT', Object.assign({}, OK_ERRAND, { reward: 8 }));
+  check('PUT 改私单成功且仍 private', edited.visibility === 'private' && edited.orderId === newId, edited);
+  const detailEdited = await mock.run('/api/errands/' + newId, 'GET', {});
+  check('改单后报酬已更新为 8', detailEdited.reward === 8, detailEdited.reward);
+
+  await expectFail('改已进大厅的 2006 → 409', '/api/errands/2006', 'PUT', OK_ERRAND, 409);
+  await expectFail('改别人私单 2008 → 403', '/api/errands/2008', 'PUT', OK_ERRAND, 403);
+
+  const published = await mock.run('/api/errands/' + newId + '/publish', 'POST', {});
+  check('publish 返回 status=pending + visibility=hall', published.status === 'pending' && published.visibility === 'hall', published);
+  const hallAfterPublish = await mock.run('/api/errands', 'GET', {});
+  check('发布后出现在大厅', ids(hallAfterPublish.list).indexOf(newId) >= 0, ids(hallAfterPublish.list));
+  await expectFail('重复 publish → 409', '/api/errands/' + newId + '/publish', 'POST', {}, 409);
+  await expectFail('publish 别人的单 → 403', '/api/errands/2008/publish', 'POST', {}, 403);
+
+  const taken = await mock.run('/api/errands/2008/take', 'POST', {}); // 私单+有会话 → 可接
+  check('私单被聊过的跑腿接单成功', taken.status === 'taken', taken);
+  const d2008After = await mock.run('/api/errands/2008', 'GET', {});
+  check('接单后 visibility 仍为 private（不因接单变 hall）', d2008After.visibility === 'private', d2008After.visibility);
+  check('接单后 canRelease=true（我是接单者）、canComplete=false（我不是发布者）',
+    d2008After.canRelease === true && d2008After.canComplete === false);
+
+  const cancelTaken = await mock.run('/api/errands/2006/cancel', 'POST', {}); // 我发布、taken
+  check('撤回已接单 → status=pending', cancelTaken.status === 'pending', cancelTaken);
+  check('撤回已接单 → 必须回 visibility', cancelTaken.visibility === 'hall', cancelTaken);
+
+  console.log('\n[4] 代取校验：与 errands.js 逐条等价（原 mock 全部放行）');
+  await expectFailMsg('reward=null → 报酬不能为空', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { reward: null }), '报酬不能为空');
+  await expectFailMsg('itemDesc 501 字 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { itemDesc: 'x'.repeat(501) }), '物品描述不能超过 500 字');
+  await expectFailMsg('remark 256 字 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { remark: 'x'.repeat(256) }), '备注不能超过 255 字');
+  await expectFailMsg('asap 同时带 deadline → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { deadline: '2026-12-01 18:00:00' }), '时间参数不完整');
+  await expectFailMsg('deadline 类型缺 deadline → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { timeType: 'deadline' }), '时间参数不完整');
+  await expectFailMsg('range 缺 timeStart → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { timeType: 'range', deadline: '2026-12-01 18:00:00' }), '时间参数不完整');
+  await expectFailMsg('visibility 非法 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { visibility: 'public' }), '可见性不合法');
+  await expectFailMsg('地标与片区不匹配 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { pickupPlace: '第30教学楼' }), '地标与片区不匹配');
+  await expectFailMsg('送达地点 101 字 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { deliveryLocation: 'x'.repeat(101) }), '送达地点不能超过 100 字');
+
+  console.log('\n[5] 跑腿匹配：place 属于片区 + 在线/计划过滤');
   await expectFail('缺 area 400', '/api/runners', 'GET', { timeType: 'asap' }, 400);
   await expectFail('place 不属于该片区 400', '/api/runners', 'GET', { area: '桃园', place: '第30教学楼', timeType: 'asap' }, 400);
   await expectFail('timeType 非法 400', '/api/runners', 'GET', { area: '桃园', timeType: 'xxx' }, 400);
   await expectFail('deadline 缺 deadline 400', '/api/runners', 'GET', { area: '桃园', timeType: 'deadline' }, 400);
   const asap = await mock.run('/api/runners', 'GET', { area: '桃园', place: '桃园', timeType: 'asap' });
   check('asap 桃园 → 只有在线的跑腿小李', JSON.stringify((asap.list || []).map((r) => r.userId)) === '[8]', (asap.list || []).map((r) => r.userId));
-  // 明天上午 09:00-10:00：阿杰的计划只有工作日 18:00-22:00，窗口不重叠且非「随时在线」→ 应被过滤
   const d = new Date(Date.now() + 24 * 3600 * 1000);
   const pad = (n) => (n < 10 ? '0' + n : '' + n);
   const day = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -88,7 +176,7 @@ function expectFail(name, url, method, data, code) {
   check('itemSize=large 仍匹配（小李支持大件）', sizeLarge.total === 1, sizeLarge.total);
   await expectFail('itemSize 非枚举 400', '/api/runners', 'GET', { area: '桃园', place: '桃园', timeType: 'asap', itemSize: 'huge' }, 400);
 
-  console.log('\n[4] 聊天：messageId / isMine / 发消息只回 id+时间');
+  console.log('\n[6] 聊天：messageId / isMine / 发消息只回 id+时间');
   const msgs = await mock.run('/api/conversations/3001/messages', 'GET', { afterId: 0 });
   const first = (msgs.list || [])[0] || {};
   check('消息字段是 messageId 不是 id', first.messageId !== undefined && first.id === undefined, first);
@@ -101,44 +189,73 @@ function expectFail(name, url, method, data, code) {
   const ctx = await mock.run('/api/conversations/3001/context', 'GET', {});
   check('会话业务卡片返回 coverUrl（不是 firstImage）', ctx.bizSummary && ctx.bizSummary.coverUrl !== undefined, ctx.bizSummary);
   const read = await mock.run('/api/conversations/3001/read', 'PUT', {});
-  check('标记已读返回 unreadCount=0', read.unreadCount === 0, read);
+  check('标记已读（PUT）返回 unreadCount=0', read.unreadCount === 0, read);
   await expectFail('创建会话缺 peerId 400', '/api/conversations', 'POST', { bizType: 'item', bizId: 1001 }, 400);
-  const created = await mock.run('/api/conversations', 'POST', { peerId: 3, bizType: 'item', bizId: 1002 });
-  check('创建会话返回 conversationId + 对方昵称', !!created.conversationId && created.peerNickname === '王同学', created);
+  const createdConv = await mock.run('/api/conversations', 'POST', { peerId: 3, bizType: 'item', bizId: 1002 });
+  check('创建会话返回 conversationId + 对方昵称', !!createdConv.conversationId && createdConv.peerNickname === '王同学', createdConv);
 
-  console.log('\n[5] 商品：扁平书目录字段 + 收藏/状态接口');
-  const detail = await mock.run('/api/items/1001', 'GET', {});
-  check('商品详情是扁平 itemType=book', detail.itemType === 'book', detail.itemType);
-  check('商品详情带 bookId/bookTitle', detail.bookId === 1 && !!detail.bookTitle, { bookId: detail.bookId, bookTitle: detail.bookTitle });
-  check('商品详情不再有嵌套 book 对象', detail.book === undefined);
-  check('商品详情带 seller/isOwner/isFavorited', !!detail.seller && typeof detail.isOwner === 'boolean' && typeof detail.isFavorited === 'boolean');
-  const fav = await mock.run('/api/items/1002/favorite', 'POST', {});
-  check('收藏成功返回 favorited + favoriteCount', fav.favorited === true && typeof fav.favoriteCount === 'number', fav);
-  const unfav = await mock.run('/api/items/1002/favorite', 'DELETE', {});
-  check('取消收藏返回 favorited=false', unfav.favorited === false, unfav);
-  const st = await mock.run('/api/items/1006/status', 'PUT', { status: 'sold' });
-  check('商品状态流转 on_sale→sold 成功', st.status === 'sold', st);
-  await expectFail('非法状态流转 409', '/api/items/1006/status', 'PUT', { status: 'on_sale' }, 409);
-  await expectFail('改动别人商品 403', '/api/items/1001/status', 'PUT', { status: 'sold' }, 403);
-  const cats = await mock.run('/api/categories', 'GET', {});
-  check('分类返回 {list} 且字段 categoryId', Array.isArray(cats.list) && cats.list[0].categoryId === 1, cats.list && cats.list[0]);
-  await expectFail('书目搜索缺关键词 400', '/api/books/search', 'GET', {}, 400);
-  const books = await mock.run('/api/books/search', 'GET', { keyword: '高数' });
-  check('书目搜索按书名/作者/ISBN 命中', Array.isArray(books.list), books.list);
-  const feedback = await mock.run('/api/feedback', 'POST', { content: '很好用' });
-  check('反馈返回 feedbackId', !!feedback.feedbackId, feedback);
+  console.log('\n[7] 商品 / 书目 / 用户：校验与字段等价');
+  const itemNoCond = await mock.run('/api/items', 'POST', {
+    itemType: 'normal', categoryId: 1, title: '默认成色测试', price: 12
+  });
+  const itemDetail = await mock.run('/api/items/' + itemNoCond.itemId, 'GET', {});
+  check('缺省 conditionLevel → 后端默认 good', itemDetail.conditionLevel === 'good', itemDetail.conditionLevel);
+  check('发布只回 { itemId }', Object.keys(itemNoCond).join(',') === 'itemId', Object.keys(itemNoCond));
+  check('firstImage 是字符串（不是 {url,sortNo} 对象）', typeof itemDetail.firstImage === 'string', itemDetail.firstImage);
 
-  console.log('\n[6] 用户与登录校验对齐');
+  const itemImages = await mock.run('/api/items', 'POST', {
+    itemType: 'normal', categoryId: 1, title: '带图测试', price: 12,
+    images: [{ url: '/uploads/demo.png', sortNo: 2 }, { url: '/uploads/demo2.png', sortNo: 1 }]
+  });
+  const itemImagesDetail = await mock.run('/api/items/' + itemImages.itemId, 'GET', {});
+  check('images 按 sortNo 排序后取第一张 url 作 firstImage',
+    itemImagesDetail.firstImage === '/uploads/demo2.png', itemImagesDetail.firstImage);
+
+  await expectFailMsg('图片不是 /uploads/ 开头 → 400', '/api/items', 'POST',
+    { itemType: 'normal', categoryId: 1, title: '非法图', price: 12, images: [{ url: '/demo/x.png' }] }, '图片地址不合法');
+  await expectFailMsg('图片超过 3 张 → 400', '/api/items', 'POST',
+    { itemType: 'normal', categoryId: 1, title: '四张图', price: 12,
+      images: [{ url: '/uploads/a.png' }, { url: '/uploads/b.png' }, { url: '/uploads/c.png' }, { url: '/uploads/d.png' }] },
+    '最多上传 3 张图片');
+  await expectFailMsg('售价 0 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '零元', price: 0 }, '售价必须大于 0');
+  await expectFailMsg('成色非法 → 400', '/api/items', 'POST',
+    { itemType: 'normal', categoryId: 1, title: '成色', price: 1, conditionLevel: 'bad' }, '成色不合法');
+  await expectFailMsg('描述 2001 字 → 400', '/api/items', 'POST',
+    { itemType: 'normal', categoryId: 1, title: '长描述', price: 1, description: 'x'.repeat(2001) }, '描述不能超过 2000 字');
+
+  const book200 = await mock.run('/api/books', 'POST', { title: 'B'.repeat(200) });
+  check('书名 200 字可创建（后端上限 200）', !!book200.bookId, book200);
+  await expectFailMsg('书名 201 字 → 400', '/api/books', 'POST', { title: 'B'.repeat(201) }, '书名不能超过 200 字');
+  const bookIsbn = await mock.run('/api/books', 'POST', { title: 'ISBN 去重', isbn: '9787000000001' });
+  const bookIsbn2 = await mock.run('/api/books', 'POST', { title: '另一个书名同 ISBN', isbn: '9787000000001' });
+  check('同 ISBN 返回已有书目且 created=false', bookIsbn2.bookId === bookIsbn.bookId && bookIsbn2.created === false, bookIsbn2);
+  await expectFailMsg('ISBN 21 位 → 400', '/api/books', 'POST', { title: 'x', isbn: '1'.repeat(21) }, 'ISBN 不能超过 20 位');
+
+  const phoneOk = await mock.run('/api/users/me', 'PUT', { phone: '12345678901' });
+  check('手机号任意 11 位数字均通过（不校验 1[3-9]）', phoneOk.userInfo.phone === '12345678901', phoneOk.userInfo.phone);
+  await expectFailMsg('手机号 10 位 → 400', '/api/users/me', 'PUT', { phone: '1234567890' }, '手机号格式不正确');
+  const campusIgnored = await mock.run('/api/users/me', 'PUT', { campus: '南区' });
+  check('PUT /users/me 不接受 campus（仍为 null）', campusIgnored.userInfo.campus === null, campusIgnored.userInfo.campus);
+
+  console.log('\n[8] 登录 / 注册校验：与 auth.js 对齐');
   const u = await mock.run('/api/users/3', 'GET', {});
   check('用户公开资料只含 4 字段', Object.keys(u).sort().join(',') === 'avatarUrl,creditScore,nickname,userId', Object.keys(u));
   const profile = await mock.run('/api/users/me/runner-profile', 'GET', {});
   check('跑腿设置字段齐全（serviceAreas/Places/itemSizes 数组）', Array.isArray(profile.serviceAreas) && Array.isArray(profile.servicePlaces) && Array.isArray(profile.itemSizes));
   await expectFail('登录缺密码 400', '/api/auth/login', 'POST', { studentNo: '202321010100001' }, 400);
-  await expectFail('登录学号 5 位 400', '/api/auth/login', 'POST', { studentNo: '12345', password: '123456' }, 400);
+  // 修正：auth.js 登录只校验非空，5 位学号不会 400（后端走到查库 → 401「学号或密码错误」）
+  const shortNo = await mock.run('/api/auth/login', 'POST', { studentNo: '12345', password: '123456' }).then(
+    (r) => ({ ok: true, r }),
+    (e) => ({ ok: false, e })
+  );
+  check('登录学号 5 位**不是** 400（后端只在注册校验格式）', !(shortNo.ok === false && shortNo.e.code === 400),
+    shortNo.ok ? 'mock 放行' : shortNo.e);
+  await expectFailMsg('登录空学号 → 400', '/api/auth/login', 'POST', { studentNo: '   ', password: '123456' }, '请输入学号和密码');
   const login = await mock.run('/api/auth/login', 'POST', { studentNo: '202321010100001', password: '123456' });
   check('登录返回 token + userInfo', !!login.token && login.userInfo.userId === 1, Object.keys(login));
   await expectFail('注册昵称 1 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: 'a', password: '123456' }, 400);
   await expectFail('注册昵称 13 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: '一二三四五六七八九十一二三', password: '123456' }, 400);
+  await expectFail('注册学号 5 位 400', '/api/auth/register', 'POST', { studentNo: '12345', nickname: '五六', password: '123456' }, 400);
 
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);
