@@ -87,6 +87,9 @@
 <text x="732.968747834627" y="107.39939707238184" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">业务类型</text>
 <ellipse cx="896.5404718490613" cy="223.14042059956944" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
 <text x="896.5404718490613" y="224.14042059956944" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">最后消息</text>
+<line x1="871.468747834627" y1="165" x2="961.2" y2="177" stroke="#4B5563" stroke-width="1.4"/>
+<ellipse cx="1000" cy="177" rx="38.800000000000004" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1000" y="178" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">业务ID</text>
 <ellipse cx="722.3656801239982" cy="156.8467944008586" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
 <text x="722.3656801239982" y="157.8467944008586" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">最后时间</text>
 <rect x="874.8951078577684" y="489.8345978097426" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>

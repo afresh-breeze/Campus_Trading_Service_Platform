@@ -72,6 +72,9 @@
   <path d="M484,640 H598" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
   <text x="541" y="628" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">收藏记录</text>
 
+  <path d="M800,270 V560 H420 V576" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="610" y="548" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">商品摘要</text>
+
   <rect x="40" y="730" width="180" height="80" rx="2" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
   <text x="130" y="760" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">用户 *</text>
   <text x="130" y="784" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#64748b">买家 / 卖家</text>
@@ -120,8 +123,8 @@
 
   <rect x="880" y="970" width="260" height="60" fill="#FFF8EE"/>
   <path d="M880,970 H1140 V1030 H880 V970" fill="none" stroke="#C9A87C" stroke-width="1.8"/>
-  <text x="1010" y="994" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#5D4630">D4 messages</text>
-  <text x="1010" y="1014" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#806E5C">聊天消息</text>
+  <text x="1010" y="994" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#5D4630">D4 conversations / messages</text>
+  <text x="1010" y="1014" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#806E5C">会话与消息</text>
 
   <path d="M220,800 H300 V1000 H634" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
   <text x="312" y="900" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">聊天消息 / 新消息</text>
