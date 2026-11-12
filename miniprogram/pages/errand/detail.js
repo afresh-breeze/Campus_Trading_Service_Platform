@@ -246,11 +246,15 @@ Page({
     });
   },
 
-  /** 409 / 404 / 403 分别给不同出路，别一律弹 message */
+  /**
+   * 409 / 404 / 403 分别给不同出路，别一律弹 message。
+   * 409 的原因不止「被接走」：发布→「订单已在大厅」、撤回→「当前订单不能撤回」、
+   * 释放→「当前订单不能释放」，所以优先透出后端 message，前端只留兜底文案。
+   */
   handleActionError(err) {
     const code = err && err.code;
     if (code === 409) {
-      util.toast('手慢了，订单已被接走');
+      util.toast((err && err.message) || '手慢了，订单已被接走');
       this.fetch();
       return;
     }

@@ -149,7 +149,7 @@
 | 底部按钮按 `canTake/canComplete/canCancel/canRelease` 显示，前端不自己算 | `buildActions()` 只读后端 `can*`（含 `canPublish`），顺序：主操作 → 发布到大厅 → 撤回/取消 → 释放；**无主操作时把第一个提为主色**，避免整栏全灰。私单 `canEdit` 见下方「暂不渲染」 |
 | 接单/完成/撤回/释放 各调对应接口 | `POST /:id/take`、`/complete`、`/cancel`、`/release`，并补 `/publish`（私单发布到大厅，11-11 新增接口） |
 | 每个操作二次确认，文案写清后果 | `util.confirm()`；`taken` 状态下撤回文案单独区分「退回待接单（大厅单回大厅、私单仍为私单）」，不笼统写「回大厅」 |
-| 409 冲突提示并刷新详情 | `handleActionError()`：409 →「手慢了，订单已被接走」+ 重拉；404 → 整页转错误态；其余透出后端 `message`（与 `response.js` 的 `code = status` 对齐） |
+| 409 冲突提示并刷新详情 | `handleActionError()`：409 **优先透出后端 message**（接单「该订单已被接单」、发布「订单已在大厅」、撤回「当前订单不能撤回」、释放「当前订单不能释放」），前端只留「手慢了」兜底 + 重拉；404 → 整页转错误态；403 透出后端 `message`（与 `response.js` 的 `code = status` 对齐） |
 | `taken` 下「联系 TA」 | 仅 `taken/completed` 且 `chatPeerId` 存在时显示，跳 `/pages/chat/detail?peerId=<对方>&bizType=errand&bizId=<orderId>`；发布者找接单人、其他身份找发布者 |
 | `onShow` 重拉 | 已实现（从聊天页返回能看到最新状态）；另加 `onPullDownRefresh` |
 
@@ -1049,7 +1049,7 @@ git push
 2. 底部按钮按 `canTake / canComplete / canCancel / canRelease` 显示，前端不自己算权限。
 3. 接单 → `POST /api/errands/:id/take`；完成 → `/complete`；撤回 → `/cancel`；释放 → `/release`。
 4. 每个操作都二次确认（`wx.showModal`），文案写清后果（“接单后订单将从大厅消失”）。
-5. 409 冲突时提示“手慢了，订单已被接走”，并刷新详情。
+5. 409 冲突时**优先透出后端 message**（接单是“该订单已被接单”，发布/撤回/释放各有原因文案），前端文案只做兜底，并刷新详情。
 
 **怎么做**
 
@@ -1860,7 +1860,7 @@ Page({
 4. `onShow` 重新拉取（从聊天返回要看最新状态）。
 5. 显示发布人信用/完成数（若接口有）。
 
-**异常与边界**：409 → 提示“手慢了，订单已被接走” + 自动刷新；404 → “订单不存在或已删除” + 返回大厅。
+**异常与边界**：409 → 优先透出后端 message（原因不止“被接走”），前端文案兜底 + 自动刷新；404 → “订单不存在或已删除” + 返回大厅。
 
 **验收**：两账号并发接单一个成功一个 409；四种状态按钮组合正确；状态标签颜色正确。
 
@@ -2032,7 +2032,7 @@ onLoad(query)
 
 返回：`{ "messageId": 88, "createdAt": "2026-11-15 20:13:10" }`。
 
-#### 7.2.5 `POST /api/conversations/:id/read` 标记已读
+#### 7.2.5 `PUT /api/conversations/:id/read` 标记已读
 
 请求：`{ "lastMessageId": 88 }`（可省略，省略则标记到最新）。返回 `{ "unreadCount": 0 }`。
 
@@ -2069,10 +2069,16 @@ async function assertMember(conversationId, userId) {
 router.post('/', async (req, res, next) => {
   try {
     const me = req.user.userId;
-    const { peerId, bizType = 'item', bizId = 0 } = req.body || {};
+    const { peerId, bizType = 'item' } = req.body || {};
+    const bizId = Number((req.body || {}).bizId);
     if (!peerId) return res.status(400).json({ code: 400, message: '缺少 peerId' });
     if (Number(peerId) === Number(me)) return res.status(400).json({ code: 400, message: '不能和自己发起会话' });
     if (!['item', 'errand'].includes(bizType)) return res.status(400).json({ code: 400, message: 'bizType 非法' });
+    // bizId 必传且 >= 0（对齐 routes/chat.js 的 parseNonNegativeInt，不设默认值）：
+    // item 必须 > 0；errand **必须传真实 orderId**——私单接单权限靠
+    // isErrandChatPeer 认「聊过这单」，传 0 认不出，详情页 canTake 恒 false、接单 403。
+    if (!Number.isInteger(bizId) || bizId < 0 || (bizType === 'item' && bizId <= 0))
+      return res.status(400).json({ code: 400, message: 'bizId 不合法' });
 
     // 调 A 的存储过程；输出参数方式按 objects.sql 实际写法调整
     const [out] = await db.query('CALL sp_get_or_create_conversation(?, ?, ?, ?, @cid)', [me, peerId, bizType, bizId]);
@@ -2155,8 +2161,8 @@ router.post('/:id/messages', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// 5) 标记已读
-router.post('/:id/read', async (req, res, next) => {
+// 5) 标记已读（方法固定 PUT，与 routes/chat.js:444 一致）
+router.put('/:id/read', async (req, res, next) => {
   try {
     const me = req.user.userId;
     const cid = Number(req.params.id);
@@ -2981,8 +2987,8 @@ report/assets/（B 的图）
 | --- | --- | --- |
 | 登录 | `POST /api/auth/login` | `pages/login/` |
 | 注册 | `POST /api/auth/register` | `pages/register/` |
-| 个人中心 | `GET /api/users/me` | `pages/mine/index/` |
-| 个人资料 | `GET/PUT /api/users/me`、`POST /api/upload` | `pages/mine/profile/` |
+| 个人中心 | `GET /api/auth/me` | `pages/mine/index/` |
+| 个人资料 | `GET /api/auth/me`（读）、`PUT /api/users/me`（写）、`POST /api/upload` | `pages/mine/profile/` |
 | 设置 | 本地 + `POST /api/auth/logout`（若有） | `pages/mine/settings/` |
 | 帮助 | `POST /api/feedback` | `pages/mine/help/` |
 | 代取大厅 | `GET /api/errands?status=pending` | `pages/errand/hall/` |
@@ -2992,7 +2998,7 @@ report/assets/（B 的图）
 | 我的代取 | `GET /api/errands/mine?role=publisher|runner` | `pages/mine/errands/` |
 | 接单设置/上线 | `GET/PUT /api/users/me/runner-profile`、`PUT /api/users/me/online` | `pages/mine/runner/` |
 | 消息列表 | `GET /api/conversations`、`GET /api/conversations/unread-count` | `pages/chat/list/` |
-| 聊天页 | `POST /api/conversations`、`GET/POST /api/conversations/:id/messages`、`POST /api/conversations/:id/read` | `pages/chat/detail/` |
+| 聊天页 | `POST /api/conversations`、`GET/POST /api/conversations/:id/messages`、`PUT /api/conversations/:id/read` | `pages/chat/detail/` |
 
 ### 12.4 常用调试片段
 
