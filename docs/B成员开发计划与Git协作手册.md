@@ -101,7 +101,7 @@
 | --- | --- | --- | --- |
 | M0 环境与登录打通 | 11-07 | ✅ 已过 | `app.json` 注册 20 页；`/api/health`、`/api/auth/me` 可通；登录页渲染成功，开发者工具 **0 错误 0 警告** |
 | M1 二手闭环（配合 A） | 11-11 | 🟡 配合中 | 公共层与组件已交付，A 可引用；B 侧页面尚未开始 |
-| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中 | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；小程序侧 **代取详情页 11-12 已落地**（占位页重写，见 §0.4-6），剩大厅/发布/我的代取/接单设置与聊天页 |
+| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中 | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；小程序侧 **代取大厅 + 详情页 11-12 已落地**（见 §0.4-6、§0.4-7），剩发布/找跑腿/我的代取/接单设置与聊天页 |
 
 #### 2）公共层遗留项（A 11-10 评审提出的 7 项，已全部闭环）
 
@@ -162,12 +162,33 @@
 **验证**：`node --check` 通过、`detail.json` 解析通过、WXML 标签配平；用 mock 数据跑 `apply()` 分支 **22 项断言全过**（5 种 `can*` 组合、三种时间口径、地标去重、报酬两位小数、`isPublisher/isRunner`、`chatPeerId` 双向、404 与缺 id 分支）。
 **未做**：微信开发者工具编译留证与两账号并发联调（需本机环境）。**大厅页仍是占位，详情页暂时没有入口**，验证只能靠开发者工具「自定义编译模式」带 `id=2001` 直达。
 
-#### 7）已知阻塞（写在这里，避免口头遗忘）
+#### 7）11-12 追加：代取大厅（已完成）
+
+**为什么追加**：详情页做完后 tab 2「代取」仍是 17 行占位页，用户编译后看到骨架以为代码没生效。大厅是详情页唯一的入口，不补就等于详情页无法验收。
+
+**`pages/errand/hall` 由占位页重写（js 184 行 / wxml 101 行 / wxss 217 行）**
+
+| 手册 §6.7 要求 | 落地 |
+| --- | --- |
+| 只拉 `status=pending`，page/pageSize=10 | 请求固定 `{status:'pending', page, pageSize:10}`，**前端不再二次过滤状态**；`visibility=hall` 由后端 SQL 固定 |
+| 卡片：片区·地标、送达地、报酬、时间、规格、发布人 | 路线两行（实心点=取件、空心点=送达）+ 右侧报酬；第二行规格/时间标签 + 备注；底部发布人·相对时间 |
+| 点卡片进详情 | `navigateTo('/pages/errand/detail?id=')` |
+| 下拉刷新 / 上拉加载 / 三态 | 全部实现；`hasMore = 已加载数 < total`，翻页失败只 toast 不清列表；上拉用 `loadingMore` 锁防重复请求 |
+| 顶部「我要接单」入口 | `/pages/mine/runner?mode=online`（11-13 落地后生效） |
+| 空列表 | 空态 +「去发布代取」；未登录单独给登录引导，不在大厅里弹 401 |
+| 顶部在线人数条 | **不做**：后端无此数据（手册原话「若接口无此数据就省略，不要编」） |
+
+**字段名纠偏**：手册 §6.7 表格原写 `errandId`，后端**实际返回 `orderId`**，已改。
+
+**验证**：`node --check`、json 解析、WXML 配平通过；stub 掉 `Page/wx/getApp/request` 直跑页面逻辑 **34 项断言全过**（派生字段、时间三态、分页追加不重复、翻页失败保留列表、首屏失败错误态、未登录、跳转参数、空列表）。
+**mock 补 3 条大厅演示单**（2009 橘园 range / 2010 第一运动场 asap / 2011 南区 large deadline），大厅从 2 条变 5 条，契约测试仍 88/0。
+
+#### 8）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
 - ~~mock 与后端字段/校验不一致~~ → **已整改（11-11 复盘）**：`utils/mock.js` 经两轮对齐后共 **39 条路由**（服务端 40 条 − `POST /api/upload` 文件上传接口，该接口不适合 mock），入参校验、返回字段、失败码逐条对齐 `server/src/routes/*.js`；`scripts/mock-contract-test.js` 已扩到 **88 项断言全过**，作为回归门槛。**后端新增接口必须同步 mock 与断言**，否则 MOCK 模式会直接报「mock 未登记该接口」。
-- ~~代取详情页无入口~~ → **未解除**：`pages/errand/hall` 仍为占位（17 行），详情页只能靠自定义编译模式进入；大厅落地时要接 `bindtap → /pages/errand/detail?id=`。
+- ~~代取详情页无入口~~ → **已解除（11-12）**：`pages/errand/hall` 已实现列表并接好 `bindtap → /pages/errand/detail?id=`。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
 - **A 的 6 个二手页面仍为占位骨架**（wxml 11 行），M1 的 UI 走查与 B 侧配合验收都要等页面落地（记录见 `docs/UI走查记录-B.md` #18）。
 - **后端无 stats 聚合接口**：个人中心四项统计用 `items/mine`、`favorites`、`errands/mine` 的 `total` 派生，`/api/errands/mine` 必须支持 `status` 筛选（mock 已对齐）。
@@ -1771,7 +1792,7 @@ Page({
 
 | 字段 | 说明 |
 | --- | --- |
-| `errandId` | 主键 |
+| `orderId` | 主键（后端实际字段名；旧稿写 `errandId` 是错的） |
 | `pickupArea` / `pickupPlace` | 取件片区 / 地标 |
 | `deliveryLocation` | 送达地点（必填） |
 | `itemSize` | `small/medium/large` |

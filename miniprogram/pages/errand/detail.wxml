@@ -7,6 +7,7 @@
     <text class="t-sub">加载中…</text>
   </view>
   <view wx:elif="{{error}}" class="detail-state">
+    <!-- 404 / 网络失败共用这个卡片，文案由 js 决定 -->
     <view class="card detail-state__card">
       <text class="t-title">{{error}}</text>
       <text class="t-sub detail-state__desc">{{errorDesc}}</text>
