@@ -177,4 +177,7 @@
 <ellipse cx="1358.4354733614255" cy="213.68823122763317" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
 <ellipse cx="1358.4354733614255" cy="213.68823122763317" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
 <text x="1358.4354733614255" y="214.68823122763317" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可接规格</text>
+<line x1="348.1410041599603" y1="858.8355332741025" x2="684.4" y2="1085" stroke="#4B5563" stroke-width="1.4"/>
+<ellipse cx="720" cy="1085" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="720" y="1086" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可见性</text>
 </svg>

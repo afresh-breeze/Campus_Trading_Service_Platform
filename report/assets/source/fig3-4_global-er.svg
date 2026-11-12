@@ -324,8 +324,14 @@
 <text x="2248.790542098641" y="217.924057237728" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">接单时间</text>
 <ellipse cx="2112.7547612627277" cy="71.04194485196194" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
 <text x="2112.7547612627277" y="72.04194485196194" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">完成时间</text>
+<line x1="2071.0934971776287" y1="319.42100415996026" x2="2227.56" y2="580" stroke="#4B5563" stroke-width="1.4"/>
+<ellipse cx="2270" cy="580" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="2270" y="581" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可见性</text>
 <rect x="1713.7196950640678" y="643.9651075651318" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
 <text x="1761.7196950640678" y="668.9651075651318" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">会话</text>
+<line x1="1809.7196950640678" y1="660" x2="1932.56" y2="600" stroke="#4B5563" stroke-width="1.4"/>
+<ellipse cx="1975" cy="600" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="1975" y="601" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">业务ID</text>
 <ellipse cx="1802.379687447204" cy="575.3254031683999" rx="38.800000000000004" ry="18" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
 <text x="1802.379687447204" y="576.3254031683999" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#1f2937">会话ID</text>
 <line x1="1778.5796874472042" y1="585.3254031683999" x2="1826.179687447204" y2="585.3254031683999" stroke="#334155" stroke-width="1.2"/>

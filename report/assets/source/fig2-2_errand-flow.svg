@@ -14,10 +14,10 @@
   <rect x="0" y="0" width="1120" height="1260" fill="#F4F1E7"/>
 
   <text x="40" y="58" font-size="30" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 代取订单状态流转图</text>
-  <text x="40" y="86" font-size="13" fill="#806E5C">4 个状态 · 发布前可选搜索匹配 · 谈妥可直接接单　|　代取 / 订单</text>
+  <text x="40" y="86" font-size="13" fill="#806E5C">4 个状态 · 私单 / 大厅两种可见性 · 谈妥可直接接单　|　代取 / 订单</text>
   <line x1="40" y1="98" x2="660" y2="98" stroke="#E6A874" stroke-width="2"/>
   <text x="40" y="126" font-size="13" fill="#806E5C">胶囊 = 开始 / 结束　灰色矩形 = 操作步骤　蓝色矩形 = 订单状态　紫色菱形 = 判断</text>
-  <text x="40" y="147" font-size="13" fill="#806E5C">实线 = 正常流转　虚线 = 接单者释放回大厅　pending / taken / completed / cancelled = errand_orders.status 枚举</text>
+  <text x="40" y="147" font-size="13" fill="#806E5C">实线 = 正常流转　虚线 = 接单者释放回 pending　status = pending/taken/completed/cancelled　visibility = private/hall</text>
 
   <rect x="380" y="178" width="160" height="44" rx="22" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
   <text x="460" y="200" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">开始</text>
@@ -31,7 +31,7 @@
   <line x1="460" y1="332" x2="460" y2="372" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
 
   <polygon points="460,374 570,430 460,486 350,430" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
-  <text x="460" y="430" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#0f172a">是否搜索匹配？</text>
+  <text x="460" y="430" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#0f172a">是否先找跑腿？</text>
 
   <line x1="460" y1="486" x2="460" y2="648" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
   <text x="472" y="560" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">否，直接发布</text>
@@ -40,8 +40,8 @@
   <text x="610" y="418" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">是</text>
 
   <rect x="760" y="398" width="220" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
-  <text x="870" y="422" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">搜索匹配可接单跑腿</text>
-  <text x="870" y="446" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">片区 · 地标 · 时间 · 规格</text>
+  <text x="870" y="422" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">创建私单并匹配跑腿</text>
+  <text x="870" y="446" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">pending · private · 不进入大厅</text>
 
   <line x1="870" y1="462" x2="870" y2="512" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
 
@@ -56,24 +56,24 @@
 
   <rect x="760" y="650" width="220" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
   <text x="870" y="674" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">联系 TA 沟通</text>
-  <text x="870" y="698" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">协商送达时间与报酬</text>
+  <text x="870" y="698" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">同一私单 · 协商时间与报酬</text>
 
   <path d="M760,682 H582" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
-  <text x="715" y="674" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">未谈妥</text>
+  <text x="610" y="674" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">未谈妥，回发布页</text>
   <circle cx="700" cy="682" r="3" fill="#4B5563"/>
 
   <path d="M980,682 H1010 V944 H582" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
-  <text x="790" y="934" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">谈妥，直接接单</text>
+  <text x="790" y="934" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">谈妥，跑腿在详情接单</text>
 
   <rect x="340" y="650" width="240" height="64" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
   <text x="460" y="674" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">发布到大厅</text>
-  <text x="460" y="698" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">生成 pending 订单</text>
+  <text x="460" y="698" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">visibility=hall · 订单进入大厅</text>
 
   <line x1="460" y1="714" x2="460" y2="788" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
 
   <rect x="340" y="790" width="240" height="68" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
   <text x="460" y="816" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">待接单</text>
-  <text x="460" y="840" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">pending · 大厅可见</text>
+  <text x="460" y="840" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#64748b">pending · 大厅 / 私单</text>
 
   <line x1="460" y1="858" x2="460" y2="908" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
   <text x="472" y="886" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">接单者接单</text>
@@ -109,5 +109,6 @@
 
   <path d="M170,978 V1162 H378" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
 
-  <text x="40" y="1230" font-size="12" fill="#806E5C">注：搜索匹配仅查看跑腿信息，是否联系由发布者决定；谈妥后由该跑腿直接接单，订单不进入大厅。taken 需先撤回为 pending 才能取消，completed / cancelled 为终态。</text>
+  <text x="40" y="1216" font-size="12" fill="#806E5C">注：点“先找跑腿”即创建 visibility=private 的 pending 私单，仅与发布者聊过该单的跑腿可见可接，多个跑腿共用同一 orderId，先接先得。</text>
+  <text x="40" y="1240" font-size="12" fill="#806E5C">未谈妥时回发布页保留原表单，把同一单改为 visibility=hall 发布到大厅；taken 需先撤回为 pending 才能取消，completed / cancelled 为终态。</text>
 </svg>

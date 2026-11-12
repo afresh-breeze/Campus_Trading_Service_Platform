@@ -73,7 +73,7 @@ JOIN users u ON u.user_id = i.seller_id
 LEFT JOIN categories c ON c.category_id = i.category_id
 LEFT JOIN books b ON b.book_id = i.book_id;
 
--- 代取大厅：只展示待接单订单，带发布者公开信息
+-- 代取大厅：只展示已发布到大厅的待接单订单，带发布者公开信息
 CREATE OR REPLACE VIEW v_errand_hall AS
 SELECT
   e.order_id           AS orderId,
@@ -92,10 +92,12 @@ SELECT
   e.time_start         AS timeStart,
   e.deadline           AS deadline,
   e.status             AS status,
+  e.visibility         AS visibility,
   e.created_at         AS createdAt
 FROM errand_orders e
 JOIN users u ON u.user_id = e.publisher_id
-WHERE e.status = 'pending';
+WHERE e.status = 'pending'
+  AND e.visibility = 'hall';
 
 -- 会话列表：会话 + 双方昵称头像
 CREATE OR REPLACE VIEW v_conversation_base AS
@@ -220,8 +222,8 @@ BEGIN
   COMMIT;
 END$$
 
--- 接单：事务 + 行锁，防并发重复接单
--- p_code：0 成功；403 不能接自己的单；404 不存在；409 已被接走
+-- 接单：事务 + 行锁，防并发重复接单；大厅单任意非发布者可接，私单只有与该单会话的跑腿可接
+-- p_code：0 成功；403 发布者接自己的单；4031 私单且无该单会话；404 不存在；409 状态不是 pending
 CREATE PROCEDURE sp_take_errand(
   IN p_order_id BIGINT,
   IN p_runner_id BIGINT,
@@ -230,6 +232,9 @@ CREATE PROCEDURE sp_take_errand(
 BEGIN
   DECLARE v_publisher_id BIGINT DEFAULT NULL;
   DECLARE v_status VARCHAR(20) DEFAULT NULL;
+  DECLARE v_visibility VARCHAR(10) DEFAULT NULL;
+  DECLARE v_chat_peer INT DEFAULT 0;
+  DECLARE v_allowed INT DEFAULT 1;
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -239,8 +244,8 @@ BEGIN
 
   START TRANSACTION;
 
-  SELECT publisher_id, status
-    INTO v_publisher_id, v_status
+  SELECT publisher_id, status, visibility
+    INTO v_publisher_id, v_status, v_visibility
     FROM errand_orders
    WHERE order_id = p_order_id
    FOR UPDATE;
@@ -255,21 +260,39 @@ BEGIN
     SET p_code = 409;
     ROLLBACK;
   ELSE
-    SET @current_user_id = p_runner_id;
+    IF v_visibility = 'private' THEN
+      SELECT COUNT(*)
+        INTO v_chat_peer
+        FROM conversations
+       WHERE biz_type = 'errand'
+         AND biz_id = p_order_id
+         AND user_a_id = LEAST(v_publisher_id, p_runner_id)
+         AND user_b_id = GREATEST(v_publisher_id, p_runner_id);
 
-    UPDATE errand_orders
-       SET runner_id = p_runner_id,
-           status = 'taken',
-           taken_at = NOW()
-     WHERE order_id = p_order_id
-       AND status = 'pending';
+      IF v_chat_peer = 0 THEN
+        SET v_allowed = 0;
+        SET p_code = 4031;
+        ROLLBACK;
+      END IF;
+    END IF;
 
-    IF ROW_COUNT() = 1 THEN
-      SET p_code = 0;
-      COMMIT;
-    ELSE
-      SET p_code = 409;
-      ROLLBACK;
+    IF v_allowed = 1 THEN
+      SET @current_user_id = p_runner_id;
+
+      UPDATE errand_orders
+         SET runner_id = p_runner_id,
+             status = 'taken',
+             taken_at = NOW()
+       WHERE order_id = p_order_id
+         AND status = 'pending';
+
+      IF ROW_COUNT() = 1 THEN
+        SET p_code = 0;
+        COMMIT;
+      ELSE
+        SET p_code = 409;
+        ROLLBACK;
+      END IF;
     END IF;
   END IF;
 END$$

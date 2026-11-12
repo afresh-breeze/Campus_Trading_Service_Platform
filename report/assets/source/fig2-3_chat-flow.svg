@@ -100,5 +100,5 @@
   <text x="460" y="1262" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">结束</text>
 
   <text x="40" y="1340" font-size="12" fill="#806E5C">注：轮询只拉 afterId 之后的新消息；进入会话后按 lastMessageId 标记已读；发送失败保留草稿可重发，不做本地假消息。</text>
-  <text x="40" y="1362" font-size="12" fill="#806E5C">会话按「双方用户 + 业务类型 + 业务 ID」复用；图片消息只存 /uploads/ 相对路径。</text>
+  <text x="40" y="1362" font-size="12" fill="#806E5C">会话按「双方用户 + 业务类型 + 业务 ID」复用；找跑腿必须先创建私单，bizId=私单 orderId；图片消息只存 /uploads/ 相对路径。</text>
 </svg>

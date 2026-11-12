@@ -276,9 +276,12 @@
 | GET | `/api/items?keyword=&bookId=&categoryId=&sort=&page=&pageSize=` | A | `bookId` 用于搜索结果页“同书商品优先” |
 | GET | `/api/users/me/runner-profile` | A | 接单设置页回显；返回 `isOnline`、`availabilityType`、`serviceAreas: []`、`servicePlaces: []`、`itemSizes: []`、`timeSlots: []`、`manualUntil`、`remark` |
 | GET | `/api/runners?area=&place=&timeType=&timeStart=&deadline=&itemSize=&page=&pageSize=` | A | 找跑腿匹配页；`asap` 只返回在线，`deadline`/`range` 允许“未来计划重叠但当前不在线”的 `slot` 跑腿；按片区 + 具体地标 + 时间重叠筛选，不直接改订单状态 |
-| GET | `/api/errands/:id` | A | 返回订单完整字段（含 `deliveryLocation` 送达地点）和 `canTake`、`canComplete`、`canCancel`、`canRelease`，B 的页面据此显示按钮 |
-| POST | `/api/errands/:id/cancel` | A | 发布者撤回：`pending → cancelled`；`taken → pending`，清空接单人 |
-| POST | `/api/errands/:id/release` | A | 接单者释放：`taken → pending`，清空接单人 |
+| GET | `/api/errands/:id` | A | 返回订单完整字段（含 `deliveryLocation`、`visibility`）和 `canTake`、`canEdit`、`canPublish`、`canComplete`、`canCancel`、`canRelease`，B 的页面据此显示按钮 |
+| POST | `/api/errands` | A | 发布代取；`visibility` 可选 `hall`（默认）/ `private`（先找跑腿，不进大厅） |
+| PUT | `/api/errands/:id` | A | 修改未发布的私单；只有发布者、`pending` 且 `private` 可改 |
+| POST | `/api/errands/:id/publish` | A | 私单发布到大厅；只改 `visibility='hall'`，状态仍是 `pending` |
+| POST | `/api/errands/:id/cancel` | A | 发布者撤回：`pending → cancelled`；`taken → pending`，清空接单人，可见性不变 |
+| POST | `/api/errands/:id/release` | A | 接单者释放：`taken → pending`，清空接单人，可见性不变 |
 | POST | `/api/feedback` | A | 帮助页意见反馈；body `{ "content": "..." }` |
 
 **跑腿资料与上线（B 的页面按这个传参）：**
@@ -335,10 +338,11 @@ PUT /api/users/me/online
 
 **角色规则（11-12 写进接口文档，B 的页面按这个显示按钮）：**
 
-- 接单：除发布者外的登录用户，订单状态必须是 `pending`；接单成功后变 `taken`，订单从大厅消失，别人不能再接。
+- 接单：大厅单（`visibility='hall'`）除发布者外的登录用户可接；私单（`visibility='private'`）只有与发布者就该单创建过会话的跑腿可接。订单状态必须是 `pending`；接单成功后变 `taken`，别人不能再接。
 - 完成：只有发布者可以确认完成，状态必须是 `taken`。
-- 发布者撤回：`pending → cancelled`；`taken → pending`，清空 `runner_id`、`taken_at`，订单回大厅。
-- 接单者释放：`taken → pending`，清空 `runner_id`、`taken_at`，订单回大厅。
+- 发布者撤回：`pending → cancelled`；`taken → pending`，清空 `runner_id`、`taken_at`，可见性不变（大厅单回大厅，私单仍只对聊过的跑腿开放）。
+- 接单者释放：`taken → pending`，清空 `runner_id`、`taken_at`，可见性不变。
+- 私单编辑/发大厅：只有发布者、`pending` 且 `private` 时可 `PUT /api/errands/:id`；`POST /api/errands/:id/publish` 只把 `visibility` 改成 `hall`，状态仍是 `pending`。
 - `taken` 不能直接变 `cancelled`；发布者必须先退回 `pending`，再取消。
 - 不再有单独的“挂起/恢复”状态和接口；`taken` 本身就是锁单。
 - 商品状态：只有卖家可以改；`on_sale → reserved / sold / off_shelf`，`reserved → on_sale / sold`，`off_shelf → on_sale`；`sold` 是终态。预订只改状态，不记录预订人。
@@ -356,7 +360,8 @@ B 的聊天页用这三个参数调 `POST /api/conversations`，body 为 `{ peer
 
 - 卡片固定在消息列表上方，不随消息滚动；只展示和导航，不放状态按钮，聊天页仍只负责沟通。
 - 商品会话：封面、标题、价格、状态；点击跳 `/pages/item/detail?id=<bizId>`。
-- 代取会话：规格、取片区 / 地标、报酬、状态；点击跳 `/pages/errand/detail?id=<bizId>`。
+- 代取会话：规格、取片区 / 地标、报酬、状态；点击跳 `/pages/errand/detail?id=<bizId>`。卡片只展示和导航，跑腿进入详情页后点“接单”，聊天页不放接单按钮。
+- 私单会话的 `bizId` 就是私单 `order_id`；卡片不返回 `visibility`，需要显示“未发布到大厅”时由 B 自行扩展，后端接单鉴权不依赖卡片字段。
 - `GET /api/conversations/:id/context` 只允许会话参与者调用，返回 `{ bizType, bizId, bizSummary }`；`bizSummary` 为 `null` 时显示“商品已下架 / 订单不存在”，不可跳转，但不影响聊天。
 - `bizSummary` 字段：item 会话返回 `title`、`price`、`status`、`coverUrl`；errand 会话返回 `itemSize`、`pickupArea`、`pickupPlace`、`reward`、`status`。
 - `onShow` 重新拉一次 context：卖家在商品详情页改状态、发布者 / 接单者在代取详情页改状态后返回，卡片立即显示新状态。
@@ -367,12 +372,12 @@ B 的聊天页用这三个参数调 `POST /api/conversations`，body 为 `{ peer
 
 ```text
 /pages/search/result?keyword=高数
-/pages/errand/runners?area=北区教学区&place=第16教学楼&timeType=deadline&deadline=2026-11-20 18:00:00&itemSize=small
+/pages/errand/runners?orderId=<私单id>&area=北区教学区&place=第16教学楼&timeType=deadline&deadline=2026-11-20 18:00:00&itemSize=small
 /pages/mine/runner?mode=online
 ```
 
 - A 的首页搜索框跳 `pages/search/result`；结果页用 `keyword` 请求书目和商品。
-- B 的发布代取页“先找跑腿”跳 `pages/errand/runners`；参数只用于预填筛选条件，用户可以修改。
+- B 的发布代取页点“先找跑腿”：先调 `POST /api/errands` 传 `visibility='private'` 创建私单，再携带 `orderId` 跳 `pages/errand/runners`；“联系 TA”用该 `orderId` 建会话。
 - B 的代取页“上线/下线”跳 `pages/mine/runner?mode=online`；个人页“接单设置”跳 `pages/mine/runner`（不带参数）。
 
 **接口变更流程：**
@@ -1583,13 +1588,14 @@ git push origin dev
    - 地标匹配真值表：只接某栋楼的跑腿，不匹配“只填片区”的订单；接整个片区（或只按片区）的跑腿，能匹配片区内任何具体地标。
    - 时间匹配：参数与订单一致，`timeType=asap` 不筛时间；`timeType=deadline` 用 `[NOW(), deadline]`；`timeType=range` 用 `[timeStart, deadline]`。`slot` 跑腿的需求窗口与任一 `once`/`weekly` occurrence 重叠即可；`now` 跑腿只看在线状态。MVP 数据量小，应用层解析 JSON 过滤即可，报告里说明；不要再把 `time_slots` 当成“每天重复的 HH:mm”。
    - 返回昵称、头像、信用分、完成数、`serviceAreas`、`servicePlaces`、在线计划摘要、可接规格、报价、备注；**不返回手机号等敏感信息**。
-   - 明确：匹配页只展示信息 + 联系 TA（跳聊天），**不直接改订单状态**；订单仍发布到大厅由 `sp_take_errand` 接单。
+   - 明确：匹配页只展示信息 + 联系 TA（跳聊天），**不直接改订单状态**。发布页“先找跑腿”已创建 `private` 私单时，联系 TA 用该 `orderId` 建会话；跑腿进入代取详情页后由 `sp_take_errand` 接单。若没谈妥，发布者回发布页把同一单 `POST /api/errands/:id/publish` 到大厅，不再新建订单。
 3. **16:00-17:00 代取发布 + 大厅**：
-   - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、送达地点 `deliveryLocation`（必填，自由文本，≤100 字，不做片区/地标校验）、物品规格、描述、备注 `remark`（选填，≤255 字，取件详细地址与交付要求写这里；前端输入框用灰色小字提示“填写取件详细地址、交付要求等”）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；插入 `status='pending'`；返回 `orderId`。
+   - `POST /api/errands`：`timeType` 必填（页面必须选尽快 / 截止 / 范围之一）；校验取件片区 `pickupArea`（必填，取值在 25 个固定片区内）、取件地标 `pickupPlace`（必填，受控地标名，且所属片区必须等于 `pickupArea`；只选片区时允许直接传片区名）、送达地点 `deliveryLocation`（必填，自由文本，≤100 字，不做片区/地标校验）、物品规格、描述、备注 `remark`（选填，≤255 字，取件详细地址与交付要求写这里；前端输入框用灰色小字提示“填写取件详细地址、交付要求等”）、报酬 ≥ 0、时间要求；`timeType` 只能取 `asap/deadline/range`，`asap` 时 `timeStart`、`deadline` 必须为空，`deadline` 时只填 `deadline`，`range` 时两者都填且 `timeStart < deadline`；`visibility` 可选 `hall/private`，默认 `hall`；插入 `status='pending'`；返回 `orderId` 和 `visibility`。
+   - 私单编辑与发布：`PUT /api/errands/:id` 只允许发布者修改 `pending + private` 订单，参数同发布；`POST /api/errands/:id/publish` 只把 `visibility` 改为 `hall`，状态仍是 `pending`；已在大厅返回 409。
    - 不校验“截止时间必须晚于当前时间”，也不做超时自动取消；`deadline` 只作参考和匹配用。
-   - `GET /api/errands?status=pending&page=&pageSize=`：直查 `errand_orders` + `users`（发布者）；默认只查 `pending`；分页；按 `created_at DESC`；返回发布者昵称/头像/信用分。
-   - `v_errand_hall`：已创建；结构与大厅直查结果一致（`errand_orders` + `users`）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`；接口未接入，可在 Navicat 中查询演示。
-   - 测试：seed 几条 pending 订单；大厅能看到；三种时间模式都能发布，非法组合 400；报酬负数 400；`pickupPlace` 不在清单内 400；只传片区名作为 `pickupPlace` 能成功；送达地点为空或超过 100 字返回 400。
+   - `GET /api/errands?status=pending&page=&pageSize=`：直查 `errand_orders` + `users`（发布者）；默认只查 `pending`，且固定加 `visibility='hall'`，私单不进大厅；分页；按 `created_at DESC`；返回发布者昵称/头像/信用分和 `visibility`。
+   - `v_errand_hall`：已创建；只返回 `status='pending' AND visibility='hall'`，结构与大厅直查结果一致（`errand_orders` + `users`）；字段 camelCase；包含 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`、`visibility`。
+   - 测试：seed 几条 pending 订单；大厅能看到；三种时间模式都能发布，非法组合 400；报酬负数 400；`pickupPlace` 不在清单内 400；只传片区名作为 `pickupPlace` 能成功；送达地点为空或超过 100 字返回 400；`visibility='private'` 的订单不出现在大厅。
 4. **18:00-21:00 聊天数据库对象提前做**：
    - 今天先写 `conversations`、`messages` 相关对象（见 11-13 的清单），能写多少写多少；这样 B 的聊天后端不会等到 11-15。
    - 至少先交付 `v_conversation_base`、`sp_get_or_create_conversation` 的初版，让 B 可以开始。
@@ -1615,7 +1621,7 @@ git push -u origin feature/errand-core
 - [ ] 修改进行中的循环计划，前端弹窗提醒“只影响下一次，当前这次要结束用提前下线”。
 - [ ] `GET /api/runners` 按时间要求返回可接单跑腿（`asap` 在线；`deadline`/`range` 可含计划重叠的 `slot` 跑腿），按取件片区粗筛 + 具体地标细筛 + 规格 + 时间重叠筛选有效，不泄露手机号。
 - [ ] 地标匹配符合真值表：只接某栋楼的跑腿不匹配“只填片区”的订单；接整个片区的跑腿能匹配片区内具体地标订单。
-- [ ] 发布代取单成功；大厅显示 pending 订单；分页正常。
+- [ ] 发布代取单成功；大厅显示 `hall + pending` 订单；分页正常。
 - [ ] 报酬负数、时间组合非法、必填缺失、地标不在清单内都返回 400。
 - [ ] `v_errand_hall` 结果包含发布者昵称/头像和 `pickupArea`、`pickupPlace`、`deliveryLocation`、`remark`。
 
@@ -1639,13 +1645,14 @@ git push -u origin feature/errand-core
 1. **09:00-12:00 接单事务**：
    - 优先把事务写在 `sp_take_errand` 存储过程里（数据库对象加分）；入参 `p_order_id, p_runner_id, OUT p_code`；内部：
      - `START TRANSACTION`；
-     - `SELECT publisher_id, status ... FOR UPDATE`；
+     - `SELECT publisher_id, status, visibility ... FOR UPDATE`；
      - 不存在 404、自己发的单 403、非 pending 409；
+     - 私单再查 `conversations` 是否存在 `biz_type='errand' AND biz_id=p_order_id` 且双方匹配的会话，没有则 4031；
      - `SET @current_user_id = p_runner_id`；
      - `UPDATE ... SET runner_id=?, status='taken', taken_at=NOW() WHERE order_id=? AND status='pending'`；
      - `ROW_COUNT()=1` 才 COMMIT，否则 ROLLBACK + 409。
    - 如果 SP 卡住超过 2 小时，先用计划 6.8 的 Node 事务保证闭环，11-17 再补 SP；但 `sp_take_errand` 必须在 11-17 前补上，算数据库对象。
-   - Node 调用 SP 时，同样用**同一个连接**：`CALL sp_take_errand(?, ?, @code)` → `SELECT @code` → 映射 404/403/409。
+   - Node 调用 SP 时，同样用**同一个连接**：`CALL sp_take_errand(?, ?, @code)` → `SELECT @code` → 映射 404/403/4031/409。
    - `GET /api/errands/mine?role=publisher|runner`：按发布者/接单者查，带状态筛选和分页。
    - `trg_errand_status_log`：`AFTER UPDATE`，状态变化时插日志；`changed_by` 用 `@current_user_id`。
 2. **14:00-17:00 聊天数据库对象 + 交接**：
@@ -1719,9 +1726,9 @@ git push -u origin feature/chat-db-objects
      - 日志触发器记录。
    - 发布者撤回 `/cancel`：
      - `pending → cancelled`，订单结束；
-     - `taken → pending`，退回大厅，`runner_id = NULL`、`taken_at = NULL`。
+     - `taken → pending`，可见性不变，`runner_id = NULL`、`taken_at = NULL`。
    - 接单者释放 `/release`：
-     - `taken → pending`，退回大厅，`runner_id = NULL`、`taken_at = NULL`。
+     - `taken → pending`，可见性不变，`runner_id = NULL`、`taken_at = NULL`。
    - `taken` 不能一步变 `cancelled`；发布者要退回 `pending`，再取消。
    - 没有单独的“挂起/恢复”状态和接口；`taken` 本身就是锁单，订单不在大厅、别人不能再接。
    - 所有写操作先查订单，校验角色和状态；角色不符 403，状态不符 409。
@@ -1761,9 +1768,10 @@ git push -u origin feature/errand-status
 - [ ] 状态机全路径正确；非法跳转 409。
 - [ ] 完成后 `runner_profiles.completed_count` +1，`users.credit_score` 增加（不超过 100）。
 - [ ] `errand_status_logs` 完整记录每次状态变化，撤回/释放记录实际操作人。
-- [ ] 发布者撤回/接单者释放后，订单回到大厅，`runner_id`、`taken_at` 都为空。
-- [ ] 角色权限：非发布者完成 403、非接单者释放 403、非发布者撤回 403。
-- [ ] 接单后订单从大厅消失，别人不能再接。
+- [ ] 发布者撤回/接单者释放后，订单回到 `pending`，`runner_id`、`taken_at` 都为空；可见性不变。
+- [ ] 角色权限：非发布者完成 403、非接单者释放 403、非发布者撤回 403；无该单会话的跑腿接私单 403。
+- [ ] 接单后订单不再出现在大厅，别人不能再接。
+- [ ] 私单不出现在大厅；发布到大厅后同一 `orderId` 可被所有用户看到并接单。
 
 **注意**
 
@@ -1784,7 +1792,7 @@ git push -u origin feature/errand-status
 
 1. **09:00-12:00 代取联调**：
    - 用两个账号走：A 发布代取 → B 上线 → B 接单（确认大厅里消失）→ A 完成；
-   - 再走一遍：A 发布 → B 接单 → B 释放 → 订单回大厅 → A 撤回；检查 B 的页面按钮是否按 `canTake/canComplete/canCancel/canRelease` 显示；
+   - 再走一遍：A 发布 → B 接单 → B 释放 → 订单回待接单 → A 撤回；检查 B 的页面按钮是否按 `canTake/canEdit/canPublish/canComplete/canCancel/canRelease` 显示；
    - 修接口字段/错误码；不要改 B 的页面代码，除非 B 请你改（改之前说一声）。
 2. **14:00-17:00 数据库对象第一批**：
    - `v_user_summary`：用户 + 发布商品数、收藏数、完成跑腿数、发布代取数；用子查询或聚合，先保证结果对，再考虑性能。
@@ -1845,7 +1853,7 @@ git push -u origin feature/db-objects-batch1
    - 记录所有阻塞 bug，按 P0/P1 分类；只修 P0。
 2. **14:00-17:00 性能初查**：
    - `EXPLAIN` 检查：商品列表、商品搜索、代取大厅、消息增量拉取；
-   - 确认 `items(status, created_at)`、`errands(status, created_at)`、`messages(conversation_id, message_id)` 被使用；
+   - 确认 `items(status, created_at)`、`errand_orders(visibility, status, created_at)`、`messages(conversation_id, message_id)` 被使用；
    - 搜索 `LIKE '%keyword%'` 不走索引是正常的，报告里写“数据量小 + 前缀搜索可优化”，不要为了演示强行加索引。
    - 用 `EXPLAIN ANALYZE` 记录耗时（MySQL 8.0.18+ 支持）。
 3. **17:00-19:00 文档 + 测试**：
@@ -1935,7 +1943,7 @@ git push origin dev
 
 2. **10:00-12:00 补齐视图/函数**：
    - `v_item_list`：商品 + 卖家 + 分类 + 书目 + 首图；字段 camelCase；`LEFT JOIN` 处理无分类/无书目。
-   - `v_errand_hall`：pending 订单 + 发布者昵称/头像/信用分。
+   - `v_errand_hall`：`pending + hall` 订单 + 发布者昵称/头像/信用分。
    - `v_conversation_base`：会话 + 双方昵称/头像；B 直接查。
    - `v_user_summary`：用户 + 发布商品数、收藏数、完成跑腿数、发布代取数；每个统计用子查询，先保证正确。
    - `fn_unread_count`：`READS SQL DATA`；统计未读。
@@ -2050,7 +2058,7 @@ git push -u origin feature/db-objects
 
      ```sql
      EXPLAIN SELECT * FROM v_item_list WHERE status='on_sale' ORDER BY created_at DESC LIMIT 10;
-     EXPLAIN SELECT * FROM errand_orders WHERE status='pending' ORDER BY created_at DESC LIMIT 10;
+     EXPLAIN SELECT * FROM errand_orders WHERE visibility='hall' AND status='pending' ORDER BY created_at DESC LIMIT 10;
      EXPLAIN SELECT * FROM messages WHERE conversation_id=1 AND message_id > 0 ORDER BY message_id LIMIT 20;
      ```
 
@@ -2077,7 +2085,7 @@ git push -u origin feature/triggers-perf
 **验收**
 
 - [ ] 5 个触发器全部有效，状态未变化时不写日志。
-- [ ] 撤回/释放后订单回大厅，日志记录实际操作人；过期订单不会被自动取消。
+- [ ] 撤回/释放后订单回到 `pending` 且可见性不变，日志记录实际操作人；过期订单不会被自动取消。
 - [ ] 1000 商品/5000 消息插入成功。
 - [ ] 关键查询 `EXPLAIN` 使用索引；记录耗时。
 - [ ] 截图齐全。
@@ -2977,7 +2985,7 @@ DROP VIEW IF EXISTS v_item_list;
 | `item_images` | `(item_id, sort_no)` | 首图、详情图 |
 | `runner_profiles` | `(is_online)`、`(availability_type)` | 找跑腿先筛在线；自动任务按类型扫描 `slot` 用户；片区与地标分别用 `JSON_CONTAINS(service_areas, ...)`、`JSON_CONTAINS(service_places, ...)` |
 | `runner_item_sizes` | `(item_size, user_id)` | 按规格筛选跑腿 |
-| `errand_orders` | `(status, created_at)` | 代取大厅 |
+| `errand_orders` | `(visibility, status, created_at)` | 代取大厅只查 `hall + pending` |
 | `errand_orders` | `(publisher_id, status)`、`(runner_id, status)` | 我的代取 |
 | `messages` | `(conversation_id, message_id)` | 增量拉取 |
 | `conversations` | `UNIQUE(user_a_id, user_b_id, biz_type, biz_id)` | 防重复会话 |
@@ -3112,13 +3120,14 @@ END;
 ```sql
 START TRANSACTION;
 
-SELECT publisher_id, status
-INTO @publisher_id, @status
+SELECT publisher_id, status, visibility
+INTO @publisher_id, @status, @visibility
 FROM errand_orders
 WHERE order_id = p_order_id
 FOR UPDATE;
 
 -- 不存在：404；自己发的单：403；非 pending：409
+-- 私单再查 conversations 中是否存在该订单会话；没有：4031
 SET @current_user_id = p_runner_id;
 
 UPDATE errand_orders
@@ -3184,7 +3193,7 @@ EXPLAIN SELECT * FROM v_item_list
 WHERE status='on_sale' ORDER BY created_at DESC LIMIT 10;
 
 EXPLAIN SELECT * FROM errand_orders
-WHERE status='pending' ORDER BY created_at DESC LIMIT 10;
+WHERE visibility='hall' AND status='pending' ORDER BY created_at DESC LIMIT 10;
 
 EXPLAIN SELECT * FROM messages
 WHERE conversation_id=1 AND message_id > 0 ORDER BY message_id LIMIT 20;
@@ -4275,6 +4284,63 @@ B 当前阻塞：
 - 11-30 提交不能动。
 - 其他任务都可以挪/砍。
 
+### 8.7 私单流程给 B 的变更清单（A 未改 B 文件）
+
+**背景**：聊天页顶部订单卡片已经能跳代取详情。现在把“先找跑腿”改成：发布页先创建 `private` 私单 → 与跑腿聊天 → 谈妥由跑腿在详情页直接接单；没谈妥回发布页保留原填写内容 → 把同一单发布到大厅。A 已完成后端/SQL/接口文档，下面只列 B 需要改的页面；A 没有改 `server/src/routes/chat.js` 和任何 B 的页面。
+
+**1. `miniprogram/pages/errand/publish/`**
+
+- “先找跑腿”不再只做跳转：先按发布校验收集表单，调 `POST /api/errands`，body 额外带 `"visibility": "private"`，拿到 `orderId` 后跳：
+  `wx.navigateTo({ url: '/pages/errand/runners?orderId=' + orderId + '&area=' + ... })`
+- 页面 `onLoad` 收到 `orderId` 时，调 `GET /api/errands/:id` 回填全部字段，并把 `orderId` 存在 `data` 中；返回本页时 `onShow` 重新拉一次，避免聊天期间订单被接走还显示可编辑。
+- “发布到大厅”按钮：
+  - 已有 `orderId`：先调 `PUT /api/errands/:id` 保存当前表单（可省略，但用户改过就必须保存），再调 `POST /api/errands/:id/publish`；成功后用同一 `orderId` 返回详情/我的代取。
+  - 没有 `orderId`：维持原逻辑，`POST /api/errands` 不传 `visibility`（默认 `hall`）。
+- 不要调用已废弃的“新建第二张订单再发布”，同一私单只改 `visibility`，否则聊天里的 `bizId` 会指向旧订单。
+- 按钮显示用详情接口的 `canEdit` / `canPublish`，不要只看本地状态。
+
+**2. `miniprogram/pages/errand/runners/`**
+
+- 接收 `orderId` 参数；点“联系 TA”时调 `POST /api/conversations`：
+  `{ "peerId": <跑腿 userId>, "bizType": "errand", "bizId": <orderId> }`
+- **不能再传 `bizId: 0`**：私单接单权限依赖 `biz_type='errand' AND biz_id=订单ID` 的会话，传 0 会导致跑腿接单返回 403。
+- 没有 `orderId`（例如从其他入口直接进来）时，先创建私单或提示用户从发布页进入；不要在无订单的情况下建 `bizId=0` 的会话。
+- 页面文案可提示：“联系后由跑腿在订单详情页接单”。
+
+**3. `miniprogram/pages/errand/detail/`**
+
+- 订单字段新增 `visibility`（`private` / `hall`）。
+- 按钮改用后端返回的 `canTake`、`canEdit`、`canPublish`、`canComplete`、`canCancel`、`canRelease`：
+  - 发布者看到未发布私单：显示“编辑订单”“发布到大厅”；“编辑订单”跳 `/pages/errand/publish?orderId=<id>`，由发布页 `onLoad` 按 `orderId` 回填；“发布到大厅”可直接调 `POST /api/errands/:id/publish`。
+  - 跑腿看到私单且 `canTake=true`：显示“接单”；
+  - 其他用户访问私单详情应收到 404，按“订单不存在”处理。
+- “我的代取”沿用 `GET /api/errands/mine?role=publisher`，发布者要能看到 `pending + private` 的未发布私单，并可从列表进入详情继续编辑或发布。
+- 接单失败提示：后端返回 403 且 message 为“该订单尚未发布到大厅，只有与发布者聊过该订单的跑腿可以接”时，提示“请先与发布者沟通该订单”。
+
+**4. 聊天页与订单卡片（可不改）**
+
+- 顶部卡片保持“只展示和导航”，点击跳 `/pages/errand/detail?id=<bizId>`；跑腿在详情页点接单，聊天页不要加接单按钮。
+- 如要在卡片上显示“未发布到大厅”，需要 B 自己改 `chat.js` 的 context 摘要增加 `visibility`；不加也不影响接单，因为授权在 `sp_take_errand` 里完成。
+
+**5. B 手册需要同步的旧口径**
+
+- “找跑腿只展示信息，订单仍回大厅接单” → 改为“先创建私单，谈妥可直接接单；未谈妥发布同一单到大厅”。
+- “找跑腿页发起会话传 `bizId=0`” → 改为传私单的 `orderId`。
+
+**6. `miniprogram/utils/mock.js` 同步**
+
+- 新增 `PUT /api/errands/:id`、`POST /api/errands/:id/publish` 两条 mock 路由。
+- `GET /api/errands` 只返回 `visibility='hall'`；`POST /api/errands` 支持并返回 `visibility`。
+- 详情补 `visibility`、`canEdit`、`canPublish`；`cancel` 的 `taken → pending` 返回 `visibility`。
+- `scripts/mock-contract-test.js` 补对应断言，避免 MOCK 模式提示“mock 未登记该接口”。
+
+**7. 联调验收**
+
+1. 发布页填表 → 先找跑腿 → 大厅列表查不到该单；`GET /api/errands/:id` 发布者可看。
+2. 联系两个跑腿 → 两条会话的 `bizId` 都是同一 `orderId`。
+3. 跑腿 A 从聊天卡片进详情接单成功；跑腿 B 再接返回 409；发布者 `GET /api/errands/:id` 看到 `status='taken'`。
+4. 另一单：发布 → 联系跑腿 → 不接单 → 回发布页（表单还在）→ 改报酬 → 保存 → 发布到大厅 → 大厅可见，私单原会话仍可用，其他用户也可接。
+
 ---
 
 ## 9. 报告、PPT、视频（A 的部分）
@@ -4379,7 +4445,7 @@ B 当前阻塞：
 **2.2 业务流程**：至少 3 张流程图：
 
 - 图 2-1 二手交易流程：注册登录 → 发布/浏览 → 搜索（独立结果页，书籍卡片 + 同书商品优先） → 详情 → 收藏 → 联系卖家 → 线下交易 → 标记售出。
-- 图 2-2 代取流程：发布订单 → 先找跑腿（在线/片区+地标/时间要求/规格匹配） → 没合适的发布大厅 → 接单锁单 → 完成 / 撤回 / 释放 / 取消。
+- 图 2-2 代取流程：发布页 → 直接发布大厅，或“先找跑腿”创建私单 → 与跑腿聊天 → 谈妥由跑腿直接接单；没谈妥回发布页保留表单 → 把同一私单发布到大厅 → 接单锁单 → 完成 / 撤回 / 释放 / 取消。
 - 图 2-3 聊天流程：从商品/订单发起 → 获取或创建会话 → 轮询拉消息 → 标记已读。
 - 图 2-4 上线流程：个人页接单设置/代取页上线入口 → 填写范围/在线计划（具体日期或星期循环）/规格/报价 → 保存 → 自动上下线或手动上线/下线；进行中循环下线要选“只这一次/取消之后所有”。
 
@@ -4552,7 +4618,7 @@ SET favorite_count = (SELECT COUNT(*) FROM favorites f WHERE f.item_id = i.item_
 3. 完成订单：更新订单状态 + 跑腿完成数 + 信用分，同一事务。
 4. 贴两个会话的测试过程：一个成功、一个等待后失败。
 
-**状态机单独写**：`pending → taken → completed`；`pending → cancelled`；`taken → pending`（发布者撤回 / 接单者释放）；`taken → completed`（发布者确认）。说明 `taken` 本身就是锁单，订单从大厅消失、不能被重复接；`taken` 不能直接到 `cancelled`，撤回/释放会清空 `runner_id`、`taken_at`，日志表保留操作轨迹；`deadline` 只是参考，不做超时自动取消。
+**状态机单独写**：`pending → taken → completed`；`pending → cancelled`；`taken → pending`（发布者撤回 / 接单者释放）；`taken → completed`（发布者确认）。说明 `taken` 本身就是锁单，订单不能被重复接；`taken` 不能直接到 `cancelled`，撤回/释放会清空 `runner_id`、`taken_at`，日志表保留操作轨迹；`deadline` 只是参考，不做超时自动取消。`visibility` 是独立维度：`private` 私单只对聊过的跑腿开放，`hall` 大厅单所有人可接，私单发布到大厅只改 `visibility`，状态仍是 `pending`。
 
 **测试数据**：3 个账号、20 条以上商品、10 条以上代取单、20 条以上消息、5 条以上在线跑腿资料（含多选规格、`once` 和 `weekly` 在线计划）；性能测试造 1000 商品、5000 消息，贴 `EXPLAIN` 和查询耗时。
 
@@ -4687,7 +4753,7 @@ report/assets/
 | 5 | 跑腿资料/规格表 | `DESC runner_profiles; DESC runner_item_sizes;` | JSON 字段、复合主键 | 6.1 |
 | 6 | 外键与约束 | 查 `information_schema.TABLE_CONSTRAINTS` | FK、UNIQUE、CHECK | 6.1 |
 | 7 | `v_item_list` 查询 | `SELECT * FROM v_item_list LIMIT 5;` | 商品 + 卖家 + 分类 + 首图 | 6.2 |
-| 8 | `v_errand_hall` 查询 | `SELECT * FROM v_errand_hall LIMIT 5;` | 待接单 + 发布者 | 6.2 |
+| 8 | `v_errand_hall` 查询 | `SELECT * FROM v_errand_hall LIMIT 5;` | 待接单 + hall + 发布者 | 6.2 |
 | 9 | `v_conversation_base` 查询 | `SELECT * FROM v_conversation_base LIMIT 5;` | 双方昵称/头像 | 6.2 |
 | 10 | `v_user_summary` 查询 | `SELECT * FROM v_user_summary LIMIT 5;` | 发布数、收藏数、完成数 | 6.2 |
 | 11 | 发布商品成功 | `CALL sp_publish_item(...); SELECT @item_id;` | 商品 + 多图写入 | 6.3 |
@@ -4705,7 +4771,7 @@ report/assets/
 | 23 | 代取状态日志 | 接单/完成后查 `errand_status_logs` | 状态变更记录 | 6.5 |
 | 24 | 消息触发器 | 分别插入 text / image 消息后查 `conversations` | 预览为截断文本 / `[图片]`，`last_time` 更新 | 6.5 |
 | 25 | 发布者撤回接单 | 接单后发布者调 `/cancel` | 状态回 `pending`，`runner_id`/`taken_at` 为空 | 6.6 |
-| 26 | 接单者释放 + 过期不取消 | 接单者调 `/release`；再造一条过期 pending 单 | 订单回大厅；过期单仍是 `pending` | 6.6 |
+| 26 | 接单者释放 + 过期不取消 | 接单者调 `/release`；再造一条过期 pending 单 | 订单回到 `pending` 且可见性不变；过期单仍是 `pending` | 6.6 |
 | 27 | 列表查询走索引 | `EXPLAIN SELECT ... FROM items WHERE status='on_sale' ORDER BY created_at DESC;` | `key` 命中索引 | 6.8 |
 | 28 | 跑腿匹配先按在线过滤 | `EXPLAIN SELECT ... FROM runner_profiles WHERE is_online=1;` | `key` 命中 `idx_runner_online`；片区和地标再用 `JSON_CONTAINS` 过滤 | 6.8 |
 | 29 | 批量测试数据 | `SELECT COUNT(*) FROM items; SELECT COUNT(*) FROM messages;` | 1000 / 5000 | 6.8 |
@@ -4748,7 +4814,7 @@ report/assets/
 | 图 1-1 | 系统功能模块图 | 11-22 | 三层：小程序/后端/数据库 |
 | 图 1-2 | 技术架构图 | 11-22 | HTTP + JWT + mysql2 + 本地图片 |
 | 图 2-1 | 二手交易流程图 | 11-22 | 含发布、独立搜索页、收藏、售出 |
-| 图 2-2 | 代取流程图 | 11-22 | 含先找跑腿、发布大厅、接单锁单、撤回/释放、完成/取消 |
+| 图 2-2 | 代取流程图 | 11-22 | 含先找跑腿创建私单、谈妥直接接单、未谈妥发大厅、撤回/释放、完成/取消 |
 | 图 2-3 | 聊天流程图 | 11-22 | 含轮询、已读 |
 | 图 2-4 | 上线/接单设置流程图 | 11-22 | 两个入口、自动/手动上下线、计划列表、循环下线弹窗、修改循环提醒、回填上次数据 |
 | 图 2-5 | 顶层 DFD | 11-22 | 用户 ↔ 系统 ↔ 数据库 |
@@ -4808,7 +4874,7 @@ report/assets/
 >
 > 数据库对象方面，4 个视图覆盖商品列表、代取大厅、会话列表和个人统计场景：`v_item_list` 和 `v_conversation_base` 已接入后端查询，`v_errand_hall` 和 `v_user_summary` 已创建，可在 Navicat 中直接查询演示。5 个存储过程中，发布商品、接单、完成订单、获取会话这 4 个已接入接口，`sp_refresh_user_credit` 作为游标示例用于维护演示；2 个函数中 `fn_unread_count` 已用于未读数，`fn_completed_errands` 供信用分刷新过程调用。5 个触发器维护收藏数、状态日志和会话最后消息，都随业务写入自动执行。核心业务对象均已接入系统，统计和演示对象也都能在数据库里直接执行验证。
 >
-> 代取订单的时间要求用 `time_type + time_start + deadline` 三列表达“尽快 / 截止时间 / 时间范围”，`deadline` 只作参考，不判断超时、不自动取消，只用于找跑腿时和跑腿的在线计划做重叠匹配。发布者可以撤回接单，接单者也可以释放接单，订单都会退回大厅 `pending`；`taken` 不能直接变 `cancelled`，必须先回 `pending`，这样状态变化都有明确操作人，日志可追溯。
+> 代取订单的时间要求用 `time_type + time_start + deadline` 三列表达“尽快 / 截止时间 / 时间范围”，`deadline` 只作参考，不判断超时、不自动取消，只用于找跑腿时和跑腿的在线计划做重叠匹配。发布者可以撤回接单，接单者也可以释放接单，订单都会退回 `pending`，可见性不变；`taken` 不能直接变 `cancelled`，必须先回 `pending`，这样状态变化都有明确操作人，日志可追溯。`visibility` 单独区分私单和已发布到大厅的订单，发布到大厅只改可见性，不改变状态机。
 >
 > 最关键的难点是并发接单。两个跑腿同时点接单，只能有一个成功。我们用事务加 `SELECT ... FOR UPDATE` 锁住订单行，检查状态必须是 pending，再用带 `status='pending'` 条件的 UPDATE，判断 `affectedRows` 是否为 1，最后提交。第二个请求会等待锁释放，然后看到状态已经变成 taken，返回 409。这个流程我们在答辩现场会用两个窗口演示。
 >
@@ -5302,10 +5368,12 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - [ ] 上线/接单设置页两个入口可用：个人页进入为设置，代取页 `?mode=online` 进入可直接上线/下线；计划列表能改/删未开始计划。
 - [ ] 自动任务到计划开始上线、结束下线；手动覆盖最晚到 23:59；服务重启后下一分钟补算。
 - [ ] 进行中循环下线弹窗二选一可用；修改进行中循环时前端弹窗提醒只影响下一次。
-- [ ] 发布代取单，大厅能看到 pending 订单。
+- [ ] 发布代取单，大厅能看到 `hall + pending` 订单。
 - [ ] 找跑腿匹配页（P1）能按取件片区 + 具体地标 + 在线计划 + 规格筛选可接单跑腿并联系 TA；不直接改订单状态。
+- [ ] 私单链路：发布页“先找跑腿”建 `private` 单 → 联系 TA 用该 `orderId` 建会话 → 跑腿从聊天卡片进详情接单成功；未谈妥回发布页保留表单，`PUT` 后可 `publish` 到大厅，仍是同一 `orderId`。
+- [ ] 私单未发布时不出现在大厅；无该单会话的跑腿接单返回 4031 对应的 403 提示。
 - [ ] `sp_take_errand` 并发接单：两个账号只有一个成功，另一个 409。
-- [ ] 完成/撤回/释放/取消全路径可用，状态日志有记录；接单后订单从大厅消失。
+- [ ] 完成/撤回/释放/取消全路径可用，状态日志有记录；接单后订单不再出现在大厅。
 - [ ] `sp_complete_errand` 更新完成数/信用分。
 - [ ] 会话列表、聊天页、顶部商品/订单卡片、发送文字 / 图片消息、3 秒轮询、已读、未读数可用；图片先上传成功再发送，会话列表预览显示 `[图片]`；卖家从卡片进详情改状态后返回，卡片状态同步更新。
 - [ ] `sp_get_or_create_conversation` 不会重复建会话。
@@ -5820,7 +5888,7 @@ SQL：
 | bcrypt | 加盐密码哈希算法 |
 | ORM | 对象关系映射；本项目不用，手写 SQL |
 | 轮询 | 客户端定时请求服务器拉取新数据 |
-| 找跑腿匹配 | 按取件片区 + 具体地标/时间要求/规格筛选可接单跑腿（`asap` 在线；未来单可含计划重叠的 `slot` 跑腿），仅展示信息并联系，不直接指派订单 |
+| 找跑腿匹配 | 按取件片区 + 具体地标/时间要求/规格筛选可接单跑腿（`asap` 在线；未来单可含计划重叠的 `slot` 跑腿），仅展示信息并联系，不直接指派订单；“先找跑腿”先创建私单，联系时用该订单 ID 建会话，谈妥可直接接单，未谈妥可把同一单发布到大厅 |
 | 上线 | 跑腿设置在线状态、可代取范围/在线计划/规格；按计划自动上下线或手动覆盖；可在个人页或代取页进入 |
 | 同书优先 | 搜索结果页先展示同一 `bookId` 的商品，再展示其他匹配商品 |
 | PR | Pull Request，GitHub 上的合并请求 |

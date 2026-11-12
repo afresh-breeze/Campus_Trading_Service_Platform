@@ -213,6 +213,7 @@ CREATE TABLE errand_orders (
   time_start DATETIME NULL,
   deadline DATETIME NULL,
   status ENUM('pending','taken','completed','cancelled') NOT NULL DEFAULT 'pending',
+  visibility ENUM('private','hall') NOT NULL DEFAULT 'hall',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   taken_at DATETIME NULL,
   completed_at DATETIME NULL,
@@ -226,7 +227,7 @@ CREATE TABLE errand_orders (
     OR (time_type = 'deadline' AND time_start IS NULL AND deadline IS NOT NULL)
     OR (time_type = 'range' AND time_start IS NOT NULL AND deadline IS NOT NULL AND time_start < deadline)
   ),
-  KEY idx_errands_status_created (status, created_at),
+  KEY idx_errands_visibility_status_created (visibility, status, created_at),
   KEY idx_errands_publisher_status (publisher_id, status),
   KEY idx_errands_runner_status (runner_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
