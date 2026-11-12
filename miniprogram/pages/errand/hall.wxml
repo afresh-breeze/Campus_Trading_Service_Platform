@@ -1,0 +1,101 @@
+<!-- 代取大厅（B 成员，11-12，tab 2）：只拉 pending，卡片点进详情 -->
+<nav-top />
+
+<view class="page hall">
+  <!-- 顶部：标题 + 我要接单入口（11-13 接单设置页落地后生效） -->
+  <view class="hall-head">
+    <view class="hall-head__row">
+      <text class="hall-head__title">代取大厅</text>
+      <view class="hall-head__entry" bindtap="onGoRunner" hover-class="hall-head__entry--hover">
+        <text class="hall-head__entry-text">我要接单</text>
+        <text class="hall-head__entry-arrow">›</text>
+      </view>
+    </view>
+    <text class="hall-head__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
+    <text class="hall-head__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
+  </view>
+
+  <view wx:if="{{!isLogin}}" class="hall-state">
+    <!-- 未登录：不在大厅里弹 401，直接给登录引导 -->
+    <empty-state title="登录后查看代取大厅" desc="代取大厅只对已登录同学开放" action-text="去登录" bind:action="onLogin" />
+  </view>
+
+  <block wx:elif="{{firstLoading}}">
+    <!-- 首屏骨架：只用占位块，不编假数据 -->
+    <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="sk-line sk-line--lg"></view>
+      <view class="sk-line sk-line--md"></view>
+      <view class="sk-line sk-line--sm"></view>
+    </view>
+  </block>
+
+  <view wx:elif="{{error}}" class="hall-state">
+    <!-- 首屏失败：给重试，不给白屏 -->
+    <view class="card hall-state__card">
+      <text class="t-title">加载失败</text>
+      <text class="t-sub hall-state__desc">{{error}}</text>
+      <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+    </view>
+  </view>
+
+  <view wx:elif="{{!list.length}}" class="hall-state">
+    <!-- 真空态：给「去发布」出路 -->
+    <empty-state
+      title="现在还没有待接单的代取"
+      desc="发布一条，让顺路的同学帮你带"
+      action-text="去发布代取"
+      bind:action="onPublish"
+    />
+  </view>
+
+  <block wx:else>
+    <!-- 列表 -->
+    <view
+      class="order"
+      wx:for="{{list}}"
+      wx:key="orderId"
+      data-id="{{item.orderId}}"
+      bindtap="onTapOrder"
+      hover-class="order--hover"
+      hover-stay-time="80"
+    >
+      <view class="order__top">
+        <view class="order__route">
+          <view class="order__line">
+            <view class="order__dot order__dot--from"></view>
+            <text class="order__place ellipsis">{{item.fromText}}</text>
+          </view>
+          <view class="order__line">
+            <view class="order__dot order__dot--to"></view>
+            <text class="order__place ellipsis">{{item.toText}}</text>
+          </view>
+        </view>
+        <view class="order__reward">
+          <text class="order__price">¥{{item.rewardText}}</text>
+          <text class="order__reward-label">报酬</text>
+        </view>
+      </view>
+
+      <view class="order__meta">
+        <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
+        <text class="tag tag-warning order__tag">{{item.timeText}}</text>
+        <text wx:if="{{item.remark}}" class="order__remark ellipsis">备注：{{item.remark}}</text>
+      </view>
+
+      <view class="order__foot">
+        <text class="order__who ellipsis">{{item.publisherNickname}} · {{item.createdText}}</text>
+        <text class="order__go">查看详情 ›</text>
+      </view>
+    </view>
+
+    <!-- 上拉加载：三态文案，避免「到底了还在转圈」 -->
+    <view class="hall-more">
+      <text wx:if="{{loadingMore}}" class="hall-more__text">加载中…</text>
+      <text wx:elif="{{hasMore}}" class="hall-more__text">上拉加载更多</text>
+      <text wx:else class="hall-more__text">没有更多了</text>
+    </view>
+  </block>
+
+  <!-- 发布入口：登录后才显示 FAB -->
+  <view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover">＋</view>
+</view>

@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "找跑腿",
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
+}

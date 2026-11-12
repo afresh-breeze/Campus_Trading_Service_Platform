@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "登录",
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
+}

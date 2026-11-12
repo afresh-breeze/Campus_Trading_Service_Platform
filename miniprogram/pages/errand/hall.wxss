@@ -1,0 +1,217 @@
+/* 代取大厅（B 成员，11-12）：只引用 app.wxss 的设计令牌，不写死色值 */
+.hall {
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------------- 顶部 ---------------- */
+.hall-head {
+  padding: var(--space) var(--space) var(--space-sm);
+}
+.hall-head__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hall-head__title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 2rpx;
+}
+/* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线） */
+.hall-head__entry {
+  display: flex;
+  align-items: center;
+  height: 60rpx;
+  padding: 0 20rpx;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-light);
+}
+.hall-head__entry--hover {
+  opacity: 0.85;
+}
+.hall-head__entry-text {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+.hall-head__entry-arrow {
+  margin-left: 6rpx;
+  font-size: var(--font-base);
+  color: var(--color-primary-dark);
+}
+.hall-head__sub {
+  display: block;
+  margin-top: 10rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+
+/* ---------------- 状态区（空 / 错 / 未登录） ---------------- */
+.hall-state {
+  padding: var(--space-xl) var(--space);
+}
+.hall-state__card {
+  text-align: center;
+}
+.hall-state__desc {
+  display: block;
+  margin: var(--space-sm) 0 var(--space);
+  line-height: 1.6;
+}
+
+/* ---------------- 首屏骨架 ---------------- */
+.sk-card {
+  margin: var(--space-sm) var(--space) 0;
+  padding: var(--space);
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+.sk-line {
+  height: 24rpx;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-divider);
+  animation: sk-pulse 1.2s ease-in-out infinite;
+}
+.sk-line + .sk-line {
+  margin-top: 18rpx;
+}
+.sk-line--lg {
+  width: 62%;
+  height: 32rpx;
+}
+.sk-line--md {
+  width: 44%;
+}
+.sk-line--sm {
+  width: 30%;
+}
+@keyframes sk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ---------------- 订单卡片 ---------------- */
+.order {
+  margin: var(--space-sm) var(--space) 0;
+  padding: var(--space);
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+.order--hover {
+  background-color: var(--color-bg);
+}
+.order__top {
+  display: flex;
+  align-items: center;
+}
+.order__route {
+  flex: 1;
+  min-width: 0;
+  padding-right: var(--space-sm);
+}
+.order__line {
+  display: flex;
+  align-items: center;
+}
+.order__line + .order__line {
+  margin-top: 12rpx;
+}
+/* 起终点用形状 + 位置区分，不只靠颜色 */
+.order__dot {
+  flex: none;
+  width: 14rpx;
+  height: 14rpx;
+  margin-right: 14rpx;
+  border-radius: 50%;
+}
+.order__dot--from {
+  background-color: var(--color-primary-dark);
+}
+.order__dot--to {
+  background-color: var(--color-bg-white);
+  border: 3rpx solid var(--color-accent);
+  box-sizing: border-box;
+}
+.order__place {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.order__reward {
+  flex: none;
+  text-align: right;
+  padding-left: var(--space-sm);
+  border-left: 1rpx solid var(--color-divider);
+}
+.order__price {
+  display: block;
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-price);
+}
+.order__reward-label {
+  display: block;
+  margin-top: 2rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+
+.order__meta {
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-sm);
+  overflow: hidden;
+}
+.order__tag {
+  flex: none;
+  margin-right: var(--space-xs);
+}
+.order__remark {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+
+.order__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1rpx solid var(--color-divider);
+}
+.order__who {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.order__go {
+  flex: none;
+  margin-left: var(--space-sm);
+  font-size: var(--font-xs);
+  color: var(--color-accent);
+}
+
+/* ---------------- 底部加载提示 ---------------- */
+.hall-more {
+  padding: var(--space) 0 0;
+  text-align: center;
+}
+.hall-more__text {
+  font-size: var(--font-xs);
+  color: var(--color-text-4);
+}
+.fab--hover {
+  opacity: 0.88;
+}

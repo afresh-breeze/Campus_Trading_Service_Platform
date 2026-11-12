@@ -1,0 +1,218 @@
+/**
+ * 代取详情（B 成员，11-12）
+ * 只允许引用 app.wxss 的变量，不写魔法色值。
+ * 底部固定操作栏会遮挡内容，所以 .detail 预留 190rpx + 安全区。
+ */
+
+.detail {
+  min-height: 100vh;
+  padding: var(--space);
+  padding-bottom: calc(var(--space) + env(safe-area-inset-bottom));
+  background-color: var(--color-bg);
+}
+
+/* 有底部操作栏时才让出高度 */
+.detail--bar {
+  padding-bottom: calc(190rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------------- 加载 / 错误 ---------------- */
+.detail-state {
+  padding: 100rpx 0;
+  text-align: center;
+}
+.detail-state__card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.detail-state__desc {
+  margin-top: 12rpx;
+}
+.detail-state__btn {
+  margin-top: 32rpx;
+}
+
+/* ---------------- 头部：状态 + 报酬 ---------------- */
+.detail-head {
+  display: flex;
+  flex-direction: column;
+}
+.detail-head__tags {
+  display: flex;
+  flex-wrap: wrap;
+}
+.detail-head__tag {
+  margin: 0 12rpx 12rpx 0;
+}
+.detail-head__reward {
+  display: flex;
+  align-items: baseline;
+  margin-top: 8rpx;
+}
+.detail-head__price {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: var(--color-price);
+}
+.detail-head__label {
+  margin-left: 12rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+.detail-head__time {
+  margin-top: 6rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-2);
+}
+
+/* ---------------- 路线 ---------------- */
+.detail-route {
+  padding-bottom: 8rpx;
+}
+.detail-route__line {
+  display: flex;
+}
+.detail-route__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.detail-route__label {
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.detail-route__value {
+  margin-top: 4rpx;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.detail-route__remark {
+  margin-top: 6rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-2);
+}
+/* 起终点圆点：起=深棕（稳），终=辅色（暖），不靠颜色传达信息，标注文字同时存在 */
+.detail-route__dot {
+  flex: none;
+  width: 16rpx;
+  height: 16rpx;
+  margin: 12rpx 20rpx 0 4rpx;
+  border-radius: 50%;
+}
+.detail-route__dot--from {
+  background-color: var(--color-primary-dark);
+}
+.detail-route__dot--to {
+  background-color: var(--color-accent);
+}
+.detail-route__dash {
+  height: 40rpx;
+  margin: 8rpx 0 8rpx 11rpx;
+  border-left: 2rpx dashed var(--color-border);
+}
+
+/* ---------------- 信息列表 ---------------- */
+.detail-info__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10rpx 0;
+}
+.detail-info__row--hover {
+  opacity: 0.7;
+}
+.detail-info__k {
+  flex: none;
+  width: 160rpx;
+  font-size: var(--font-base);
+  color: var(--color-text-3);
+}
+.detail-info__v {
+  flex: 1;
+  text-align: right;
+  font-size: var(--font-base);
+  color: var(--color-text);
+  word-break: break-all;
+}
+.detail-info__copy {
+  margin-left: 12rpx;
+  font-size: var(--font-xs);
+  color: var(--color-primary-dark);
+}
+
+/* ---------------- 发布人 / 接单人 ---------------- */
+.detail-people__row {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 0;
+}
+.detail-people__avatar {
+  flex: none;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background-color: var(--color-divider);
+}
+.detail-people__avatar--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-lg);
+  color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
+}
+.detail-people__info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 20rpx;
+}
+.detail-people__name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.detail-people__sub {
+  margin-top: 2rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+.detail-people__role {
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.detail-people__chat {
+  height: 68rpx;
+  margin-top: 16rpx;
+  font-size: var(--font-sm);
+}
+
+/* ---------------- 无可用操作时的说明 ---------------- */
+.detail-hint {
+  margin-top: 24rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+  text-align: center;
+}
+
+/* ---------------- 底部固定操作栏 ---------------- */
+.detail-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  padding: 16rpx var(--space) calc(16rpx + env(safe-area-inset-bottom));
+  background-color: var(--color-bg-white);
+  border-top: 1rpx solid var(--color-border);
+  box-shadow: 0 -4rpx 16rpx rgba(122, 93, 64, 0.06);
+}
+.detail-bar__btn {
+  flex: 1;
+  min-width: 0;
+}
+.detail-bar__btn + .detail-bar__btn {
+  margin-left: 16rpx;
+}

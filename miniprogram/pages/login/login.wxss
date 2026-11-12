@@ -1,0 +1,65 @@
+.login-page {
+  min-height: 100vh;
+  padding: 0 48rpx;
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 42%);
+}
+
+.hero {
+  padding: 120rpx 0 72rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.logo {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 32rpx;
+  background-color: var(--color-primary-dark);
+  color: #fff;
+  font-size: 64rpx;
+  font-weight: 700;
+  text-align: center;
+  line-height: 128rpx;
+  box-shadow: var(--shadow-float);
+}
+.hero-title {
+  margin-top: 28rpx;
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.hero-sub {
+  margin-top: 10rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+
+.form-wrap {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.form-wrap .field:last-of-type {
+  border-bottom: none;
+}
+.submit {
+  margin: 40rpx 24rpx 0;
+  width: calc(100% - 48rpx);
+}
+.extra {
+  padding: 24rpx 32rpx 36rpx;
+}
+
+.agreement {
+  margin-top: 48rpx;
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--color-text-4);
+}
+.tip {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--color-warning);
+}

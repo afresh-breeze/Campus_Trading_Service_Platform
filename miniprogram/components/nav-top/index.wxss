@@ -1,0 +1,48 @@
+/* 顶部安全区：透明占位，不挡下方内容点击 */
+.nav-top {
+  position: relative;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* 悬浮返回按钮（仅二级页且有页面栈时出现） */
+.nav-top__back {
+  position: absolute;
+  left: 20rpx;
+  bottom: 6rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-card, 0 4rpx 16rpx rgba(120, 80, 20, 0.08));
+  pointer-events: auto;
+}
+
+.nav-top__back--hover {
+  opacity: 0.8;
+}
+
+.nav-top__chevron {
+  width: 16rpx;
+  height: 16rpx;
+  border-left: 4rpx solid var(--color-text, #2E2119);
+  border-bottom: 4rpx solid var(--color-text, #2E2119);
+  transform: rotate(45deg);
+  margin-left: 6rpx;
+}
+
+/* 可选标题（默认不用，留作特殊页） */
+.nav-top__title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14rpx;
+  text-align: center;
+  font-size: var(--font-lg, 32rpx);
+  font-weight: 500;
+  color: var(--color-text, #2E2119);
+  pointer-events: none;
+}

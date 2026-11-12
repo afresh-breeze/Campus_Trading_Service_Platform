@@ -1,0 +1,52 @@
+<!-- 登录页（B 成员） -->
+<nav-top back />
+<view class="page login-page">
+  <view class="hero">
+    <view class="logo">易</view>
+    <view class="hero-title">校园易站</view>
+    <view class="hero-sub">校园二手交易 · 代取跑腿</view>
+  </view>
+
+  <view class="form-wrap">
+    <view class="field">
+      <text class="field-label">学号</text>
+      <input
+        class="field-input"
+        type="number"
+        maxlength="20"
+        placeholder="请输入学号（本校 15 位）"
+        placeholder-class="field-placeholder"
+        value="{{studentNo}}"
+        bindinput="onStudentNoInput"
+      />
+    </view>
+    <view class="field">
+      <text class="field-label">密码</text>
+      <input
+        class="field-input"
+        password="{{true}}"
+        maxlength="20"
+        placeholder="请输入密码（6-20 位）"
+        placeholder-class="field-placeholder"
+        value="{{password}}"
+        bindinput="onPasswordInput"
+        bindconfirm="onSubmit"
+      />
+    </view>
+
+    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmit">
+      登录
+    </button>
+
+    <view class="row-between extra">
+      <text class="t-sub" bindtap="onGoRegister">还没有账号？去注册</text>
+      <text class="t-sub" bindtap="onForget">忘记密码</text>
+    </view>
+  </view>
+
+  <view class="agreement t-sub">
+    登录即表示同意《用户协议》与《隐私政策》
+  </view>
+
+  <view class="tip t-sub" wx:if="{{isMock}}">当前为本地模拟数据模式（config.js 中 MOCK = true）</view>
+</view>

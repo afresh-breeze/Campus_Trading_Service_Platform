@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "我的发布",
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
+}

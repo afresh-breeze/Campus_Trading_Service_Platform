@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1055" height="1029" viewBox="-46 -146 1055 1029" font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
+<rect x="-46" y="-146" width="1055" height="1029" fill="#F4F1E7"/>
+<text x="-26" y="-104" font-size="28" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 全局 ER 总览图（Chen 记法）</text>
+<text x="-26" y="-73" font-size="13" fill="#806E5C">12 个实体 · 17 个联系　|　隐藏普通属性，仅保留联系属性与可接规格</text>
+<line x1="-26" y1="-63" x2="594" y2="-63" stroke="#E6A874" stroke-width="2"/>
+<text x="-26" y="-24" font-size="13" fill="#806E5C">矩形 / 双矩形 = 强实体 / 弱实体　菱形 / 双菱形 = 联系 / 标识联系　椭圆 / 双椭圆 = 属性 / 多值属性</text>
+<text x="-26" y="-3" font-size="13" fill="#806E5C">下划线 = 主键（虚线 = 弱实体部分键）　1 / N / M = 基数　双线 = 完全参与　虚线椭圆 = 派生属性</text>
+<line x1="375.6148933142889" y1="540.0640764512185" x2="413.5912467516699" y2="469.21348469059456" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="368.21136123124666" y1="536.095737668382" x2="406.1877146686277" y2="465.245145907758" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="431.6454681247266" y1="421.41800274346616" x2="474.5447085740619" y2="318.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="342.3571081967926" y1="584.0796647107621" x2="298.9507594689996" y2="664.2220728942091" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="349.7433198225489" y1="588.0801494088383" x2="306.33697109475594" y2="668.2225575922853" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="278.6294863500499" y1="710.5607637659681" x2="235.2231376222569" y2="790.703171949415" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="311.04897949575957" y1="568.9478387804434" x2="240.24819965200453" y2="579.0781496499267" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="164.80077984375504" y1="589.8733106445466" x2="94" y2="600.0036215140299" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="469.15151851041895" y1="783.5920287439928" x2="431.49272693150766" y2="704.4852788683636" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="461.5670774996444" y1="787.2026041211427" x2="423.90828592073314" y2="708.0958542455135" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="405.90445589071777" y1="660.5053821235056" x2="370.4741865648761" y2="586.0799070598002" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="720.3399878537831" y1="366.2710874516526" x2="660.1184101882474" y2="351.2548169069544" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="718.3076725696236" y1="374.4215288253312" x2="658.0860949040879" y2="359.405258280633" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="596.5057962210433" y1="336.1538134580052" x2="532.5600816737308" y2="312.42761591770693" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="477.28457676969805" y1="56.182428783796894" x2="506.5816533448265" y2="156.0368280797526" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="485.34481551833284" y1="53.817571216203106" x2="514.6418920934614" y2="153.67197051215882" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="510.6446676986949" y1="205.23903435106797" x2="491.5643139470793" y2="270.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="461.1714897608391" y1="55" x2="436.98891654168875" y2="99.29835291774728" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="433.3485898540973" y1="145.9195080950501" x2="476.29451734977044" y2="270.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="633.9460873030679" y1="80.33895589000102" x2="616.6541086726043" y2="171.1474525423551" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="642.1978127226126" y1="81.91026986258535" x2="624.905834092149" y2="172.71876651493943" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="591.7967866434614" y1="216.50558039153836" x2="517.5085615771671" y2="270.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="593.052753238482" y1="72.86001718575166" x2="553.2880323251584" y2="89.11639718150896" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="596.231425559127" y1="80.63536555595122" x2="556.4667046458035" y2="96.89174555170852" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="517.4834472588296" y1="133.09957106853315" x2="489.45216400496366" y2="270.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="718.1403653204251" y1="254.99146653272197" x2="700.4246788456926" y2="183.37373709558443" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="709.9861369092558" y1="257.008533467278" x2="692.2704504345234" y2="185.3908040301405" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="679.2270030174145" y1="135.5478542298364" x2="653.8382337010825" y2="81.12461287629318" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="672.2357117567775" y1="273.10851845326846" x2="641.1161469891139" y2="271.35927406870127" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="671.7642882432225" y1="281.49527944132984" x2="640.6447234755589" y2="279.74603505676265" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="562.8308340803953" y1="279.8897288850159" x2="532.5600816737308" y2="285.58574735247316" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="588.7225714263159" y1="539.149583985683" x2="532.7067411410196" y2="541.7856230579322" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="589.117428573684" y1="547.5402983672582" x2="533.1015982883878" y2="550.1763374395074" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="450.51043268720514" y1="552.2459343612207" x2="407.04897949575957" y2="556.9189275098278" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="636.9412739544262" y1="516" x2="546.9878076302134" y2="422.3745678094168" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="519.5816939764338" y1="380.24812019231655" x2="494.3757555558274" y2="318.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="221.07999999999998" y1="38.2" x2="294" y2="38.2" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="221.07999999999998" y1="29.8" x2="294" y2="29.8" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="384.4763072826828" y1="33.006287358271386" x2="421.5531452182611" y2="32.1778974845857" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="186.68649766892588" y1="58" x2="373.39882835700115" y2="180.14564543481546" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="413.2195536040389" y1="214.17560723022567" x2="463.2755876914199" y2="270.6178613470282" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="282.0630926975308" y1="223.89341438005846" x2="338.6618444039279" y2="258.2877230497223" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="286.4253611619214" y1="216.7149316821213" x2="343.02411286831847" y2="251.1092403517851" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="399.3605911675272" y1="276.53482135418585" x2="436.5600816737308" y2="284.43017225992935" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="458.68663093272323" y1="318.6178613470282" x2="364.2365323874954" y2="406.2289955469495" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="356.6526210260497" y1="538.0799070598002" x2="348.05868891341265" y2="452.0099916817987" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="317.02255101081823" y1="412.2509511834907" x2="289.28146941694257" y2="400.8560824861172" stroke="#4B5563" stroke-width="1.4"/>
+<line x1="824.7638302117034" y1="387.0487708750884" x2="880.4869518049658" y2="390.8080871908957" stroke="#4B5563" stroke-width="1.4"/>
+<text x="389.38224985396306" y="505.4886348499132" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="455.2887576056105" y="364.7612070460626" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="329.8577759460289" y="615.9764779259568" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="251.41557568589874" y="760.8066010832584" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="278.4806207676322" y="573.6077817804057" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="126.56835872812732" y="595.3436785140675" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="450.7450643356153" y="754.6983885318137" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="386.77211045476326" y="620.3156255891047" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="691.6219044855569" y="363.4388236879307" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="561.9751103654945" y="323.3416667862441" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="490.8867386795141" y="87.62477588733147" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="500.34127667282246" y="240.54360092888652" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="450.04750608002996" y="75.37724234216375" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="456.5393907017608" y="213.25661885111828" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="630.117639842827" y="122.89652133637605" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="551.6811451076625" y="245.72621210750287" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="576.3503177786756" y="84.2256261688998" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="502.346554301742" y="207.3594478189205" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="705.9140353364635" y="223.05584445891674" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="665.5170675865952" y="106.15930389892306" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="657.6850002068747" y="276.49724653039823" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="546.4846277807965" y="282.96557885744284" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="563.1527180687636" y="544.5575191497052" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="427.0412479638245" y="554.7693506614686" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="613.3852385358249" y="491.4823900969608" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="505.97048722930634" y="346.96778041586083" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="254.6232" y="34" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="404.49779976789506" y="32.558956826481115" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="228.5283559841691" y="85.37259382534126" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="440.2498120112246" y="244.65442445329904" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="310.27965271466877" y="236.12555501913522" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<text x="419.44831604087716" y="280.79831084328737" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">1</text>
+<text x="415.2395856019184" y="358.918983078992" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">M</text>
+<text x="353.27457710198985" y="504.24813472598476" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">N</text>
+<rect x="436.5600816737308" y="270.6178613470282" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="484.5600816737308" y="295.6178613470282" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">用户</text>
+<rect x="-2" y="582.871553234673" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="46" y="607.871553234673" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">书目</text>
+<rect x="174.22437213616809" y="790.703171949415" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="222.22437213616809" y="815.703171949415" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">分类</text>
+<rect x="311.04897949575957" y="538.0799070598002" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="359.04897949575957" y="563.0799070598002" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">商品</text>
+<rect x="424.0645050741482" y="785.3973164325678" width="105.44" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="430.0645050741482" y="791.3973164325678" width="93.44" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="476.7845050741482" y="810.3973164325678" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">商品图片</text>
+<rect x="719.3238302117034" y="359.49205778180533" width="105.44" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="725.3238302117034" y="365.49205778180533" width="93.44" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="772.0438302117034" y="384.49205778180533" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">跑腿设置</text>
+<rect x="421.5531452182611" y="7" width="105.44" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="474.2731452182611" y="32" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">代取订单</text>
+<rect x="594.6420893988045" y="33.124612876293185" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="642.6420893988045" y="58.124612876293185" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">会话</text>
+<rect x="672" y="256" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="678" y="262" width="84" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="720" y="281" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">消息</text>
+<rect x="588.92" y="516" width="142.16" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="594.92" y="522" width="130.16" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="660" y="541" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">商品状态日志</text>
+<rect x="78.92" y="10" width="142.16" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="84.92" y="16" width="130.16" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="150" y="35" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">代取状态日志</text>
+<rect x="196.7501916229014" y="172.30417303108987" width="96" height="48" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<rect x="202.7501916229014" y="178.30417303108987" width="84" height="36" rx="2" fill="none" stroke="#0284c7" stroke-width="1.6"/>
+<text x="244.7501916229014" y="197.30417303108987" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700" fill="#0f172a">反馈</text>
+<polygon points="421.8045305847452,415 467.8045305847452,445 421.8045305847452,475 375.8045305847452,445" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="421.8045305847452" y="446" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">出售</text>
+<polygon points="290.6366758159638,658.3915395046076 336.6366758159638,688.3915395046076 290.6366758159638,718.3915395046076 244.63667581596383,688.3915395046076" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="290.6366758159638" y="689.3915395046076" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">属于</text>
+<polygon points="202.52448974787978,554.4757301472366 248.52448974787978,584.4757301472366 202.52448974787978,614.4757301472366 156.52448974787978,584.4757301472366" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="202.52448974787978" y="585.4757301472366" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">关联</text>
+<polygon points="416.8024811584191,653.397974340222 462.8024811584191,683.397974340222 416.8024811584191,713.397974340222 370.8024811584191,683.397974340222" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="416.8024811584191,660.397974340222 455.8024811584191,683.397974340222 416.8024811584191,706.397974340222 377.8024811584191,683.397974340222" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="416.8024811584191" y="684.397974340222" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">包含</text>
+<polygon points="625.8252773828293,317.0324127003186 671.8252773828293,347.0324127003186 625.8252773828293,377.0324127003186 579.8252773828293,347.0324127003186" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="625.8252773828293,324.0324127003186 664.8252773828293,347.0324127003186 625.8252773828293,370.0324127003186 586.8252773828293,347.0324127003186" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="625.8252773828293" y="348.0324127003186" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">配置</text>
+<polygon points="518,150.0359901997452 564,180.0359901997452 518,210.0359901997452 472,180.0359901997452" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="518" y="181.0359901997452" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">发布</text>
+<polygon points="424.9116388338252,91.42186745609713 470.9116388338252,121.42186745609713 424.9116388338252,151.42186745609712 378.9116388338252,121.42186745609713" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="424.9116388338252" y="122.42186745609713" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">接单</text>
+<polygon points="615.5930461576722,169.17214862124607 671.9530461576722,199.17214862124607 615.5930461576722,229.17214862124607 559.2330461576722,199.17214862124607" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="615.5930461576722" y="200.17214862124607" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">发起会话</text>
+<polygon points="523,76.03599019974521 579.36,106.03599019974521 523,136.0359901997452 466.64,106.03599019974521" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="523" y="107.03599019974521" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">加入会话</text>
+<polygon points="689.9575032563753,128.5497019000794 735.9575032563753,158.5497019000794 689.9575032563753,188.5497019000794 643.9575032563753,158.5497019000794" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="689.9575032563753,135.5497019000794 728.9575032563753,158.5497019000794 689.9575032563753,181.5497019000794 650.9575032563753,158.5497019000794" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="689.9575032563753" y="159.5497019000794" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">归属</text>
+<polygon points="598.5305443426148,243.17214862124604 644.5305443426148,273.17214862124604 598.5305443426148,303.17214862124604 552.5305443426148,273.17214862124604" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="598.5305443426148" y="274.17214862124604" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">发送</text>
+<polygon points="490,518 536,548 490,578 444,548" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="490,525 529,548 490,571 451,548" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="490" y="549" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">生成</text>
+<polygon points="529.2677278996688,373.93114154672855 575.2677278996688,403.93114154672855 529.2677278996688,433.93114154672855 483.2677278996688,403.93114154672855" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="529.2677278996688" y="404.93114154672855" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">操作</text>
+<polygon points="340,4 386,34 340,64 294,34" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="340,11 379,34 340,57 301,34" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="340" y="35" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">生成</text>
+<polygon points="396.3633040947555,165.1688134319322 442.3633040947555,195.1688134319322 396.3633040947555,225.1688134319322 350.3633040947555,195.1688134319322" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="396.3633040947555" y="196.1688134319322" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">操作</text>
+<polygon points="364.6551366483161,239.16881343193222 410.6551366483161,269.1688134319322 364.6551366483161,299.1688134319322 318.6551366483161,269.1688134319322" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<polygon points="364.6551366483161,246.16881343193222 403.6551366483161,269.1688134319322 364.6551366483161,292.1688134319322 325.6551366483161,269.1688134319322" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="364.6551366483161" y="270.1688134319322" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">提交</text>
+<polygon points="345.24637435383846,393.84410987282536 391.24637435383846,423.84410987282536 345.24637435383846,453.84410987282536 299.24637435383846,423.84410987282536" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="345.24637435383846" y="424.84410987282536" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="#1e1b4b">收藏</text>
+<ellipse cx="258.79517820337287" cy="388.3335972227737" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="258.79517820337287" y="389.3335972227737" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">收藏时间</text>
+<ellipse cx="922.4000245063521" cy="393.63571948332265" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<ellipse cx="922.4000245063521" cy="393.63571948332265" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="922.4000245063521" y="394.63571948332265" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可接规格</text>
+</svg>

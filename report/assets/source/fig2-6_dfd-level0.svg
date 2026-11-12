@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1200" viewBox="0 0 1440 1200" font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
+  <defs>
+    <marker id="arrow-right" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="0">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-left" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="180">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-up" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="270">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-start-left" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="180">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-start-up" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="270">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1440" height="1200" fill="#F4F1E7"/>
+
+  <text x="40" y="58" font-size="30" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 数据流图（0 层图）</text>
+  <text x="40" y="86" font-size="13" fill="#806E5C">6 个加工 · 4 个数据存储　|　二手交易 · 代取 · 聊天</text>
+  <line x1="40" y1="98" x2="780" y2="98" stroke="#E6A874" stroke-width="2"/>
+  <text x="40" y="126" font-size="13" fill="#806E5C">矩形 = 外部实体　圆形 = 加工（P1–P6）　棕色矩形 = 数据存储（D1–D4）　箭头 = 数据流</text>
+  <text x="40" y="147" font-size="13" fill="#806E5C">→ = 单向数据流　↔ = 双向（请求 / 返回 或 读 / 写）　* = 同一实体重复绘制，避免连线交叉</text>
+
+  <text x="40" y="180" font-size="14" font-weight="700" fill="#806E5C">二手交易</text>
+  <text x="40" y="706" font-size="14" font-weight="700" fill="#806E5C">代取 · 聊天</text>
+
+  <rect x="40" y="400" width="180" height="80" rx="2" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="130" y="430" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">用户 *</text>
+  <text x="130" y="454" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#64748b">买家 / 卖家</text>
+
+  <circle cx="420" cy="240" r="64" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="420" y="218" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#0284c7">P1</text>
+  <text x="420" y="242" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="700" fill="#0f172a">发布商品</text>
+
+  <circle cx="420" cy="440" r="64" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="420" y="418" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#0284c7">P2</text>
+  <text x="420" y="442" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="700" fill="#0f172a">浏览搜索</text>
+
+  <circle cx="420" cy="640" r="64" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="420" y="618" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#0284c7">P3</text>
+  <text x="420" y="642" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="700" fill="#0f172a">收藏</text>
+
+  <rect x="600" y="210" width="260" height="60" fill="#FFF8EE"/>
+  <path d="M600,210 H860 V270 H600 V210" fill="none" stroke="#C9A87C" stroke-width="1.8"/>
+  <text x="730" y="234" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#5D4630">D1 items</text>
+  <text x="730" y="254" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#806E5C">商品与图片</text>
+
+  <rect x="600" y="610" width="260" height="60" fill="#FFF8EE"/>
+  <path d="M600,610 H860 V670 H600 V610" fill="none" stroke="#C9A87C" stroke-width="1.8"/>
+  <text x="730" y="634" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#5D4630">D2 favorites</text>
+  <text x="730" y="654" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#806E5C">收藏记录</text>
+
+  <path d="M222,410 H280 V240 H354" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
+  <text x="292" y="320" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">商品信息 / 发布结果</text>
+
+  <path d="M222,440 H354" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
+  <text x="288" y="428" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">查询条件 / 商品列表</text>
+
+  <path d="M222,470 H290 V640 H354" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
+  <text x="302" y="550" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">收藏操作 / 收藏列表</text>
+
+  <path d="M484,240 H598" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="541" y="228" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">商品记录</text>
+
+  <path d="M730,270 V440 H488" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
+  <text x="560" y="428" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">在售商品</text>
+
+  <path d="M484,640 H598" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
+  <text x="541" y="628" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">收藏记录</text>
+
+  <path d="M800,270 V560 H420 V576" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-down)"/>
+  <text x="610" y="548" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">商品摘要</text>
+
+  <rect x="40" y="730" width="180" height="80" rx="2" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="130" y="760" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">用户 *</text>
+  <text x="130" y="784" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#64748b">买家 / 卖家</text>
+
+  <circle cx="420" cy="770" r="64" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="420" y="748" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#0284c7">P4</text>
+  <text x="420" y="772" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="700" fill="#0f172a">发布代取</text>
+
+  <rect x="600" y="740" width="260" height="60" fill="#FFF8EE"/>
+  <path d="M600,740 H860 V800 H600 V740" fill="none" stroke="#C9A87C" stroke-width="1.8"/>
+  <text x="730" y="764" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#5D4630">D3 errand_orders</text>
+  <text x="730" y="784" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#806E5C">代取订单</text>
+
+  <circle cx="1040" cy="770" r="64" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="1040" y="748" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#0284c7">P5</text>
+  <text x="1040" y="772" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="700" fill="#0f172a">接单</text>
+
+  <rect x="1220" y="730" width="180" height="80" rx="2" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="1310" y="760" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">跑腿</text>
+  <text x="1310" y="784" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#64748b">接单者</text>
+
+  <path d="M222,762 H354" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="288" y="750" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">代取需求</text>
+
+  <path d="M354,778 H222" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
+  <text x="288" y="796" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">订单编号</text>
+
+  <path d="M484,770 H598" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="541" y="758" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">订单记录</text>
+
+  <path d="M862,762 H974" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="918" y="750" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">待接订单</text>
+
+  <path d="M974,778 H862" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
+  <text x="918" y="796" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">接单结果</text>
+
+  <path d="M1220,762 H1106" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-left)"/>
+  <text x="1163" y="750" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">接单请求</text>
+
+  <path d="M1104,778 H1220" fill="none" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow-right)"/>
+  <text x="1163" y="796" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">订单详情</text>
+
+  <circle cx="700" cy="1000" r="64" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="700" y="978" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#0284c7">P6</text>
+  <text x="700" y="1002" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="700" fill="#0f172a">聊天</text>
+
+  <rect x="880" y="970" width="260" height="60" fill="#FFF8EE"/>
+  <path d="M880,970 H1140 V1030 H880 V970" fill="none" stroke="#C9A87C" stroke-width="1.8"/>
+  <text x="1010" y="994" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#5D4630">D4 conversations / messages</text>
+  <text x="1010" y="1014" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#806E5C">会话与消息</text>
+
+  <path d="M220,800 H300 V1000 H634" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
+  <text x="312" y="900" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">聊天消息 / 新消息</text>
+
+  <path d="M764,1000 H878" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-left)" marker-end="url(#arrow-right)"/>
+  <text x="821" y="988" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">消息记录</text>
+
+  <path d="M1300,810 V1090 H700 V1066" fill="none" stroke="#4B5563" stroke-width="1.4" marker-start="url(#arrow-start-up)" marker-end="url(#arrow-up)"/>
+  <text x="1000" y="1078" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#ffffff" stroke-width="4" paint-order="stroke">聊天消息 / 新消息</text>
+
+  <text x="40" y="1130" font-size="12" fill="#806E5C">注：* 同一外部实体为避免连线交叉重复绘制；P1–P6 为 6 个加工，D1–D4 为 4 个数据存储。</text>
+  <text x="40" y="1152" font-size="12" fill="#806E5C">聊天页顶部业务卡片会读取 items / errand_orders 的摘要，为避免连线交叉未展开；数据流名称均为名词。</text>
+</svg>

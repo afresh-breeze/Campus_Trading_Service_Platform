@@ -1,0 +1,12 @@
+<!-- 发布代取（B 成员负责） -->
+<nav-top back />
+<view class="page page-body">
+  <view class="card">
+    <view class="t-title">发布代取</view>
+    <view class="t-sub placeholder-note">
+      页面骨架已注册，等待B成员实现。
+    </view>
+    <view class="t-sub placeholder-path">pages/errand/publish</view>
+  </view>
+  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+</view>

@@ -1,0 +1,158 @@
+.card {
+  background: var(--color-bg-white, #FFFFFF);
+  overflow: hidden;
+}
+
+/* ---------- grid：两列瀑布流 ---------- */
+.card--grid {
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(120, 80, 20, 0.08);
+}
+
+.card--grid .card__cover {
+  position: relative;
+  width: 100%;
+  height: 320rpx;
+}
+
+.card--grid .card__body {
+  padding: 16rpx 18rpx 20rpx;
+  /* flex 列 + foot 的 margin-top:auto：标题一行还是两行，价格都贴底对齐（走查记录 #1） */
+  display: flex;
+  flex-direction: column;
+  min-height: 172rpx;
+}
+
+.card--grid .card__title {
+  font-size: 28rpx;
+  color: var(--color-text, #2E2119);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 80rpx;
+}
+
+/* ---------- list：单列横向 ---------- */
+.card--list {
+  display: flex;
+  padding: 20rpx;
+  border-radius: 16rpx;
+}
+
+.card--list .card__cover {
+  width: 200rpx;
+  height: 200rpx;
+  flex-shrink: 0;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.card--list .card__body {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.card--list .card__title {
+  font-size: 30rpx;
+  color: var(--color-text, #2E2119);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ---------- 通用 ---------- */
+.card__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* 原为浅焦糖 #FCDBA9，图片未加载时整块偏重，改浅中性底（走查记录 #3） */
+  background: var(--color-divider, #F1EAE0);
+}
+
+.card__img--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: var(--color-text-4, #C7B9A8);
+}
+
+.card__tag {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+}
+
+.card__meta {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+  color: var(--color-text-3, #9A8875);
+  /* 恒占一行：成色与地点都为空时不塌陷，网格卡片才能等高（走查记录 #1） */
+  min-height: 34rpx;
+}
+
+.card__meta--empty {
+  /* 空行不显示内容，但保留高度 */
+  visibility: hidden;
+}
+
+.card__meta-item {
+  max-width: 220rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__dot {
+  margin: 0 8rpx;
+}
+
+.card__foot {
+  margin-top: auto;
+  padding-top: 12rpx;
+  display: flex;
+  align-items: baseline;
+}
+
+.card__price {
+  display: flex;
+  align-items: baseline;
+  color: var(--color-price, #A7724F);
+}
+
+.card__yuan {
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.card__num {
+  font-size: 34rpx;
+  font-weight: 600;
+  margin-left: 2rpx;
+}
+
+.card__origin {
+  margin-left: 10rpx;
+  font-size: 22rpx;
+  color: var(--color-text-4, #C7B9A8);
+  text-decoration: line-through;
+}
+
+.card__state {
+  margin-left: auto;
+  /* 父级 align-items: baseline，标签要自己回正，否则贴到价格基线以下（走查记录 #9） */
+  align-self: center;
+}
+
+.card--hover {
+  opacity: 0.9;
+}

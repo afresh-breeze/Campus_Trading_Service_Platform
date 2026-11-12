@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "注册",
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
+}

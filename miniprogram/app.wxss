@@ -1,0 +1,279 @@
+/**
+ * 全局样式（B 成员：公共层）
+ * ------------------------------------------------------------------
+ * 设计令牌 + 通用原子类。页面样式只允许引用这里的变量/类，
+ * 不允许再出现魔法色值，方便后期统一改主题。
+ */
+
+page {
+  /* 主色：奶茶色系（#F4F1E7/#FCDBA9/#E6A874/#A7724F/#79513D/#6A4431） */
+  --color-primary: #E6A874;
+  --color-primary-light: #FCDBA9;
+  --color-primary-dark: #79513D;
+
+  /* 辅助色 */
+  --color-accent: #A7724F;
+  /* 价格色：焦糖棕，白底大字号可读 */
+  --color-price: #A7724F;
+  --color-success: #1F7A45;
+  --color-warning: #B45309;
+  --color-danger: #C62828;
+
+  /* 中性色（暖奶茶调） */
+  --color-text: #2E2119;
+  --color-text-2: #6B5B4D;
+  --color-text-3: #9A8875;
+  --color-text-4: #C7B9A8;
+  --color-border: #E9DFD0;
+  --color-divider: #F1EAE0;
+  --color-bg: #F4F1E7;
+  --color-bg-white: #FFFFFF;
+
+  /* 圆角 / 阴影 / 间距 */
+  --radius-sm: 8rpx;
+  --radius: 16rpx;
+  --radius-lg: 24rpx;
+  --radius-full: 999rpx;
+  --shadow-card: 0 4rpx 16rpx rgba(122, 93, 64, 0.08);
+  --shadow-float: 0 8rpx 24rpx rgba(230, 168, 116, 0.35);
+  --space-xs: 8rpx;
+  --space-sm: 16rpx;
+  --space: 24rpx;
+  --space-lg: 32rpx;
+  --space-xl: 48rpx;
+
+  /* 字号层级 */
+  --font-xs: 22rpx;
+  --font-sm: 24rpx;
+  --font-base: 28rpx;
+  --font-lg: 32rpx;
+  --font-xl: 36rpx;
+  --font-2xl: 44rpx;
+
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-base);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+view,
+text,
+input,
+textarea,
+button,
+scroll-view {
+  box-sizing: border-box;
+}
+
+/* ---------------- 布局 ---------------- */
+.row {
+  display: flex;
+  align-items: center;
+}
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------------- 容器 ---------------- */
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  /* 悬浮胶囊 tabBar 会遮挡底部内容，预留高度 */
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+.page-body {
+  padding: var(--space);
+}
+.card {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--space);
+}
+.card + .card {
+  margin-top: var(--space-sm);
+}
+
+/* ---------------- 文字 ---------------- */
+.t-title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.t-base {
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.t-sub {
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+.t-price {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-danger);
+}
+.t-price::before {
+  content: '¥';
+  font-size: var(--font-sm);
+  margin-right: 2rpx;
+}
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ellipsis-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* ---------------- 按钮 ---------------- */
+.btn {
+  /* 小程序原生 button 自带默认内边距，单靠 line-height 居中会被顶偏，
+     改用 flex 双向居中并清零内边距（登录按钮文字偏下的修复） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+  border-radius: var(--radius-full);
+  font-size: var(--font-lg);
+  font-weight: 500;
+  background-color: var(--color-bg-white);
+  color: var(--color-text);
+  border: none;
+}
+.btn::after {
+  border: none;
+}
+.btn-primary {
+  /* 白字只能压 primary-dark；primary(#E6A874) 上白字约 2:1，红线禁止 */
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+  box-shadow: var(--shadow-float);
+}
+.btn-primary[disabled] {
+  background-color: #EBDCC3;
+  color: #9A8875;
+  box-shadow: none;
+}
+.btn-ghost {
+  background-color: var(--color-bg-white);
+  color: var(--color-primary-dark);
+  border: 1rpx solid var(--color-primary-dark);
+}
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+.btn-block {
+  width: 100%;
+}
+.btn-sm {
+  height: 60rpx;
+  line-height: 58rpx;
+  font-size: var(--font-sm);
+  padding: 0 24rpx;
+}
+
+/* ---------------- 表单 ---------------- */
+.field {
+  display: flex;
+  align-items: center;
+  height: 96rpx;
+  padding: 0 var(--space);
+  background-color: var(--color-bg-white);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+.field-label {
+  width: 150rpx;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.field-input {
+  flex: 1;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.field-placeholder {
+  color: var(--color-text-4);
+}
+
+/* ---------------- 状态标签 ---------------- */
+.tag {
+  display: inline-block;
+  padding: 4rpx 14rpx;
+  font-size: var(--font-xs);
+  border-radius: var(--radius-sm);
+  line-height: 1.6;
+}
+.tag-primary {
+  color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
+}
+.tag-success {
+  color: var(--color-success);
+  background-color: rgba(31, 122, 69, 0.1);
+}
+.tag-warning {
+  color: var(--color-warning);
+  background-color: rgba(180, 83, 9, 0.12);
+}
+.tag-gray {
+  color: var(--color-text-3);
+  background-color: var(--color-divider);
+}
+.tag-danger {
+  color: var(--color-danger);
+  background-color: rgba(198, 40, 40, 0.1);
+}
+
+/* ---------------- 悬浮加号按钮（列表页右下角） ---------------- */
+.fab {
+  position: fixed;
+  right: 32rpx;
+  /* 上移避开悬浮胶囊 tabBar */
+  bottom: calc(150rpx + env(safe-area-inset-bottom));
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+  font-size: 56rpx;
+  line-height: 100rpx;
+  text-align: center;
+  box-shadow: var(--shadow-float);
+  z-index: 20;
+}
+
+/* ---------------- 分隔 / 安全区 ---------------- */
+.divider {
+  height: 1rpx;
+  background-color: var(--color-divider);
+}
+.safe-bottom {
+  height: calc(24rpx + env(safe-area-inset-bottom));
+}

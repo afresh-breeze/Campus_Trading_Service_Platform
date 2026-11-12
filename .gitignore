@@ -34,6 +34,12 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 
+# Qoder 本地 AI 技能包（自动生成、体积大，按手册第 12 节各自安装）
+.qoder/
+
+# CodeBuddy 本地 AI 技能包（ui-ux-pro-max，同上，不入库）
+.codebuddy/
+
 # 临时文件
 *.tmp
 *.bak

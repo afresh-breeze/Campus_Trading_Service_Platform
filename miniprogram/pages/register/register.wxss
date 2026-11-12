@@ -1,0 +1,41 @@
+.reg-page {
+  min-height: 100vh;
+  padding: 0 48rpx 48rpx;
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 36%);
+}
+.head {
+  padding: 72rpx 8rpx 40rpx;
+}
+.head-title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+}
+.head-sub {
+  margin-top: 10rpx;
+}
+.form-wrap {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.form-wrap .field:last-of-type {
+  border-bottom: none;
+}
+.submit {
+  margin: 40rpx 24rpx;
+  width: calc(100% - 48rpx);
+}
+.row-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-tip {
+  margin-top: 36rpx;
+}
+.link {
+  font-size: var(--font-sm);
+  color: var(--color-primary-dark);
+  margin-left: 8rpx;
+}

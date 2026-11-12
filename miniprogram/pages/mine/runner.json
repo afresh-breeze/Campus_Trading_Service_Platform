@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "接单设置",
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
+}

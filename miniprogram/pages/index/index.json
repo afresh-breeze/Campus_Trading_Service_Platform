@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "二手市场",
+  "usingComponents": {
+    "nav-top": "/components/nav-top/index"
+  }
+}
