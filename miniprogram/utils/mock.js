@@ -659,13 +659,178 @@ const runnerProfiles = [
     isOnline: false,
     manualUntil: null,
     // 按计划上线：工作日 18:00-22:00，窗口不重叠就会被过滤掉（对齐后端）
+    // 注意后端 id 必须是字符串（readTrimmed），演示数据也用字符串 id
     timeSlots: [
-      { id: 1, type: 'weekly', from: '2026-11-01', weekdays: [1, 2, 3, 4, 5], start: '18:00', end: '22:00' }
+      { id: 'slot-9-1', type: 'weekly', from: '2026-11-01', weekdays: [1, 2, 3, 4, 5], start: '18:00', end: '22:00' }
     ],
     basePrice: 4.0,
     remark: '工作日 18:00 之后接单'
   }
 ];
+
+// ---------------- 跑腿档案校验（逐字对照 users.js + utils/runner.js） ----------------
+const AVAILABILITY_TYPES = ['slot', 'now'];
+// 后端在线接口对「没档案就上线」的用户写入的默认片区
+const DEFAULT_SERVICE_AREA = '北区其他';
+
+function pad2(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+function runnerToday(d) {
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function runnerHHmm(d) {
+  return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+/** 'HH:mm' 严格校验（对齐 runner.js isValidTime） */
+function runnerIsValidTime(v) {
+  return typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+}
+/** 'YYYY-MM-DD' 严格校验（对齐 runner.js parseDateOnly） */
+function runnerIsValidDate(v) {
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const p = v.split('-').map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  return d.getFullYear() === p[0] && d.getMonth() === p[1] - 1 && d.getDate() === p[2];
+}
+function runnerWeekdayOf(v) {
+  const d = new Date(String(v).replace(/-/g, '/') + ' 00:00:00');
+  if (isNaN(d.getTime())) return 0;
+  return d.getDay() === 0 ? 7 : d.getDay();
+}
+/** 两条计划时间是否重叠（对齐 users.js schedulesOverlap） */
+function runnerSchedulesOverlap(a, b) {
+  if (!(a.start < b.end && b.start < a.end)) return false;
+  if (a.type === 'once' && b.type === 'once') return a.date === b.date;
+  if (a.type === 'weekly' && b.type === 'weekly') {
+    return a.weekdays.some((day) => b.weekdays.indexOf(day) > -1);
+  }
+  const once = a.type === 'once' ? a : b;
+  const weekly = a.type === 'weekly' ? a : b;
+  return once.date >= weekly.from && weekly.weekdays.indexOf(runnerWeekdayOf(once.date)) > -1;
+}
+/** 对齐 runner.js hasFutureSlot：once 看 date+end；weekly 看 from 之后是否还有命中 */
+function runnerHasFutureSlot(slots, now) {
+  const today = runnerToday(now);
+  const nowT = runnerHHmm(now);
+  return (slots || []).some((s) => {
+    if (!s) return false;
+    if (s.type === 'once') {
+      return s.date > today || (s.date === today && s.end > nowT);
+    }
+    if (s.type !== 'weekly') return false;
+    if (s.from > today) return true;
+    for (let offset = 0; offset < 7; offset += 1) {
+      const d = new Date(now.getTime() + offset * 86400000);
+      const ds = runnerToday(d);
+      const wd = runnerWeekdayOf(ds);
+      if (s.weekdays.indexOf(wd) < 0) continue;
+      return ds > today || s.end > nowT;
+    }
+    return false;
+  });
+}
+/** 对齐 runner.js isScheduleNow：当前时刻是否落在某条计划内 */
+function runnerIsScheduleNow(slots, now) {
+  const today = runnerToday(now);
+  const nowT = runnerHHmm(now);
+  return (slots || []).some((s) => {
+    if (!s) return false;
+    if (s.type === 'once') return s.date === today && s.start <= nowT && nowT < s.end;
+    if (s.type !== 'weekly') return false;
+    return (
+      s.from <= today &&
+      s.weekdays.indexOf(runnerWeekdayOf(today)) > -1 &&
+      s.start <= nowT &&
+      nowT < s.end
+    );
+  });
+}
+/** 进行中的循环计划在今天的结束时间（对齐 runner.js activeWeeklyEnd） */
+function runnerActiveWeeklyEnd(slot, now) {
+  if (!slot || slot.type !== 'weekly') return null;
+  const today = runnerToday(now);
+  if (typeof slot.from !== 'string' || slot.from > today) return null;
+  if (slot.weekdays.indexOf(runnerWeekdayOf(today)) < 0) return null;
+  return today + ' ' + slot.end + ':00';
+}
+/** 今天之内下一个上/下线边界（对齐 runner.js nextBoundaryToday，简化为今日边界） */
+function runnerNextBoundaryToday(slots, now) {
+  const today = runnerToday(now);
+  const nowT = runnerHHmm(now);
+  let best = null;
+  (slots || []).forEach((s) => {
+    if (!s) return;
+    const hitsToday =
+      s.type === 'once' ? s.date === today : s.from <= today && s.weekdays.indexOf(runnerWeekdayOf(today)) > -1;
+    if (!hitsToday) return;
+    [s.start, s.end].forEach((t) => {
+      if (t > nowT && (!best || t < best)) best = t;
+    });
+  });
+  return best ? today + ' ' + best + ':00' : null;
+}
+/** 对齐 users.js validateTimeSlots：逐条校验 + 两两查重 + 未来计划要求 */
+function validateRunnerTimeSlots(raw, availabilityType, now) {
+  const input = raw === undefined || raw === null ? [] : raw;
+  if (!Array.isArray(input)) return { error: '在线计划格式错误' };
+
+  const slots = [];
+  const ids = [];
+  for (let i = 0; i < input.length; i += 1) {
+    const item = input[i];
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return { error: '在线计划格式错误' };
+    }
+    const id = readTrimmed(item.id);
+    if (!id || id.length > 64 || ids.indexOf(id) > -1) {
+      return { error: '在线计划格式错误' };
+    }
+    if (!runnerIsValidTime(item.start) || !runnerIsValidTime(item.end) || item.start >= item.end) {
+      return { error: '在线计划格式错误' };
+    }
+    ids.push(id);
+
+    if (item.type === 'once') {
+      if (!runnerIsValidDate(item.date)) return { error: '在线计划格式错误' };
+      slots.push({ id: id, type: 'once', date: item.date, start: item.start, end: item.end });
+    } else if (item.type === 'weekly') {
+      if (!runnerIsValidDate(item.from) || !Array.isArray(item.weekdays) || item.weekdays.length === 0) {
+        return { error: '在线计划格式错误' };
+      }
+      const weekdays = [];
+      for (let j = 0; j < item.weekdays.length; j += 1) {
+        const day = item.weekdays[j];
+        if (typeof day !== 'number' || day % 1 !== 0 || day < 1 || day > 7 || weekdays.indexOf(day) > -1) {
+          return { error: '在线计划格式错误' };
+        }
+        weekdays.push(day);
+      }
+      weekdays.sort((x, y) => x - y);
+      slots.push({
+        id: id,
+        type: 'weekly',
+        weekdays: weekdays,
+        start: item.start,
+        end: item.end,
+        from: item.from
+      });
+    } else {
+      return { error: '在线计划格式错误' };
+    }
+  }
+
+  for (let i = 0; i < slots.length; i += 1) {
+    for (let j = i + 1; j < slots.length; j += 1) {
+      if (runnerSchedulesOverlap(slots[i], slots[j])) return { error: '在线计划格式错误' };
+    }
+  }
+
+  if (availabilityType === 'slot' && !runnerHasFutureSlot(slots, now)) {
+    return { error: '按计划上线至少需要一条未来计划' };
+  }
+  return { slots: slots };
+}
 
 // 会话：表结构 userAId / userBId，接口层再按当前用户取「对方」信息（对齐 chat.js peerOf）
 const conversations = [
@@ -1070,6 +1235,7 @@ const routes = {
     return delay({ userInfo: Object.assign({}, currentUser) });
   },
 
+  // 跑腿档案：逐字对齐 users.js 的校验（服务片区/地标/在线方式/在线计划/规格/报价/备注）
   'GET /api/users/me/runner-profile': () => {
     const profile = runnerProfiles.find((r) => r.userId === CURRENT_USER_ID);
     return delay(
@@ -1093,52 +1259,185 @@ const routes = {
 
   'PUT /api/users/me/runner-profile': (data) => {
     const body = data || {};
-    const areas = Array.isArray(body.serviceAreas) ? body.serviceAreas : [];
-    const places = Array.isArray(body.servicePlaces) ? body.servicePlaces : [];
-    const sizes = Array.isArray(body.itemSizes) ? body.itemSizes : [];
-    const availabilityType = readTrimmed(body.availabilityType) || 'slot';
-    if (!['now', 'slot'].includes(availabilityType)) return fail(400, '接单模式不合法');
-    for (let i = 0; i < sizes.length; i++) {
-      if (ITEM_SIZES.indexOf(sizes[i]) < 0) return fail(400, '物品规格不合法');
+    const now = new Date();
+
+    // 1. 服务片区：数组且 ≥1，片区必须在 25 片区清单内
+    if (!Array.isArray(body.serviceAreas) || body.serviceAreas.length === 0) {
+      return fail(400, '服务片区至少选择一个');
     }
+    const serviceAreas = [...new Set(body.serviceAreas.map((v) => readTrimmed(v)))];
+    if (serviceAreas.some((v) => !campusUtil.isValidZone(v))) {
+      return fail(400, '服务片区不在可选范围内');
+    }
+
+    // 2. 地标：可空；每个必须是合法地标（片区本身也算）且属于已选片区
+    const rawPlaces =
+      body.servicePlaces === undefined || body.servicePlaces === null ? [] : body.servicePlaces;
+    if (!Array.isArray(rawPlaces)) return fail(400, '地标与片区不匹配');
+    const servicePlaces = [...new Set(rawPlaces.map((v) => readTrimmed(v)))];
+    if (
+      servicePlaces.some(
+        (v) => !backendIsValidPlace(v) || serviceAreas.indexOf(backendZoneOfPlace(v)) < 0
+      )
+    ) {
+      return fail(400, '地标与片区不匹配');
+    }
+
+    // 3. 在线方式
+    const availabilityType = readTrimmed(body.availabilityType);
+    if (AVAILABILITY_TYPES.indexOf(availabilityType) < 0) return fail(400, '在线方式不合法');
+
+    // 4. 在线计划（含重叠与「按计划上线必须有未来计划」）
+    const slotsResult = validateRunnerTimeSlots(body.timeSlots, availabilityType, now);
+    if (slotsResult.error) return fail(400, slotsResult.error);
+    const timeSlots = slotsResult.slots;
+
+    // 5. 可接规格
+    const rawSizes = body.itemSizes === undefined || body.itemSizes === null ? [] : body.itemSizes;
+    if (!Array.isArray(rawSizes)) return fail(400, '可接规格不合法');
+    const itemSizes = [...new Set(rawSizes)];
+    if (itemSizes.some((v) => ITEM_SIZES.indexOf(v) < 0)) return fail(400, '可接规格不合法');
+    itemSizes.sort((a, b) => ITEM_SIZES.indexOf(a) - ITEM_SIZES.indexOf(b));
+
+    // 6. 报价：数字或纯数字字符串，0 ≤ p ≤ 99999999.99
+    let basePrice = null;
+    if (body.basePrice !== undefined && body.basePrice !== null && body.basePrice !== '') {
+      if (typeof body.basePrice === 'number') basePrice = body.basePrice;
+      else if (typeof body.basePrice === 'string' && body.basePrice.trim() !== '') {
+        basePrice = Number(body.basePrice.trim());
+      } else return fail(400, '报价格式不正确');
+      if (!isFinite(basePrice) || basePrice > 99999999.99) return fail(400, '报价格式不正确');
+      if (basePrice < 0) return fail(400, '报价不能为负数');
+    }
+
+    // 7. 备注 ≤255 字
+    let remark = '';
+    if (body.remark !== undefined && body.remark !== null) {
+      if (typeof body.remark !== 'string') return fail(400, '备注格式不正确');
+      remark = body.remark.trim();
+    }
+    if (remark.length > 255) return fail(400, '备注不能超过 255 字');
+
+    // 8. 在线状态：slot 按计划判定当前是否在时段内；now 沿用原状态
     const existing = runnerProfiles.find((r) => r.userId === CURRENT_USER_ID);
+    let isOnline;
+    if (availabilityType === 'slot') isOnline = runnerIsScheduleNow(timeSlots, now);
+    else isOnline = existing ? !!existing.isOnline : false;
+
     const profile = Object.assign(
       {
         userId: CURRENT_USER_ID,
         nickname: currentUser.nickname,
-        avatarUrl: currentUser.avatarUrl,
+        avatarUrl: currentUser.avatarUrl || '',
         creditScore: currentUser.creditScore,
-        completedCount: 0,
-        isOnline: false,
-        manualUntil: null,
-        timeSlots: []
+        completedCount: existing ? existing.completedCount || 0 : 0
       },
       existing || {},
-      body,
       {
-        serviceAreas: areas,
-        servicePlaces: places,
-        itemSizes: sizes,
-        availabilityType: availabilityType
+        serviceAreas: serviceAreas,
+        servicePlaces: servicePlaces,
+        itemSizes: itemSizes,
+        availabilityType: availabilityType,
+        timeSlots: timeSlots,
+        basePrice: basePrice,
+        remark: remark,
+        isOnline: isOnline,
+        manualUntil: null
       }
     );
-    if (existing) Object.assign(existing, profile);
-    else runnerProfiles.push(profile);
-    return delay(profile);
+    if (existing) {
+      Object.assign(existing, profile);
+      return delay(Object.assign({}, existing));
+    }
+    runnerProfiles.push(profile);
+    return delay(Object.assign({}, profile));
   },
 
   'PUT /api/users/me/online': (data) => {
-    const profile = runnerProfiles.find((r) => r.userId === CURRENT_USER_ID);
-    const isOnline = !!(data && data.isOnline);
-    if (!profile) return fail(400, '请先保存接单设置');
-    if (profile.availabilityType === 'now' || isOnline) {
-      profile.isOnline = isOnline;
-      return delay({ isOnline: isOnline, availabilityType: 'now', manualUntil: null });
+    const body = data || {};
+    if (typeof body.isOnline !== 'boolean') return fail(400, 'isOnline 必须为布尔值');
+    if (body.availabilityType !== undefined && AVAILABILITY_TYPES.indexOf(body.availabilityType) < 0) {
+      return fail(400, '在线方式不合法');
     }
-    const future = (profile.timeSlots || []).length > 0;
-    if (!future) return fail(400, '按计划上线至少需要一条未来计划');
-    profile.isOnline = false;
-    return delay({ isOnline: false, availabilityType: profile.availabilityType, manualUntil: profile.manualUntil });
+    let scope = null;
+    if (body.scope !== undefined) {
+      if (['once', 'future'].indexOf(body.scope) < 0) return fail(400, 'scope 不合法');
+      scope = body.scope;
+      if (!readTrimmed(body.scheduleId)) return fail(400, 'scheduleId 不能为空');
+    }
+
+    const now = new Date();
+    const profile = runnerProfiles.find((r) => r.userId === CURRENT_USER_ID);
+    const availabilityType = body.availabilityType || (profile ? profile.availabilityType : 'now');
+
+    // 随时在线：没有档案也能建一份默认档案（对齐 users.js 的 DEFAULT_SERVICE_AREA）
+    if (availabilityType === 'now') {
+      if (!profile) {
+        const created = {
+          userId: CURRENT_USER_ID,
+          nickname: currentUser.nickname,
+          avatarUrl: currentUser.avatarUrl || '',
+          creditScore: currentUser.creditScore,
+          completedCount: 0,
+          serviceAreas: [DEFAULT_SERVICE_AREA],
+          servicePlaces: [],
+          itemSizes: [],
+          availabilityType: 'now',
+          timeSlots: [],
+          manualUntil: null,
+          basePrice: null,
+          remark: '',
+          isOnline: body.isOnline
+        };
+        runnerProfiles.push(created);
+      } else {
+        profile.isOnline = body.isOnline;
+        profile.availabilityType = 'now';
+        profile.manualUntil = null;
+      }
+      return delay({ isOnline: body.isOnline, availabilityType: 'now', manualUntil: null });
+    }
+
+    // 按计划上线：必须先保存设置，且至少一条未来计划
+    if (!profile) return fail(400, '请先保存接单设置');
+    if (!runnerHasFutureSlot(profile.timeSlots || [], now)) {
+      return fail(400, '按计划上线至少需要一条未来计划');
+    }
+
+    let timeSlots = (profile.timeSlots || []).slice();
+    let manualUntil = null;
+    let nextAvailabilityType = 'slot';
+    let isOnline = body.isOnline;
+
+    if (scope && body.isOnline === false) {
+      const schedule = timeSlots.filter((s) => s.id === readTrimmed(body.scheduleId))[0];
+      if (!schedule) return fail(400, '该在线计划不存在');
+      if (scope === 'once') {
+        // 只这一次：下线到该计划的今日结束点
+        manualUntil = runnerActiveWeeklyEnd(schedule, now) || runnerNextBoundaryToday(timeSlots, now);
+      } else {
+        // 取消之后所有：把这条计划从列表里删掉
+        timeSlots = timeSlots.filter((s) => s.id !== schedule.id);
+        if (!timeSlots.length) {
+          nextAvailabilityType = 'now';
+          manualUntil = null;
+        } else {
+          manualUntil = runnerNextBoundaryToday(timeSlots, now);
+        }
+      }
+    } else {
+      manualUntil = runnerNextBoundaryToday(timeSlots, now);
+    }
+
+    profile.isOnline = isOnline;
+    profile.availabilityType = nextAvailabilityType;
+    profile.timeSlots = timeSlots;
+    profile.manualUntil = manualUntil;
+    return delay({
+      isOnline: Boolean(isOnline),
+      availabilityType: nextAvailabilityType,
+      manualUntil: manualUntil
+    });
   },
 
   'GET /api/users/:id': (data) => {

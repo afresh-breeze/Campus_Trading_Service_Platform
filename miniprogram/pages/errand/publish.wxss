@@ -1,13 +1,93 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 发布代取 / 编辑代取（B 成员）｜只引用 app.wxss 的令牌与原子类 */
+.form-tip {
+  margin: 8rpx 0 16rpx;
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
+
+.field--top {
+  height: auto;
+  min-height: 96rpx;
+  padding-top: 20rpx;
+  padding-bottom: 20rpx;
+  align-items: flex-start;
 }
-.placeholder-tip {
-  margin-top: 24rpx;
-  text-align: center;
+.field--top .field-label {
+  padding-top: 6rpx;
+}
+
+.field--static .field-input,
+.field-input--muted {
+  color: var(--color-text-3);
+}
+.field-input--error {
+  color: var(--color-danger);
+}
+
+.field-textarea {
+  flex: 1;
+  min-height: 120rpx;
+  font-size: var(--font-base);
+  color: var(--color-text);
+  width: 100%;
+}
+
+.field-count {
+  text-align: right;
+  padding: 0 var(--space) 8rpx;
   font-size: var(--font-xs);
   color: var(--color-text-4);
+}
+
+/* 单选横排 */
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.radio-item {
+  display: flex;
+  align-items: center;
+  margin-right: 24rpx;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.radio-item radio {
+  transform: scale(0.8);
+  margin-right: 4rpx;
+}
+
+/* picker 触发值 */
+.picker-value {
+  min-width: 190rpx;
+  padding: 8rpx 16rpx;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  font-size: var(--font-base);
+  color: var(--color-text);
+  text-align: center;
+}
+.picker-value--time {
+  margin-left: 12rpx;
+}
+.picker-arrow {
+  color: var(--color-text-4);
+  font-size: var(--font-xl);
+  line-height: 1;
+}
+
+/* 底部操作区 */
+.form-actions {
+  margin-top: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.form-actions .btn-ghost {
+  border: none;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+.form-footnote {
+  text-align: center;
+  line-height: 1.6;
+  padding: 0 var(--space);
 }

@@ -1,12 +1,199 @@
-<!-- 发布代取（B 成员负责） -->
-<nav-top back />
+<!-- 发布代取 / 编辑代取（B 成员，11-13）｜规格见手册 §6.8 -->
+<nav-top back title="{{pageTitle}}" />
 <view class="page page-body">
+
+  <!-- 取件位置：分类 → 片区 → 地标 三级联动 -->
   <view class="card">
-    <view class="t-title">发布代取</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
+    <view class="t-title">取件信息</view>
+    <view class="t-sub form-tip">先选分类缩小范围，再选片区和具体地标</view>
+
+    <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+      <view class="field-wrap">
+        <view class="field">
+          <view class="field-label">分类</view>
+          <view class="field-input">{{categories[categoryIndex]}}</view>
+          <view class="picker-arrow">›</view>
+        </view>
+      </view>
+    </picker>
+
+    <picker mode="selector" range="{{zones}}" value="{{zoneIndex}}" bindchange="onZoneChange">
+      <view class="field-wrap">
+        <view class="field">
+          <view class="field-label">取件片区</view>
+          <view class="field-input {{errors.pickupArea ? 'field-input--error' : ''}}">
+            {{zones[zoneIndex] || '请选择片区'}}
+          </view>
+          <view class="picker-arrow">›</view>
+        </view>
+        <text wx:if="{{errors.pickupArea}}" class="field-error">{{errors.pickupArea}}</text>
+      </view>
+    </picker>
+
+    <!-- 片区有下级地标才显示地标选择；没有则锁定为「全区」 -->
+    <block wx:if="{{places.length}}">
+      <picker mode="selector" range="{{places}}" value="{{placeIndex}}" bindchange="onPlaceChange">
+        <view class="field-wrap">
+          <view class="field">
+            <view class="field-label">取件地标</view>
+            <view class="field-input {{errors.pickupPlace ? 'field-input--error' : ''}}">
+              {{places[placeIndex] || '请选择地标'}}
+            </view>
+            <view class="picker-arrow">›</view>
+          </view>
+          <text wx:if="{{errors.pickupPlace}}" class="field-error">{{errors.pickupPlace}}</text>
+        </view>
+      </picker>
+    </block>
+    <block wx:else>
+      <view class="field-wrap">
+        <view class="field field--static">
+          <view class="field-label">取件地标</view>
+          <view class="field-input field-input--muted">{{placeEmptyText}}</view>
+        </view>
+      </view>
+    </block>
+
+    <view class="field-wrap">
+      <view class="field field--top">
+        <view class="field-label">送达地点</view>
+        <input
+          class="field-input"
+          placeholder="如：1 号宿舍楼 302"
+          placeholder-class="field-placeholder"
+          maxlength="100"
+          value="{{form.deliveryLocation}}"
+          bindinput="onDeliveryInput"
+        />
+      </view>
+      <text wx:if="{{errors.deliveryLocation}}" class="field-error">{{errors.deliveryLocation}}</text>
     </view>
-    <view class="t-sub placeholder-path">pages/errand/publish</view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 物品信息 -->
+  <view class="card">
+    <view class="t-title">物品信息</view>
+
+    <view class="field-wrap">
+      <view class="field">
+        <view class="field-label">物品规格</view>
+        <radio-group class="radio-row" bindchange="onSizeChange">
+          <label wx:for="{{sizeOptions}}" wx:key="value" class="radio-item">
+            <radio value="{{item.value}}" checked="{{sizeIndex === index}}" color="#79513D" />
+            <text>{{item.label}}</text>
+          </label>
+        </radio-group>
+      </view>
+      <text wx:if="{{errors.itemSize}}" class="field-error">{{errors.itemSize}}</text>
+    </view>
+
+    <view class="field-wrap">
+      <view class="field field--top">
+        <view class="field-label">物品描述</view>
+        <textarea
+          class="field-textarea"
+          placeholder="选填，帮跑腿更快认出物品"
+          placeholder-class="field-placeholder"
+          maxlength="500"
+          value="{{form.itemDesc}}"
+          bindinput="onDescInput"
+        />
+      </view>
+      <view class="field-count">{{descCount}}/500</view>
+      <text wx:if="{{errors.itemDesc}}" class="field-error">{{errors.itemDesc}}</text>
+    </view>
+
+    <view class="field-wrap">
+      <view class="field field--top">
+        <view class="field-label">备注</view>
+        <textarea
+          class="field-textarea"
+          placeholder="取件楼栋门牌、取件码、交付要求等"
+          placeholder-class="field-placeholder"
+          maxlength="255"
+          value="{{form.remark}}"
+          bindinput="onRemarkInput"
+        />
+      </view>
+      <view class="field-count">{{remarkCount}}/255</view>
+      <text wx:if="{{errors.remark}}" class="field-error">{{errors.remark}}</text>
+    </view>
+  </view>
+
+  <!-- 时间与报酬 -->
+  <view class="card">
+    <view class="t-title">时间与报酬</view>
+
+    <view class="field-wrap">
+      <view class="field">
+        <view class="field-label">时间要求</view>
+        <radio-group class="radio-row" bindchange="onTimeTypeChange">
+          <label wx:for="{{timeOptions}}" wx:key="value" class="radio-item">
+            <radio value="{{item.value}}" checked="{{timeIndex === index}}" color="#79513D" />
+            <text>{{item.label}}</text>
+          </label>
+        </radio-group>
+      </view>
+      <text wx:if="{{errors.timeType}}" class="field-error">{{errors.timeType}}</text>
+    </view>
+
+    <!-- asap 隐藏时间选择（后端不允许 asap 携带任何时间字段） -->
+    <block wx:if="{{timeOptions[timeIndex].value !== 'asap'}}">
+      <block wx:if="{{timeOptions[timeIndex].value === 'range'}}">
+        <view class="field-wrap">
+          <view class="field">
+            <view class="field-label">开始日期</view>
+            <picker mode="date" start="{{minDate}}" value="{{startDate}}" bindchange="onStartDateChange">
+              <view class="picker-value">{{startDate || '选择日期'}}</view>
+            </picker>
+            <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+              <view class="picker-value picker-value--time">{{startTime || '选择时间'}}</view>
+            </picker>
+          </view>
+        </view>
+      </block>
+      <view class="field-wrap">
+        <view class="field">
+          <view class="field-label">截止时间</view>
+          <picker mode="date" start="{{minDate}}" value="{{deadlineDate}}" bindchange="onDeadlineDateChange">
+            <view class="picker-value">{{deadlineDate || '选择日期'}}</view>
+          </picker>
+          <picker mode="time" value="{{deadlineTime}}" bindchange="onDeadlineTimeChange">
+            <view class="picker-value picker-value--time">{{deadlineTime || '选择时间'}}</view>
+          </picker>
+        </view>
+        <text wx:if="{{errors.time}}" class="field-error">{{errors.time}}</text>
+      </view>
+    </block>
+
+    <view class="field-wrap">
+      <view class="field">
+        <view class="field-label">报酬（元）</view>
+        <input
+          class="field-input"
+          type="digit"
+          placeholder="0.00"
+          placeholder-class="field-placeholder"
+          value="{{form.reward}}"
+          bindinput="onRewardInput"
+        />
+        <view class="t-sub">≤ 200</view>
+      </view>
+      <text wx:if="{{errors.reward}}" class="field-error">{{errors.reward}}</text>
+    </view>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="form-actions">
+    <button class="btn btn-ghost btn-block" disabled="{{submitting}}" bindtap="onTapPrivate" wx:if="{{!isEdit}}">
+      存为私单，先找跑腿
+    </button>
+    <button class="btn btn-primary btn-block" disabled="{{submitting}}" bindtap="onTapSubmit">
+      {{submitting ? '提交中…' : (isEdit ? '保存修改' : '发布到大厅')}}
+    </button>
+    <view class="t-sub form-footnote" wx:if="{{!isEdit}}">
+      私单不会出现在大厅；谈妥后由对方在详情页接单，也可稍后在详情页「发布到大厅」。
+    </view>
+  </view>
+  <view class="safe-bottom"></view>
 </view>

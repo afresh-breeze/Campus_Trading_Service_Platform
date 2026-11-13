@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "发布代取",
+  "enablePullDownRefresh": false,
   "usingComponents": {
     "nav-top": "/components/nav-top/index"
   }

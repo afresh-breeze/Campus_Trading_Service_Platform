@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "接单设置",
+  "enablePullDownRefresh": false,
   "usingComponents": {
     "nav-top": "/components/nav-top/index"
   }

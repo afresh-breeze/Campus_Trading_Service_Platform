@@ -10,9 +10,8 @@
 //   2. 非发布者、非接单者、且没就该单建过会话的人，详情接口直接 404（不是 403）；
 //   3. 谈妥后跑腿可直接接单，不必先发布到大厅；发布者也可点「发布到大厅」。
 //
-// 未接入项：canEdit（编辑未发布私单）要跳发布页带 id 回填，而
-//   pages/errand/publish 目前仍是占位页（11-13 前落地）。这里**先不渲染编辑按钮**，
-//   避免点进占位页造成"点了没反应"的假故障；发布页落地后在此补一个按钮即可。
+// 未接入项：无（canEdit 编辑按钮 11-13 随发布页落地一并挂上，跳
+//   /pages/errand/publish?id= 回填编辑；发布页 PUT 成功后 navigateBack 回本页）。
 //
 // 本次修（P1-2/6/7/8、P2-4/6/8）：
 //   · 404 与临时失败分开：404 只给「回大厅」，网络失败给「重试」；
@@ -46,7 +45,9 @@ function buildActions(order) {
   const list = [];
   if (order.canTake) list.push({ key: 'take', text: '接单', primary: true });
   if (order.canComplete) list.push({ key: 'complete', text: '确认完成', primary: true });
+  // edit 放在 publish 之后：待发布私单的主色应留给「发布到大厅」这个关键下一步
   if (order.canPublish) list.push({ key: 'publish', text: '发布到大厅', primary: false });
+  if (order.canEdit) list.push({ key: 'edit', text: '编辑订单', primary: false });
   if (order.canCancel) {
     list.push({
       key: 'cancel',
@@ -271,6 +272,15 @@ Page({
 
     const cfg = map[key];
     if (!cfg) return;
+
+    // 编辑不弹确认：跳发布页回填，改完由发布页负责保存
+    if (key === 'edit') {
+      wx.navigateTo({
+        url: '/pages/errand/publish?id=' + this.data.id,
+        fail: () => util.toast('编辑页打开失败')
+      });
+      return;
+    }
 
     util.confirm(cfg.confirm, cfg.title).then((ok) => {
       if (!ok) return;

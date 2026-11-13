@@ -382,6 +382,119 @@ const OK_ERRAND = {
     check(filter400[i][0] + ' → 400', r.ok === false && r.err.code === 400, r.ok ? 'mock 放行' : r.err);
   }
 
+  console.log('\n[11] 接单设置 / 上线：runner-profile 与 online（对照 users.js）');
+  // PUT /me/runner-profile 的校验逐字对齐（文案来自 users.js）
+  const profile400 = [
+    ['片区为空', { serviceAreas: [] }, '服务片区至少选择一个'],
+    ['片区非法', { serviceAreas: ['火星'] }, '服务片区不在可选范围内'],
+    ['地标跨片区', { serviceAreas: ['桃园'], servicePlaces: ['第16教学楼'] }, '地标与片区不匹配'],
+    ['在线方式非法', { serviceAreas: ['桃园'], availabilityType: 'abc' }, '在线方式不合法'],
+    ['计划非数组', { serviceAreas: ['桃园'], availabilityType: 'now', timeSlots: 'x' }, '在线计划格式错误'],
+    [
+      '计划起止倒置',
+      {
+        serviceAreas: ['桃园'],
+        availabilityType: 'now',
+        timeSlots: [{ id: 'a', type: 'once', date: '2026-12-01', start: '18:00', end: '09:00' }]
+      },
+      '在线计划格式错误'
+    ],
+    [
+      '计划 id 非字符串',
+      {
+        serviceAreas: ['桃园'],
+        availabilityType: 'now',
+        timeSlots: [{ id: 1, type: 'once', date: '2026-12-01', start: '09:00', end: '10:00' }]
+      },
+      '在线计划格式错误'
+    ],
+    ['规格非法', { serviceAreas: ['桃园'], availabilityType: 'now', itemSizes: ['huge'] }, '可接规格不合法'],
+    ['报价负数', { serviceAreas: ['桃园'], availabilityType: 'now', basePrice: -1 }, '报价不能为负数'],
+    ['备注非字符串', { serviceAreas: ['桃园'], availabilityType: 'now', remark: 123 }, '备注格式不正确']
+  ];
+  for (let i = 0; i < profile400.length; i += 1) {
+    const body = Object.assign({ itemSizes: ['small'] }, profile400[i][1]);
+    const r = await mock.run('/api/users/me/runner-profile', 'PUT', body).then(
+      (ok) => ({ ok: true, data: ok }),
+      (err) => ({ ok: false, err: err })
+    );
+    check(
+      'runner-profile ' + profile400[i][0] + ' → 400「' + profile400[i][2] + '」',
+      r.ok === false && r.err.code === 400 && r.err.message === profile400[i][2],
+      r.ok ? 'mock 放行' : r.err
+    );
+  }
+
+  // slot 型没有未来计划会被拦；正常保存后字段回读一致
+  const noFuture = await mock.run('/api/users/me/runner-profile', 'PUT', {
+    serviceAreas: ['桃园'],
+    itemSizes: ['small'],
+    availabilityType: 'slot',
+    timeSlots: []
+  }).then(
+    (ok) => ({ ok: true, data: ok }),
+    (err) => ({ ok: false, err: err })
+  );
+  check(
+    'slot 型无未来计划 → 400「按计划上线至少需要一条未来计划」',
+    noFuture.ok === false && noFuture.err.message === '按计划上线至少需要一条未来计划',
+    noFuture.ok ? 'mock 放行' : noFuture.err
+  );
+
+  const savedProfile = await mock.run('/api/users/me/runner-profile', 'PUT', {
+    serviceAreas: ['桃园', '李园'],
+    servicePlaces: ['桃园'],
+    itemSizes: ['medium', 'small'],
+    availabilityType: 'slot',
+    timeSlots: [
+      { id: 's1', type: 'weekly', from: '2026-11-01', weekdays: [3, 1], start: '09:00', end: '12:00' },
+      { id: 's2', type: 'once', date: '2026-12-20', start: '14:00', end: '16:00' }
+    ],
+    basePrice: '3.5',
+    remark: ' 测试备注 '
+  });
+  check('保存后 serviceAreas 去重保序', JSON.stringify(savedProfile.serviceAreas) === '["桃园","李园"]', savedProfile.serviceAreas);
+  check('保存后 itemSizes 按后端顺序排序', JSON.stringify(savedProfile.itemSizes) === '["small","medium"]', savedProfile.itemSizes);
+  check('保存后 weekly weekdays 升序', JSON.stringify(savedProfile.timeSlots[0].weekdays) === '[1,3]', savedProfile.timeSlots[0]);
+  check('保存后 basePrice 字符串转数字', savedProfile.basePrice === 3.5, savedProfile.basePrice);
+  check('保存后 remark 去首尾空白', savedProfile.remark === '测试备注', savedProfile.remark);
+
+  // once 落在 weekly 命中日内 → 重叠 400
+  const overlap = await mock.run('/api/users/me/runner-profile', 'PUT', {
+    serviceAreas: ['桃园'],
+    itemSizes: ['small'],
+    availabilityType: 'slot',
+    timeSlots: [
+      { id: 's1', type: 'weekly', from: '2026-11-01', weekdays: [1], start: '09:00', end: '12:00' },
+      { id: 's2', type: 'once', date: '2026-11-16', start: '10:00', end: '11:00' } // 2026-11-16 是周一
+    ]
+  }).then(
+    (ok) => ({ ok: true, data: ok }),
+    (err) => ({ ok: false, err: err })
+  );
+  check('once 与 weekly 重叠 → 400「在线计划格式错误」', overlap.ok === false && overlap.err.message === '在线计划格式错误', overlap.ok ? 'mock 放行' : overlap.err);
+
+  // PUT /me/online 的校验
+  await expectFailMsg('online isOnline 非布尔 → 400', '/api/users/me/online', 'PUT', { isOnline: 'yes' }, 'isOnline 必须为布尔值');
+  await expectFailMsg(
+    'online 方式非法 → 400',
+    '/api/users/me/online',
+    'PUT',
+    { isOnline: true, availabilityType: 'abc' },
+    '在线方式不合法'
+  );
+  await expectFailMsg('scope 非法 → 400', '/api/users/me/online', 'PUT', { isOnline: true, scope: 'bad', scheduleId: 's1' }, 'scope 不合法');
+  await expectFailMsg('缺 scheduleId → 400', '/api/users/me/online', 'PUT', { isOnline: true, scope: 'once' }, 'scheduleId 不能为空');
+  const onlineNow = await mock.run('/api/users/me/online', 'PUT', { isOnline: true, availabilityType: 'now' });
+  check('now 型上线返回 isOnline/availabilityType/manualUntil', onlineNow.isOnline === true && onlineNow.availabilityType === 'now' && onlineNow.manualUntil === null, onlineNow);
+  await expectFailMsg(
+    '下线引用不存在的计划 → 400',
+    '/api/users/me/online',
+    'PUT',
+    { isOnline: false, availabilityType: 'slot', scope: 'future', scheduleId: 'nope' },
+    '该在线计划不存在'
+  );
+
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);
 })();

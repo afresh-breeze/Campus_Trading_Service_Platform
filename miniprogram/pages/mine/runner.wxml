@@ -1,12 +1,191 @@
-<!-- 接单设置（B 成员负责） -->
-<nav-top back />
+<!-- 接单设置 / 上线接单 双入口（B 成员，11-13）｜规格见手册 §6.12 -->
+<nav-top back title="{{pageTitle}}" />
 <view class="page page-body">
-  <view class="card">
-    <view class="t-title">接单设置</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/mine/runner</view>
+
+  <!-- 顶部状态条：在线状态一眼可见，不要只靠按钮颜色 -->
+  <view class="status-bar {{isOnline ? 'status-bar--on' : 'status-bar--off'}}">
+    <view class="status-bar__dot"></view>
+    <text class="status-bar__text">{{statusText}}</text>
+    <text class="status-bar__count" wx:if="{{completedCount}}">已完成 {{completedCount}} 单</text>
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 可接范围 -->
+  <view class="card">
+    <view class="t-title">可接范围</view>
+    <view class="t-sub form-tip">勾选可接片区；某片区不勾任何地标 = 整个片区都接</view>
+
+    <checkbox-group bindchange="onAreasChange">
+      <view wx:for="{{zoneGroups}}" wx:key="category" wx:for-item="group" class="zone-group">
+        <view class="zone-group__title">{{group.category}}</view>
+        <view class="check-grid">
+          <label wx:for="{{group.zones}}" wx:key="name" wx:for-item="z" class="check-item">
+            <checkbox value="{{z.name}}" checked="{{z.checked}}" color="#79513D" />
+            <text>{{z.name}}</text>
+          </label>
+        </view>
+      </view>
+    </checkbox-group>
+    <text wx:if="{{errors.serviceAreas}}" class="field-error">{{errors.serviceAreas}}</text>
+
+    <block wx:if="{{placeGroups.length}}">
+      <view class="divider"></view>
+      <view class="t-sub form-tip">具体地标（可空）：只接指定楼栋/建筑时再勾</view>
+      <checkbox-group bindchange="onPlacesChange">
+        <view wx:for="{{placeGroups}}" wx:key="zone" wx:for-item="pg" class="zone-group">
+          <view class="zone-group__title">{{pg.zone}}</view>
+          <view class="check-grid">
+            <label wx:for="{{pg.places}}" wx:key="name" wx:for-item="pl" class="check-item">
+              <checkbox value="{{pl.name}}" checked="{{pl.checked}}" color="#79513D" />
+              <text>{{pl.name}}</text>
+            </label>
+          </view>
+        </view>
+      </checkbox-group>
+    </block>
+  </view>
+
+  <!-- 可接规格 -->
+  <view class="card">
+    <view class="t-title">可接规格</view>
+    <checkbox-group class="check-row" bindchange="onSizesChange">
+      <label wx:for="{{sizeOptions}}" wx:key="value" class="check-item check-item--wide">
+        <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#79513D" />
+        <text>{{item.label}}</text>
+      </label>
+    </checkbox-group>
+    <text wx:if="{{errors.itemSizes}}" class="field-error">{{errors.itemSizes}}</text>
+  </view>
+
+  <!-- 在线方式与计划 -->
+  <view class="card">
+    <view class="t-title">在线方式</view>
+
+    <radio-group class="check-row radio-row--gap" bindchange="onAvailChange">
+      <label wx:for="{{availabilityOptions}}" wx:key="value" class="check-item">
+        <radio value="{{item.value}}" checked="{{availabilityType === item.value}}" color="#79513D" />
+        <text>{{item.label}}</text>
+      </label>
+    </radio-group>
+
+    <!-- 已保存的计划 -->
+    <block wx:if="{{timeSlots.length}}">
+      <view class="divider"></view>
+      <view class="t-sub form-tip">在线计划（仅未开始的计划可修改/删除）</view>
+      <view wx:for="{{timeSlots}}" wx:key="id" wx:for-item="s" class="slot-row">
+        <view class="slot-row__main">
+          <text class="slot-row__text">{{s.text}}</text>
+          <text class="tag {{s.status === 'active' ? 'tag-success' : s.status === 'future' ? 'tag-primary' : 'tag-gray'}}">
+            {{s.status === 'active' ? '进行中' : s.status === 'future' ? '未开始' : '已结束'}}
+          </text>
+        </view>
+        <view class="slot-row__ops" wx:if="{{s.status === 'future'}}">
+          <text class="slot-op" data-id="{{s.id}}" bindtap="onEditSlot">编辑</text>
+          <text class="slot-op slot-op--danger" data-id="{{s.id}}" bindtap="onDeleteSlot">删除</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 新增 / 编辑计划 -->
+    <view class="divider"></view>
+    <view class="t-sub form-tip">{{editingId ? '正在编辑计划' : '添加在线计划'}}</view>
+
+    <radio-group class="check-row radio-row--gap" bindchange="onSlotTypeChange">
+      <label class="check-item">
+        <radio value="once" checked="{{slotType === 'once'}}" color="#79513D" />
+        <text>单次</text>
+      </label>
+      <label class="check-item">
+        <radio value="weekly" checked="{{slotType === 'weekly'}}" color="#79513D" />
+        <text>每周循环</text>
+      </label>
+    </radio-group>
+
+    <view class="slot-form">
+      <block wx:if="{{slotType === 'once'}}">
+        <picker mode="date" start="{{minDate}}" value="{{slotDate}}" bindchange="onSlotDateChange">
+          <view class="picker-value">{{slotDate || '选择日期'}}</view>
+        </picker>
+      </block>
+      <block wx:else>
+        <picker mode="date" start="{{minDate}}" value="{{slotFrom}}" bindchange="onSlotFromChange">
+          <view class="picker-value">从 {{slotFrom || '起始日'}} 开始</view>
+        </picker>
+        <checkbox-group class="check-row check-row--wrap" bindchange="onWeekdayChange">
+          <label wx:for="{{weekdays}}" wx:key="value" class="check-item">
+            <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#79513D" />
+            <text>{{item.label}}</text>
+          </label>
+        </checkbox-group>
+      </block>
+      <view class="slot-form__times">
+        <picker mode="time" value="{{slotStart}}" bindchange="onSlotStartChange">
+          <view class="picker-value">{{slotStart || '开始时间'}}</view>
+        </picker>
+        <text class="slot-form__dash">至</text>
+        <picker mode="time" value="{{slotEnd}}" bindchange="onSlotEndChange">
+          <view class="picker-value">{{slotEnd || '结束时间'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="slot-ops">
+      <button class="btn btn-sm btn-ghost" wx:if="{{editingId}}" bindtap="onCancelEdit">取消编辑</button>
+      <button class="btn btn-sm btn-primary" disabled="{{saving}}" bindtap="onAddSlot">
+        {{editingId ? '保存这条计划' : '添加计划'}}
+      </button>
+    </view>
+    <text wx:if="{{errors.timeSlots}}" class="field-error">{{errors.timeSlots}}</text>
+  </view>
+
+  <!-- 报价与备注 -->
+  <view class="card">
+    <view class="t-title">报价与备注</view>
+    <view class="field-wrap">
+      <view class="field">
+        <view class="field-label">基础报价</view>
+        <input
+          class="field-input"
+          type="digit"
+          placeholder="选填，0-100 元"
+          placeholder-class="field-placeholder"
+          value="{{basePrice}}"
+          bindinput="onBasePriceInput"
+        />
+        <view class="t-sub">元</view>
+      </view>
+      <text wx:if="{{errors.basePrice}}" class="field-error">{{errors.basePrice}}</text>
+    </view>
+    <view class="field-wrap">
+      <view class="field">
+        <view class="field-label">备注</view>
+        <input
+          class="field-input"
+          placeholder="选填，如「大件请自备小推车」"
+          placeholder-class="field-placeholder"
+          maxlength="255"
+          value="{{remark}}"
+          bindinput="onRemarkInput"
+        />
+      </view>
+      <text wx:if="{{errors.remark}}" class="field-error">{{errors.remark}}</text>
+    </view>
+  </view>
+
+  <!-- 底部按钮：两种模式不同（§6.12） -->
+  <view class="form-actions">
+    <block wx:if="{{mode === 'online'}}">
+      <button class="btn btn-ghost btn-block" wx:if="{{isOnline}}" disabled="{{saving}}" bindtap="onTapOffline">
+        立即下线
+      </button>
+      <button class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapMainBottom">
+        {{saving ? '处理中…' : (isOnline ? '保存设置' : '保存并上线')}}
+      </button>
+    </block>
+    <block wx:else>
+      <button class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapSave">
+        {{saving ? '保存中…' : '保存设置'}}
+      </button>
+    </block>
+  </view>
+  <view class="safe-bottom"></view>
 </view>
