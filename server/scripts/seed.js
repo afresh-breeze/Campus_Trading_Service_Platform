@@ -1,4 +1,4 @@
-// 演示数据初始化：可重复执行；每次重建 3 个演示账号名下的商品、图片和收藏。
+// 演示数据初始化：可重复执行；每次重建 3 个演示账号名下的商品、图片、收藏、代取单和跑腿设置。
 // 前提：已执行 database/schema.sql，不依赖 objects.sql / seed.sql。
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -277,6 +277,162 @@ const FAVORITES = [
   { studentNo: '2023001', itemIndex: 6 }
 ];
 
+// 覆盖不同片区、规格、时间类型和报酬，用于大厅筛选/排序演示。
+const ERRANDS = [
+  {
+    publisherNo: '2023001',
+    pickupArea: '桃园',
+    pickupPlace: '桃园',
+    deliveryLocation: '李园 2 栋 305',
+    itemSize: 'small',
+    itemDesc: '一份外卖',
+    remark: '桃园 3 栋楼下，到了打电话',
+    reward: 5.0,
+    timeType: 'asap',
+    hoursAgo: 0.5
+  },
+  {
+    publisherNo: '2023002',
+    pickupArea: '北区教学区',
+    pickupPlace: '第16教学楼',
+    deliveryLocation: '橘园 5 栋 212',
+    itemSize: 'medium',
+    itemDesc: '一箱教材',
+    remark: '第16教学楼 301 门口',
+    reward: 8.0,
+    timeType: 'deadline',
+    deadlineInHours: 24,
+    hoursAgo: 2
+  },
+  {
+    publisherNo: '2023003',
+    pickupArea: '李园',
+    pickupPlace: '李园',
+    deliveryLocation: '中心图书馆一楼大厅',
+    itemSize: 'small',
+    itemDesc: '两杯奶茶',
+    remark: '李园 6 栋楼下奶茶店取',
+    reward: 3.0,
+    timeType: 'range',
+    timeStartInHours: 2,
+    deadlineInHours: 5,
+    hoursAgo: 4
+  },
+  {
+    publisherNo: '2023001',
+    pickupArea: '南区教学区',
+    pickupPlace: '第30教学楼',
+    deliveryLocation: '楠园 1 栋 101',
+    itemSize: 'large',
+    itemDesc: '一个 24 寸行李箱',
+    remark: '第30教学楼一楼大厅',
+    reward: 15.0,
+    timeType: 'asap',
+    hoursAgo: 8
+  },
+  {
+    publisherNo: '2023002',
+    pickupArea: '中心图书馆',
+    pickupPlace: '中心图书馆',
+    deliveryLocation: '梅园 4 栋 410',
+    itemSize: 'small',
+    itemDesc: '两本借阅的书',
+    remark: '图书馆自助借还机旁',
+    reward: 4.0,
+    timeType: 'deadline',
+    deadlineInHours: 48,
+    hoursAgo: 12
+  },
+  {
+    publisherNo: '2023003',
+    pickupArea: '第一运动场',
+    pickupPlace: '第一运动场',
+    deliveryLocation: '竹园 6 栋 606',
+    itemSize: 'medium',
+    itemDesc: '羽毛球拍和球',
+    remark: '运动场看台入口',
+    reward: 6.0,
+    timeType: 'range',
+    timeStartInHours: 24,
+    deadlineInHours: 27,
+    hoursAgo: 20
+  },
+  {
+    publisherNo: '2023001',
+    pickupArea: '一号门外/吾悦广场',
+    pickupPlace: '一号门外/吾悦广场',
+    deliveryLocation: '杏园 2 栋 202',
+    itemSize: 'large',
+    itemDesc: '一个大件快递',
+    remark: '吾悦广场负一楼快递柜',
+    reward: 20.0,
+    timeType: 'asap',
+    hoursAgo: 24
+  },
+  {
+    publisherNo: '2023002',
+    pickupArea: '南区其他',
+    pickupPlace: '文俊楼',
+    deliveryLocation: '南区校医院门口',
+    itemSize: 'medium',
+    itemDesc: '一个文件袋',
+    remark: '文俊楼 205 办公室',
+    reward: 10.0,
+    timeType: 'deadline',
+    deadlineInHours: 72,
+    hoursAgo: 30
+  },
+  {
+    publisherNo: '2023003',
+    pickupArea: '北区图书馆',
+    pickupPlace: '北区图书馆',
+    deliveryLocation: '茶园 1 栋 101',
+    itemSize: 'small',
+    itemDesc: '一把雨伞',
+    remark: '北区图书馆二楼服务台',
+    reward: 2.0,
+    timeType: 'asap',
+    hoursAgo: 36
+  }
+];
+
+// 演示“按我的接单设置”：三个账号都有一套可接片区/规格，方便任意账号登录演示。
+const RUNNER_PROFILES = [
+  {
+    studentNo: '2023001',
+    isOnline: 1,
+    availabilityType: 'now',
+    serviceAreas: ['桃园', '楠园', '中心图书馆'],
+    servicePlaces: [],
+    itemSizes: ['small', 'large'],
+    timeSlots: [],
+    basePrice: 7.0,
+    remark: '图书馆和桃园附近，小件大件都可'
+  },
+  {
+    studentNo: '2023002',
+    isOnline: 1,
+    availabilityType: 'now',
+    serviceAreas: ['南区教学区', '中心图书馆', '南区其他'],
+    servicePlaces: [],
+    itemSizes: ['medium', 'large'],
+    timeSlots: [],
+    basePrice: 6.0,
+    remark: '下午和晚饭后顺路带单'
+  },
+  {
+    studentNo: '2023003',
+    isOnline: 1,
+    availabilityType: 'now',
+    serviceAreas: ['桃园', '李园', '北区教学区'],
+    servicePlaces: [],
+    itemSizes: ['small', 'medium'],
+    timeSlots: [],
+    basePrice: 5.0,
+    remark: '饭点在线，小件优先'
+  }
+];
+
 function placeholders(values) {
   return values.map(() => '?').join(', ');
 }
@@ -416,6 +572,81 @@ async function insertFavorites(conn, userIds, itemIds) {
   }
 }
 
+async function upsertRunnerProfiles(conn, userIds) {
+  for (const profile of RUNNER_PROFILES) {
+    const userId = userIds.get(profile.studentNo);
+    await conn.query(
+      `INSERT INTO runner_profiles
+         (user_id, is_online, availability_type, service_areas, service_places,
+          time_slots, manual_until, base_price, remark, completed_count)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, 0)
+       ON DUPLICATE KEY UPDATE
+         is_online = VALUES(is_online),
+         availability_type = VALUES(availability_type),
+         service_areas = VALUES(service_areas),
+         service_places = VALUES(service_places),
+         time_slots = VALUES(time_slots),
+         manual_until = NULL,
+         base_price = VALUES(base_price),
+         remark = VALUES(remark),
+         completed_count = 0`,
+      [
+        userId,
+        profile.isOnline,
+        profile.availabilityType,
+        JSON.stringify(profile.serviceAreas),
+        JSON.stringify(profile.servicePlaces),
+        JSON.stringify(profile.timeSlots),
+        profile.basePrice,
+        profile.remark
+      ]
+    );
+
+    await conn.query('DELETE FROM runner_item_sizes WHERE user_id = ?', [userId]);
+    for (const size of profile.itemSizes) {
+      await conn.query(
+        'INSERT INTO runner_item_sizes (user_id, item_size) VALUES (?, ?)',
+        [userId, size]
+      );
+    }
+  }
+}
+
+async function insertErrands(conn, userIds) {
+  const now = Date.now();
+  for (const errand of ERRANDS) {
+    const createdAt = new Date(now - errand.hoursAgo * 60 * 60 * 1000);
+    const timeStart = errand.timeStartInHours === undefined
+      ? null
+      : new Date(now + errand.timeStartInHours * 60 * 60 * 1000);
+    const deadline = errand.deadlineInHours === undefined
+      ? null
+      : new Date(now + errand.deadlineInHours * 60 * 60 * 1000);
+
+    await conn.query(
+      `INSERT INTO errand_orders
+         (publisher_id, pickup_area, pickup_place, delivery_location, item_size,
+          item_desc, remark, reward, time_type, time_start, deadline,
+          status, visibility, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'hall', ?)`,
+      [
+        userIds.get(errand.publisherNo),
+        errand.pickupArea,
+        errand.pickupPlace,
+        errand.deliveryLocation,
+        errand.itemSize,
+        errand.itemDesc,
+        errand.remark,
+        errand.reward,
+        errand.timeType,
+        timeStart,
+        deadline,
+        createdAt
+      ]
+    );
+  }
+}
+
 async function main() {
   const conn = await pool.getConnection();
   try {
@@ -433,11 +664,17 @@ async function main() {
       `DELETE FROM items WHERE seller_id IN (${placeholders(demoUserIds)})`,
       demoUserIds
     );
+    await conn.query(
+      `DELETE FROM errand_orders WHERE publisher_id IN (${placeholders(demoUserIds)})`,
+      demoUserIds
+    );
 
     const categoryIds = await upsertCategories(conn);
     const bookIds = await upsertBooks(conn);
     const itemIds = await insertItems(conn, userIds, categoryIds, bookIds);
     await insertFavorites(conn, userIds, itemIds);
+    await upsertRunnerProfiles(conn, userIds);
+    await insertErrands(conn, userIds);
 
     await conn.query(
       `UPDATE items
@@ -466,11 +703,17 @@ async function main() {
       `SELECT COUNT(*) AS c FROM favorites WHERE user_id IN (${placeholders(demoUserIds)})`,
       demoUserIds
     );
+    const [[errandCount]] = await conn.query(
+      `SELECT COUNT(*) AS c FROM errand_orders WHERE publisher_id IN (${placeholders(demoUserIds)})`,
+      demoUserIds
+    );
 
     console.log('seed 完成');
     console.log(`- 演示账号：${userCount.c} 个（2023001 / 2023002 / 2023003）`);
     console.log(`- 分类：${CATEGORIES.length} 个；书目：${BOOKS.length} 本`);
     console.log(`- 商品：${itemCount.c} 个；图片：${imageCount.c} 张；收藏：${favoriteCount.c} 条`);
+    console.log(`- 代取单：${errandCount.c} 条（hall + pending）`);
+    console.log(`- 跑腿设置：${RUNNER_PROFILES.length} 个演示账号（含可接片区/规格）`);
     console.log('- 演示账号密码见《课程设计开发计划.md》3.7 节，不在脚本里单独输出');
   } catch (err) {
     await conn.rollback();

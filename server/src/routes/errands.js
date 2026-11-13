@@ -18,6 +18,11 @@ const ERRAND_VISIBILITIES = ['private', 'hall'];
 const TIME_TYPES = ['asap', 'deadline', 'range'];
 const ROLES = ['publisher', 'runner'];
 const MAX_REWARD = 99999999.99;
+const SORT_ORDERS = {
+  latest: 'e.created_at DESC, e.order_id DESC',
+  reward_desc: 'e.reward DESC, e.order_id DESC',
+  reward_asc: 'e.reward ASC, e.order_id DESC'
+};
 
 const BASE_FIELDS = `
   e.order_id           AS orderId,
@@ -88,6 +93,71 @@ function readStatusFilter(value) {
     return { status: '', error: '订单状态不合法' };
   }
   return { status, error: '' };
+}
+
+function readCommaList(value) {
+  if (value === undefined || value === null || value === '') {
+    return { list: [], error: '' };
+  }
+  const values = [];
+  const parts = Array.isArray(value) ? value : [value];
+  for (const part of parts) {
+    if (typeof part !== 'string') {
+      return { list: [], error: '参数错误' };
+    }
+    for (const token of part.split(',')) {
+      const text = token.trim();
+      if (text) values.push(text);
+    }
+  }
+  return { list: Array.from(new Set(values)), error: '' };
+}
+
+function readAreaFilter(value) {
+  const parsed = readCommaList(value);
+  if (parsed.error) return parsed;
+  for (const area of parsed.list) {
+    if (!isValidZone(area)) {
+      return { list: [], error: '取件片区不在可选范围内' };
+    }
+  }
+  return parsed;
+}
+
+function readItemSizeFilter(value) {
+  const parsed = readCommaList(value);
+  if (parsed.error) return parsed;
+  for (const size of parsed.list) {
+    if (!ITEM_SIZES.includes(size)) {
+      return { list: [], error: '物品规格不合法' };
+    }
+  }
+  return parsed;
+}
+
+function readTimeTypeFilter(value) {
+  const parsed = readCommaList(value);
+  if (parsed.error) return parsed;
+  for (const type of parsed.list) {
+    if (!TIME_TYPES.includes(type)) {
+      return { list: [], error: '时间类型不合法' };
+    }
+  }
+  return parsed;
+}
+
+function readSort(value) {
+  if (value === undefined || value === null || value === '') {
+    return { sort: 'latest', error: '' };
+  }
+  if (typeof value !== 'string') {
+    return { sort: 'latest', error: '排序方式不合法' };
+  }
+  const sort = value.trim() || 'latest';
+  if (!Object.prototype.hasOwnProperty.call(SORT_ORDERS, sort)) {
+    return { sort: 'latest', error: '排序方式不合法' };
+  }
+  return { sort, error: '' };
 }
 
 function parseErrandPayload(body) {
@@ -216,21 +286,53 @@ router.get('/', async (req, res, next) => {
     return fail(res, 400, statusFilter.error);
   }
   const status = statusFilter.status || 'pending';
+
+  const areaFilter = readAreaFilter(req.query.area);
+  if (areaFilter.error) {
+    return fail(res, 400, areaFilter.error);
+  }
+  const itemSizeFilter = readItemSizeFilter(req.query.itemSize);
+  if (itemSizeFilter.error) {
+    return fail(res, 400, itemSizeFilter.error);
+  }
+  const timeTypeFilter = readTimeTypeFilter(req.query.timeType);
+  if (timeTypeFilter.error) {
+    return fail(res, 400, timeTypeFilter.error);
+  }
+  const sortFilter = readSort(req.query.sort);
+  if (sortFilter.error) {
+    return fail(res, 400, sortFilter.error);
+  }
+
+  const where = ["e.status = ?", "e.visibility = 'hall'"];
+  const params = [status];
+  if (areaFilter.list.length) {
+    where.push('e.pickup_area IN (?)');
+    params.push(areaFilter.list);
+  }
+  if (itemSizeFilter.list.length) {
+    where.push('e.item_size IN (?)');
+    params.push(itemSizeFilter.list);
+  }
+  if (timeTypeFilter.list.length) {
+    where.push('e.time_type IN (?)');
+    params.push(timeTypeFilter.list);
+  }
+  const whereSql = `WHERE ${where.join(' AND ')}`;
   const offset = (pagination.page - 1) * pagination.pageSize;
 
   try {
     const [[countRow]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM errand_orders e WHERE e.status = ? AND e.visibility = 'hall'",
-      [status]
+      `SELECT COUNT(*) AS total FROM errand_orders e ${whereSql}`,
+      params
     );
     const [rows] = await pool.query(
       `SELECT ${BASE_FIELDS}
        ${BASE_JOIN}
-       WHERE e.status = ?
-         AND e.visibility = 'hall'
-       ORDER BY e.created_at DESC, e.order_id DESC
+       ${whereSql}
+       ORDER BY ${SORT_ORDERS[sortFilter.sort]}
        LIMIT ? OFFSET ?`,
-      [status, pagination.pageSize, offset]
+      [...params, pagination.pageSize, offset]
     );
 
     return ok(res, {
