@@ -57,6 +57,11 @@
   font-size: var(--font-xs);
   color: var(--color-text-4);
 }
+/* 协议可点：用下划线 + 强调色提示可交互，不依赖颜色单独传达 */
+.agreement__link {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
 .tip {
   margin-top: 20rpx;
   text-align: center;

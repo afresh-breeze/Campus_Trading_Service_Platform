@@ -136,12 +136,20 @@ App({
     }
   },
 
-  /** 登录成功后统一落盘 */
+  /**
+   * 登录成功后统一落盘。
+   * 必须先把上一位用户的未读数/角标清零再刷新：换账号登录时 unreadCount 不会自己归零，
+   * 新用户会顶着上一个账号的红点进来（P1-1）。
+   */
   setSession(token, userInfo) {
     this.globalData.token = token || '';
     this.globalData.userInfo = userInfo || null;
+    this.globalData.unreadCount = 0;
     wx.setStorageSync(config.STORAGE_KEY.TOKEN, this.globalData.token);
     wx.setStorageSync(config.STORAGE_KEY.USER, this.globalData.userInfo);
+    this.setUnreadBadge(0);
+    // 登录/注册成功后才拉未读；失败不阻塞登录流程
+    this.refreshUnread();
   },
 
   /** 清空登录态 */

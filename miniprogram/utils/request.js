@@ -5,8 +5,11 @@
  *   1. 响应体统一 { code, message, data }
  *   2. code === 0 视为成功，resolve(data)
  *   3. code === 401 或 HTTP 401 -> 清登录态并跳登录页，reject
- *   4. 其余 code -> 默认 toast 提示 message，reject，调用方可传 silent 关闭
- *   5. 头信息 Authorization: Bearer <token>
+ *      例外：传了 skipAuthRedirect 的请求（登录本身）走普通错误分支，
+ *      只 toast 后端 message，**不清已有会话** —— 否则「密码错」会被当成「登录过期」。
+ *   4. HTTP 403 + message「账号已被禁用」-> 清会话并回登录页（账号被禁用不是普通权限错）
+ *   5. 其余 code -> 默认 toast 提示 message，reject，调用方可传 silent 关闭
+ *   6. 头信息 Authorization: Bearer <token>
  */
 const config = require('../config');
 const mock = require('./mock');
@@ -24,14 +27,40 @@ function getToken() {
 
 /** 401 统一处理：只跳一次，避免并发请求重复跳转 */
 let redirecting = false;
-function handleUnauthorized() {
+
+/** 当前页面的完整路径（含参数），用于 401 后回跳 */
+function currentUrl() {
+  const pages = getCurrentPages();
+  const current = pages.length ? pages[pages.length - 1] : null;
+  if (!current) return '';
+  const route = current.route || '';
+  const options = current.options || {};
+  const query = Object.keys(options)
+    .map((k) => k + '=' + options[k])
+    .join('&');
+  return '/' + route + (query ? '?' + query : '');
+}
+
+/**
+ * 清登录态：**统一走 app.clearSession()**，避免只清 token 不清未读数/角标，
+ * 否则重登后还挂着上一个账号的红点（app.clearSession 会重置 unreadCount + 角标）。
+ */
+function clearSessionEverywhere() {
+  const app = getApp();
+  if (app && typeof app.clearSession === 'function') {
+    app.clearSession();
+    return;
+  }
+  // app 还没起来（极早期请求）：退化为直接清缓存
   wx.removeStorageSync(config.STORAGE_KEY.TOKEN);
   wx.removeStorageSync(config.STORAGE_KEY.USER);
-  const app = getApp();
-  if (app) {
-    app.globalData.token = '';
-    app.globalData.userInfo = null;
-  }
+}
+
+/**
+ * 踢回登录页。带 redirect，登录完能回到原页面。
+ * @param {string} [tip] 额外提示（账号被禁用时用）
+ */
+function gotoLogin(tip) {
   if (redirecting) return;
   redirecting = true;
   const pages = getCurrentPages();
@@ -41,14 +70,28 @@ function handleUnauthorized() {
     redirecting = false;
     return;
   }
+  const back = currentUrl();
+  const url = '/pages/login/login' + (back ? '?redirect=' + encodeURIComponent(back) : '');
+  if (tip) wx.showToast({ title: tip, icon: 'none' });
   wx.reLaunch({
-    url: '/pages/login/login',
+    url,
     complete: () => {
       setTimeout(() => {
         redirecting = false;
       }, 800);
     }
   });
+}
+
+function handleUnauthorized() {
+  clearSessionEverywhere();
+  gotoLogin('');
+}
+
+/** 账号被禁用（HTTP 403 + 固定文案）：清会话并回登录页，不要留着一个假登录态 */
+function handleDisabledAccount() {
+  clearSessionEverywhere();
+  gotoLogin('账号已被禁用，请联系管理员');
 }
 
 /**
@@ -58,6 +101,7 @@ function handleUnauthorized() {
  * @param {string} [options.method]  GET/POST/PUT/DELETE
  * @param {Object} [options.data]    请求体或 query
  * @param {Object} [options.header]  附加头
+ * @param {boolean} [options.skipAuthRedirect] 为 true 时 401 不跳登录、不清会话（登录接口用）
  * @param {boolean} [options.silent] 为 true 时不自动 toast 错误
  * @param {boolean} [options.auth]   为 false 时不带 token（如登录注册）
  * @param {boolean} [options.loading] 为 true 时显示全局 loading
@@ -66,7 +110,15 @@ function handleUnauthorized() {
  */
 function request(options) {
   const opts = Object.assign(
-    { method: 'GET', data: {}, header: {}, auth: true, silent: false, loading: false },
+    {
+      method: 'GET',
+      data: {},
+      header: {},
+      auth: true,
+      silent: false,
+      loading: false,
+      skipAuthRedirect: false
+    },
     options
   );
 
@@ -111,9 +163,15 @@ function request(options) {
         const status = res.statusCode || 0;
         const body = res.data || {};
 
-        if (status === 401 || body.code === config.UNAUTHORIZED_CODE) {
+        if ((status === 401 || body.code === config.UNAUTHORIZED_CODE) && !opts.skipAuthRedirect) {
           handleUnauthorized();
           reject({ code: 401, message: '登录已失效，请重新登录' });
+          return;
+        }
+        // 账号被禁用：A 的后端在 middleware/auth.js 固定返回 403 + 这段文案
+        if (status === 403 && (body && body.message) === '账号已被禁用') {
+          handleDisabledAccount();
+          reject({ code: 403, message: '账号已被禁用' });
           return;
         }
         if (status < 200 || status >= 300) {

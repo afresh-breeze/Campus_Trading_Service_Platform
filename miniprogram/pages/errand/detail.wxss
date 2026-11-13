@@ -189,6 +189,22 @@
 }
 
 /* ---------------- 无可用操作时的说明 ---------------- */
+.detail-backhall {
+  margin: var(--space) var(--space) 0;
+  padding: 22rpx 0;
+  text-align: center;
+  border-radius: var(--radius);
+  background-color: var(--color-bg-white);
+  box-shadow: var(--shadow-card);
+}
+.detail-backhall--hover {
+  background-color: var(--color-bg);
+}
+.detail-backhall__text {
+  font-size: var(--font-sm);
+  color: var(--color-accent);
+}
+
 .detail-hint {
   margin-top: 24rpx;
   font-size: var(--font-sm);

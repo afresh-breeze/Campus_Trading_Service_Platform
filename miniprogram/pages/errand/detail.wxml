@@ -11,7 +11,12 @@
     <view class="card detail-state__card">
       <text class="t-title">{{error}}</text>
       <text class="t-sub detail-state__desc">{{errorDesc}}</text>
-      <button class="btn btn-primary btn-block detail-state__btn" bindtap="onBackHall">回代取大厅</button>
+      <!-- 临时失败先给「重试」，404 只给「回大厅」（P1-2） -->
+      <button wx:if="{{canRetry}}" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
+      <button
+        class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn"
+        bindtap="onBackHall"
+      >回代取大厅</button>
     </view>
   </view>
   <block wx:else>
@@ -79,6 +84,11 @@
         <text class="detail-info__k">发布时间</text>
         <text class="detail-info__v">{{createdText}}</text>
       </view>
+      <!-- 已完成订单要能看到完成时间（P1-6） -->
+      <view wx:if="{{completedText}}" class="detail-info__row">
+        <text class="detail-info__k">完成时间</text>
+        <text class="detail-info__v">{{completedText}}</text>
+      </view>
     </view>
 
     <!-- ④ 发布人 / 接单人 -->
@@ -113,7 +123,13 @@
       >联系 TA</button>
     </view>
 
-    <!-- ⑤ 状态说明：订单已无可用操作时告诉用户为什么 -->
+    <!-- ⑤ 固定出路：从 redirectTo / 分享 / 外部链接进来时页面栈只有 1 层，
+         nav-top 不显示返回键，正常态必须自带一条回大厅的入口（P1-7） -->
+    <view class="detail-backhall" bindtap="onBackHall" hover-class="detail-backhall--hover">
+      <text class="detail-backhall__text">回代取大厅</text>
+    </view>
+
+    <!-- ⑥ 状态说明：订单已无可用操作时告诉用户为什么 -->
     <view wx:if="{{!actions.length}}" class="detail-hint">
       <text wx:if="{{order.status === 'completed'}}">订单已完成，如需沟通请点「联系 TA」。</text>
       <text wx:elif="{{order.status === 'cancelled'}}">订单已取消，不会再出现在大厅。</text>
@@ -128,7 +144,7 @@
   <button
     wx:for="{{actions}}"
     wx:key="key"
-    class="btn detail-bar__btn {{item.primary ? 'btn-primary' : 'btn-ghost'}}"
+    class="btn detail-bar__btn {{item.primary ? 'btn-primary' : (item.danger ? 'btn-danger' : 'btn-ghost')}}"
     data-key="{{item.key}}"
     disabled="{{submitting}}"
     loading="{{submitting && actionKey === item.key}}"

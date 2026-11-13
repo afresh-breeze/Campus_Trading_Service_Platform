@@ -79,10 +79,15 @@
       <view class="order__meta">
         <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
         <text class="tag tag-warning order__tag">{{item.timeText}}</text>
-        <text wx:if="{{item.remark}}" class="order__remark ellipsis">备注：{{item.remark}}</text>
       </view>
 
+      <!-- 物品描述：跑腿在列表里就能判断「取什么」，不用点进详情（P1-3） -->
+      <text wx:if="{{item.itemDesc}}" class="order__desc ellipsis-2">{{item.itemDesc}}</text>
+
       <view class="order__foot">
+        <!-- 头像缺省用昵称首字，不依赖图片资源 -->
+        <image wx:if="{{item.publisherAvatarUrl}}" class="order__avatar" src="{{item.publisherAvatarUrl}}" mode="aspectFill" />
+        <view wx:else class="order__avatar order__avatar--text">{{item.publisherInitial}}</view>
         <text class="order__who ellipsis">{{item.publisherNickname}} · {{item.createdText}}</text>
         <text class="order__go">查看详情 ›</text>
       </view>

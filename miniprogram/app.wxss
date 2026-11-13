@@ -221,6 +221,21 @@ scroll-view {
 .field-placeholder {
   color: var(--color-text-4);
 }
+/* 字段级错误：外面套一层 .field-wrap，错误行贴在输入行下方，
+   避免破坏 .field 的 96rpx 等高横排 */
+.field-wrap {
+  background-color: var(--color-bg-white);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+.field-wrap .field {
+  border-bottom: none;
+}
+.field-error {
+  display: block;
+  padding: 0 var(--space) 14rpx calc(var(--space) + 150rpx);
+  font-size: var(--font-xs);
+  color: var(--color-danger);
+}
 
 /* ---------------- 状态标签 ---------------- */
 .tag {
