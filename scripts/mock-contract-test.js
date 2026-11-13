@@ -10,6 +10,9 @@
  * 维护约定：后端新增/改动接口时，先改 mock.js，再在这里补一条断言。
  * 变更：2026-11-12 按 A 的全面排查补 [3] 私单全流程、[4] 代取校验等价、
  *       [7] 商品/书目/用户校验等价，并修正「登录学号 5 位 → 400」这条**错误契约**。
+ *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权）、[10] 大厅筛选
+ *       （area/itemSize/timeType/sort，同维度 OR + 跨维度 AND + 筛选后 total）。
+ *       [10] 的 400 只看状态码：A 的实现还没推送到 dev，文案待其推送后逐字对齐。
  */
 const path = require('path');
 const REPO = require('path').join(__dirname, '..', 'miniprogram', 'utils');
@@ -256,6 +259,128 @@ const OK_ERRAND = {
   await expectFail('注册昵称 1 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: 'a', password: '123456' }, 400);
   await expectFail('注册昵称 13 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: '一二三四五六七八九十一二三', password: '123456' }, 400);
   await expectFail('注册学号 5 位 400', '/api/auth/register', 'POST', { studentNo: '12345', nickname: '五六', password: '123456' }, 400);
+
+  console.log('\n[9] 会话发起权限：私单只允许发布者（P0-4）');
+  // 2004 = 当前用户（1）发布的未发布私单
+  const convOwnPrivate = await mock.run('/api/conversations', 'POST', {
+    peerId: 6,
+    bizType: 'errand',
+    bizId: 2004
+  });
+  check('自己发布的私单可以发起会话', !!convOwnPrivate.conversationId, convOwnPrivate);
+  // 2008 = 别人（5）的私单：不拦的话，知道 publisherId + orderId 就能先插会话，
+  // 再靠 isErrandChatPeer 拿到查看/接单授权（越权）
+  await expectFailMsg(
+    '别人的私单发起会话 → 403',
+    '/api/conversations',
+    'POST',
+    { peerId: 5, bizType: 'errand', bizId: 2008 },
+    '私单只能由发布者发起会话'
+  );
+  // 2001 = 大厅单：任何登录用户都能就它发起咨询
+  const convHall = await mock.run('/api/conversations', 'POST', {
+    peerId: 5,
+    bizType: 'errand',
+    bizId: 2001
+  });
+  check('大厅单可以自由发起会话', !!convHall.conversationId, convHall);
+  await expectFailMsg(
+    '订单不存在 → 404',
+    '/api/conversations',
+    'POST',
+    { peerId: 5, bizType: 'errand', bizId: 999999 },
+    '订单不存在'
+  );
+
+  console.log('\n[10] 大厅筛选：area / itemSize / timeType / sort（A 侧扩展契约）');
+  // 断言写成「相对快照」的形式：前面 [1]~[9] 会新建订单，写死 id 列表会随用例增删而碎。
+  const idsOf = (r) => (r.list || []).map((e) => e.orderId).join(',');
+  const hallAll = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50 });
+  const base = hallAll.list;
+  check('基线非空（否则下面全是假通过）', base.length >= 5, base.length);
+  check('基线全部是 pending + hall', base.every((e) => e.status === 'pending' && e.visibility === 'hall'));
+
+  /** 断言行集 = 基线里满足 pred 的那批（顺序仍按发布时间倒序） */
+  const expectFiltered = async (name, query, pred) => {
+    const r = await mock.run('/api/errands', 'GET', Object.assign({ page: 1, pageSize: 50 }, query));
+    const want = base.filter(pred).map((e) => e.orderId).join(',');
+    check(name, idsOf(r) === want && r.total === base.filter(pred).length, {
+      got: idsOf(r),
+      want: want,
+      total: r.total
+    });
+    return r;
+  };
+
+  const sortLatest = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, sort: 'latest' });
+  check('sort=latest 与不传等价', idsOf(sortLatest) === idsOf(hallAll), idsOf(sortLatest));
+
+  const sortDesc = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, sort: 'reward_desc' });
+  const descOk = sortDesc.list.every((e, i, a) => i === 0 || Number(a[i - 1].reward) >= Number(e.reward));
+  check('sort=reward_desc 报酬单调不增', descOk, sortDesc.list.map((e) => e.reward));
+  const sortAsc = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, sort: 'reward_asc' });
+  const ascOk = sortAsc.list.every((e, i, a) => i === 0 || Number(a[i - 1].reward) <= Number(e.reward));
+  check('sort=reward_asc 报酬单调不减', ascOk, sortAsc.list.map((e) => e.reward));
+  check('排序不改变 total', sortDesc.total === hallAll.total && sortAsc.total === hallAll.total);
+
+  // 同维度 OR
+  await expectFiltered('area 同维度 OR（桃园+中心图书馆）', { area: '桃园,中心图书馆' }, (e) =>
+    ['桃园', '中心图书馆'].indexOf(e.pickupArea) >= 0
+  );
+  await expectFiltered('itemSize 同维度 OR（small+medium）', { itemSize: 'small,medium' }, (e) =>
+    ['small', 'medium'].indexOf(e.itemSize) >= 0
+  );
+  const timeOr = await expectFiltered('timeType 同维度 OR（asap+deadline）', { timeType: 'asap,deadline' }, (e) =>
+    ['asap', 'deadline'].indexOf(e.timeType) >= 0
+  );
+  check('timeType 筛选排除 range 单', timeOr.list.every((e) => e.timeType !== 'range'));
+
+  // 跨维度 AND
+  await expectFiltered('跨维度 AND（中心图书馆 + small）', { area: '中心图书馆', itemSize: 'small' }, (e) =>
+    e.pickupArea === '中心图书馆' && e.itemSize === 'small'
+  );
+  await expectFiltered(
+    '跨维度 AND 无交集 → 空列表',
+    { area: '桃园', timeType: 'asap' },
+    (e) => e.pickupArea === '桃园' && e.timeType === 'asap'
+  );
+
+  // 空串 = 不限（前端「不限」不传参，但要能容忍误传空串）
+  const emptyVal = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, area: '', itemSize: '  ' });
+  check('筛选值为空串 → 视为不限', idsOf(emptyVal) === idsOf(hallAll), idsOf(emptyVal));
+
+  // 筛选 + 分页共存：每页都要带同样的筛选条件，total 是筛选后总数而不是全表
+  const smallAll = base.filter((e) => e.itemSize === 'small');
+  const pg1 = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 1, itemSize: 'small' });
+  const pg2 = await mock.run('/api/errands', 'GET', { page: 2, pageSize: 1, itemSize: 'small' });
+  check(
+    '筛选后第 1 页 = 筛选结果的第 1 条',
+    idsOf(pg1) === String(smallAll[0].orderId) && pg1.total === smallAll.length,
+    idsOf(pg1) + '/' + pg1.total
+  );
+  check(
+    '筛选后第 2 页（total 仍为筛选后总数）',
+    idsOf(pg2) === String(smallAll[1].orderId) && pg2.total === smallAll.length,
+    idsOf(pg2) + '/' + pg2.total
+  );
+
+  // 非法值：只断言 400 状态码。A 的实现还没推送到 dev，文案待其推送后逐字对齐。
+  const filter400 = [
+    ['area 非法片区', { area: '火星' }],
+    ['area 部分非法', { area: '桃园,火星' }],
+    ['itemSize 非法', { itemSize: 'huge' }],
+    ['timeType=range 不是合法筛选项', { timeType: 'range' }],
+    ['timeType 部分非法', { timeType: 'asap,range' }],
+    ['sort 非法', { sort: 'popular' }]
+  ];
+  for (let i = 0; i < filter400.length; i += 1) {
+    const q = Object.assign({ page: 1, pageSize: 50 }, filter400[i][1]);
+    const r = await mock.run('/api/errands', 'GET', q).then(
+      (ok) => ({ ok: true, data: ok }),
+      (err) => ({ ok: false, err: err })
+    );
+    check(filter400[i][0] + ' → 400', r.ok === false && r.err.code === 400, r.ok ? 'mock 放行' : r.err);
+  }
 
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);

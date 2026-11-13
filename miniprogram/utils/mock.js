@@ -765,6 +765,73 @@ function backendIsValidPlace(place) {
   return campusUtil.isValidZone(place) || !!campusUtil.zoneOfPlace(place);
 }
 
+// ---------------- 大厅筛选（GET /api/errands 的 A 侧扩展契约） ----------------
+// 契约（2026-11-13 由 B 侧记录的 A 摘要）：
+//   area=桃园,李园  itemSize=small,medium  timeType=asap,deadline
+//   sort=latest|reward_desc|reward_asc（默认 latest）
+//   保留 status / page / pageSize；同维度 OR、跨维度 AND；total 为**筛选后**总数；非法值 400。
+// 注意：可筛选的 timeType 只有 asap / deadline —— range 是合法订单类型但**不是**合法筛选项。
+// 待办：A 的实现尚未推送到 dev，下面的 400 文案按本文件既有风格（'xxx不合法'）占位；
+//       A 推送后需逐字核对，契约测试 [10] 目前只断言状态码与筛选结果，不断言文案。
+const ERRAND_SORTS = ['latest', 'reward_desc', 'reward_asc'];
+const HALL_TIME_FILTERS = ['asap', 'deadline'];
+
+/** 逗号分隔多值 → 去空白去重数组；空串视为「不限」返回 null */
+function parseMultiValue(raw) {
+  const s = readTrimmed(raw);
+  if (!s) return null;
+  const out = [];
+  s.split(',').forEach((part) => {
+    const v = part.trim();
+    if (v && out.indexOf(v) < 0) out.push(v);
+  });
+  return out.length ? out : null;
+}
+
+/**
+ * 解析大厅筛选参数。
+ * 返回 { area, itemSize, timeType, sort }（未传的维度为 null），或 { error } 表示 400 文案。
+ */
+function parseHallFilters(data) {
+  const body = data || {};
+  const area = parseMultiValue(body.area);
+  if (area) {
+    for (let i = 0; i < area.length; i += 1) {
+      if (!campusUtil.isValidZone(area[i])) return { error: '片区不合法' };
+    }
+  }
+  const itemSize = parseMultiValue(body.itemSize);
+  if (itemSize) {
+    for (let i = 0; i < itemSize.length; i += 1) {
+      if (ITEM_SIZES.indexOf(itemSize[i]) < 0) return { error: '物品规格不合法' };
+    }
+  }
+  const timeType = parseMultiValue(body.timeType);
+  if (timeType) {
+    for (let i = 0; i < timeType.length; i += 1) {
+      if (HALL_TIME_FILTERS.indexOf(timeType[i]) < 0) return { error: '时间类型不合法' };
+    }
+  }
+  const sort = readTrimmed(body.sort) || 'latest';
+  if (ERRAND_SORTS.indexOf(sort) < 0) return { error: '排序方式不合法' };
+  return { area: area, itemSize: itemSize, timeType: timeType, sort: sort };
+}
+
+/** 大厅排序：默认按发布时间倒序；报酬排序时用发布时间作为并列的次序 */
+function sortHallList(list, sort) {
+  const byCreated = (a, b) =>
+    a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.orderId - a.orderId;
+  const copy = list.slice();
+  if (sort === 'reward_desc') {
+    copy.sort((a, b) => Number(b.reward) - Number(a.reward) || byCreated(a, b));
+  } else if (sort === 'reward_asc') {
+    copy.sort((a, b) => Number(a.reward) - Number(b.reward) || byCreated(a, b));
+  } else {
+    copy.sort(byCreated);
+  }
+  return copy;
+}
+
 // ---------------- 与后端逐字对齐的小工具 ----------------
 const MAX_PRICE = 99999999.99;
 const MAX_REWARD = 99999999.99;
@@ -1373,14 +1440,21 @@ const routes = {
 
   // ---------------- 代取（对照 errands.js） ----------------
   // 大厅只出 visibility='hall'（后端 SQL 硬编码），私单只能从详情页 / 会话卡片进入
+  // 筛选：area / itemSize / timeType 同维度 OR、跨维度 AND；sort 三档；total 为筛选后总数
   'GET /api/errands': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
     const status = readTrimmed(data.status) || 'pending';
     if (ERRAND_STATUSES.indexOf(status) < 0) return fail(400, '订单状态不合法');
-    const list = errands
-      .filter((e) => e.status === status && e.visibility === 'hall')
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.orderId - a.orderId));
+    const filters = parseHallFilters(data);
+    if (filters.error) return fail(400, filters.error);
+
+    let list = errands.filter((e) => e.status === status && e.visibility === 'hall');
+    if (filters.area) list = list.filter((e) => filters.area.indexOf(e.pickupArea) >= 0);
+    if (filters.itemSize) list = list.filter((e) => filters.itemSize.indexOf(e.itemSize) >= 0);
+    if (filters.timeType) list = list.filter((e) => filters.timeType.indexOf(e.timeType) >= 0);
+    list = sortHallList(list, filters.sort);
+
     return delay({
       list: pageOf(list, pg),
       total: list.length,
@@ -1700,8 +1774,14 @@ const routes = {
     const peer = userOf(peerId);
     if (!peer || peer.status !== 'active') return fail(404, '对方用户不存在');
     if (bizType === 'item' && !items.some((i) => i.itemId === bizId)) return fail(404, '商品不存在');
-    if (bizType === 'errand' && bizId > 0 && !errands.some((e) => e.orderId === bizId)) {
-      return fail(404, '订单不存在');
+    if (bizType === 'errand' && bizId > 0) {
+      const order = errands.filter((e) => Number(e.orderId) === Number(bizId))[0];
+      if (!order) return fail(404, '订单不存在');
+      // P0-4：私单只允许发布者发起会话。私单的查看/接单授权依赖「存在该单会话」，
+      // 若这里不拦，任何知道 publisherId + orderId 的人都能先插会话再查看/接走私单。
+      if (order.visibility === 'private' && Number(order.publisherId) !== CURRENT_USER_ID) {
+        return fail(403, '私单只能由发布者发起会话');
+      }
     }
 
     let conv = conversations.find(
