@@ -3,7 +3,6 @@
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
   "usingComponents": {
-    "nav-top": "/components/nav-top/index",
     "empty-state": "/components/empty-state/index"
   }
 }

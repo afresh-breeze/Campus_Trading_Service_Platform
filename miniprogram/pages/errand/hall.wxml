@@ -1,10 +1,10 @@
 <!-- 代取大厅（B 成员，11-12 → 11-15 筛选/吸顶改造）：只拉 pending，卡片点进详情 -->
-<nav-top />
-
 <view class="page hall">
-  <!-- 标题 + 我要接单 + 筛选条合成一块整体吸附：标题永远待在顶部，
-       上滑只把字号收小（compact），没有「大标题滚走、小标题补位」的交接 -->
-  <view class="hall-bar {{compact ? 'hall-bar--compact' : ''}}" style="top: {{stickyTop}}px">
+  <!-- 顶部整块吸附（含状态栏/胶囊占位）：
+       块从屏幕最顶就开始覆盖（top:0 + 不透明背景），列表从它底下滚过，
+       永远不会透到标题上方；标题区域冻结，只有列表在滚 -->
+  <view class="hall-bar {{compact ? 'hall-bar--compact' : ''}}">
+    <view class="hall-bar__safe" style="height: {{stickyTop}}px"></view>
     <view class="hall-bar__head">
       <text class="hall-bar__title">代取大厅</text>
       <view class="hall-bar__entry" bindtap="onGoRunner" hover-class="hall-bar__entry--hover">
