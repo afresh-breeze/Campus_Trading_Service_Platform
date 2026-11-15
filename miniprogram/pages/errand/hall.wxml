@@ -2,8 +2,8 @@
 <nav-top />
 
 <view class="page hall">
-  <!-- 吸顶时补一条带标题的顶栏，盖住状态栏/胶囊区域（与二手首页同一套） -->
-  <view class="hall-topbar {{stuck ? 'hall-topbar--show' : ''}}" style="height: {{stickyTop}}px">
+  <!-- 大标题完全滚出视口顶部后，才补一条带标题的顶栏（避免顶栏把还在屏上的大标题盖住） -->
+  <view class="hall-topbar {{headHidden ? 'hall-topbar--show' : ''}}" style="height: {{stickyTop}}px">
     <text class="hall-topbar__title">代取大厅</text>
   </view>
 

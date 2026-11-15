@@ -3,7 +3,7 @@
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 
-/* ---------------- 吸顶补的顶栏（与二手首页同一套） ---------------- */
+/* ---------------- 吸顶补的顶栏 ---------------- */
 .hall-topbar {
   position: fixed;
   top: 0;
@@ -16,7 +16,9 @@
   background-color: var(--color-bg);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.16s ease;
+  /* 刻意不做淡入/位移：吸顶标题必须直接出现在最终位置。
+     任何过渡都会被看成「文字弹出来」，而且在临界点来回滚时会连闪。 */
+  transition: none;
 }
 .hall-topbar--show {
   opacity: 1;
