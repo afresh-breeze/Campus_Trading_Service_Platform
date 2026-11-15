@@ -1,13 +1,276 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 二手首页（A 成员，11-14）：只引用 app.wxss 的设计令牌，不写死主题色 */
+
+/* 吸顶时补的顶部导航栏：盖住胶囊下方到吸顶条之间的区域 */
+.home-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 var(--space) 8rpx;
+  background-color: var(--color-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
 }
-.placeholder-path {
+.home-topbar--show {
+  opacity: 1;
+}
+.home-topbar__title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: 1rpx;
+}
+
+/* ---------------- 标题 ---------------- */
+.home-head {
+  padding: var(--space) var(--space) 0;
+}
+.home-head__title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 2rpx;
+  line-height: 1.3;
+}
+.home-head__sub {
+  margin-top: 8rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+
+/* ---------------- 吸顶区 ---------------- */
+.home-sentinel {
+  height: 2rpx;
+}
+.home-sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  z-index: 10;
+  padding: var(--space-sm) var(--space);
+  background-color: var(--color-bg);
+}
+.home-sticky--stuck {
+  box-shadow: 0 1rpx 0 var(--color-divider), 0 8rpx 16rpx rgba(122, 93, 64, 0.08);
+}
+
+/* 搜索胶囊：只是入口，不是 input */
+.home-search {
+  display: flex;
+  align-items: center;
+  height: 76rpx;
+  padding: 0 28rpx;
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-white);
+  box-shadow: var(--shadow-card);
+}
+.home-search--hover {
+  opacity: 0.88;
+}
+.home-search__icon {
+  position: relative;
+  flex: none;
+  width: 26rpx;
+  height: 26rpx;
+  margin-right: 14rpx;
+  border: 3rpx solid var(--color-text-3);
+  border-radius: 50%;
+}
+.home-search__icon::after {
+  content: '';
+  position: absolute;
+  right: -8rpx;
+  bottom: -6rpx;
+  width: 12rpx;
+  height: 3rpx;
+  border-radius: 2rpx;
+  background-color: var(--color-text-3);
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+.home-search__ph {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------------- 分类横滑 ---------------- */
+.home-cats {
+  width: 100%;
+  height: 60rpx;
+  margin-top: var(--space-sm);
+  white-space: nowrap;
+}
+.home-cats::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.home-cat {
+  display: inline-flex;
+  align-items: center;
+  height: 60rpx;
+  padding: 0 26rpx;
+  margin-right: var(--space-sm);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-white);
+  font-size: 26rpx;
+  color: var(--color-text-2);
+  vertical-align: top;
+}
+.home-cat--active {
+  border-color: transparent;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+/* ---------------- 计数 + 排序 ---------------- */
+.home-sort {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56rpx;
   margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
 }
-.placeholder-tip {
-  margin-top: 24rpx;
+.home-sort__count {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.home-sort__ops {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+.home-sort__item {
+  display: flex;
+  align-items: center;
+  height: 56rpx;
+  padding: 0 8rpx;
+  font-size: 26rpx;
+  color: var(--color-text-2);
+}
+.home-sort__item--active {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.home-sort__divider {
+  width: 1rpx;
+  height: 24rpx;
+  margin: 0 14rpx;
+  background-color: var(--color-border);
+}
+.home-sort__item--price {
+  min-width: 96rpx;
+  justify-content: flex-end;
+}
+.home-sort__arrow {
+  width: 20rpx;
+  margin-left: 2rpx;
+  font-size: 22rpx;
   text-align: center;
+}
+
+/* ---------------- 状态区（登录 / 错误） ---------------- */
+.home-state {
+  padding: var(--space);
+}
+.home-state__card {
+  text-align: center;
+}
+.home-state__desc {
+  display: block;
+  margin: var(--space-sm) 0 var(--space);
+  line-height: 1.6;
+  word-break: break-all;
+}
+.home-state__card .btn {
+  margin-top: var(--space);
+}
+
+/* ---------------- 首屏骨架 ---------------- */
+.home-sk {
+  display: flex;
+  margin: var(--space-sm) var(--space) 0;
+  padding: 20rpx;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+.home-sk__cover {
+  flex: none;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background-color: var(--color-divider);
+  animation: home-pulse 1.2s ease-in-out infinite;
+}
+.home-sk__body {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+  padding-top: 6rpx;
+}
+.home-sk__line {
+  height: 24rpx;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-divider);
+  animation: home-pulse 1.2s ease-in-out infinite;
+}
+.home-sk__line + .home-sk__line {
+  margin-top: 18rpx;
+}
+.home-sk__line--lg {
+  width: 62%;
+  height: 30rpx;
+}
+.home-sk__line--md {
+  width: 44%;
+}
+.home-sk__line--sm {
+  width: 30%;
+}
+@keyframes home-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ---------------- 商品列表 ---------------- */
+.home-list {
+  padding: 0 var(--space);
+}
+.home-list__item {
+  margin-top: var(--space-sm);
+}
+
+/* ---------------- 底部加载提示 ---------------- */
+.home-more {
+  padding: var(--space) 0 var(--space-sm);
+  text-align: center;
+}
+.home-more__text {
   font-size: var(--font-xs);
   color: var(--color-text-4);
+}
+
+.fab--hover {
+  opacity: 0.88;
 }
