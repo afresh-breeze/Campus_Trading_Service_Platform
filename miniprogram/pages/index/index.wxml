@@ -106,7 +106,7 @@
   <block wx:else>
     <view class="home-list">
       <view class="home-list__item" wx:for="{{list}}" wx:key="itemId">
-        <item-card mode="list" item="{{item}}" bind:tap="onTapItem" />
+        <item-card mode="list" item="{{item}}" show-time="{{true}}" bind:tap="onTapItem" />
       </view>
     </view>
 
