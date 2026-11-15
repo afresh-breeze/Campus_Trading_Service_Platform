@@ -106,8 +106,7 @@ function toCard(order) {
 Page({
   data: {
     stickyTop: 64,
-    stuck: false, // 筛选条是否已吸附（只控制阴影）
-    headHidden: false, // 大标题是否已完全滚出视口（控制顶栏小标题出现）
+    compact: false, // 上滑后标题字号收小（位置不动，也不切换节点）
     list: [],
     total: 0,
     page: 1,
@@ -130,18 +129,18 @@ Page({
     this.setData({ stickyTop: getNavHeight() });
   },
 
-  onReady() {
-    this.setupStickyObserver();
-  },
-
-  onUnload() {
-    if (this._io) {
-      this._io.disconnect();
-      this._io = null;
-    }
-    if (this._ioHead) {
-      this._ioHead.disconnect();
-      this._ioHead = null;
+  /**
+   * 上滑只做一件事：把标题字号收小（compact）。
+   * 标题和筛选条同属一个 sticky 块，从首屏就停在最终位置，
+   * 滚动全程不移动、不切换节点、不淡入 —— 只有字号变。
+   * 24/10 的进出阈值是迟滞，避免在临界点来回滚时字号抖。
+   */
+  onPageScroll(e) {
+    const y = (e && e.scrollTop) || 0;
+    if (!this.data.compact && y > 24) {
+      this.setData({ compact: true });
+    } else if (this.data.compact && y < 10) {
+      this.setData({ compact: false });
     }
   },
 
@@ -162,49 +161,6 @@ Page({
     if (this.data.refreshing) return;
     if (this.data.loadingMore || !this.data.hasMore || this.data.error) return;
     this.fetch(this.data.page + 1);
-  },
-
-  /**
-   * 两个独立判据，别混成一个：
-   *   ① stuck      = 哨兵越过吸顶线 → 筛选条吸住了，只加阴影；
-   *   ② headHidden = 哨兵越过视口顶   → 大标题**完全滚出去**了，这时才显示顶栏小标题。
-   *
-   * 为什么不能都用 ①：筛选条吸附时大标题离屏幕顶只差 60px 左右、还在屏上，
-   * 顶栏一出现就把大标题盖住，看起来像「文字突然变小 / 弹出」（用户反馈）。
-   * 用 ② 让大标题自己滚出、顶栏再补位，两者永不重叠。
-   *
-   * 哨兵只有 2rpx，临界点手指微抖或惯性回弹会让 crossing 反复触发，
-   * 所以两个判据都加最小切换间隔做迟滞，避免连闪。
-   */
-  setupStickyObserver() {
-    if (!wx.createIntersectionObserver) return;
-    try {
-      this._io = wx.createIntersectionObserver(this, { thresholds: [0] });
-      this._io
-        .relativeToViewport({ top: -this.data.stickyTop })
-        .observe('.hall-sentinel', (res) => {
-          this.applyStickyFlag('stuck', res.intersectionRatio <= 0);
-        });
-
-      this._ioHead = wx.createIntersectionObserver(this, { thresholds: [0] });
-      this._ioHead.relativeToViewport().observe('.hall-sentinel', (res) => {
-        this.applyStickyFlag('headHidden', res.intersectionRatio <= 0);
-      });
-    } catch (e) {
-      this._io = null;
-      this._ioHead = null;
-    }
-  },
-
-  /** 带迟滞的布尔状态写入：240ms 内的来回穿越视为抖动，直接忽略 */
-  applyStickyFlag(key, value) {
-    if (this.data[key] === value) return;
-    const now = Date.now();
-    if (this._flagAt && now - this._flagAt < 240) return;
-    this._flagAt = now;
-    const patch = {};
-    patch[key] = value;
-    this.setData(patch);
   },
 
   /** 筛选/排序变化：清空旧列表，回到顶部，重拉第一页 */

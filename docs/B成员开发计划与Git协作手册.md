@@ -291,7 +291,7 @@
 
 | # | 反馈 | 处理 |
 | --- | --- | --- |
-| 1 | 页面顶端空白，排序/分类要能上滑悬浮 | `errand/hall` 照二手首页同一套方案改造：`hall-head` padding 压紧 + `hall-sentinel` + `position: sticky` 筛选条，吸顶时补固定顶栏并加阴影 |
+| 1 | 页面顶端空白，排序/分类要能上滑悬浮 | `errand/hall` 把「标题 + 我要接单 + 筛选条」合成**一块整体 sticky**：标题从首屏就停在最终位置，上滑只用 `onPageScroll` 把字号收小（`compact`，24/10 迟滞），**不做「大标题滚走 → 小标题补位」**（顶栏淡入 + 盖住大标题这两版都被否掉了）；行高固定，字号变化不影响布局高度 |
 | 2 | 代取没图，看不出是什么 | `errand_orders` 表**没有图片字段**（B 不能改表），先用本地品类插画（`assets/errand/food|express|doc|daily|other.png`，Pillow 生成的 192px 简笔画）按 `itemDesc/remark` 关键词匹配展示；**真图片需 A 给 errand_orders 加 image 字段**（已列需求清单） |
 | 3 | 地点选择改设计 + 搜索 + 具体教学楼 | 新增 `components/place-picker`（搜索 `searchLandmarks` 别名联想 / 分类横滑 / 片区网格 / 52 地标胶囊），替换 publish 与 runners 的三级 picker；`placeRequired=true`（发布页必须选到楼）/`false`（找跑腿可全区） |
 | 4 | 没选「按计划」不该显示时间范围 | `runner.wxml` 计划区整体包 `wx:if="{{availabilityType === 'slot'}}"`，else 显示「当前在线不需要设置时段」提示 |

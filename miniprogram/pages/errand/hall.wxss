@@ -3,50 +3,42 @@
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 
-/* ---------------- 吸顶补的顶栏 ---------------- */
-.hall-topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 9;
-  display: flex;
-  align-items: flex-end;
-  padding: 0 var(--space) 8rpx;
+/* ---------------- 顶部整块吸附（标题 + 筛选） ----------------
+   标题和筛选条在同一块里一起吸顶：标题从首屏起就停在最终位置，
+   上滑只把字号收小，不存在「大标题滚走 → 小标题补位」的交接/淡入。 */
+.hall-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  z-index: 10;
+  padding: 8rpx var(--space) 10rpx;
   background-color: var(--color-bg);
-  opacity: 0;
-  pointer-events: none;
-  /* 刻意不做淡入/位移：吸顶标题必须直接出现在最终位置。
-     任何过渡都会被看成「文字弹出来」，而且在临界点来回滚时会连闪。 */
-  transition: none;
 }
-.hall-topbar--show {
-  opacity: 1;
+.hall-bar--compact {
+  box-shadow: 0 1rpx 0 var(--color-divider), 0 8rpx 16rpx rgba(122, 93, 64, 0.08);
 }
-.hall-topbar__title {
-  font-size: var(--font-lg);
-  font-weight: 600;
-  color: var(--color-text);
-  letter-spacing: 1rpx;
-}
-
-/* ---------------- 顶部（padding 压紧，给筛选条让位） ---------------- */
-.hall-head {
-  padding: 8rpx var(--space) 4rpx;
-}
-.hall-head__row {
+/* 固定行高：字号变化不影响布局高度，吸顶瞬间不会整体跳一下 */
+.hall-bar__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 76rpx;
 }
-.hall-head__title {
+.hall-bar__title {
   font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: 2rpx;
+  line-height: 1;
+  transition: font-size 0.16s ease;
+}
+/* 上滑后只是「变小」，位置不动 */
+.hall-bar--compact .hall-bar__title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  letter-spacing: 1rpx;
 }
 /* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线） */
-.hall-head__entry {
+.hall-bar__entry {
   display: flex;
   align-items: center;
   height: 60rpx;
@@ -54,40 +46,29 @@
   border-radius: var(--radius-full);
   background-color: var(--color-primary-light);
 }
-.hall-head__entry--hover {
+.hall-bar__entry--hover {
   opacity: 0.85;
 }
-.hall-head__entry-text {
+.hall-bar__entry-text {
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-primary-dark);
 }
-.hall-head__entry-arrow {
+.hall-bar__entry-arrow {
   margin-left: 6rpx;
   font-size: var(--font-base);
   color: var(--color-primary-dark);
 }
-.hall-head__sub {
+.hall-bar__sub {
   display: block;
-  margin-top: 8rpx;
+  margin-bottom: 6rpx;
   font-size: var(--font-sm);
+  line-height: 1.4;
   color: var(--color-text-3);
 }
 
 /* ---------------- 吸顶筛选条 ---------------- */
-.hall-sentinel {
-  height: 2rpx;
-}
-.hall-sticky {
-  position: -webkit-sticky;
-  position: sticky;
-  z-index: 10;
-  padding: var(--space-sm) var(--space) 10rpx;
-  background-color: var(--color-bg);
-}
-.hall-sticky--stuck {
-  box-shadow: 0 1rpx 0 var(--color-divider), 0 8rpx 16rpx rgba(122, 93, 64, 0.08);
-}
+/* ---------------- 吸顶筛选条（在 hall-bar 内部，随整块吸附） ---------------- */
 .filter-row {
   display: flex;
   align-items: center;

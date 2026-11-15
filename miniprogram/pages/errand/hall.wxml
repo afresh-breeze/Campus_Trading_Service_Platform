@@ -2,29 +2,20 @@
 <nav-top />
 
 <view class="page hall">
-  <!-- 大标题完全滚出视口顶部后，才补一条带标题的顶栏（避免顶栏把还在屏上的大标题盖住） -->
-  <view class="hall-topbar {{headHidden ? 'hall-topbar--show' : ''}}" style="height: {{stickyTop}}px">
-    <text class="hall-topbar__title">代取大厅</text>
-  </view>
-
-  <!-- 顶部：标题 + 我要接单入口；padding 压紧给筛选条让位（用户反馈第 1 条） -->
-  <view class="hall-head">
-    <view class="hall-head__row">
-      <text class="hall-head__title">代取大厅</text>
-      <view class="hall-head__entry" bindtap="onGoRunner" hover-class="hall-head__entry--hover">
-        <text class="hall-head__entry-text">我要接单</text>
-        <text class="hall-head__entry-arrow">›</text>
+  <!-- 标题 + 我要接单 + 筛选条合成一块整体吸附：标题永远待在顶部，
+       上滑只把字号收小（compact），没有「大标题滚走、小标题补位」的交接 -->
+  <view class="hall-bar {{compact ? 'hall-bar--compact' : ''}}" style="top: {{stickyTop}}px">
+    <view class="hall-bar__head">
+      <text class="hall-bar__title">代取大厅</text>
+      <view class="hall-bar__entry" bindtap="onGoRunner" hover-class="hall-bar__entry--hover">
+        <text class="hall-bar__entry-text">我要接单</text>
+        <text class="hall-bar__entry-arrow">›</text>
       </view>
     </view>
-    <text class="hall-head__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
-    <text class="hall-head__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
-  </view>
+    <text class="hall-bar__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
+    <text class="hall-bar__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
 
-  <!-- 哨兵：越过吸顶线时 sticky 区加阴影 -->
-  <view class="hall-sentinel"></view>
-
-  <!-- 吸顶筛选条：规格 + 时间标签分类、最新/报酬排序（后端契约 errands.js） -->
-  <view class="hall-sticky {{stuck ? 'hall-sticky--stuck' : ''}}" style="top: {{stickyTop}}px">
+    <!-- 规格 + 时间标签分类、最新/报酬排序（后端契约 errands.js） -->
     <view class="filter-row">
       <text class="filter-row__label">规格</text>
       <view class="filter-chips">
