@@ -14,19 +14,14 @@
   padding: 0 var(--space) 10rpx;
   background-color: var(--color-bg);
 }
-/* 状态栏 + 胶囊按钮占位：不渲染任何内容，只撑高把标题压到胶囊下方 */
+/* 状态栏 + 胶囊占位：不渲染任何内容，只撑高把标题顶到与胶囊齐平 */
 .hall-bar__safe {
   overflow: hidden;
 }
-.hall-bar--compact {
-  box-shadow: 0 1rpx 0 var(--color-divider), 0 8rpx 16rpx rgba(122, 93, 64, 0.08);
-}
-/* 固定行高：字号变化不影响布局高度，吸顶瞬间不会整体跳一下 */
+/* 标题行：行高由 js 按胶囊实际高度内联写入，与胶囊完全同排；字号恒定不缩放 */
 .hall-bar__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 76rpx;
 }
 .hall-bar__title {
   font-size: var(--font-2xl);
@@ -34,18 +29,27 @@
   color: var(--color-text);
   letter-spacing: 2rpx;
   line-height: 1;
-  transition: font-size 0.16s ease;
 }
-/* 上滑后只是「变小」，位置不动 */
-.hall-bar--compact .hall-bar__title {
-  font-size: var(--font-lg);
-  font-weight: 600;
-  letter-spacing: 1rpx;
+/* 副标题 + 我要接单 同排：入口从标题行挪下来，给胶囊让位 */
+.hall-bar__subrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6rpx;
+}
+.hall-bar__sub {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-sm);
+  line-height: 1.4;
+  color: var(--color-text-3);
 }
 /* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线） */
 .hall-bar__entry {
   display: flex;
   align-items: center;
+  flex: none;
+  margin-left: 16rpx;
   height: 60rpx;
   padding: 0 20rpx;
   border-radius: var(--radius-full);

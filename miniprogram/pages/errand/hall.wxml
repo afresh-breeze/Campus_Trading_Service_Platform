@@ -1,19 +1,21 @@
 <!-- 代取大厅（B 成员，11-12 → 11-15 筛选/吸顶改造）：只拉 pending，卡片点进详情 -->
 <view class="page hall">
-  <!-- 顶部整块吸附（含状态栏/胶囊占位）：
-       块从屏幕最顶就开始覆盖（top:0 + 不透明背景），列表从它底下滚过，
-       永远不会透到标题上方；标题区域冻结，只有列表在滚 -->
-  <view class="hall-bar {{compact ? 'hall-bar--compact' : ''}}">
+  <!-- 顶部整块吸附：块从屏幕最顶(top:0)就开始覆盖且背景不透明，列表从它底下滚过。
+       标题行与右上角胶囊齐平（占位到胶囊顶、行高=胶囊高），滚动全程冻结不动，
+       无任何动画（用户 11-15 定稿：不要变小/淡入/补位）。 -->
+  <view class="hall-bar">
     <view class="hall-bar__safe" style="height: {{stickyTop}}px"></view>
-    <view class="hall-bar__head">
+    <view class="hall-bar__head" style="height: {{barHead}}px">
       <text class="hall-bar__title">代取大厅</text>
+    </view>
+    <view class="hall-bar__subrow">
+      <text class="hall-bar__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
+      <text class="hall-bar__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
       <view class="hall-bar__entry" bindtap="onGoRunner" hover-class="hall-bar__entry--hover">
         <text class="hall-bar__entry-text">我要接单</text>
         <text class="hall-bar__entry-arrow">›</text>
       </view>
     </view>
-    <text class="hall-bar__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
-    <text class="hall-bar__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
 
     <!-- 规格 + 时间标签分类、最新/报酬排序（后端契约 errands.js） -->
     <view class="filter-row">

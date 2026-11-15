@@ -50,15 +50,15 @@ function guessCategory(order) {
   return 'other';
 }
 
-/** 与 nav-top / 二手首页同一个公式：吸顶内容停在胶囊下方 */
-function getNavHeight() {
+/** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
+function getNavMetrics() {
   try {
     const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
-    if (menu && menu.bottom) return menu.bottom + 6;
+    if (menu && menu.top && menu.height) return { top: menu.top, height: menu.height };
     const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-    return (win.statusBarHeight || 20) + 44;
+    return { top: (win.statusBarHeight || 20) + 4, height: 32 };
   } catch (e) {
-    return 64;
+    return { top: 24, height: 32 };
   }
 }
 
@@ -105,8 +105,8 @@ function toCard(order) {
 
 Page({
   data: {
-    stickyTop: 64,
-    compact: false, // 上滑后标题字号收小（位置不动，也不切换节点）
+    stickyTop: 24, // 状态栏占位 = 胶囊顶部 y，让标题与胶囊齐平
+    barHead: 32, // 标题行高 = 胶囊高度，与胶囊完全同排
     list: [],
     total: 0,
     page: 1,
@@ -126,23 +126,11 @@ Page({
   onLoad() {
     // 首屏由 onShow 触发：onLoad 时 app.bootstrap 可能还没跑完
     this._reqSeq = 0;
-    this.setData({ stickyTop: getNavHeight() });
+    const nav = getNavMetrics();
+    this.setData({ stickyTop: nav.top, barHead: nav.height });
   },
 
-  /**
-   * 上滑只做一件事：把标题字号收小（compact）。
-   * 标题和筛选条同属一个 sticky 块，从首屏就停在最终位置，
-   * 滚动全程不移动、不切换节点、不淡入 —— 只有字号变。
-   * 24/10 的进出阈值是迟滞，避免在临界点来回滚时字号抖。
-   */
-  onPageScroll(e) {
-    const y = (e && e.scrollTop) || 0;
-    if (!this.data.compact && y > 24) {
-      this.setData({ compact: true });
-    } else if (this.data.compact && y < 10) {
-      this.setData({ compact: false });
-    }
-  },
+  // 整块吸顶后标题区完全冻结，不做任何滚动响应动画（用户 11-15 定稿口径）
 
   onShow() {
     const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
