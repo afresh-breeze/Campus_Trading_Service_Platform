@@ -313,7 +313,7 @@ Page({
     wx.navigateTo({
       url:
         '/pages/chat/detail?peerId=' + card.peerId + '&bizType=errand&bizId=' + card.orderId,
-      fail: () => util.toast('聊天页尚未实现')
+      fail: () => util.toast('聊天页打开失败')
     });
   },
 

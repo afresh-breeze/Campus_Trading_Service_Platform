@@ -116,11 +116,14 @@
         </view>
       </block>
 
+      <!-- 聊天入口：pending 大厅单也能先问发布者（A 15:11 反馈）；
+           cancelled 不再给入口 -->
       <button
-        wx:if="{{chatPeerId && (order.status === 'taken' || order.status === 'completed')}}"
+        wx:if="{{chatShow}}"
         class="btn btn-ghost detail-people__chat"
         bindtap="onContact"
-      >联系 TA</button>
+      >{{chatLabel}}</button>
+      <text wx:if="{{chatTip}}" class="detail-people__tip">{{chatTip}}</text>
     </view>
 
     <!-- ⑤ 固定出路：从 redirectTo / 分享 / 外部链接进来时页面栈只有 1 层，

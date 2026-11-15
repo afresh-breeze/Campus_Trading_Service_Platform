@@ -187,6 +187,13 @@
   margin-top: 16rpx;
   font-size: var(--font-sm);
 }
+.detail-people__tip {
+  display: block;
+  margin-top: 10rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+  text-align: center;
+}
 
 /* ---------------- 无可用操作时的说明 ---------------- */
 .detail-backhall {

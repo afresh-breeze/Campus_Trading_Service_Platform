@@ -38,7 +38,7 @@ function timeText(order) {
 }
 
 /**
- * 底部按钮：顺序 = 主操作 → 私单发布 → 撤回 → 释放
+ * 底部按钮：顺序 = 主操作 → 私单发布 → 找跑腿 → 编辑 → 撤回 → 释放
  * 有主操作时它一定是主色按钮；若只有次要操作，把第一个提为主色，避免整条栏都是灰按钮
  */
 function buildActions(order) {
@@ -47,6 +47,8 @@ function buildActions(order) {
   if (order.canComplete) list.push({ key: 'complete', text: '确认完成', primary: true });
   // edit 放在 publish 之后：待发布私单的主色应留给「发布到大厅」这个关键下一步
   if (order.canPublish) list.push({ key: 'publish', text: '发布到大厅', primary: false });
+  // 待发布私单可以反复回找跑腿页挑人（谈崩了不一定要发大厅）
+  if (order.canEdit) list.push({ key: 'findRunner', text: '找跑腿', primary: false });
   if (order.canEdit) list.push({ key: 'edit', text: '编辑订单', primary: false });
   if (order.canCancel) {
     list.push({
@@ -92,6 +94,9 @@ Page({
     runnerInitial: '接',
     runnerAvatarUrl: '',
     chatPeerId: 0,
+    chatShow: false,
+    chatLabel: '联系 TA',
+    chatTip: '',
     actions: [],
     actionKey: '',
     submitting: false
@@ -169,10 +174,22 @@ Page({
     const isRunner = !!order.runnerId && Number(order.runnerId) === myId;
     const publisherNick = order.publisherNickname || '发布者';
 
-    // 联系谁：我是发布者找接单人；其他人（接单者 / 聊过私单的跑腿）找发布者
+    // 联系谁：我是发布者找接单人；其他人（接单者 / 聊过私单的跑腿 / 大厅单的潜在跑腿）找发布者
     let chatPeerId = 0;
     if (isPublisher) chatPeerId = Number(order.runnerId || 0);
     else chatPeerId = Number(order.publisherId || 0);
+
+    // 聊天入口的口径（A 15:11 反馈「没接单聊天的入口」）：
+    //   · taken/completed：发布者找接单人、其他人找发布者（原口径）；
+    //   · pending 大厅单：非发布者可先联系发布者问清楚再接单——后端 chat.js 只拦
+    //     「私单非发布者建会话」，大厅单任意登录用户都能建，放开是安全的；
+    //   · pending 私单：非发布者本来就进不来详情页（404，除非已是会话方），
+    //     能进来的会话方继续聊也合理；
+    //   · cancelled：不再给聊天入口。
+    const canChat = !!chatPeerId && order.status !== 'cancelled';
+    const chatLabel = !isPublisher && order.status === 'pending' ? '联系发布者' : '联系 TA';
+    const chatTip =
+      canChat && !isPublisher && order.status === 'pending' ? '有疑问可以先联系发布者，谈妥后再接单' : '';
 
     this.setData({
       loading: false,
@@ -197,6 +214,9 @@ Page({
       runnerInitial: (order.runnerNickname || '接').slice(0, 1),
       runnerAvatarUrl: adapter.fullUrl(order.runnerAvatar),
       chatPeerId,
+      chatShow: canChat,
+      chatLabel,
+      chatTip,
       actions: buildActions(order)
     });
   },
@@ -270,10 +290,8 @@ Page({
       }
     };
 
-    const cfg = map[key];
-    if (!cfg) return;
-
-    // 编辑不弹确认：跳发布页回填，改完由发布页负责保存
+    // 编辑/找跑腿是「跳转类」动作，不弹确认，也**不在 map 里**——
+    // 必须放在 cfg 判空之前，否则 edit 键取不到 cfg 会被直接 return（11-13~11-15 的空点击 bug）
     if (key === 'edit') {
       wx.navigateTo({
         url: '/pages/errand/publish?id=' + this.data.id,
@@ -281,6 +299,26 @@ Page({
       });
       return;
     }
+    if (key === 'findRunner') {
+      const order = this.data.order || {};
+      const query = [
+        'orderId=' + order.orderId,
+        'area=' + encodeURIComponent(order.pickupArea || ''),
+        'place=' + encodeURIComponent(order.pickupPlace || ''),
+        'timeType=' + (order.timeType || 'asap'),
+        'itemSize=' + (order.itemSize || '')
+      ];
+      if (order.timeStart) query.push('timeStart=' + encodeURIComponent(order.timeStart));
+      if (order.deadline) query.push('deadline=' + encodeURIComponent(order.deadline));
+      wx.navigateTo({
+        url: '/pages/errand/runners?' + query.join('&'),
+        fail: () => util.toast('找跑腿页打开失败')
+      });
+      return;
+    }
+
+    const cfg = map[key];
+    if (!cfg) return;
 
     util.confirm(cfg.confirm, cfg.title).then((ok) => {
       if (!ok) return;
@@ -351,7 +389,7 @@ Page({
     // 聊天页 11-13~14 落地前是占位页，URL 契约先按手册 §6.14 写死
     wx.navigateTo({
       url: '/pages/chat/detail?peerId=' + peerId + '&bizType=errand&bizId=' + order.orderId,
-      fail: () => util.toast('聊天页尚未实现')
+      fail: () => util.toast('聊天页打开失败')
     });
   },
 

@@ -199,7 +199,7 @@ Page({
       app.requireLogin('/pages/errand/hall');
       return;
     }
-    wx.navigateTo({ url: '/pages/errand/publish', fail: () => util.toast('发布页尚未实现') });
+    wx.navigateTo({ url: '/pages/errand/publish', fail: () => util.toast('发布页打开失败') });
   },
 
   onGoRunner() {
@@ -211,7 +211,7 @@ Page({
     // 11-13 实现：mode=online 表示「上线 / 接单设置」双入口的第二个
     wx.navigateTo({
       url: '/pages/mine/runner?mode=online',
-      fail: () => util.toast('接单设置页尚未实现')
+      fail: () => util.toast('接单设置页打开失败')
     });
   },
 

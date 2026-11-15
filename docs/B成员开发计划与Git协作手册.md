@@ -150,7 +150,7 @@
 | 接单/完成/撤回/释放 各调对应接口 | `POST /:id/take`、`/complete`、`/cancel`、`/release`，并补 `/publish`（私单发布到大厅，11-11 新增接口） |
 | 每个操作二次确认，文案写清后果 | `util.confirm()`；`taken` 状态下撤回文案单独区分「退回待接单（大厅单回大厅、私单仍为私单）」，不笼统写「回大厅」 |
 | 409 冲突提示并刷新详情 | `handleActionError()`：409 **优先透出后端 message**（接单「该订单已被接单」、发布「订单已在大厅」、撤回「当前订单不能撤回」、释放「当前订单不能释放」），前端只留「手慢了」兜底 + 重拉；404 → 整页转错误态；403 透出后端 `message`（与 `response.js` 的 `code = status` 对齐） |
-| `taken` 下「联系 TA」 | 仅 `taken/completed` 且 `chatPeerId` 存在时显示，跳 `/pages/chat/detail?peerId=<对方>&bizType=errand&bizId=<orderId>`；发布者找接单人、其他身份找发布者 |
+| 聊天入口 | **11-15 修正**：`pending/taken/completed` 且 `chatPeerId` 存在时都显示（`cancelled` 不给），跳 `/pages/chat/detail?peerId=<对方>&bizType=errand&bizId=<orderId>`；发布者找接单人（pending 无接单人不显示），非发布者找发布者——**pending 大厅单文案「联系发布者」+ 提示「有疑问可以先联系发布者，谈妥后再接单」**，后端 `chat.js` 只拦「私单非发布者建会话」，大厅单放行 |
 | `onShow` 重拉 | 已实现（从聊天页返回能看到最新状态）；另加 `onPullDownRefresh` |
 
 **顺带处理的边界**
@@ -275,7 +275,19 @@
 **验证**：`node --check` ×2、WXML 配平 ×2 通过；契约测试 **141/0**；聊天页冒烟 **47/0**（初始化链/已读与角标/增量轮询与去重/乐观发送与失败重发/空消息拦截/定时器清理/403/网络失败/两种业务卡片/卡片跳转）、消息列表冒烟 **19/0**（tab 同步/99+ 角标/翻页去重/三态/四参跳转/登录门）；回归大厅 52/0、详情 23/0、发布 39/0、接单 43/0、我的代取 36/0、找跑腿 41/0。
 **未做**：真机双账号 5 秒互发验收（需 M2 联调环境，11-16 执行）。
 
-#### 11）已知阻塞（写在这里，避免口头遗忘）
+#### 11）11-15 修复：未接单聊天入口 + 编辑按钮空点击（A 15:11 反馈后排查）
+
+| 问题 | 根因 | 修复 |
+| --- | --- | --- |
+| 大厅单 `pending` 详情页没有聊天入口（A 反馈「没接单聊天的入口」） | `detail.wxml` 的「联系 TA」写死 `status === 'taken' \|\| 'completed'`；但跑腿接单前常需先问取件码/能否晚点，后端 `chat.js` 对大厅单**不限**建会话（只拦私单非发布者） | 条件改为 `chatShow`（`chatPeerId` 存在且非 `cancelled`）；非发布者 pending 文案「联系发布者」+ 下方提示「有疑问可以先联系发布者，谈妥后再接单」；`cancelled` 不给入口 |
+| 「编辑订单」按钮点了没反应（11-13 起就存在） | `onAction()` 里 `const cfg = map[key]; if (!cfg) return;` 在 `edit` 分支**之前**，而 map 里没有 `edit` 键 → 永远提前 return | 把 `edit`/`findRunner` 两个「跳转类」动作整体移到 `cfg` 判空之前 |
+| 私单建好后无法再回去挑跑腿（只能发布到大厅） | 详情页 `buildActions` 没有回匹配页的入口 | 私单 pending（`canEdit`）新增「找跑腿」按钮（排在「发布到大厅」后，不抢主色），带 `orderId+area+place+timeType+itemSize+时间` 回 `/pages/errand/runners` |
+| `chat/detail` 403 一律显示「无权查看该会话」 | 固定文案吞掉了后端原因（如「私单只能由发布者发起会话」） | 403 标题「无法打开会话」，描述优先透出 `err.message` |
+| 占位期的 fallback 文案仍写「XX 尚未实现」 | 11-08 占位骨架遗留 | hall/publish/runner/chat 四处 fallback 改为「XX 打开失败」 |
+
+**验证**：契约 **141/0**；详情冒烟 **23 → 33**（新增 pending 聊天入口、`chatLabel/chatTip` 分支、`edit`/`findRunner` 跳转断言）、聊天页冒烟 **48/0**（403 透出后端 message）、其余六页冒烟全绿。
+
+#### 12）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
