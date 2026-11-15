@@ -12,7 +12,8 @@
  *       [7] 商品/书目/用户校验等价，并修正「登录学号 5 位 → 400」这条**错误契约**。
  *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权）、[10] 大厅筛选
  *       （area/itemSize/timeType/sort，同维度 OR + 跨维度 AND + 筛选后 total）。
- *       [10] 的 400 只看状态码：A 的实现还没推送到 dev，文案待其推送后逐字对齐。
+ *       2026-11-15 A 的实现（f3d44dc）推送后，[10] 的 400 改为**逐字断言文案**，
+ *       并澄清 timeType 合法筛选项含 range（与订单类型一致）、参数支持字符串数组。
  */
 const path = require('path');
 const REPO = require('path').join(__dirname, '..', 'miniprogram', 'utils');
@@ -364,14 +365,16 @@ const OK_ERRAND = {
     idsOf(pg2) + '/' + pg2.total
   );
 
-  // 非法值：只断言 400 状态码。A 的实现还没推送到 dev，文案待其推送后逐字对齐。
+  // 非法值：2026-11-15 起按 A 的真实实现（f3d44dc）**逐字断言 400 文案**。
   const filter400 = [
-    ['area 非法片区', { area: '火星' }],
-    ['area 部分非法', { area: '桃园,火星' }],
-    ['itemSize 非法', { itemSize: 'huge' }],
-    ['timeType=range 不是合法筛选项', { timeType: 'range' }],
-    ['timeType 部分非法', { timeType: 'asap,range' }],
-    ['sort 非法', { sort: 'popular' }]
+    ['area 非法片区', { area: '火星' }, '取件片区不在可选范围内'],
+    ['area 部分非法', { area: '桃园,火星' }, '取件片区不在可选范围内'],
+    ['area 传非字符串元素', { area: ['桃园', 5] }, '参数错误'],
+    ['itemSize 非法', { itemSize: 'huge' }, '物品规格不合法'],
+    ['itemSize 传数字', { itemSize: 123 }, '参数错误'],
+    ['timeType 非法', { timeType: 'someday' }, '时间类型不合法'],
+    ['sort 非法', { sort: 'popular' }, '排序方式不合法'],
+    ['sort 传数字', { sort: 1 }, '排序方式不合法']
   ];
   for (let i = 0; i < filter400.length; i += 1) {
     const q = Object.assign({ page: 1, pageSize: 50 }, filter400[i][1]);
@@ -379,8 +382,20 @@ const OK_ERRAND = {
       (ok) => ({ ok: true, data: ok }),
       (err) => ({ ok: false, err: err })
     );
-    check(filter400[i][0] + ' → 400', r.ok === false && r.err.code === 400, r.ok ? 'mock 放行' : r.err);
+    check(
+      filter400[i][0] + ' → 400「' + filter400[i][2] + '」',
+      r.ok === false && r.err.code === 400 && r.err.message === filter400[i][2],
+      r.ok ? 'mock 放行' : r.err
+    );
   }
+
+  // timeType 的合法筛选项与订单类型一致：range 也可筛（11-13 曾误判为不可筛，A 的 f3d44dc 澄清）
+  await expectFiltered('timeType=range 单独筛选', { timeType: 'range' }, (e) => e.timeType === 'range');
+  await expectFiltered('timeType 三值全选 = 不限', { timeType: 'asap,deadline,range' }, () => true);
+  // 字符串数组入参等价于逗号分隔
+  await expectFiltered('area 传字符串数组等价逗号串', { area: ['桃园', '中心图书馆'] }, (e) =>
+    ['桃园', '中心图书馆'].indexOf(e.pickupArea) >= 0
+  );
 
   console.log('\n[11] 接单设置 / 上线：runner-profile 与 online（对照 users.js）');
   // PUT /me/runner-profile 的校验逐字对齐（文案来自 users.js）

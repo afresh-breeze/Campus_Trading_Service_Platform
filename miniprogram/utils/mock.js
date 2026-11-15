@@ -669,13 +669,12 @@ const runnerProfiles = [
 ];
 
 // ---------------- 跑腿档案校验（逐字对照 users.js + utils/runner.js） ----------------
+// 注意：pad2 等基础工具复用文件头部（第 85 行）的既有定义，不要在这里重复声明 ——
+//       微信开发者工具是严格模式，重复 function 声明会直接编译失败（Node 契约测试不报）。
 const AVAILABILITY_TYPES = ['slot', 'now'];
 // 后端在线接口对「没档案就上线」的用户写入的默认片区
 const DEFAULT_SERVICE_AREA = '北区其他';
 
-function pad2(n) {
-  return n < 10 ? '0' + n : '' + n;
-}
 function runnerToday(d) {
   return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 }
@@ -931,66 +930,80 @@ function backendIsValidPlace(place) {
 }
 
 // ---------------- 大厅筛选（GET /api/errands 的 A 侧扩展契约） ----------------
-// 契约（2026-11-13 由 B 侧记录的 A 摘要）：
-//   area=桃园,李园  itemSize=small,medium  timeType=asap,deadline
-//   sort=latest|reward_desc|reward_asc（默认 latest）
-//   保留 status / page / pageSize；同维度 OR、跨维度 AND；total 为**筛选后**总数；非法值 400。
-// 注意：可筛选的 timeType 只有 asap / deadline —— range 是合法订单类型但**不是**合法筛选项。
-// 待办：A 的实现尚未推送到 dev，下面的 400 文案按本文件既有风格（'xxx不合法'）占位；
-//       A 推送后需逐字核对，契约测试 [10] 目前只断言状态码与筛选结果，不断言文案。
+// 2026-11-15 按 A 的真实实现（f3d44dc，errands.js readAreaFilter 等）逐字对齐：
+//   area=桃园,李园  itemSize=small,medium  timeType=asap,deadline,range  sort=latest|reward_desc|reward_asc
+//   同维度 OR、跨维度 AND；total 为**筛选后**总数；缺省或空串=不限；
+//   参数可以是字符串或字符串数组，元素非字符串 → 400「参数错误」；
+//   非法值 400 文案：取件片区不在可选范围内 / 物品规格不合法 / 时间类型不合法 / 排序方式不合法。
+// 注意：timeType 的合法筛选项与订单类型一致（**range 也是合法筛选项**，11-13 曾误判为不可筛选）。
 const ERRAND_SORTS = ['latest', 'reward_desc', 'reward_asc'];
-const HALL_TIME_FILTERS = ['asap', 'deadline'];
 
-/** 逗号分隔多值 → 去空白去重数组；空串视为「不限」返回 null */
+/** 逗号分隔多值（或字符串数组）→ 去空白去重数组；空串/缺省=不限返回 null（对齐 readCommaList） */
 function parseMultiValue(raw) {
-  const s = readTrimmed(raw);
-  if (!s) return null;
+  if (raw === undefined || raw === null || raw === '') return null;
+  const parts = Array.isArray(raw) ? raw : [raw];
   const out = [];
-  s.split(',').forEach((part) => {
-    const v = part.trim();
-    if (v && out.indexOf(v) < 0) out.push(v);
-  });
-  return out.length ? out : null;
+  for (let i = 0; i < parts.length; i += 1) {
+    if (typeof parts[i] !== 'string') return { error: '参数错误' };
+    parts[i].split(',').forEach((part) => {
+      const v = part.trim();
+      if (v && out.indexOf(v) < 0) out.push(v);
+    });
+  }
+  return out.length ? { list: out } : null;
 }
 
 /**
  * 解析大厅筛选参数。
  * 返回 { area, itemSize, timeType, sort }（未传的维度为 null），或 { error } 表示 400 文案。
+ * 校验顺序对齐 A：area → itemSize → timeType → sort（同一参数多个非法值只报第一个）。
  */
 function parseHallFilters(data) {
   const body = data || {};
   const area = parseMultiValue(body.area);
+  if (area && area.error) return { error: area.error };
   if (area) {
-    for (let i = 0; i < area.length; i += 1) {
-      if (!campusUtil.isValidZone(area[i])) return { error: '片区不合法' };
+    for (let i = 0; i < area.list.length; i += 1) {
+      if (!campusUtil.isValidZone(area.list[i])) return { error: '取件片区不在可选范围内' };
     }
   }
   const itemSize = parseMultiValue(body.itemSize);
+  if (itemSize && itemSize.error) return { error: itemSize.error };
   if (itemSize) {
-    for (let i = 0; i < itemSize.length; i += 1) {
-      if (ITEM_SIZES.indexOf(itemSize[i]) < 0) return { error: '物品规格不合法' };
+    for (let i = 0; i < itemSize.list.length; i += 1) {
+      if (ITEM_SIZES.indexOf(itemSize.list[i]) < 0) return { error: '物品规格不合法' };
     }
   }
   const timeType = parseMultiValue(body.timeType);
+  if (timeType && timeType.error) return { error: timeType.error };
   if (timeType) {
-    for (let i = 0; i < timeType.length; i += 1) {
-      if (HALL_TIME_FILTERS.indexOf(timeType[i]) < 0) return { error: '时间类型不合法' };
+    for (let i = 0; i < timeType.list.length; i += 1) {
+      if (TIME_TYPES.indexOf(timeType.list[i]) < 0) return { error: '时间类型不合法' };
     }
+  }
+  if (body.sort !== undefined && body.sort !== null && body.sort !== '' && typeof body.sort !== 'string') {
+    return { error: '排序方式不合法' };
   }
   const sort = readTrimmed(body.sort) || 'latest';
   if (ERRAND_SORTS.indexOf(sort) < 0) return { error: '排序方式不合法' };
-  return { area: area, itemSize: itemSize, timeType: timeType, sort: sort };
+  return {
+    area: area ? area.list : null,
+    itemSize: itemSize ? itemSize.list : null,
+    timeType: timeType ? timeType.list : null,
+    sort: sort
+  };
 }
 
-/** 大厅排序：默认按发布时间倒序；报酬排序时用发布时间作为并列的次序 */
+/** 大厅排序：latest 按发布时间倒序；报酬并列按 orderId 倒序兜底（对齐 A 的 SORT_ORDERS） */
 function sortHallList(list, sort) {
   const byCreated = (a, b) =>
     a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.orderId - a.orderId;
+  const byOrderIdDesc = (a, b) => b.orderId - a.orderId;
   const copy = list.slice();
   if (sort === 'reward_desc') {
-    copy.sort((a, b) => Number(b.reward) - Number(a.reward) || byCreated(a, b));
+    copy.sort((a, b) => Number(b.reward) - Number(a.reward) || byOrderIdDesc(a, b));
   } else if (sort === 'reward_asc') {
-    copy.sort((a, b) => Number(a.reward) - Number(b.reward) || byCreated(a, b));
+    copy.sort((a, b) => Number(a.reward) - Number(b.reward) || byOrderIdDesc(a, b));
   } else {
     copy.sort(byCreated);
   }
