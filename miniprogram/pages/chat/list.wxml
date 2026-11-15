@@ -1,12 +1,78 @@
-<!-- 消息（B 成员负责） -->
+<!-- 消息列表（B 成员，11-14，tab 3）：会话卡片 + 未读红点 -->
 <nav-top />
 <view class="page page-body">
-  <view class="card">
-    <view class="t-title">消息</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/chat/list</view>
+
+  <!-- 登录门 -->
+  <view wx:if="{{!isLogin}}" class="cl-state">
+    <empty-state title="登录后查看消息" desc="与同学的聊天记录都在这里" action-text="去登录" bind:action="onLogin" />
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <block wx:else>
+    <!-- 首屏骨架 -->
+    <block wx:if="{{firstLoading}}">
+      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="sk-line sk-line--lg"></view>
+        <view class="sk-line sk-line--md"></view>
+        <view class="sk-line sk-line--sm"></view>
+      </view>
+    </block>
+
+    <!-- 失败：给重试 -->
+    <view wx:elif="{{error}}" class="cl-state">
+      <view class="card cl-state__card">
+        <text class="t-title">加载失败</text>
+        <text class="t-sub cl-state__desc">{{error}}</text>
+        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+      </view>
+    </view>
+
+    <!-- 真空态：给出路 -->
+    <view wx:elif="{{!list.length}}" class="cl-state">
+      <empty-state
+        title="还没有消息"
+        desc="和同学聊过的商品、代取都会出现在这里"
+        action-text="去逛逛"
+        bind:action="onGoIndex"
+      />
+    </view>
+
+    <block wx:else>
+      <view
+        wx:for="{{list}}"
+        wx:key="conversationId"
+        class="cl-conv"
+        data-id="{{item.conversationId}}"
+        data-peer="{{item.peerId}}"
+        data-biztype="{{item.bizType}}"
+        data-bizid="{{item.bizId}}"
+        bindtap="onTapConv"
+        hover-class="cl-conv--hover"
+      >
+        <!-- 头像 + 未读红点（角标叠在头像右上） -->
+        <view class="cl-conv__avatar-wrap">
+          <image wx:if="{{item.avatarUrl}}" class="cl-conv__avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <view wx:else class="cl-conv__avatar cl-conv__avatar--text">{{item.initial}}</view>
+          <view wx:if="{{item.hasUnread}}" class="cl-conv__badge">{{item.unreadText}}</view>
+        </view>
+
+        <view class="cl-conv__body">
+          <view class="cl-conv__top">
+            <text class="cl-conv__name ellipsis">{{item.peerNickname}}</text>
+            <text wx:if="{{item.timeText}}" class="cl-conv__time">{{item.timeText}}</text>
+          </view>
+          <view class="cl-conv__bottom">
+            <text class="cl-conv__last ellipsis">{{item.lastMessage}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="cl-more">
+        <text wx:if="{{loadingMore}}" class="cl-more__text">加载中…</text>
+        <text wx:elif="{{hasMore}}" class="cl-more__text">上拉加载更多</text>
+        <text wx:else class="cl-more__text">没有更多了</text>
+      </view>
+    </block>
+  </block>
+
+  <view class="safe-bottom"></view>
 </view>

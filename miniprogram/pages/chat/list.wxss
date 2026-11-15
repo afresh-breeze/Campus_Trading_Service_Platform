@@ -1,13 +1,97 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 消息列表（B 成员，11-14） */
+
+.cl-state {
+  padding: 40rpx 0;
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
-}
-.placeholder-tip {
-  margin-top: 24rpx;
+.cl-state__card {
   text-align: center;
-  font-size: var(--font-xs);
-  color: var(--color-text-4);
+}
+.cl-state__desc {
+  display: block;
+  margin: 12rpx 0 24rpx;
+}
+
+/* ---- 会话卡片 ---- */
+.cl-conv {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 20rpx;
+  margin-bottom: 16rpx;
+  background: var(--color-surface, #ffffff);
+  border-radius: 16rpx;
+}
+.cl-conv--hover {
+  opacity: 0.9;
+}
+.cl-conv__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+.cl-conv__avatar {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 50%;
+}
+.cl-conv__avatar--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft, #efe4d8);
+  color: var(--color-primary, #79513d);
+  font-size: var(--font-lg, 32rpx);
+  font-weight: 600;
+}
+.cl-conv__badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: var(--color-danger, #c0563e);
+  color: #ffffff;
+  font-size: var(--font-xs, 22rpx);
+  line-height: 32rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+.cl-conv__body {
+  flex: 1;
+  min-width: 0;
+}
+.cl-conv__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cl-conv__name {
+  font-size: var(--font-md, 28rpx);
+  font-weight: 600;
+  color: var(--color-text-1, #3b2f26);
+  min-width: 0;
+  flex: 1;
+}
+.cl-conv__time {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-4, #b3a695);
+}
+.cl-conv__bottom {
+  margin-top: 8rpx;
+}
+.cl-conv__last {
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+
+.cl-more {
+  text-align: center;
+  padding: 16rpx 0 8rpx;
+}
+.cl-more__text {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-4, #b3a695);
 }

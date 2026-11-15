@@ -1,12 +1,96 @@
-<!-- 聊天（B 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">聊天</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/chat/detail</view>
+<!-- 聊天页（B 成员，11-14）：业务卡片 + 消息气泡（3 秒增量轮询）+ 发送框 -->
+<nav-top back title="{{pageTitle}}" />
+
+<!-- 初始化失败：403/404/网络 三态分明 -->
+<view wx:if="{{fatalError}}" class="page page-body">
+  <view class="card cd-fatal">
+    <text class="t-title">{{fatalError}}</text>
+    <text class="t-sub cd-fatal__desc">{{fatalDesc}}</text>
+    <button wx:if="{{canRetry}}" class="btn btn-primary btn-block" bindtap="onRetryInit">重试</button>
+    <button wx:else class="btn btn-ghost btn-block" bindtap="onBack">返回</button>
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
 </view>
+
+<!-- 初始化骨架：会话还没建好/消息没到，给重试出路 -->
+<view wx:elif="{{loading}}" class="page page-body">
+  <view class="sk-card">
+    <view class="sk-line sk-line--lg"></view>
+    <view class="sk-line sk-line--md"></view>
+    <view class="sk-line sk-line--sm"></view>
+  </view>
+</view>
+
+<block wx:else>
+  <view class="cd-page">
+    <!-- 业务卡片：点击进商品/代取详情；动作仍在详情页做 -->
+    <view wx:if="{{bizCard}}" class="cd-biz" bindtap="onBizTap" hover-class="cd-biz--hover">
+      <image wx:if="{{bizCard.coverUrl}}" class="cd-biz__cover" src="{{bizCard.coverUrl}}" mode="aspectFill" />
+      <view wx:else class="cd-biz__cover cd-biz__cover--text">{{bizType === 'errand' ? '取' : '商'}}</view>
+      <view class="cd-biz__info">
+        <view class="cd-biz__title-row">
+          <text class="cd-biz__title ellipsis">{{bizCard.title}}</text>
+          <text class="tag tag-gray">{{bizCard.statusText}}</text>
+        </view>
+        <text class="cd-biz__sub ellipsis">{{bizCard.subText || bizTitleText}}</text>
+      </view>
+      <text class="cd-biz__price">{{bizCard.mainText}}</text>
+    </view>
+    <view wx:else class="cd-biz-sub">
+      <text class="cd-biz-sub__text">{{bizTitleText}}</text>
+    </view>
+
+    <!-- 消息区：scroll-into-view 锚点滚底；只在新消息且在底部时滚 -->
+    <scroll-view
+      class="cd-scroll"
+      scroll-y
+      scroll-into-view="{{scrollAnchor}}"
+      scroll-with-animation
+      bindscrolltoupper="onScrollToUpper"
+      bindscrolltolower="onScrollToLower"
+    >
+      <view wx:if="{{!messages.length}}" class="cd-empty">
+        <text class="cd-empty__text">还没有消息，打个招呼吧</text>
+      </view>
+
+      <block wx:for="{{messages}}" wx:key="key">
+        <!-- 时间分隔：与上一条间隔 > 5 分钟才显示 -->
+        <view wx:if="{{item.showTime}}" class="cd-time">
+          <text class="cd-time__text">{{item.timeText}}</text>
+        </view>
+
+        <view class="cd-row {{item.isMine ? 'cd-row--mine' : ''}}">
+          <view
+            class="cd-bubble {{item.isMine ? 'cd-bubble--mine' : ''}} {{item.failed ? 'cd-bubble--failed' : ''}}"
+            data-content="{{item.content}}"
+            bindlongpress="onLongPressMsg"
+            data-temp="{{item.tempId}}"
+            bindtap="{{item.failed ? 'onTapFailed' : ''}}"
+          >
+            <image wx:if="{{item.isImage}}" class="cd-bubble__img" src="{{item.imageUrl}}" mode="aspectFill" />
+            <text wx:else class="cd-bubble__text">{{item.content}}</text>
+            <view wx:if="{{item.pending}}" class="cd-bubble__status">发送中…</view>
+            <view wx:elif="{{item.failed}}" class="cd-bubble__status cd-bubble__status--fail">发送失败，点击重发</view>
+          </view>
+        </view>
+      </block>
+
+      <view id="anchor-bottom" class="cd-anchor"></view>
+    </scroll-view>
+
+    <!-- 发送框 -->
+    <view class="cd-inputbar">
+      <input
+        class="cd-inputbar__input"
+        value="{{input}}"
+        maxlength="500"
+        confirm-type="send"
+        adjust-position="{{true}}"
+        placeholder="输入消息…"
+        placeholder-class="cd-inputbar__placeholder"
+        bindinput="onInput"
+        bindconfirm="onSend"
+      />
+      <button class="cd-inputbar__send {{input ? 'cd-inputbar__send--on' : ''}}" bindtap="onSend">发送</button>
+    </view>
+  </view>
+</block>
