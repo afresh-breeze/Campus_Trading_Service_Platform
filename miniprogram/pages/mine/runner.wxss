@@ -82,6 +82,57 @@
   row-gap: 12rpx;
 }
 
+/* ---------------- 在线方式（竖排 + 选中项展开说明） ---------------- */
+.avail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+.avail-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 18rpx 20rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-bg-white);
+}
+.avail-item--active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+.avail-item radio {
+  transform: scale(0.8);
+  margin-right: 4rpx;
+}
+.avail-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.avail-item__label {
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.avail-item--active .avail-item__label {
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+/* 浅色小字说明：只做解释，不抢主信息 */
+.avail-item__desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--color-text-3);
+}
+.avail-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+
 /* ---------------- 计划列表 ---------------- */
 .slot-row {
   display: flex;
@@ -99,10 +150,18 @@
   flex: 1;
   min-width: 0;
 }
+/* 计划文案可能很长（如「每周一、三、五 18:00-22:00」），
+   必须让它自己收缩省略，否则状态标签会被挤到下一行（用户反馈的「未开始位置不对」） */
 .slot-row__text {
+  flex: 1;
+  min-width: 0;
   font-size: var(--font-base);
   color: var(--color-text);
   margin-right: 14rpx;
+}
+.slot-row__tag {
+  flex: none;
+  white-space: nowrap;
 }
 .slot-row__ops {
   display: flex;
@@ -123,6 +182,11 @@
   display: flex;
   flex-direction: column;
   gap: 16rpx;
+}
+.slot-form__hint {
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--color-text-3);
 }
 .slot-form__times {
   display: flex;

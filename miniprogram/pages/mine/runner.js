@@ -101,7 +101,11 @@ function slotText(slot) {
   return '每' + days + ' ' + time;
 }
 
-/** 下一条未来计划 → 「计划 周三 09:00 自动上线」 */
+/**
+ * 下一次会自动上线的时刻 → 「11/16 09:00」。
+ * 只用于文案拼装，不要再拼「计划……自动上线」这种句子，
+ * 调用方自己决定前缀（否则「已下线 · 计划 周三 09:00 自动上线」会重复）。
+ */
 function nextUpcomingText(slots) {
   const today = todayStr();
   const nowT = nowHHmm();
@@ -109,7 +113,10 @@ function nextUpcomingText(slots) {
   (slots || []).forEach((s) => {
     if (s.type === 'once') {
       if (s.date > today || (s.date === today && s.start > nowT)) {
-        if (!best || s.date + s.start < best.key) best = { key: s.date + s.start, text: slotText(s) };
+        const key = s.date + s.start;
+        if (!best || key < best.key) {
+          best = { key: key, text: s.date.slice(5).replace('-', '/') + ' ' + s.start };
+        }
       }
       return;
     }
@@ -123,7 +130,7 @@ function nextUpcomingText(slots) {
       if (ds < s.from) continue;
       const key = ds + s.start;
       if (!best || key < best.key) {
-        best = { key: key, text: '计划 周' + WEEKDAY_LABELS[wd] + ' ' + s.start + ' 自动上线' };
+        best = { key: key, text: ds.slice(5).replace('-', '/') + ' ' + s.start };
       }
       break;
     }
@@ -131,16 +138,41 @@ function nextUpcomingText(slots) {
   return best ? best.text : '';
 }
 
-/** 顶部状态条文案（手册 §6.12：不要只靠按钮颜色） */
+/** 当前是否正落在某条计划时段内 */
+function hasActiveSlot(slots) {
+  return (slots || []).some((s) => slotStatus(s) === 'active');
+}
+
+/** manual_until 是否还没到期（后端 effectiveOnline 的第一优先级判断） */
+function manualUntilFuture(value) {
+  if (!value) return false;
+  const t = new Date(String(value).replace(/-/g, '/')).getTime();
+  return !isNaN(t) && t > Date.now();
+}
+
+/**
+ * 顶部状态条文案（手册 §6.12：不要只靠按钮颜色）。
+ * 口径必须与后端 effectiveOnline 一致（server/src/utils/runner.js）：
+ *   now  → 看 is_online
+ *   slot → 看「此刻是否在计划时段内」，manualUntil 只是今天之内的兜底边界。
+ * 所以 slot 模式下即便 is_online=1，只要不在时段内，找跑腿列表**也不会出你**，
+ * 这里绝不能显示「当前在线」，否则就是骗用户。
+ */
 function statusTextOf(p) {
-  if (p.isOnline) {
-    if (p.manualUntil) {
-      return '当前在线至 ' + String(p.manualUntil).slice(11, 16);
-    }
-    return p.availabilityType === 'now' ? '当前在线（随时接单）' : '当前在线（按计划）';
+  const slots = p.timeSlots || [];
+  const active = hasActiveSlot(slots);
+  const reallyOnline =
+    p.availabilityType === 'now'
+      ? !!p.isOnline
+      : !!p.isOnline && (active || manualUntilFuture(p.manualUntil));
+  if (reallyOnline) {
+    if (p.manualUntil) return '当前在线至 ' + String(p.manualUntil).slice(11, 16);
+    return p.availabilityType === 'now' ? '当前在线' : '当前在线（计划时段内）';
   }
-  const next = nextUpcomingText(p.timeSlots);
-  if (p.availabilityType === 'slot' && next) return next;
+  if (p.availabilityType === 'slot') {
+    const next = nextUpcomingText(slots);
+    return next ? '已下线 · ' + next + ' 自动上线' : '已下线';
+  }
   return '已下线';
 }
 
@@ -156,6 +188,10 @@ Page({
     manualUntil: null,
     statusText: '已下线',
     completedCount: 0,
+    // 当前是否真在计划时段内（后端 effectiveOnline 的唯一依据）
+    hasActiveSlot: false,
+    // 非时段时下一次自动上线的时刻文案，如「11/16 09:00」
+    nextOnlineText: '',
 
     zoneGroups: [], // [{category, zones:[{name,checked}]}]
     placeGroups: [], // [{zone, places:[{name,checked}]}]
@@ -167,8 +203,17 @@ Page({
 
     timeSlots: [], // [{id,type,text,status}]
     availabilityOptions: [
-      { value: 'now', label: '随时在线' },
-      { value: 'slot', label: '按计划上下线' }
+      {
+        value: 'now',
+        label: '当前在线',
+        // 用户反馈：只写「随时在线」有歧义 —— 它不会自己下线，必须回来点
+        desc: '马上可以被接单。离开本页不会自动下线，请回到本页点「立即下线」。'
+      },
+      {
+        value: 'slot',
+        label: '按计划上下线',
+        desc: '只在下面设定的时段内出现，时段外自动下线。'
+      }
     ],
 
     // 新增计划表单
@@ -218,29 +263,32 @@ Page({
 
   applyProfile(p) {
     const basePrice = p.basePrice === null || p.basePrice === undefined ? '' : String(p.basePrice);
+    const slots = (p.timeSlots || []).map((s) => ({
+      id: s.id,
+      type: s.type,
+      date: s.date,
+      from: s.from,
+      weekdays: (s.weekdays || []).slice(),
+      start: s.start,
+      end: s.end,
+      text: slotText(s),
+      status: slotStatus(s)
+    }));
     const state = {
       loading: false,
       isOnline: !!p.isOnline,
       availabilityType: p.availabilityType === 'now' ? 'now' : 'slot',
       manualUntil: p.manualUntil || null,
       completedCount: Number(p.completedCount) || 0,
+      hasActiveSlot: hasActiveSlot(slots),
+      nextOnlineText: nextUpcomingText(p.timeSlots),
       serviceAreas: (p.serviceAreas || []).slice(),
       servicePlaces: (p.servicePlaces || []).slice(),
       itemSizes: (p.itemSizes || []).slice(),
-      timeSlots: (p.timeSlots || []).map((s) => ({
-        id: s.id,
-        type: s.type,
-        date: s.date,
-        from: s.from,
-        weekdays: (s.weekdays || []).slice(),
-        start: s.start,
-        end: s.end,
-        text: slotText(s),
-        status: slotStatus(s)
-      })),
+      timeSlots: slots,
       basePrice: basePrice,
       remark: p.remark || '',
-      statusText: statusTextOf(p)
+      statusText: statusTextOf(Object.assign({}, p, { timeSlots: slots }))
     };
     state.zoneGroups = this.buildZoneGroups(state.serviceAreas);
     state.placeGroups = this.buildPlaceGroups(state.serviceAreas, state.servicePlaces);
@@ -506,7 +554,12 @@ Page({
 
   /** 保存设置；online 模式传 thenOnline=true 时保存后立即上线 */
   save(thenOnline) {
-    if (this.data.saving || this.data.loading) return;
+    if (this.data.saving) return;
+    // 之前这里静默 return，用户在网络慢时点按钮毫无反应，会以为功能坏了
+    if (this.data.loading) {
+      util.toast('设置还在加载，请稍候');
+      return;
+    }
     const errors = this.validate();
     if (Object.keys(errors).length) {
       this.setData({ errors: errors });
@@ -518,13 +571,13 @@ Page({
       .put('/api/users/me/runner-profile', this.buildPayload(), { silent: true })
       .then((profile) => {
         this.applyProfile(profile || {});
-        if (this.data.mode !== 'online') {
-          util.toast('接单设置已保存');
-          this.setData({ saving: false });
-          return;
-        }
-        if (!thenOnline) {
-          util.toast('接单设置已保存');
+        if (this.data.mode !== 'online' || !thenOnline) {
+          // 按计划但当前不在时段内：不要含糊说「已保存」，要把下次上线时间讲出来
+          const next =
+            this.data.availabilityType === 'slot' && !this.data.hasActiveSlot
+              ? this.data.nextOnlineText
+              : '';
+          util.toast(next ? '已保存，' + next + ' 自动上线' : '接单设置已保存');
           this.setData({ saving: false });
           return;
         }
@@ -604,9 +657,19 @@ Page({
     this.save(true);
   },
 
-  /** online 模式的主按钮：已在线 = 只保存；未在线 = 保存并上线 */
+  /**
+   * online 模式的主按钮。
+   * 关键：slot 模式下后端 effectiveOnline 只看「此刻是否在计划时段内」，
+   * 非时段时调 /me/online 也不会让找跑腿列表出现你 —— 所以这里不调上线接口，
+   * 只保存设置并如实告诉用户下次自动上线的时间（用户反馈：按计划上线"没成功"）。
+   */
   onTapMainBottom() {
-    this.save(!this.data.isOnline);
+    const d = this.data;
+    if (d.availabilityType === 'slot' && !d.hasActiveSlot) {
+      this.save(false);
+      return;
+    }
+    this.save(!d.isOnline);
   },
 
   onTapOffline() {

@@ -2,57 +2,22 @@
 <nav-top back title="{{pageTitle}}" />
 <view class="page page-body">
 
-  <!-- 取件位置：分类 → 片区 → 地标 三级联动 -->
+  <!-- 取件位置：弹层选择（搜索 / 分类 / 片区 / 具体地标），替代原三级 picker -->
   <view class="card">
     <view class="t-title">取件信息</view>
-    <view class="t-sub form-tip">先选分类缩小范围，再选片区和具体地标</view>
+    <view class="t-sub form-tip">可搜索楼名或别名（如 25教、兰华楼），也可按分类选片区</view>
 
-    <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
-      <view class="field-wrap">
-        <view class="field">
-          <view class="field-label">分类</view>
-          <view class="field-input">{{categories[categoryIndex]}}</view>
-          <view class="picker-arrow">›</view>
+    <view class="field-wrap" bindtap="onOpenPlacePicker" hover-class="field--hover">
+      <view class="field">
+        <view class="field-label">取件地点</view>
+        <view class="field-input {{errors.pickupArea || errors.pickupPlace ? 'field-input--error' : ''}}">
+          {{pickupText || '选择片区 / 教学楼'}}
         </view>
+        <view class="picker-arrow">›</view>
       </view>
-    </picker>
-
-    <picker mode="selector" range="{{zones}}" value="{{zoneIndex}}" bindchange="onZoneChange">
-      <view class="field-wrap">
-        <view class="field">
-          <view class="field-label">取件片区</view>
-          <view class="field-input {{errors.pickupArea ? 'field-input--error' : ''}}">
-            {{zones[zoneIndex] || '请选择片区'}}
-          </view>
-          <view class="picker-arrow">›</view>
-        </view>
-        <text wx:if="{{errors.pickupArea}}" class="field-error">{{errors.pickupArea}}</text>
-      </view>
-    </picker>
-
-    <!-- 片区有下级地标才显示地标选择；没有则锁定为「全区」 -->
-    <block wx:if="{{places.length}}">
-      <picker mode="selector" range="{{places}}" value="{{placeIndex}}" bindchange="onPlaceChange">
-        <view class="field-wrap">
-          <view class="field">
-            <view class="field-label">取件地标</view>
-            <view class="field-input {{errors.pickupPlace ? 'field-input--error' : ''}}">
-              {{places[placeIndex] || '请选择地标'}}
-            </view>
-            <view class="picker-arrow">›</view>
-          </view>
-          <text wx:if="{{errors.pickupPlace}}" class="field-error">{{errors.pickupPlace}}</text>
-        </view>
-      </picker>
-    </block>
-    <block wx:else>
-      <view class="field-wrap">
-        <view class="field field--static">
-          <view class="field-label">取件地标</view>
-          <view class="field-input field-input--muted">{{placeEmptyText}}</view>
-        </view>
-      </view>
-    </block>
+      <text wx:if="{{errors.pickupArea}}" class="field-error">{{errors.pickupArea}}</text>
+      <text wx:elif="{{errors.pickupPlace}}" class="field-error">{{errors.pickupPlace}}</text>
+    </view>
 
     <view class="field-wrap">
       <view class="field field--top">
@@ -69,6 +34,16 @@
       <text wx:if="{{errors.deliveryLocation}}" class="field-error">{{errors.deliveryLocation}}</text>
     </view>
   </view>
+
+  <!-- 取件地点弹层 -->
+  <place-picker
+    visible="{{placePickerVisible}}"
+    title="选择取件地点"
+    zone="{{pickupArea}}"
+    place="{{pickupPlace}}"
+    bind:confirm="onPlaceConfirm"
+    bind:close="onPlaceClose"
+  />
 
   <!-- 物品信息 -->
   <view class="card">

@@ -287,14 +287,32 @@
 
 **验证**：契约 **141/0**；详情冒烟 **23 → 33**（新增 pending 聊天入口、`chatLabel/chatTip` 分支、`edit`/`findRunner` 跳转断言）、聊天页冒烟 **48/0**（403 透出后端 message）、其余六页冒烟全绿。
 
-#### 12）已知阻塞（写在这里，避免口头遗忘）
+#### 12）11-15 二轮反馈修复（9 条 UI/功能反馈）
+
+| # | 反馈 | 处理 |
+| --- | --- | --- |
+| 1 | 页面顶端空白，排序/分类要能上滑悬浮 | `errand/hall` 照二手首页同一套方案改造：`hall-head` padding 压紧 + `hall-sentinel` + `position: sticky` 筛选条，吸顶时补固定顶栏并加阴影 |
+| 2 | 代取没图，看不出是什么 | `errand_orders` 表**没有图片字段**（B 不能改表），先用本地品类插画（`assets/errand/food|express|doc|daily|other.png`，Pillow 生成的 192px 简笔画）按 `itemDesc/remark` 关键词匹配展示；**真图片需 A 给 errand_orders 加 image 字段**（已列需求清单） |
+| 3 | 地点选择改设计 + 搜索 + 具体教学楼 | 新增 `components/place-picker`（搜索 `searchLandmarks` 别名联想 / 分类横滑 / 片区网格 / 52 地标胶囊），替换 publish 与 runners 的三级 picker；`placeRequired=true`（发布页必须选到楼）/`false`（找跑腿可全区） |
+| 4 | 没选「按计划」不该显示时间范围 | `runner.wxml` 计划区整体包 `wx:if="{{availabilityType === 'slot'}}"`，else 显示「当前在线不需要设置时段」提示 |
+| 5 | 「随时在线」有歧义 | 改「当前在线」+ 选中项浅色小字说明「离开本页不会自动下线，请回到本页点立即下线」 |
+| 6 | 除单次/每周还要自由选某几天 | 后端 `validateTimeSlots` 只收 `once/weekly`，第三种 type 必 400 —— 把「每周循环」重做成「按星期（可多选）」+ 生效起始日，勾哪几天就哪几天（数据层就是 weekly） |
+| 7 | 「未开始」标签位置不对 | `.slot-row__text` 改 `flex:1 + min-width:0` 收缩省略，`.slot-row__tag` `flex:none`，长文案不再把标签挤下一行 |
+| 8 | 代取要排序 + 标签分类 | 筛选条接后端已有契约：规格（itemSize）/时间（timeType: 不限/尽快/限时/时段）胶囊 + 排序（最新 / 报酬↓↑），走 `resetAndFetch` 清列表重拉 |
+| 9 | 按计划上下线没成功 | 根因：后端 `effectiveOnline` 在 slot 模式只看「此刻是否在计划时段内」，非时段时调 `/me/online` 也**不会**出现在找跑腿列表，但前端谎报「已上线」。修复：页面算 `hasActiveSlot`，非时段时主按钮只保存不调上线接口，状态条「已下线 · 11/16 09:00 自动上线」+ 底部 footnote 说明；另修 `loading` 期间点按钮静默无响应（改 toast 提示） |
+
+连带：`campus.displayArea` 修正无地标片区展示（「桃园」不再显示「桃园 · 桃园」）。
+
+**验证**：契约 **141/0**；冒烟 **392/0**（hall 64 / detail 33 / publish 38 / runner 53 / mine_errands 36 / runners 47 / chat_list 19 / chat_detail 48 / item_card 25 / place_picker 29）。
+
+#### 13）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
 - ~~mock 与后端字段/校验不一致~~ → **已整改（11-11 复盘）**：`utils/mock.js` 经两轮对齐后共 **39 条路由**（服务端 40 条 − `POST /api/upload` 文件上传接口，该接口不适合 mock），入参校验、返回字段、失败码逐条对齐 `server/src/routes/*.js`；`scripts/mock-contract-test.js` 已扩到 **88 项断言全过**，作为回归门槛。**后端新增接口必须同步 mock 与断言**，否则 MOCK 模式会直接报「mock 未登记该接口」。
 - ~~代取详情页无入口~~ → **已解除（11-12）**：`pages/errand/hall` 已实现列表并接好 `bindtap → /pages/errand/detail?id=`。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
-- **A 的 6 个二手页面仍为占位骨架**（wxml 11 行），M1 的 UI 走查与 B 侧配合验收都要等页面落地（记录见 `docs/UI走查记录-B.md` #18）。
+- ~~A 的 6 个二手页面仍为占位骨架~~ → **部分解除（11-15）**：A 已交付二手首页 `pages/index/*`（列表/筛选/排序/吸顶，并用了 B 的 `item-card show-time`）；其余二手页面仍等 A。
 - **后端无 stats 聚合接口**：个人中心四项统计用 `items/mine`、`favorites`、`errands/mine` 的 `total` 派生，`/api/errands/mine` 必须支持 `status` 筛选（mock 已对齐）。
 
 ### 0.5 每天建议节奏

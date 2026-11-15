@@ -32,12 +32,6 @@ const SIZE_PICK = [
 ];
 const SIZE_LABEL = { small: '小件', medium: '中件', large: '大件' };
 
-// 25 个固定片区平铺（顺序 = CATEGORIES 分组顺序）
-const ALL_ZONES = [];
-campus.CATEGORIES.forEach((cat) => {
-  (campus.zonesByCategory()[cat] || []).forEach((z) => ALL_ZONES.push(z));
-});
-
 function pad(n) {
   return n < 10 ? '0' + n : '' + n;
 }
@@ -93,12 +87,11 @@ Page({
     canPublish: false,
     publishing: false,
 
-    // 筛选条件
-    zones: ALL_ZONES,
-    zoneIndex: 0,
-    places: [],
-    placeIndex: 0,
-    placeEmptyText: '全片区（无细分地标）',
+    // 筛选条件：取件地点走 place-picker 弹层（搜索 / 分类 / 片区 / 具体地标）
+    area: '桃园',
+    place: '', // 空 = 全片区（buildQuery 里落为片区名，后端 place=area 语义）
+    placeText: '桃园',
+    placePickerVisible: false,
     timeOptions: TIME_OPTIONS,
     sizePick: SIZE_PICK,
     timeIndex: 0,
@@ -125,20 +118,16 @@ Page({
     const orderId = Number(o.orderId || 0);
     const updates = {};
 
-    // 片区：URL 带合法片区才回填，否则保持默认第一项
+    // 片区：URL 带合法片区才回填，否则保持默认「桃园」
     const area = o.area ? decodeURIComponent(o.area) : '';
-    const areaIdx = ALL_ZONES.indexOf(area);
-    if (areaIdx > -1) updates.zoneIndex = areaIdx;
-    const zone = ALL_ZONES[updates.zoneIndex !== undefined ? updates.zoneIndex : this.data.zoneIndex];
-    const zoneInit = this.applyZone(zone);
-    Object.assign(updates, zoneInit);
-
-    // 地标：URL 的 place 必须属于该片区才回填（否则保持「全区/第一项」）
+    if (campus.isValidZone(area)) updates.area = area;
+    // 地标：必须属于该片区（片区名本身 = 全片区，不回填为具体地标）
     const place = o.place ? decodeURIComponent(o.place) : '';
-    if (zoneInit.places.length && place && place !== zone) {
-      const pi = zoneInit.places.indexOf(place);
-      if (pi > -1) updates.placeIndex = pi;
+    const activeArea = updates.area || this.data.area;
+    if (place && place !== activeArea && campus.isValidPlace(activeArea, place)) {
+      updates.place = place;
     }
+    updates.placeText = campus.displayArea(activeArea, updates.place || '');
 
     const timeIdx = TIME_OPTIONS.map((t) => t.value).indexOf(o.timeType);
     if (timeIdx > -1) updates.timeIndex = timeIdx;
@@ -214,19 +203,26 @@ Page({
       });
   },
 
-  /** 切片区：同步下级地标；没有地标则 place 恒等于片区名（后端 place=area 语义） */
-  applyZone(zone) {
-    const places = campus.placesOfZone(zone) || [];
-    return { places, placeIndex: 0, placeEmptyText: zone + '（全片区）' };
+  // ---------------- 取件地点弹层（place-picker） ----------------
+  onOpenPlacePicker() {
+    this.setData({ placePickerVisible: true });
   },
 
-  onZoneChange(e) {
-    const idx = Number(e.detail.value) || 0;
-    this.setData(Object.assign({ zoneIndex: idx }, this.applyZone(ALL_ZONES[idx])));
+  onPlaceClose() {
+    this.setData({ placePickerVisible: false });
   },
 
-  onPlaceChange(e) {
-    this.setData({ placeIndex: Number(e.detail.value) || 0 });
+  /** 找跑腿允许「全区」：place 为空时 buildQuery 落为片区名（后端 place=area 语义） */
+  onPlaceConfirm(e) {
+    const zone = (e.detail && e.detail.zone) || '';
+    if (!zone) return;
+    const place = (e.detail && e.detail.place) || '';
+    this.setData({
+      placePickerVisible: false,
+      area: zone,
+      place,
+      placeText: campus.displayArea(zone, place)
+    });
   },
 
   onTimeChange(e) {
@@ -254,10 +250,10 @@ Page({
   /** 组装 query（含与后端同口径的本地预检，避免必败请求） */
   buildQuery(page) {
     const d = this.data;
-    const zone = ALL_ZONES[d.zoneIndex];
+    const zone = d.area;
     const timeType = TIME_OPTIONS[d.timeIndex].value;
-    // place：无下级地标或选了第一项「全片区」时传片区名（后端 place=area 语义）
-    const place = d.places.length && d.placeIndex > 0 ? d.places[d.placeIndex] : zone;
+    // place 空 = 全片区 → 传片区名（后端 place=area 语义）
+    const place = d.place || zone;
 
     let timeStart = '';
     let deadline = '';

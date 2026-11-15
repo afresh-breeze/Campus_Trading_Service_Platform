@@ -1,8 +1,13 @@
-<!-- 代取大厅（B 成员，11-12，tab 2）：只拉 pending，卡片点进详情 -->
+<!-- 代取大厅（B 成员，11-12 → 11-15 筛选/吸顶改造）：只拉 pending，卡片点进详情 -->
 <nav-top />
 
 <view class="page hall">
-  <!-- 顶部：标题 + 我要接单入口（11-13 接单设置页落地后生效） -->
+  <!-- 吸顶时补一条带标题的顶栏，盖住状态栏/胶囊区域（与二手首页同一套） -->
+  <view class="hall-topbar {{stuck ? 'hall-topbar--show' : ''}}" style="height: {{stickyTop}}px">
+    <text class="hall-topbar__title">代取大厅</text>
+  </view>
+
+  <!-- 顶部：标题 + 我要接单入口；padding 压紧给筛选条让位（用户反馈第 1 条） -->
   <view class="hall-head">
     <view class="hall-head__row">
       <text class="hall-head__title">代取大厅</text>
@@ -13,6 +18,50 @@
     </view>
     <text class="hall-head__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
     <text class="hall-head__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
+  </view>
+
+  <!-- 哨兵：越过吸顶线时 sticky 区加阴影 -->
+  <view class="hall-sentinel"></view>
+
+  <!-- 吸顶筛选条：规格 + 时间标签分类、最新/报酬排序（后端契约 errands.js） -->
+  <view class="hall-sticky {{stuck ? 'hall-sticky--stuck' : ''}}" style="top: {{stickyTop}}px">
+    <view class="filter-row">
+      <text class="filter-row__label">规格</text>
+      <view class="filter-chips">
+        <view
+          wx:for="{{sizeChips}}"
+          wx:key="value"
+          class="chip {{filters.itemSize === item.value ? 'chip--active' : ''}}"
+          data-type="itemSize"
+          data-value="{{item.value}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+      <view class="sort-ops">
+        <text
+          class="sort-btn {{filters.sort === 'latest' ? 'sort-btn--active' : ''}}"
+          bindtap="onSortLatest"
+        >最新</text>
+        <view class="sort-divider"></view>
+        <text
+          class="sort-btn sort-btn--price {{filters.sort !== 'latest' ? 'sort-btn--active' : ''}}"
+          bindtap="onSortReward"
+        >报酬{{filters.sort === 'reward_desc' ? ' ↓' : (filters.sort === 'reward_asc' ? ' ↑' : '')}}</text>
+      </view>
+    </view>
+    <view class="filter-row">
+      <text class="filter-row__label">时间</text>
+      <view class="filter-chips">
+        <view
+          wx:for="{{timeChips}}"
+          wx:key="value"
+          class="chip {{filters.timeType === item.value ? 'chip--active' : ''}}"
+          data-type="timeType"
+          data-value="{{item.value}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+    </view>
   </view>
 
   <view wx:if="{{!isLogin}}" class="hall-state">
@@ -59,30 +108,36 @@
       hover-class="order--hover"
       hover-stay-time="80"
     >
-      <view class="order__top">
-        <view class="order__route">
-          <view class="order__line">
-            <view class="order__dot order__dot--from"></view>
-            <text class="order__place ellipsis">{{item.fromText}}</text>
+      <view class="order__main">
+        <!-- 品类缩略图：表里没图片字段，按描述猜品类配插画（真图片待后端加字段） -->
+        <image class="order__thumb" src="{{item.categoryIcon}}" mode="aspectFill" />
+        <view class="order__body">
+          <view class="order__top">
+            <view class="order__route">
+              <view class="order__line">
+                <view class="order__dot order__dot--from"></view>
+                <text class="order__place ellipsis">{{item.fromText}}</text>
+              </view>
+              <view class="order__line">
+                <view class="order__dot order__dot--to"></view>
+                <text class="order__place ellipsis">{{item.toText}}</text>
+              </view>
+            </view>
+            <view class="order__reward">
+              <text class="order__price">¥{{item.rewardText}}</text>
+              <text class="order__reward-label">报酬</text>
+            </view>
           </view>
-          <view class="order__line">
-            <view class="order__dot order__dot--to"></view>
-            <text class="order__place ellipsis">{{item.toText}}</text>
+
+          <view class="order__meta">
+            <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
+            <text class="tag tag-warning order__tag">{{item.timeText}}</text>
           </view>
-        </view>
-        <view class="order__reward">
-          <text class="order__price">¥{{item.rewardText}}</text>
-          <text class="order__reward-label">报酬</text>
+
+          <!-- 物品描述：跑腿在列表里就能判断「取什么」，不用点进详情（P1-3） -->
+          <text wx:if="{{item.itemDesc}}" class="order__desc ellipsis-2">{{item.itemDesc}}</text>
         </view>
       </view>
-
-      <view class="order__meta">
-        <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
-        <text class="tag tag-warning order__tag">{{item.timeText}}</text>
-      </view>
-
-      <!-- 物品描述：跑腿在列表里就能判断「取什么」，不用点进详情（P1-3） -->
-      <text wx:if="{{item.itemDesc}}" class="order__desc ellipsis-2">{{item.itemDesc}}</text>
 
       <view class="order__foot">
         <!-- 头像缺省用昵称首字，不依赖图片资源 -->

@@ -188,14 +188,18 @@ function searchLandmarks(keyword, limit) {
 }
 
 /**
- * 统一展示格式：「北区教学区 · 第16教学楼」。
- * 片区不合法返回 ''；地标为空时显示「片区 · 全区」。
+ * 统一展示格式：
+ *   有下级地标的片区 → 「北区教学区 · 第16教学楼」/「北区教学区 · 全区」
+ *   无下级地标的片区 → 只显示「桃园」（落库值 pickupPlace=片区名本身，
+ *   展示再带一遍「桃园 · 桃园」就重复了）
  * 四个代取页面都调这个，避免各处写法不一致。
  */
 function displayArea(zone, place) {
   if (!isValidZone(zone)) return '';
-  const p = place && isValidPlace(zone, place) ? place : '';
-  return p ? zone + ' · ' + p : zone + ' · 全区';
+  const hasPlaces = placesOfZone(zone).length > 0;
+  const p = place && place !== zone && isValidPlace(zone, place) ? place : '';
+  if (p) return zone + ' · ' + p;
+  return hasPlaces ? zone + ' · 全区' : zone;
 }
 
 module.exports = {

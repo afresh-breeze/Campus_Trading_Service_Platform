@@ -28,35 +28,13 @@
     <view class="card rp-filter">
       <view class="t-title">匹配条件</view>
 
-      <picker mode="selector" range="{{zones}}" value="{{zoneIndex}}" bindchange="onZoneChange">
-        <view class="field-wrap">
-          <view class="field">
-            <view class="field-label">取件片区</view>
-            <view class="field-input">{{zones[zoneIndex]}}</view>
-            <view class="picker-arrow">›</view>
-          </view>
+      <view class="field-wrap" bindtap="onOpenPlacePicker" hover-class="field--hover">
+        <view class="field">
+          <view class="field-label">取件地点</view>
+          <view class="field-input">{{placeText}}</view>
+          <view class="picker-arrow">›</view>
         </view>
-      </picker>
-
-      <block wx:if="{{places.length}}">
-        <picker mode="selector" range="{{places}}" value="{{placeIndex}}" bindchange="onPlaceChange">
-          <view class="field-wrap">
-            <view class="field">
-              <view class="field-label">取件地标</view>
-              <view class="field-input">{{places[placeIndex]}}</view>
-              <view class="picker-arrow">›</view>
-            </view>
-          </view>
-        </picker>
-      </block>
-      <block wx:else>
-        <view class="field-wrap">
-          <view class="field field--static">
-            <view class="field-label">取件地标</view>
-            <view class="field-input field-input--muted">{{placeEmptyText}}</view>
-          </view>
-        </view>
-      </block>
+      </view>
 
       <view class="field-wrap">
         <view class="field">
@@ -197,6 +175,16 @@
       </view>
     </block>
   </block>
+
+  <!-- 取件地点弹层（地标可不选 = 全片区） -->
+  <place-picker
+    visible="{{placePickerVisible}}"
+    title="选择取件地点"
+    zone="{{area}}"
+    place="{{place}}"
+    bind:confirm="onPlaceConfirm"
+    bind:close="onPlaceClose"
+  />
 
   <view class="safe-bottom"></view>
 </view>

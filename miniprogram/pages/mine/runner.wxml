@@ -60,81 +60,95 @@
   <view class="card">
     <view class="t-title">在线方式</view>
 
-    <radio-group class="check-row radio-row--gap" bindchange="onAvailChange">
-      <label wx:for="{{availabilityOptions}}" wx:key="value" class="check-item">
+    <radio-group class="avail-list" bindchange="onAvailChange">
+      <label
+        wx:for="{{availabilityOptions}}"
+        wx:key="value"
+        class="avail-item {{availabilityType === item.value ? 'avail-item--active' : ''}}"
+      >
         <radio value="{{item.value}}" checked="{{availabilityType === item.value}}" color="#79513D" />
-        <text>{{item.label}}</text>
+        <view class="avail-item__body">
+          <text class="avail-item__label">{{item.label}}</text>
+          <!-- 选中项才展开说明，避免两条小字常驻把卡片撑高 -->
+          <text wx:if="{{availabilityType === item.value}}" class="avail-item__desc">{{item.desc}}</text>
+        </view>
       </label>
     </radio-group>
 
-    <!-- 已保存的计划 -->
-    <block wx:if="{{timeSlots.length}}">
+    <!-- 没选「按计划」时，时段相关的设置一律不出现（用户反馈第 4 条） -->
+    <block wx:if="{{availabilityType === 'slot'}}">
+      <!-- 已保存的计划 -->
+      <block wx:if="{{timeSlots.length}}">
+        <view class="divider"></view>
+        <view class="t-sub form-tip">在线计划（仅未开始的计划可修改/删除）</view>
+        <view wx:for="{{timeSlots}}" wx:key="id" wx:for-item="s" class="slot-row">
+          <view class="slot-row__main">
+            <text class="slot-row__text ellipsis">{{s.text}}</text>
+            <text class="tag slot-row__tag {{s.status === 'active' ? 'tag-success' : s.status === 'future' ? 'tag-primary' : 'tag-gray'}}">
+              {{s.status === 'active' ? '进行中' : s.status === 'future' ? '未开始' : '已结束'}}
+            </text>
+          </view>
+          <view class="slot-row__ops" wx:if="{{s.status === 'future'}}">
+            <text class="slot-op" data-id="{{s.id}}" bindtap="onEditSlot">编辑</text>
+            <text class="slot-op slot-op--danger" data-id="{{s.id}}" bindtap="onDeleteSlot">删除</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 新增 / 编辑计划 -->
       <view class="divider"></view>
-      <view class="t-sub form-tip">在线计划（仅未开始的计划可修改/删除）</view>
-      <view wx:for="{{timeSlots}}" wx:key="id" wx:for-item="s" class="slot-row">
-        <view class="slot-row__main">
-          <text class="slot-row__text">{{s.text}}</text>
-          <text class="tag {{s.status === 'active' ? 'tag-success' : s.status === 'future' ? 'tag-primary' : 'tag-gray'}}">
-            {{s.status === 'active' ? '进行中' : s.status === 'future' ? '未开始' : '已结束'}}
-          </text>
-        </view>
-        <view class="slot-row__ops" wx:if="{{s.status === 'future'}}">
-          <text class="slot-op" data-id="{{s.id}}" bindtap="onEditSlot">编辑</text>
-          <text class="slot-op slot-op--danger" data-id="{{s.id}}" bindtap="onDeleteSlot">删除</text>
+      <view class="t-sub form-tip">{{editingId ? '正在编辑计划' : '添加在线计划'}}</view>
+
+      <radio-group class="check-row radio-row--gap" bindchange="onSlotTypeChange">
+        <label class="check-item">
+          <radio value="once" checked="{{slotType === 'once'}}" color="#79513D" />
+          <text>单次（某一天）</text>
+        </label>
+        <label class="check-item">
+          <radio value="weekly" checked="{{slotType === 'weekly'}}" color="#79513D" />
+          <text>按星期（可多选）</text>
+        </label>
+      </radio-group>
+
+      <view class="slot-form">
+        <block wx:if="{{slotType === 'once'}}">
+          <picker mode="date" start="{{minDate}}" value="{{slotDate}}" bindchange="onSlotDateChange">
+            <view class="picker-value">{{slotDate || '选择日期'}}</view>
+          </picker>
+        </block>
+        <block wx:else>
+          <!-- 自由选某几天：勾哪几天就哪几天，不用凑「每周几循环」的说法 -->
+          <text class="slot-form__hint">勾选哪几天就哪几天，例如只勾周二、周四</text>
+          <checkbox-group class="check-row check-row--wrap" bindchange="onWeekdayChange">
+            <label wx:for="{{weekdays}}" wx:key="value" class="check-item">
+              <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#79513D" />
+              <text>{{item.label}}</text>
+            </label>
+          </checkbox-group>
+          <picker mode="date" start="{{minDate}}" value="{{slotFrom}}" bindchange="onSlotFromChange">
+            <view class="picker-value">从 {{slotFrom || '今天'}} 起一直有效</view>
+          </picker>
+        </block>
+        <view class="slot-form__times">
+          <picker mode="time" value="{{slotStart}}" bindchange="onSlotStartChange">
+            <view class="picker-value">{{slotStart || '开始时间'}}</view>
+          </picker>
+          <text class="slot-form__dash">至</text>
+          <picker mode="time" value="{{slotEnd}}" bindchange="onSlotEndChange">
+            <view class="picker-value">{{slotEnd || '结束时间'}}</view>
+          </picker>
         </view>
       </view>
+
+      <view class="slot-ops">
+        <button class="btn btn-sm btn-ghost" wx:if="{{editingId}}" bindtap="onCancelEdit">取消编辑</button>
+        <button class="btn btn-sm btn-primary" disabled="{{saving}}" bindtap="onAddSlot">
+          {{editingId ? '保存这条计划' : '添加计划'}}
+        </button>
+      </view>
+      <text wx:if="{{errors.timeSlots}}" class="field-error">{{errors.timeSlots}}</text>
     </block>
-
-    <!-- 新增 / 编辑计划 -->
-    <view class="divider"></view>
-    <view class="t-sub form-tip">{{editingId ? '正在编辑计划' : '添加在线计划'}}</view>
-
-    <radio-group class="check-row radio-row--gap" bindchange="onSlotTypeChange">
-      <label class="check-item">
-        <radio value="once" checked="{{slotType === 'once'}}" color="#79513D" />
-        <text>单次</text>
-      </label>
-      <label class="check-item">
-        <radio value="weekly" checked="{{slotType === 'weekly'}}" color="#79513D" />
-        <text>每周循环</text>
-      </label>
-    </radio-group>
-
-    <view class="slot-form">
-      <block wx:if="{{slotType === 'once'}}">
-        <picker mode="date" start="{{minDate}}" value="{{slotDate}}" bindchange="onSlotDateChange">
-          <view class="picker-value">{{slotDate || '选择日期'}}</view>
-        </picker>
-      </block>
-      <block wx:else>
-        <picker mode="date" start="{{minDate}}" value="{{slotFrom}}" bindchange="onSlotFromChange">
-          <view class="picker-value">从 {{slotFrom || '起始日'}} 开始</view>
-        </picker>
-        <checkbox-group class="check-row check-row--wrap" bindchange="onWeekdayChange">
-          <label wx:for="{{weekdays}}" wx:key="value" class="check-item">
-            <checkbox value="{{item.value}}" checked="{{item.checked}}" color="#79513D" />
-            <text>{{item.label}}</text>
-          </label>
-        </checkbox-group>
-      </block>
-      <view class="slot-form__times">
-        <picker mode="time" value="{{slotStart}}" bindchange="onSlotStartChange">
-          <view class="picker-value">{{slotStart || '开始时间'}}</view>
-        </picker>
-        <text class="slot-form__dash">至</text>
-        <picker mode="time" value="{{slotEnd}}" bindchange="onSlotEndChange">
-          <view class="picker-value">{{slotEnd || '结束时间'}}</view>
-        </picker>
-      </view>
-    </view>
-
-    <view class="slot-ops">
-      <button class="btn btn-sm btn-ghost" wx:if="{{editingId}}" bindtap="onCancelEdit">取消编辑</button>
-      <button class="btn btn-sm btn-primary" disabled="{{saving}}" bindtap="onAddSlot">
-        {{editingId ? '保存这条计划' : '添加计划'}}
-      </button>
-    </view>
-    <text wx:if="{{errors.timeSlots}}" class="field-error">{{errors.timeSlots}}</text>
+    <text wx:else class="avail-hint">「当前在线」不需要设置时段，接单大厅会一直显示你。</text>
   </view>
 
   <!-- 报价与备注 -->
@@ -174,12 +188,21 @@
   <!-- 底部按钮：两种模式不同（§6.12） -->
   <view class="form-actions">
     <block wx:if="{{mode === 'online'}}">
-      <button class="btn btn-ghost btn-block" wx:if="{{isOnline}}" disabled="{{saving}}" bindtap="onTapOffline">
+      <!-- 按计划且不在时段内时不显示「立即下线」：本来就没在线，说了反而不一致 -->
+      <button
+        class="btn btn-ghost btn-block"
+        wx:if="{{isOnline && (availabilityType === 'now' || hasActiveSlot)}}"
+        disabled="{{saving}}"
+        bindtap="onTapOffline"
+      >
         立即下线
       </button>
       <button class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapMainBottom">
-        {{saving ? '处理中…' : (isOnline ? '保存设置' : '保存并上线')}}
+        {{saving ? '处理中…' : (availabilityType === 'slot' && !hasActiveSlot ? '保存设置' : (isOnline ? '保存设置' : '保存并上线'))}}
       </button>
+      <view class="t-sub form-footnote" wx:if="{{availabilityType === 'slot' && !hasActiveSlot && nextOnlineText}}">
+        当前不在计划时段，保存后将于 {{nextOnlineText}} 自动上线，找跑腿页那时才能看到你。
+      </view>
     </block>
     <block wx:else>
       <button class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapSave">

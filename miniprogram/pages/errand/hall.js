@@ -19,6 +19,49 @@ const TAB_INDEX = 1;
 const PAGE_SIZE = 10;
 const SIZE_TEXT = { small: '小件', medium: '中件', large: '大件' };
 
+// 筛选条候选（后端 errands.js 的 TIME_TYPES / ITEM_SIZES 原样枚举，空串 = 不限）
+const SIZE_CHIPS = [
+  { value: '', label: '全部' },
+  { value: 'small', label: '小件' },
+  { value: 'medium', label: '中件' },
+  { value: 'large', label: '大件' }
+];
+const TIME_CHIPS = [
+  { value: '', label: '不限' },
+  { value: 'asap', label: '尽快' },
+  { value: 'deadline', label: '限时' },
+  { value: 'range', label: '时段' }
+];
+
+// 品类缩略图：表里没有图片字段，用 itemDesc/remark 关键词猜品类配本地插画。
+// 真图片要 A 给 errand_orders 加字段（已列需求清单），这里先解决「看不出是什么」。
+const CATEGORY_RULES = [
+  { key: 'food', words: ['外卖', '奶茶', '咖啡', '饭', '餐', '早餐', '午餐', '晚餐', '宵夜', '水果', '零食', '饮'] },
+  { key: 'doc', words: ['文件', '打印', '资料', '书', '论文', '证件', '作业'] },
+  { key: 'daily', words: ['药', '超市', '日用品', '纸巾', '水', '生活'] },
+  { key: 'express', words: ['快递', '包裹', '菜鸟', '驿站', '取件'] }
+];
+function guessCategory(order) {
+  const text = ((order.itemDesc || '') + ' ' + (order.remark || '')).toLowerCase();
+  for (let i = 0; i < CATEGORY_RULES.length; i += 1) {
+    const rule = CATEGORY_RULES[i];
+    if (rule.words.some((w) => text.indexOf(w) > -1)) return rule.key;
+  }
+  return 'other';
+}
+
+/** 与 nav-top / 二手首页同一个公式：吸顶内容停在胶囊下方 */
+function getNavHeight() {
+  try {
+    const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+    if (menu && menu.bottom) return menu.bottom + 6;
+    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    return (win.statusBarHeight || 20) + 44;
+  } catch (e) {
+    return 64;
+  }
+}
+
 /** 卡片用紧凑时间：「尽快」/「11-12 18:00 前」/「11-12 09:00 起」 */
 function shortTime(order) {
   if (!order) return '';
@@ -52,6 +95,7 @@ function toCard(order) {
     timeText: shortTime(order),
     rewardText: util.formatPrice(order.reward),
     itemDesc: order.itemDesc || '',
+    categoryIcon: '/assets/errand/' + guessCategory(order) + '.png',
     publisherNickname: nickname,
     publisherInitial: nickname.slice(0, 1),
     publisherAvatarUrl: adapter.fullUrl(order.publisherAvatar),
@@ -61,6 +105,8 @@ function toCard(order) {
 
 Page({
   data: {
+    stickyTop: 64,
+    stuck: false,
     list: [],
     total: 0,
     page: 1,
@@ -72,12 +118,26 @@ Page({
     isLogin: true,
     // 筛选条件：A 的大厅筛选契约（area/itemSize/timeType/sort）落地后由筛选条写入；
     // 空串表示不限，**默认不带任何筛选参数**，与现有请求完全一致。
-    filters: { area: '', itemSize: '', timeType: '', sort: 'latest' }
+    filters: { area: '', itemSize: '', timeType: '', sort: 'latest' },
+    sizeChips: SIZE_CHIPS,
+    timeChips: TIME_CHIPS
   },
 
   onLoad() {
     // 首屏由 onShow 触发：onLoad 时 app.bootstrap 可能还没跑完
     this._reqSeq = 0;
+    this.setData({ stickyTop: getNavHeight() });
+  },
+
+  onReady() {
+    this.setupStickyObserver();
+  },
+
+  onUnload() {
+    if (this._io) {
+      this._io.disconnect();
+      this._io = null;
+    }
   },
 
   onShow() {
@@ -97,6 +157,66 @@ Page({
     if (this.data.refreshing) return;
     if (this.data.loadingMore || !this.data.hasMore || this.data.error) return;
     this.fetch(this.data.page + 1);
+  },
+
+  /** 吸顶后加阴影：观察标题区下方的哨兵是否越过吸顶线（与二手首页同一套） */
+  setupStickyObserver() {
+    if (!wx.createIntersectionObserver) return;
+    try {
+      this._io = wx.createIntersectionObserver(this, { thresholds: [0] });
+      this._io
+        .relativeToViewport({ top: -this.data.stickyTop })
+        .observe('.hall-sentinel', (res) => {
+          const stuck = res.intersectionRatio <= 0;
+          if (stuck !== this.data.stuck) this.setData({ stuck });
+        });
+    } catch (e) {
+      this._io = null;
+    }
+  },
+
+  /** 筛选/排序变化：清空旧列表，回到顶部，重拉第一页 */
+  resetAndFetch(patch) {
+    this.setData(
+      Object.assign(
+        {
+          list: [],
+          total: 0,
+          hasMore: true,
+          firstLoading: true,
+          error: ''
+        },
+        patch
+      )
+    );
+    // 老基础库可能没有 pageScrollTo，缺函数时跳过回顶
+    if (wx.pageScrollTo) wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.fetch(1);
+  },
+
+  onFilterTap(e) {
+    const type = e.currentTarget.dataset.type;
+    const value = e.currentTarget.dataset.value || '';
+    if (!type || this.data.filters[type] === value) return;
+    this.resetAndFetch(this._pick('filters.' + type, value));
+  },
+
+  onSortLatest() {
+    if (this.data.filters.sort === 'latest') return;
+    this.resetAndFetch(this._pick('filters.sort', 'latest'));
+  },
+
+  /** 报酬排序：latest → 降序 → 升序 循环 */
+  onSortReward() {
+    const cur = this.data.filters.sort;
+    const next = cur === 'reward_desc' ? 'reward_asc' : 'reward_desc';
+    this.resetAndFetch(this._pick('filters.sort', next));
+  },
+
+  _pick(key, value) {
+    const patch = {};
+    patch[key] = value;
+    return patch;
   },
 
   /** 重置到第一页；返回 Promise 便于下拉刷新收尾 */

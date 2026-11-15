@@ -25,7 +25,6 @@ const TIME_OPTIONS = [
   { value: 'range', label: '指定时间段' }
 ];
 const MAX_REWARD = 200;
-const ZONES_BY_CATEGORY = campus.zonesByCategory();
 
 function pad(n) {
   return n < 10 ? '0' + n : '' + n;
@@ -72,15 +71,11 @@ Page({
     loading: false,
     submitting: false,
 
-    // 片区三级联动：分类 → 片区 → 地标
-    categories: campus.CATEGORIES,
-    categoryIndex: 0,
-    zones: [],
-    zoneIndex: 0,
-    places: [], // 当前片区的下级地标；空数组 = 该片区无细分地标
-    placeIndex: 0,
-    placeEmptyText: '全区（无细分地标）',
+    // 取件地点：place-picker 弹层选择（搜索 / 分类 / 片区 / 具体地标）
+    pickupArea: '',
     pickupPlace: '',
+    pickupText: '', // 展示文案：campus.displayArea
+    placePickerVisible: false,
 
     sizeOptions: SIZE_OPTIONS,
     timeOptions: TIME_OPTIONS,
@@ -107,12 +102,9 @@ Page({
 
   onLoad(options) {
     const id = Number((options && options.id) || 0);
-    const zoneInit = this.applyZone(this.data.categories[0]);
     if (id) {
       this.setData({ isEdit: true, orderId: id, pageTitle: '编辑代取' });
       this.loadOrder(id);
-    } else {
-      this.setData(zoneInit);
     }
   },
 
@@ -127,36 +119,34 @@ Page({
           setTimeout(() => this.backOut(), 800);
           return;
         }
-        const zoneInit = this.applyZone(order.pickupArea);
-        const placeIdx = zoneInit.places.indexOf(order.pickupPlace);
         const st = splitDateTime(order.timeStart);
         const dl = splitDateTime(order.deadline);
-        this.setData(
-          Object.assign(zoneInit, {
-            loading: false,
-            placeIndex: placeIdx > -1 ? placeIdx : 0,
-            sizeIndex: Math.max(
-              0,
-              this.data.sizeOptions.map((o) => o.value).indexOf(order.itemSize)
-            ),
-            timeIndex: Math.max(
-              0,
-              this.data.timeOptions.map((o) => o.value).indexOf(order.timeType)
-            ),
-            startDate: st.date,
-            startTime: st.time,
-            deadlineDate: dl.date,
-            deadlineTime: dl.time,
-            form: {
-              deliveryLocation: order.deliveryLocation || '',
-              itemDesc: order.itemDesc || '',
-              remark: order.remark || '',
-              reward: order.reward === null || order.reward === undefined ? '' : String(order.reward)
-            },
-            descCount: (order.itemDesc || '').length,
-            remarkCount: (order.remark || '').length
-          })
-        );
+        this.setData({
+          loading: false,
+          pickupArea: order.pickupArea || '',
+          pickupPlace: order.pickupPlace || '',
+          pickupText: campus.displayArea(order.pickupArea, order.pickupPlace),
+          sizeIndex: Math.max(
+            0,
+            this.data.sizeOptions.map((o) => o.value).indexOf(order.itemSize)
+          ),
+          timeIndex: Math.max(
+            0,
+            this.data.timeOptions.map((o) => o.value).indexOf(order.timeType)
+          ),
+          startDate: st.date,
+          startTime: st.time,
+          deadlineDate: dl.date,
+          deadlineTime: dl.time,
+          form: {
+            deliveryLocation: order.deliveryLocation || '',
+            itemDesc: order.itemDesc || '',
+            remark: order.remark || '',
+            reward: order.reward === null || order.reward === undefined ? '' : String(order.reward)
+          },
+          descCount: (order.itemDesc || '').length,
+          remarkCount: (order.remark || '').length
+        });
       })
       .catch((err) => {
         this.setData({ loading: false });
@@ -165,70 +155,28 @@ Page({
       });
   },
 
-  /** 按片区初始化联动数据；片区不合法时回退到第一个分类的第一个片区 */
-  applyZone(zoneName) {
-    let categoryIndex = 0;
-    let zones = ZONES_BY_CATEGORY[campus.CATEGORIES[0]] || [];
-    let zoneIndex = zones.indexOf(zoneName);
-    if (zoneIndex > -1) {
-      categoryIndex = campus.CATEGORIES.indexOf(
-        (campus.ZONES.filter((z) => z.name === zoneName)[0] || {}).category
-      );
-      zones = ZONES_BY_CATEGORY[campus.CATEGORIES[categoryIndex]] || [];
-    } else {
-      zoneIndex = 0;
-    }
-    const zone = zones[zoneIndex] || '';
-    const places = campus.placesOfZone(zone);
-    return {
-      categoryIndex: categoryIndex,
-      zones: zones,
-      zoneIndex: zoneIndex,
-      places: places,
-      placeIndex: 0,
-      // 片区无下级地标时 pickupPlace = 片区名（后端「片区即地标」）
-      pickupPlace: places.length ? '' : zone
-    };
+  // ---------------- 取件地点弹层（place-picker） ----------------
+  onOpenPlacePicker() {
+    this.setData({ placePickerVisible: true });
   },
 
-  onCategoryChange(e) {
-    const idx = Number(e.detail.value) || 0;
-    const cat = this.data.categories[idx];
-    const zones = ZONES_BY_CATEGORY[cat] || [];
-    const zone = zones[0] || '';
-    const places = campus.placesOfZone(zone);
+  onPlaceClose() {
+    this.setData({ placePickerVisible: false });
+  },
+
+  /** 组件 confirm：zone 必有；place 为空 = 片区无下级地标，落库传片区名（后端口径） */
+  onPlaceConfirm(e) {
+    const zone = (e.detail && e.detail.zone) || '';
+    const place = (e.detail && e.detail.place) || '';
+    if (!zone) return;
+    // 有下级地标的片区必须选到楼（组件已拦，这里兜底防直接调）
+    if (!place && campus.placesOfZone(zone).length) return;
     this.setData({
-      categoryIndex: idx,
-      zones: zones,
-      zoneIndex: 0,
-      places: places,
-      placeIndex: 0,
-      pickupPlace: places.length ? '' : zone,
+      placePickerVisible: false,
+      pickupArea: zone,
+      pickupPlace: place || zone,
+      pickupText: campus.displayArea(zone, place),
       'errors.pickupArea': '',
-      'errors.pickupPlace': ''
-    });
-  },
-
-  /** 切片区必须清空地标并重载 —— 手册 §6.8 交互要点 1（最典型 bug） */
-  onZoneChange(e) {
-    const idx = Number(e.detail.value) || 0;
-    const zone = this.data.zones[idx] || '';
-    const places = campus.placesOfZone(zone);
-    this.setData({
-      zoneIndex: idx,
-      places: places,
-      placeIndex: 0,
-      pickupPlace: places.length ? '' : zone,
-      'errors.pickupArea': '',
-      'errors.pickupPlace': ''
-    });
-  },
-
-  onPlaceChange(e) {
-    const idx = Number(e.detail.value) || 0;
-    this.setData({
-      placeIndex: idx,
-      pickupPlace: this.data.places[idx] || '',
       'errors.pickupPlace': ''
     });
   },
@@ -322,7 +270,7 @@ Page({
     const form = this.data.form;
     const timeType = this.data.timeOptions[this.data.timeIndex].value;
     const payload = {
-      pickupArea: this.data.zones[this.data.zoneIndex] || '',
+      pickupArea: this.data.pickupArea || '',
       pickupPlace: this.data.pickupPlace || '',
       deliveryLocation: form.deliveryLocation.trim(),
       itemSize: this.data.sizeOptions[this.data.sizeIndex].value,
