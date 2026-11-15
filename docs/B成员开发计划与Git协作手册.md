@@ -121,7 +121,7 @@
 | --- | --- | --- |
 | `status-tag` | 状态标签，item/errand 两域 | 枚举严格对齐 `schema.sql`：item 用 `on_sale/reserved/sold/off_shelf`，errand 用 `pending/taken/completed/cancelled` |
 | `empty-state` | 空状态，几何图形拼空盒子 | **不依赖图片资源**；只在真无内容时用，加载中用骨架屏 |
-| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus`。**`coverUrl` 是组件对外名，后端返回的是 `firstImage`，必须经 `utils/adapter.js` 的 `toItem()` 转换后再传入**，页面里不要手写字段映射 |
+| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus`。**`coverUrl` 是组件对外名，后端返回的是 `firstImage`，必须经 `utils/adapter.js` 的 `toItem()` 转换后再传入**，页面里不要手写字段映射。**可选 `show-time`（Boolean，默认 false，11-15 A 需求）**：仅 `list` 模式在「成色 · 地点」行末尾右对齐显示 `createdAt` 相对时间（`util.fromNow`，只有「刚刚/3 小时前/昨天/11-05」，不带「发布」二字），不占额外高度；`grid` 模式不渲染（网格等高走查 #1） |
 
 #### 4）口径修正（与 A 对齐后统一）
 

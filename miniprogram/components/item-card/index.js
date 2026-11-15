@@ -7,6 +7,7 @@
 // 字段缺失时降级显示，不报错、不出现 undefined。
 // 枚举严格对齐 database/schema.sql：items.condition_level ENUM('new','like_new','good','fair')
 const adapter = require('../../utils/adapter');
+const util = require('../../utils/util');
 
 const CONDITION_TEXT = {
   new: '全新',
@@ -19,7 +20,11 @@ Component({
   properties: {
     item: { type: Object, value: {} },
     // grid：两列瀑布流卡片；list：单列横向卡片（我的发布/收藏）
-    mode: { type: String, value: 'grid' }
+    mode: { type: String, value: 'grid' },
+    // list 模式可选：显示商品 createdAt 的相对时间（「刚刚」「3 小时前」「昨天」「11-05」）。
+    // 默认 false，我的发布/收藏等既有页面不受影响；二手首页传 show-time="{{true}}"。
+    // 只做展示，不加「发布」前缀；grid 模式不渲染（网格卡高度已按走查记录 #1 对齐，不能再变）
+    showTime: { type: Boolean, value: false }
   },
 
   data: {
@@ -27,11 +32,13 @@ Component({
     priceText: '',
     originText: '',
     conditionText: '',
-    placeText: ''
+    placeText: '',
+    timeText: ''
   },
 
   observers: {
-    item(raw) {
+    // 两个字段都要监听：showTime 可能在 item 之后才传进来
+    'item, showTime': function (raw, showTime) {
       if (!raw) return;
       // 双保险：即使页面漏了 adapter，这里也能拿到 firstImage
       const item = adapter.toItem(raw);
@@ -45,7 +52,9 @@ Component({
         originText: origin > price ? '¥' + origin.toFixed(origin % 1 === 0 ? 0 : 2) : '',
         conditionText: CONDITION_TEXT[item.conditionLevel] || item.conditionLevel || '',
         // 地点取 items.location（schema 唯一地点列），不是已废弃的 campus
-        placeText: item.location || ''
+        placeText: item.location || '',
+        // createdAt 由 adapter.toItem() 带出；缺失时 fromNow 返回空串，不出现 undefined
+        timeText: showTime ? util.fromNow(item.createdAt) : ''
       });
     }
   },

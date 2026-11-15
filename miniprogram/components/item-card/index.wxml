@@ -12,10 +12,12 @@
     <view class="card__title">{{item.title || '未命名商品'}}</view>
 
     <!-- meta 容器恒渲染：成色/地点都为空时也占一行，否则网格卡片高度差 34rpx（走查记录 #1） -->
-    <view class="card__meta {{conditionText || placeText ? '' : 'card__meta--empty'}}">
+    <view class="card__meta {{(conditionText || placeText || (mode === 'list' && timeText)) ? '' : 'card__meta--empty'}}">
       <text wx:if="{{conditionText}}" class="card__meta-item">{{conditionText}}</text>
       <text wx:if="{{conditionText && placeText}}" class="card__dot">·</text>
       <text wx:if="{{placeText}}" class="card__meta-item">{{placeText}}</text>
+      <!-- 相对发布时间（仅 list 模式且 show-time 为 true）：同一行末尾右对齐，只显示时间本身 -->
+      <text wx:if="{{mode === 'list' && timeText}}" class="card__time">{{timeText}}</text>
     </view>
 
     <view class="card__foot">
