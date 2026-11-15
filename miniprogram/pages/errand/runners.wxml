@@ -1,12 +1,202 @@
-<!-- 找跑腿（B 成员负责） -->
-<nav-top back />
+<!-- 找跑腿匹配页（B 成员，11-15）：私单已建好，这里只「展示 + 联系」，不改订单状态 -->
+<nav-top back title="{{pageTitle}}" />
 <view class="page page-body">
-  <view class="card">
-    <view class="t-title">找跑腿</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/errand/runners</view>
+
+  <!-- 登录门 -->
+  <view wx:if="{{!isLogin}}" class="rp-state">
+    <empty-state title="登录后查找跑腿" desc="找跑腿只对已登录同学开放" />
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <block wx:else>
+    <!-- 私单摘要：提醒用户单已建好，谈妥后由对方在详情页接单 -->
+    <view wx:if="{{orderLoaded}}" class="card rp-order">
+      <view class="rp-order__head">
+        <text class="t-title">你的私单</text>
+        <text class="tag tag-gray">私单</text>
+      </view>
+      <view class="rp-order__route">
+        <text class="rp-order__route-text ellipsis">{{routeText}}</text>
+      </view>
+      <view class="rp-order__meta">
+        <text class="rp-order__reward">¥{{rewardText}}</text>
+        <text class="rp-order__time">{{timeText}}</text>
+      </view>
+      <view class="rp-order__hint">谈妥后由对方在详情页接单，这里不会直接指派</view>
+    </view>
+
+    <!-- 筛选面板：可修改后重新查 -->
+    <view class="card rp-filter">
+      <view class="t-title">匹配条件</view>
+
+      <picker mode="selector" range="{{zones}}" value="{{zoneIndex}}" bindchange="onZoneChange">
+        <view class="field-wrap">
+          <view class="field">
+            <view class="field-label">取件片区</view>
+            <view class="field-input">{{zones[zoneIndex]}}</view>
+            <view class="picker-arrow">›</view>
+          </view>
+        </view>
+      </picker>
+
+      <block wx:if="{{places.length}}">
+        <picker mode="selector" range="{{places}}" value="{{placeIndex}}" bindchange="onPlaceChange">
+          <view class="field-wrap">
+            <view class="field">
+              <view class="field-label">取件地标</view>
+              <view class="field-input">{{places[placeIndex]}}</view>
+              <view class="picker-arrow">›</view>
+            </view>
+          </view>
+        </picker>
+      </block>
+      <block wx:else>
+        <view class="field-wrap">
+          <view class="field field--static">
+            <view class="field-label">取件地标</view>
+            <view class="field-input field-input--muted">{{placeEmptyText}}</view>
+          </view>
+        </view>
+      </block>
+
+      <view class="field-wrap">
+        <view class="field">
+          <view class="field-label">时间要求</view>
+          <radio-group class="radio-row" bindchange="onTimeChange">
+            <label wx:for="{{timeOptions}}" wx:key="value" class="radio-item">
+              <radio value="{{item.value}}" checked="{{timeIndex === index}}" color="#79513D" />
+              <text>{{item.label}}</text>
+            </label>
+          </radio-group>
+        </view>
+      </view>
+
+      <!-- range 才需要开始时间 -->
+      <block wx:if="{{timeOptions[timeIndex].value === 'range'}}">
+        <view class="field-wrap">
+          <view class="field">
+            <view class="field-label">开始时间</view>
+            <picker mode="date" start="{{minDate}}" value="{{startDate}}" bindchange="onStartDateChange">
+              <view class="picker-value">{{startDate || '选择日期'}}</view>
+            </picker>
+            <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+              <view class="picker-value picker-value--time">{{startTime || '选择时间'}}</view>
+            </picker>
+          </view>
+        </view>
+      </block>
+
+      <!-- deadline / range 都需要截止时间 -->
+      <block wx:if="{{timeOptions[timeIndex].value !== 'asap'}}">
+        <view class="field-wrap">
+          <view class="field">
+            <view class="field-label">截止时间</view>
+            <picker mode="date" start="{{minDate}}" value="{{deadlineDate}}" bindchange="onDeadlineDateChange">
+              <view class="picker-value">{{deadlineDate || '选择日期'}}</view>
+            </picker>
+            <picker mode="time" value="{{deadlineTime}}" bindchange="onDeadlineTimeChange">
+              <view class="picker-value picker-value--time">{{deadlineTime || '选择时间'}}</view>
+            </picker>
+          </view>
+        </view>
+      </block>
+
+      <picker mode="selector" range="{{sizePick}}" value="{{sizeIndex}}" bindchange="onSizeChange">
+        <view class="field-wrap">
+          <view class="field">
+            <view class="field-label">物品规格</view>
+            <view class="field-input">{{sizePick[sizeIndex].label}}</view>
+            <view class="picker-arrow">›</view>
+          </view>
+        </view>
+      </picker>
+
+      <button class="btn btn-primary btn-block rp-filter__btn" disabled="{{refreshing}}" bindtap="onRequery">
+        {{refreshing ? '匹配中…' : '重新匹配'}}
+      </button>
+    </view>
+
+    <!-- 首屏加载 -->
+    <block wx:if="{{firstLoading}}">
+      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="sk-line sk-line--lg"></view>
+        <view class="sk-line sk-line--md"></view>
+        <view class="sk-line sk-line--sm"></view>
+      </view>
+    </block>
+
+    <!-- 失败：400 文案直出（时间参数不完整等）+ 重试 -->
+    <view wx:elif="{{error}}" class="rp-state">
+      <view class="card rp-state__card">
+        <text class="t-title">匹配失败</text>
+        <text class="t-sub rp-state__desc">{{error}}</text>
+        <button class="btn btn-primary btn-block" bindtap="onRetry">重试</button>
+      </view>
+    </view>
+
+    <!-- 空态：给出路 -->
+    <view wx:elif="{{!list.length}}" class="rp-state">
+      <empty-state
+        title="当前没有符合条件的跑腿"
+        desc="试试放宽筛选条件，或把这一单发布到大厅"
+      />
+      <button wx:if="{{canPublish}}" class="btn btn-primary btn-block" disabled="{{publishing}}" bindtap="onPublishHall">
+        {{publishing ? '发布中…' : '把这单发布到大厅'}}
+      </button>
+      <button wx:else class="btn btn-ghost btn-block" bindtap="onGoHall">去代取大厅看看</button>
+      <view class="t-sub rp-state__tip">也可以修改上方匹配条件后点「重新匹配」</view>
+    </view>
+
+    <block wx:else>
+      <!-- 匹配结果 -->
+      <view class="rp-head">
+        <text class="rp-head__text">匹配到 {{total}} 位跑腿 · 按完成单数排序</text>
+      </view>
+
+      <view wx:for="{{list}}" wx:key="userId" class="card rp-card">
+        <view class="rp-card__top">
+          <image wx:if="{{item.avatarUrl}}" class="rp-card__avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <view wx:else class="rp-card__avatar rp-card__avatar--text">{{item.initial}}</view>
+          <view class="rp-card__info">
+            <view class="rp-card__name-row">
+              <text class="rp-card__name ellipsis">{{item.nickname}}</text>
+              <text class="rp-card__online {{item.online ? 'rp-card__online--on' : ''}}">{{item.onlineText}}</text>
+            </view>
+            <text class="rp-card__stats">{{item.creditText}} · {{item.doneText}} · {{item.availText}}</text>
+          </view>
+          <view class="rp-card__price-wrap">
+            <text class="rp-card__price">¥{{item.priceText}}</text>
+            <text class="rp-card__price-label">起步价</text>
+          </view>
+        </view>
+
+        <view class="rp-card__meta">
+          <text class="rp-card__area ellipsis">服务片区：{{item.areaText}}</text>
+          <view wx:if="{{item.sizeTexts.length}}" class="rp-card__sizes">
+            <text wx:for="{{item.sizeTexts}}" wx:for-item="sz" wx:key="*this" class="tag tag-gray rp-card__size">{{sz}}</text>
+          </view>
+        </view>
+
+        <text wx:if="{{item.remark}}" class="rp-card__remark ellipsis-2">{{item.remark}}</text>
+
+        <view class="rp-card__foot">
+          <text class="rp-card__tip">谈妥后由 TA 在详情页接单</text>
+          <button
+            class="rp-contact"
+            size="mini"
+            data-user-id="{{item.userId}}"
+            bindtap="onContact"
+            hover-class="rp-contact--hover"
+          >联系 TA</button>
+        </view>
+      </view>
+
+      <view class="rp-more">
+        <text wx:if="{{loadingMore}}" class="rp-more__text">加载中…</text>
+        <text wx:elif="{{hasMore}}" class="rp-more__text">上拉加载更多</text>
+        <text wx:else class="rp-more__text">没有更多了</text>
+      </view>
+    </block>
+  </block>
+
+  <view class="safe-bottom"></view>
 </view>
