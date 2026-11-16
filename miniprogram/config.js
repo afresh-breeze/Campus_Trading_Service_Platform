@@ -21,8 +21,9 @@ module.exports = {
 
   // 后端未就绪时的本地模拟开关：
   // true  -> utils/mock.js 拦截已登记接口，返回假数据，方便先调 UI 与跳转
-  // false -> 全部走真实网络请求（A 的 server 跑起来后改成 false）
-  MOCK: true,
+  // false -> 全部走真实网络请求（11-16 起：A 的后端 3000/seed 已跑通，默认走真后端联调；
+  //          离线演示时可本地临时改回 true，但不要提交）
+  MOCK: false,
 
   // 存储键名统一管理，避免各处手写字符串
   STORAGE_KEY: {
