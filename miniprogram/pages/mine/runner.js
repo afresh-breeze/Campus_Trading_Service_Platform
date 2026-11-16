@@ -44,6 +44,17 @@ function weekdayOfDateStr(s) {
   return day === 0 ? 7 : day;
 }
 
+/** 区间天数（含首尾共 span+1 天）；非法返回 -1 */
+function daysBetween(a, b) {
+  const ta = new Date(String(a).replace(/-/g, '/') + ' 00:00:00').getTime();
+  const tb = new Date(String(b).replace(/-/g, '/') + ' 00:00:00').getTime();
+  if (isNaN(ta) || isNaN(tb)) return -1;
+  return Math.round((tb - ta) / 86400000);
+}
+
+/** 自定义区间最长天数（展开成逐日 once，防止选一年炸出 365 条） */
+const MAX_RANGE_DAYS = 31;
+
 /** 生成计划 id：唯一且 ≤64 字（后端约束） */
 function slotId() {
   return 's' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
@@ -120,7 +131,9 @@ function nextUpcomingText(slots) {
       }
       return;
     }
-    for (let offset = 0; offset < 7; offset += 1) {
+    // 覆盖 8 天：若今天就是计划星期且时段已开始，下一次命中是下周同一天（offset=7），
+    // 只扫 7 天会在「今天已过时段开始」时漏掉下一次，状态条只剩「已下线」（11-16 真机踩中）
+    for (let offset = 0; offset < 8; offset += 1) {
       const d = new Date();
       d.setDate(d.getDate() + offset);
       const ds = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -218,13 +231,18 @@ Page({
 
     // 新增计划表单
     slotType: 'once',
-    slotDate: '',
+    slotDate: '', // once 区间的开始日期
+    slotToDate: '', // once 区间的结束日期
     slotFrom: todayStr(),
     slotStart: '',
     slotEnd: '',
     weekdays: [1, 2, 3, 4, 5, 6, 7].map((d) => ({ value: d, label: '周' + WEEKDAY_LABELS[d], checked: false })),
     minDate: todayStr(),
     editingId: '',
+
+    // 可接范围搜索
+    areaKw: '',
+    areaResults: [],
 
     basePrice: '',
     remark: '',
@@ -346,6 +364,47 @@ Page({
     this.setData({ servicePlaces: (e.detail.value || []).slice() });
   },
 
+  // ---------------- 可接范围搜索（11-16 反馈：长列表找地标太累） ----------------
+  onAreaSearch(e) {
+    const kw = String((e.detail && e.detail.value) || '').trim();
+    this.setData({ areaKw: kw, areaResults: this.buildSearchResults(kw) });
+  },
+
+  buildSearchResults(kw) {
+    if (!kw) return [];
+    const places = this.data.servicePlaces;
+    return campus.searchLandmarks(kw, 20).map((name) => ({
+      name: name,
+      zone: campus.zoneOfPlace(name) || '',
+      checked: places.indexOf(name) > -1
+    }));
+  },
+
+  /** 点搜索结果 = 切换该地标勾选；片区没勾就连带勾上（servicePlaces 必须挂在 serviceAreas 下） */
+  onSearchPlaceTap(e) {
+    const name = e.currentTarget.dataset.name;
+    const zone = campus.zoneOfPlace(name);
+    if (!name || !zone) return;
+    const d = this.data;
+    let places = d.servicePlaces.slice();
+    let areas = d.serviceAreas.slice();
+    const idx = places.indexOf(name);
+    if (idx > -1) {
+      places.splice(idx, 1);
+    } else {
+      if (areas.indexOf(zone) < 0) areas.push(zone);
+      places.push(name);
+    }
+    this.setData({
+      serviceAreas: areas,
+      servicePlaces: places,
+      zoneGroups: this.buildZoneGroups(areas),
+      placeGroups: this.buildPlaceGroups(areas, places),
+      areaResults: this.buildSearchResults(d.areaKw),
+      'errors.serviceAreas': ''
+    });
+  },
+
   onSizesChange(e) {
     this.setData({
       itemSizes: (e.detail.value || []).slice(),
@@ -364,6 +423,9 @@ Page({
   onSlotDateChange(e) {
     this.setData({ slotDate: e.detail.value });
   },
+  onSlotToDateChange(e) {
+    this.setData({ slotToDate: e.detail.value });
+  },
   onSlotFromChange(e) {
     this.setData({ slotFrom: e.detail.value });
   },
@@ -380,12 +442,45 @@ Page({
     });
   },
 
+  /** 把自定义日期区间展开成逐日 once slot（后端 validateTimeSlots 只认 once/weekly，区间由前端拆） */
+  expandOnceRange(fromDate, toDate, start, end) {
+    const span = daysBetween(fromDate, toDate);
+    const days = [];
+    const cur = new Date(String(fromDate).replace(/-/g, '/') + ' 00:00:00');
+    for (let i = 0; i <= span; i += 1) {
+      days.push(cur.getFullYear() + '-' + pad(cur.getMonth() + 1) + '-' + pad(cur.getDate()));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return days.map((day) => {
+      const slot = { id: slotId(), type: 'once', date: day, start: start, end: end };
+      return {
+        id: slot.id,
+        type: 'once',
+        date: day,
+        from: '',
+        weekdays: [],
+        start: start,
+        end: end,
+        text: slotText(slot),
+        status: slotStatus(slot)
+      };
+    });
+  },
+
   /** 新增 / 保存编辑计划；编辑中的计划以 editingId 覆盖 */
   onAddSlot() {
     const d = this.data;
     const type = d.slotType;
     const errors = {};
-    if (type === 'once' && !d.slotDate) errors.slot = '请选择日期';
+    if (type === 'once') {
+      if (!d.slotDate || !d.slotToDate) errors.slot = '请选择起止日期';
+      else if (d.slotDate > d.slotToDate) errors.slot = '结束日期不能早于开始日期';
+      else {
+        const span = daysBetween(d.slotDate, d.slotToDate);
+        if (span < 0) errors.slot = '日期不合法';
+        else if (span > MAX_RANGE_DAYS - 1) errors.slot = '日期区间最长 ' + MAX_RANGE_DAYS + ' 天';
+      }
+    }
     if (type === 'weekly') {
       const picked = d.weekdays.filter((w) => w.checked).map((w) => w.value);
       if (!picked.length) errors.slot = '请选择循环的星期';
@@ -403,47 +498,74 @@ Page({
     }
 
     const editing = d.editingId ? d.timeSlots.filter((s) => s.id !== d.editingId) : d.timeSlots;
-    const candidate = {
-      id: d.editingId || slotId(),
-      type: type,
-      date: type === 'once' ? d.slotDate : undefined,
-      from: type === 'weekly' ? d.slotFrom : undefined,
-      weekdays: type === 'weekly' ? d.weekdays.filter((w) => w.checked).map((w) => w.value) : undefined,
-      start: d.slotStart,
-      end: d.slotEnd
-    };
-    if (overlapsWith(editing, candidate)) {
-      this.setData({ 'errors.timeSlots': '在线计划格式错误' });
-      util.toast('与已有计划时间重叠');
-      return;
+
+    // once：区间展开成逐日计划，先整批做重叠校验（任何一天撞上既有计划都报错）
+    let newSlots;
+    if (type === 'once') {
+      newSlots = this.expandOnceRange(d.slotDate, d.slotToDate, d.slotStart, d.slotEnd);
+      for (let i = 0; i < newSlots.length; i += 1) {
+        const cand = {
+          id: newSlots[i].id,
+          type: 'once',
+          date: newSlots[i].date,
+          start: newSlots[i].start,
+          end: newSlots[i].end
+        };
+        if (overlapsWith(editing, cand)) {
+          this.setData({ 'errors.timeSlots': '在线计划格式错误' });
+          util.toast(newSlots[i].date + ' 与已有计划时间重叠');
+          return;
+        }
+      }
+    } else {
+      const candidate = {
+        id: d.editingId || slotId(),
+        type: 'weekly',
+        from: d.slotFrom,
+        weekdays: d.weekdays.filter((w) => w.checked).map((w) => w.value),
+        start: d.slotStart,
+        end: d.slotEnd
+      };
+      if (overlapsWith(editing, candidate)) {
+        this.setData({ 'errors.timeSlots': '在线计划格式错误' });
+        util.toast('与已有计划时间重叠');
+        return;
+      }
+      newSlots = [
+        {
+          id: candidate.id,
+          type: 'weekly',
+          date: '',
+          from: candidate.from,
+          weekdays: candidate.weekdays,
+          start: candidate.start,
+          end: candidate.end,
+          text: slotText(candidate),
+          status: slotStatus(candidate)
+        }
+      ];
     }
 
-    const slot = {
-      id: candidate.id,
-      type: type,
-      date: candidate.date || '',
-      from: candidate.from || '',
-      weekdays: candidate.weekdays || [],
-      start: candidate.start,
-      end: candidate.end,
-      text: slotText(candidate),
-      status: slotStatus(candidate)
-    };
     const timeSlots = d.editingId
-      ? d.timeSlots.map((s) => (s.id === d.editingId ? slot : s))
-      : d.timeSlots.concat([slot]);
+      ? d.timeSlots.map((s) => (s.id === d.editingId ? newSlots[0] : s)).concat(
+          d.editingId ? newSlots.slice(1) : []
+        )
+      : d.timeSlots.concat(newSlots);
 
     this.setData({
       timeSlots: timeSlots,
       editingId: '',
       slotType: 'once',
       slotDate: '',
+      slotToDate: '',
       slotStart: '',
       slotEnd: '',
       weekdays: this.data.weekdays.map((w) => ({ value: w.value, label: w.label, checked: false })),
       'errors.timeSlots': ''
     });
-    util.toast(d.editingId ? '计划已更新' : '计划已添加');
+    util.toast(
+      d.editingId ? '计划已更新' : newSlots.length > 1 ? '已按天拆成 ' + newSlots.length + ' 条计划' : '计划已添加'
+    );
   },
 
   /** 编辑：只有未开始的计划能改（进行中改了也只影响下一次，手册允许但不做入口） */
@@ -459,6 +581,7 @@ Page({
       editingId: id,
       slotType: slot.type,
       slotDate: slot.date || '',
+      slotToDate: slot.date || '', // 单条 once 编辑时区间=当天
       slotFrom: slot.from || todayStr(),
       slotStart: slot.start,
       slotEnd: slot.end,
@@ -492,6 +615,7 @@ Page({
     this.setData({
       editingId: '',
       slotDate: '',
+      slotToDate: '',
       slotStart: '',
       slotEnd: '',
       weekdays: this.data.weekdays.map((w) => ({ value: w.value, label: w.label, checked: false }))

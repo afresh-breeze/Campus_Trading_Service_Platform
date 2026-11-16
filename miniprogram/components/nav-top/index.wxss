@@ -5,6 +5,22 @@
   pointer-events: none;
 }
 
+/* 非固定：bar 就是普通占位（原行为，所有既有页面不变） */
+.nav-top__bar {
+  position: relative;
+  width: 100%;
+}
+
+/* fixed=true：bar 悬浮在屏幕顶 + 不透明背景，内容靠 __ph 占位不被盖 */
+.nav-top__bar--fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background-color: var(--color-bg, #FAF6F0);
+}
+
 /* 悬浮返回按钮（仅二级页且有页面栈时出现） */
 .nav-top__back {
   position: absolute;

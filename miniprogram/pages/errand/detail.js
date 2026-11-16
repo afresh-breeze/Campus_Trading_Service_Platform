@@ -217,7 +217,12 @@ Page({
       chatShow: canChat,
       chatLabel,
       chatTip,
-      actions: buildActions(order)
+      // 聊天入口并进底部操作栏（11-16 反馈：联系发布者和接单放一起，卡片里只留发布人信息）
+      actions: (function () {
+        const list = buildActions(order);
+        if (canChat) list.unshift({ key: 'chat', text: chatLabel, primary: false });
+        return list;
+      })()
     });
   },
 
@@ -255,6 +260,12 @@ Page({
   onAction(e) {
     const key = e.currentTarget.dataset.key;
     if (this.data.submitting) return;
+
+    // 聊天是跳转类动作，不弹确认，必须在 cfg 判空之前处理（同 edit/findRunner）
+    if (key === 'chat') {
+      this.onContact();
+      return;
+    }
 
     const map = {
       take: {

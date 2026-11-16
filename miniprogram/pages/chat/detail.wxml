@@ -1,8 +1,9 @@
 <!-- 聊天页（B 成员，11-14）：业务卡片 + 消息气泡（3 秒增量轮询）+ 发送框 -->
-<nav-top back title="{{pageTitle}}" />
-
-<!-- 初始化失败：403/404/网络 三态分明 -->
+<!-- 修复（11-16）：nav-top 挪进 cd-page（100vh flex 列）内部当第一个子元素。
+     之前 nav-top 在外面占高度，cd-page 又是 100vh，总高超出视口，
+     底部发送框（我方的聊天框）被顶到屏幕外看不见。 -->
 <view wx:if="{{fatalError}}" class="page page-body">
+  <nav-top back />
   <view class="card cd-fatal">
     <text class="t-title">{{fatalError}}</text>
     <text class="t-sub cd-fatal__desc">{{fatalDesc}}</text>
@@ -11,8 +12,8 @@
   </view>
 </view>
 
-<!-- 初始化骨架：会话还没建好/消息没到，给重试出路 -->
 <view wx:elif="{{loading}}" class="page page-body">
+  <nav-top back />
   <view class="sk-card">
     <view class="sk-line sk-line--lg"></view>
     <view class="sk-line sk-line--md"></view>
@@ -22,6 +23,7 @@
 
 <block wx:else>
   <view class="cd-page">
+    <nav-top back title="{{pageTitle}}" />
     <!-- 业务卡片：点击进商品/代取详情；动作仍在详情页做 -->
     <view wx:if="{{bizCard}}" class="cd-biz" bindtap="onBizTap" hover-class="cd-biz--hover">
       <image wx:if="{{bizCard.coverUrl}}" class="cd-biz__cover" src="{{bizCard.coverUrl}}" mode="aspectFill" />

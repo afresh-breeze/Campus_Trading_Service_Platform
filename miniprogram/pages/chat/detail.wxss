@@ -17,6 +17,10 @@
   box-sizing: border-box;
   padding-bottom: env(safe-area-inset-bottom);
 }
+/* nav-top 是 flex 子项时不许被压缩，否则安全区占位塌陷、气泡顶进状态栏 */
+.cd-page .nav-top {
+  flex-shrink: 0;
+}
 
 /* ---- 业务卡片 ---- */
 .cd-biz {

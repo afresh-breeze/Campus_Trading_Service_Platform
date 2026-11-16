@@ -11,13 +11,10 @@
     <view class="hall-bar__subrow">
       <text class="hall-bar__sub" wx:if="{{isLogin && total > 0}}">{{total}} 单待接单 · 下拉刷新</text>
       <text class="hall-bar__sub" wx:elif="{{isLogin}}">同校同学发布的跑腿需求都在这里</text>
-      <view class="hall-bar__entry" bindtap="onGoRunner" hover-class="hall-bar__entry--hover">
-        <text class="hall-bar__entry-text">我要接单</text>
-        <text class="hall-bar__entry-arrow">›</text>
-      </view>
     </view>
 
-    <!-- 规格 + 时间标签分类、最新/报酬排序（后端契约 errands.js） -->
+    <!-- 规格 + 时间标签分类、最新/报酬排序（后端契约 errands.js）；
+         「我要接单」与规格行同排（顶部与 chip 齐平），排序与时间行同排 -->
     <view class="filter-row">
       <text class="filter-row__label">规格</text>
       <view class="filter-chips">
@@ -26,6 +23,23 @@
           wx:key="value"
           class="chip {{filters.itemSize === item.value ? 'chip--active' : ''}}"
           data-type="itemSize"
+          data-value="{{item.value}}"
+          bindtap="onFilterTap"
+        >{{item.label}}</view>
+      </view>
+      <view class="hall-bar__entry" bindtap="onGoRunner" hover-class="hall-bar__entry--hover">
+        <text class="hall-bar__entry-text">我要接单</text>
+        <text class="hall-bar__entry-arrow">›</text>
+      </view>
+    </view>
+    <view class="filter-row">
+      <text class="filter-row__label">时间</text>
+      <view class="filter-chips">
+        <view
+          wx:for="{{timeChips}}"
+          wx:key="value"
+          class="chip {{filters.timeType === item.value ? 'chip--active' : ''}}"
+          data-type="timeType"
           data-value="{{item.value}}"
           bindtap="onFilterTap"
         >{{item.label}}</view>
@@ -40,19 +54,6 @@
           class="sort-btn sort-btn--price {{filters.sort !== 'latest' ? 'sort-btn--active' : ''}}"
           bindtap="onSortReward"
         >报酬{{filters.sort === 'reward_desc' ? ' ↓' : (filters.sort === 'reward_asc' ? ' ↑' : '')}}</text>
-      </view>
-    </view>
-    <view class="filter-row">
-      <text class="filter-row__label">时间</text>
-      <view class="filter-chips">
-        <view
-          wx:for="{{timeChips}}"
-          wx:key="value"
-          class="chip {{filters.timeType === item.value ? 'chip--active' : ''}}"
-          data-type="timeType"
-          data-value="{{item.value}}"
-          bindtap="onFilterTap"
-        >{{item.label}}</view>
       </view>
     </view>
   </view>

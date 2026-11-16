@@ -41,6 +41,64 @@
 }
 
 /* ---------------- 勾选网格 ---------------- */
+/* 可接范围搜索框（11-16 反馈）：输入关键字直达地标，点击切换勾选 */
+.area-search {
+  margin-bottom: 20rpx;
+}
+.area-search__input {
+  height: 72rpx;
+  padding: 0 24rpx;
+  background-color: var(--color-surface-2, #f4f1e7);
+  border-radius: var(--radius-full);
+  font-size: var(--font-base);
+}
+.area-search__results {
+  margin-top: 12rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.area-search__item {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 20rpx;
+  background-color: var(--color-bg-white);
+}
+.area-search__item + .area-search__item {
+  border-top: 1rpx solid var(--color-divider);
+}
+.area-search__item--hover {
+  background-color: var(--color-primary-light);
+}
+.area-search__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.area-search__zone {
+  flex: none;
+  margin-left: 12rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.area-search__state {
+  flex: none;
+  margin-left: 16rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-2);
+}
+.area-search__state--on {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.area-search__empty {
+  display: block;
+  margin-top: 12rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+
 .zone-group {
   margin-bottom: 20rpx;
 }

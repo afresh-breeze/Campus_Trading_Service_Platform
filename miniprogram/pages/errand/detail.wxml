@@ -116,14 +116,7 @@
         </view>
       </block>
 
-      <!-- 聊天入口：pending 大厅单也能先问发布者（A 15:11 反馈）；
-           cancelled 不再给入口 -->
-      <button
-        wx:if="{{chatShow}}"
-        class="btn btn-ghost detail-people__chat"
-        bindtap="onContact"
-      >{{chatLabel}}</button>
-      <text wx:if="{{chatTip}}" class="detail-people__tip">{{chatTip}}</text>
+      <!-- 联系入口已并入底部操作栏（11-16 反馈）：卡片里只留发布人/接单人信息 -->
     </view>
 
     <!-- ⑤ 固定出路：从 redirectTo / 分享 / 外部链接进来时页面栈只有 1 层，
@@ -142,15 +135,18 @@
   </block>
 </view>
 
-<!-- 底部操作栏：按钮与文案全部来自 js 的 buildActions（源头是后端 can*） -->
+<!-- 底部操作栏：聊天入口与订单动作并排（11-16 反馈），按钮全部来自 js 的 actions -->
 <view wx:if="{{actions.length}}" class="detail-bar">
-  <button
-    wx:for="{{actions}}"
-    wx:key="key"
-    class="btn detail-bar__btn {{item.primary ? 'btn-primary' : (item.danger ? 'btn-danger' : 'btn-ghost')}}"
-    data-key="{{item.key}}"
-    disabled="{{submitting}}"
-    loading="{{submitting && actionKey === item.key}}"
-    bindtap="onAction"
-  >{{item.text}}</button>
+  <text wx:if="{{chatTip}}" class="detail-bar__tip">{{chatTip}}</text>
+  <view class="detail-bar__row">
+    <button
+      wx:for="{{actions}}"
+      wx:key="key"
+      class="btn detail-bar__btn {{item.primary ? 'btn-primary' : (item.danger ? 'btn-danger' : 'btn-ghost')}}"
+      data-key="{{item.key}}"
+      disabled="{{submitting}}"
+      loading="{{submitting && actionKey === item.key}}"
+      bindtap="onAction"
+    >{{item.text}}</button>
+  </view>
 </view>

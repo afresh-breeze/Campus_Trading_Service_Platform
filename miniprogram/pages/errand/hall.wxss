@@ -44,13 +44,13 @@
   line-height: 1.4;
   color: var(--color-text-3);
 }
-/* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线） */
+/* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线）。
+   高度与 chip 一致（52rpx），保证「我要接单」顶部与规格行 chip 顶部齐平（11-16 反馈） */
 .hall-bar__entry {
   display: flex;
   align-items: center;
   flex: none;
-  margin-left: 16rpx;
-  height: 60rpx;
+  height: 52rpx;
   padding: 0 20rpx;
   border-radius: var(--radius-full);
   background-color: var(--color-primary-light);
@@ -67,6 +67,9 @@
   margin-left: 6rpx;
   font-size: var(--font-base);
   color: var(--color-primary-dark);
+}
+.hall-bar__subrow {
+  display: block;
 }
 .hall-bar__sub {
   display: block;
@@ -208,11 +211,12 @@
 }
 .order__thumb {
   flex: none;
-  width: 96rpx;
-  height: 96rpx;
-  margin-right: var(--space-sm);
-  border-radius: var(--radius);
-  background-color: var(--color-bg);
+  /* 与二手首页 item-card list 封面同尺寸（200×200，圆角 12rpx），两个列表视觉一致（11-16 反馈） */
+  width: 200rpx;
+  height: 200rpx;
+  margin-right: 20rpx;
+  border-radius: 12rpx;
+  background-color: var(--color-divider);
 }
 .order__body {
   flex: 1;

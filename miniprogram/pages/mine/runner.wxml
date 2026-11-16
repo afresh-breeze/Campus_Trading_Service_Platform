@@ -1,5 +1,6 @@
 <!-- 接单设置 / 上线接单 双入口（B 成员，11-13）｜规格见手册 §6.12 -->
-<nav-top back title="{{pageTitle}}" />
+<!-- fixed：页面很长，返回按钮必须固定在顶不随滚动消失（11-16 反馈） -->
+<nav-top back title="{{pageTitle}}" fixed />
 <view class="page page-body">
 
   <!-- 顶部状态条：在线状态一眼可见，不要只靠按钮颜色 -->
@@ -13,6 +14,33 @@
   <view class="card">
     <view class="t-title">可接范围</view>
     <view class="t-sub form-tip">勾选可接片区；某片区不勾任何地标 = 整个片区都接</view>
+
+    <!-- 地点搜索：输入关键字直达地标，点一下就切换勾选（11-16 反馈） -->
+    <view class="area-search">
+      <input
+        class="area-search__input"
+        value="{{areaKw}}"
+        placeholder="搜索地点，如「30 教」「图书馆」「桃园」"
+        placeholder-class="field-placeholder"
+        confirm-type="search"
+        bindinput="onAreaSearch"
+      />
+      <view wx:if="{{areaResults.length}}" class="area-search__results">
+        <view
+          wx:for="{{areaResults}}"
+          wx:key="name"
+          class="area-search__item"
+          data-name="{{item.name}}"
+          bindtap="onSearchPlaceTap"
+          hover-class="area-search__item--hover"
+        >
+          <text class="area-search__name ellipsis">{{item.name}}</text>
+          <text class="area-search__zone">{{item.zone}}</text>
+          <text class="area-search__state {{item.checked ? 'area-search__state--on' : ''}}">{{item.checked ? '取消勾选' : '勾选'}}</text>
+        </view>
+      </view>
+      <text wx:elif="{{areaKw}}" class="area-search__empty">没有匹配的地标，试试「教」「图书馆」「驿站」</text>
+    </view>
 
     <checkbox-group bindchange="onAreasChange">
       <view wx:for="{{zoneGroups}}" wx:key="category" wx:for-item="group" class="zone-group">
@@ -102,7 +130,7 @@
       <radio-group class="check-row radio-row--gap" bindchange="onSlotTypeChange">
         <label class="check-item">
           <radio value="once" checked="{{slotType === 'once'}}" color="#79513D" />
-          <text>单次（某一天）</text>
+          <text>自定义（某天到某天）</text>
         </label>
         <label class="check-item">
           <radio value="weekly" checked="{{slotType === 'weekly'}}" color="#79513D" />
@@ -112,9 +140,17 @@
 
       <view class="slot-form">
         <block wx:if="{{slotType === 'once'}}">
-          <picker mode="date" start="{{minDate}}" value="{{slotDate}}" bindchange="onSlotDateChange">
-            <view class="picker-value">{{slotDate || '选择日期'}}</view>
-          </picker>
+          <!-- 自定义区间：不是循环，从开始日到结束日每天这一时段在线；保存时按天拆成逐日计划 -->
+          <text class="slot-form__hint">从开始日到结束日每天这个时段在线，不是循环；最长 31 天</text>
+          <view class="slot-form__times">
+            <picker mode="date" start="{{minDate}}" value="{{slotDate}}" bindchange="onSlotDateChange">
+              <view class="picker-value">{{slotDate || '开始日期'}}</view>
+            </picker>
+            <text class="slot-form__dash">至</text>
+            <picker mode="date" start="{{slotDate || minDate}}" value="{{slotToDate}}" bindchange="onSlotToDateChange">
+              <view class="picker-value">{{slotToDate || '结束日期'}}</view>
+            </picker>
+          </view>
         </block>
         <block wx:else>
           <!-- 自由选某几天：勾哪几天就哪几天，不用凑「每周几循环」的说法 -->
