@@ -1,5 +1,6 @@
 <!-- 代取详情（B 成员，11-12）：展示 + 状态机操作，按钮全部由后端 can* 决定 -->
-<nav-top back />
+<!-- 11-16 反馈：返回按钮 fixed 固定在顶部，不随内容滚动消失（nav-top 组件 11-15 已支持 fixed） -->
+<nav-top back fixed />
 
 <view class="detail {{actions.length ? 'detail--bar' : ''}}">
   <!-- 加载中 / 加载失败互斥；404 说明无权可见，单独给「回大厅」出路 -->

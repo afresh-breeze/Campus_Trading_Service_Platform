@@ -101,7 +101,7 @@
 | --- | --- | --- | --- |
 | M0 环境与登录打通 | 11-07 | ✅ 已过 | `app.json` 注册 20 页；`/api/health`、`/api/auth/me` 可通；登录页渲染成功，开发者工具 **0 错误 0 警告** |
 | M1 二手闭环（配合 A） | 11-11 | 🟡 配合中 | 公共层与组件已交付，A 可引用；B 侧页面尚未开始 |
-| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中 | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；小程序侧 **大厅 + 详情（11-12）、发布页 + 接单设置/上线页（11-13）、消息列表 + 聊天页 + 3 秒轮询（11-14 任务于 11-15 补齐）、我的代取 + 找跑腿匹配页（11-15）已全部落地**（见 §0.4-6 ~ §0.4-10），进入 M2 联调 |
+| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中（联调阶段） | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；小程序侧 **大厅 + 详情（11-12）、发布页 + 接单设置/上线页（11-13）、消息列表 + 聊天页 + 3 秒轮询（11-14 任务于 11-15 补齐）、我的代取 + 找跑腿匹配页（11-15）已全部落地**（见 §0.4-6 ~ §0.4-10）；**11-16 联调：B 本机真后端已跑通并实测接口（见 §0.4-13），chat 鉴权 bug 已修** |
 
 #### 2）公共层遗留项（A 11-10 评审提出的 7 项，已全部闭环）
 
@@ -305,7 +305,31 @@
 
 **验证**：契约 **141/0**；冒烟 **392/0**（hall 64 / detail 33 / publish 38 / runner 53 / mine_errands 36 / runners 47 / chat_list 19 / chat_detail 48 / item_card 25 / place_picker 29）。
 
-#### 13）已知阻塞（写在这里，避免口头遗忘）
+#### 13）11-16 当日任务：M2 联调修复（`fix/m2-integration` 口径）
+
+**联调环境（B 本机已跑通）**：
+
+- 本机 MySQL 建 `campus_service` 库（A 的 `schema.sql` 14 表 + `objects.sql` 35 个表对象/视图/存储过程，`DELIMITER $$` 需按分隔符切句执行）+ seed 数据，`server/.env` 各机自配（已 gitignore）。一键脚本 `scripts/init-dev-db.js`（B 专属 scripts/）。
+- 演示账号密码是 **`123456`**（`seed.js` 第 9 行；文档旧值 `123456` 作废），2023001/2023002/2023003 同密码。
+- 真接口实测：带 token `/api/conversations`、`/unread-count`、`/api/items`、`/api/errands` 均 200。
+- `miniprogram/config.js` 的 `MOCK` 已按 A 要求改为 **false** 提交（`6b58344`）；离线演示本地临时改回 true 不提交（`git update-index --skip-worktree` 防误提交，解除用 `--no-skip-worktree`）。
+
+**联调修复与反馈**：
+
+| # | 事项 | 处理 |
+| --- | --- | --- |
+| 1 | **chat 路由 500（联调首日真 bug）** | `routes/chat.js` 全文件读 `req.user.userId` 但从未 `router.use(auth)` → 会话列表/未读数全 500。补挂 auth（`edf392d`）；新增 `scripts/chat-auth-smoke.js` 15/0（真 express + 真 auth + 内存假 pool，无 token 401 / 合法 token 200），并用 `git stash` 回退验证过修复前全 500 |
+| 2 | 用户 6 条反馈（上午） | 大厅「我要接单」齐平 / 缩略图 200rpx / 聊天框消失根因（nav-top 挪进 `cd-page`）/ nav-top 新增 `fixed` 属性 + 接单设置页地点搜索 / 「单次」改「自定义某天到某天」（前端逐日拆 once，契约不变）/ 详情页 chat 并入底部操作栏（`b2583b6`） |
+| 3 | 用户追加 2 条 | 搜索 `[object Object]`（`searchLandmarks` 返回对象非字符串）+ 「片区即地点」搜不到（图书馆/运动场等）+ 发送按钮宽度（`92d8fc1`） |
+| 4 | 用户三轮宽度收敛 | 微信 `button` 默认样式怪癖两连：**类选择器压不住内置 `width:184px`**（必须内联 style）；**类选择器 `margin-left` 被吞渲染为 0**（截图逐像素实测证实，缝隙一直是 0）→ 缝隙改实体 `<view class="cd-inputbar__gap">` 占位 20rpx（`523e864`） |
+| 5 | 代取详情返回按钮随滚动消失 | `errand/detail.wxml` 的 `nav-top` 加 `fixed`（bar 固定 + 不透明同色背景 `#F4F1E7`） |
+| 6 | 大厅标题滚动行为 | 标题与胶囊齐平固定、删除缩小动画（`71bc180`、`e3dc846`） |
+
+**验证**：契约 **141/0**；冒烟 **410/0**（11 个脚本已入库 `scripts/smoke/`，别再用 Temp）。
+
+**未做（顺延）**：真机双账号 5 秒互发验收（`?mode=online` 上线状态依赖 A 的 `GET /api/runners` 真实数据）；开发者工具全页编译留证截图。
+
+#### 14）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
