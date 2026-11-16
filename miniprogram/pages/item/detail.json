@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "商品详情",
   "usingComponents": {
-    "nav-top": "/components/nav-top/index"
+    "nav-top": "/components/nav-top/index",
+    "status-tag": "/components/status-tag/index"
   }
 }
