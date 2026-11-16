@@ -178,15 +178,20 @@
 .cd-inputbar__placeholder {
   color: var(--color-text-4, #b3a695);
 }
+/* 输入框与发送按钮之间的缝隙：实测 button 组件会吞掉类选择器 margin-left
+   （16rpx/20rpx 都渲染成 0，截图逐像素量过），改用实体 view 占位 20rpx（10px）。
+   不要再用 margin 方案 —— 见 11-16 21:40 记录 */
+.cd-inputbar__gap {
+  flex: none;
+  width: 20rpx;
+}
 /* 发送按钮：宽度 = 「发送」二字 56rpx + 左右各 22rpx，100rpx 固定。
    不用 width:auto/fit-content —— 微信 button 默认样式 width:184px 在部分环境兜不住，
-   固定值最稳；真正生效的宽度写在 wxml 内联 style 上（内联优先级最高）。
-   margin-left: 20rpx（10px）= 输入框与发送框之间的空隙（11-16 第 3 轮反馈） */
+   固定值最稳；真正生效的宽度写在 wxml 内联 style 上（内联优先级最高） */
 .cd-inputbar__send {
   flex: none;
   width: 100rpx;
   min-width: 0;
-  margin-left: 20rpx;
   padding: 0;
   min-height: 64rpx;
   line-height: 64rpx;

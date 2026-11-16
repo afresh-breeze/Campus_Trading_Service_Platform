@@ -92,6 +92,9 @@
         bindinput="onInput"
         bindconfirm="onSend"
       />
+      <!-- 间隙用实体 view 占位：button 组件吞掉类选择器的 margin-left（实测渲染为 0），
+           与 width:184px 同源的默认样式怪癖，宽度/间距一律走内联或实体元素 -->
+      <view class="cd-inputbar__gap" />
       <button
         class="cd-inputbar__send {{input ? 'cd-inputbar__send--on' : ''}}"
         style="width: 100rpx; min-width: 0; padding: 0;"
