@@ -92,7 +92,11 @@
         bindinput="onInput"
         bindconfirm="onSend"
       />
-      <button class="cd-inputbar__send {{input ? 'cd-inputbar__send--on' : ''}}" bindtap="onSend">发送</button>
+      <button
+        class="cd-inputbar__send {{input ? 'cd-inputbar__send--on' : ''}}"
+        style="width: 76rpx; min-width: 0; padding: 0 10rpx;"
+        bindtap="onSend"
+      >发送</button>
     </view>
   </view>
 </block>
