@@ -327,10 +327,6 @@
   color: var(--color-primary-dark);
   border-color: transparent;
 }
-.detail-bar__count {
-  margin-left: 6rpx;
-  font-size: 24rpx;
-}
 .detail-bar__contact {
   width: 100%;
 }

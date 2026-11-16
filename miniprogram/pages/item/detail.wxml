@@ -161,7 +161,6 @@
         bindtap="onFavorite"
       >
         <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
-        <text wx:if="{{favoriteCount}}" class="detail-bar__count">{{favoriteCount}}</text>
       </button>
     </view>
     <view class="detail-bar__cell detail-bar__cell--contact">
