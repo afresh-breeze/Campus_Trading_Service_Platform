@@ -292,6 +292,23 @@ const OK_ERRAND = {
     { peerId: 5, bizType: 'errand', bizId: 999999 },
     '订单不存在'
   );
+  // 11-16 回归：大厅单 2009/2010/2011 的发布人（11/12/13）此前不在 mock 用户表，
+  // userOf() 查不到 → 404「对方用户不存在」→ 详情页「联系发布者」直接「会话不存在」
+  for (const pair of [[2009, 11], [2010, 12], [2011, 13]]) {
+    const r = await mock.run('/api/conversations', 'POST', {
+      peerId: pair[1],
+      bizType: 'errand',
+      bizId: pair[0]
+    });
+    check('大厅单 #' + pair[0] + '（发布人 ' + pair[1] + '）可以发起会话', !!r.conversationId, r);
+  }
+  await expectFailMsg(
+    '对方用户不存在 → 404',
+    '/api/conversations',
+    'POST',
+    { peerId: 99, bizType: 'errand', bizId: 2001 },
+    '对方用户不存在'
+  );
 
   console.log('\n[10] 大厅筛选：area / itemSize / timeType / sort（A 侧扩展契约）');
   // 断言写成「相对快照」的形式：前面 [1]~[9] 会新建订单，写死 id 列表会随用例增删而碎。

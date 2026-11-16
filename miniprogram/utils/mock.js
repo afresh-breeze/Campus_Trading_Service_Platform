@@ -217,7 +217,13 @@ const users = [
   { userId: 6, studentNo: '202321010100006', nickname: '孙同学', avatarUrl: '', creditScore: 90, phone: '', status: 'active' },
   { userId: 7, studentNo: '202321010100007', nickname: '周同学', avatarUrl: '', creditScore: 76, phone: '', status: 'active' },
   { userId: 8, studentNo: '202321010100008', nickname: '跑腿小李', avatarUrl: '', creditScore: 96, phone: '', status: 'active' },
-  { userId: 9, studentNo: '202321010100009', nickname: '阿杰', avatarUrl: '', creditScore: 86, phone: '', status: 'active' }
+  { userId: 9, studentNo: '202321010100009', nickname: '阿杰', avatarUrl: '', creditScore: 86, phone: '', status: 'active' },
+  // 11-16 补：代取单 2009/2010/2011 的发布人（publisherId 11~13）此前不在用户表，
+  // POST /api/conversations 的 userOf() 查不到 → 404「对方用户不存在」→
+  // 详情页「联系发布者」直接落到「会话不存在」。昵称/信用分与订单 publisher 字段严格一致。
+  { userId: 11, studentNo: '202321010100011', nickname: '陈同学', avatarUrl: '', creditScore: 82, phone: '', status: 'active' },
+  { userId: 12, studentNo: '202321010100012', nickname: '吴同学', avatarUrl: '', creditScore: 95, phone: '', status: 'active' },
+  { userId: 13, studentNo: '202321010100013', nickname: '郑同学', avatarUrl: '', creditScore: 70, phone: '', status: 'active' }
 ];
 
 function userOf(userId) {
