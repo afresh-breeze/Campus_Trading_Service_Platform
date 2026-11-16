@@ -4,7 +4,7 @@
 //   1. 只展示 on_sale，状态过滤交给后端，前端不二次过滤；
 //   2. 搜索胶囊只做入口，跳 /pages/search/result，首页不弹键盘；
 //   3. 分类单选（0 = 全部），排序 latest / price_asc / price_desc；
-//   4. 每页 6 条：当前 seed 8 件在售，可演示 6 + 2 的上拉加载；
+//   4. 每页 6 条：seed 17 件在售，可演示 6 + 6 + 5 三页；
 //   5. 每次 onShow 重拉第一页；筛选/排序变化清空旧列表并显示骨架；
 //   6. 请求带自增 seq，过期响应整包丢弃；上拉按 itemId 去重。
 const http = require('../../utils/request');
@@ -15,24 +15,24 @@ const PAGE_SIZE = 6;
 const TAB_INDEX = 0;
 const ALL_CATEGORY = { categoryId: 0, name: '全部' };
 
-/** 与 nav-top 同一个公式：吸顶内容停在胶囊下方 */
-function getNavHeight() {
+/** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
+function getNavMetrics() {
   try {
     const menu = wx.getMenuButtonBoundingClientRect
       ? wx.getMenuButtonBoundingClientRect()
       : null;
-    if (menu && menu.bottom) return menu.bottom + 6;
+    if (menu && menu.top && menu.height) return { top: menu.top, height: menu.height };
     const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-    return (win.statusBarHeight || 20) + 44;
+    return { top: (win.statusBarHeight || 20) + 4, height: 32 };
   } catch (e) {
-    return 64;
+    return { top: 24, height: 32 };
   }
 }
 
 Page({
   data: {
-    stickyTop: 64,
-    stuck: false,
+    stickyTop: 24, // 状态栏占位 = 胶囊顶部 y，让标题与胶囊齐平
+    barHead: 32, // 标题行高 = 胶囊高度，与胶囊完全同排
     isLogin: true,
     firstLoading: true,
     loadingMore: false,
@@ -51,11 +51,8 @@ Page({
   onLoad() {
     this._reqSeq = 0;
     this._categoriesLoading = false;
-    this.setData({ stickyTop: getNavHeight() });
-  },
-
-  onReady() {
-    this.setupStickyObserver();
+    const nav = getNavMetrics();
+    this.setData({ stickyTop: nav.top, barHead: nav.height });
   },
 
   onShow() {
@@ -66,13 +63,6 @@ Page({
     this.refresh();
   },
 
-  onUnload() {
-    if (this._io) {
-      this._io.disconnect();
-      this._io = null;
-    }
-  },
-
   onPullDownRefresh() {
     this.refresh().then(() => wx.stopPullDownRefresh());
   },
@@ -81,23 +71,6 @@ Page({
     if (this.data.refreshing || this.data.loadingMore || this.data.firstLoading) return;
     if (!this.data.hasMore || this.data.error) return;
     this.fetch(this.data.page + 1);
-  },
-
-  /** 吸顶后加阴影：观察标题区下方的哨兵是否越过吸顶线 */
-  setupStickyObserver() {
-    if (!wx.createIntersectionObserver) return;
-    try {
-      this._io = wx.createIntersectionObserver(this, { thresholds: [0] });
-      this._io
-        .relativeToViewport({ top: -this.data.stickyTop })
-        .observe('.home-sentinel', (res) => {
-          const stuck = res.intersectionRatio <= 0;
-          if (stuck !== this.data.stuck) this.setData({ stuck });
-        });
-    } catch (e) {
-      // 老基础库不支持时只保留吸顶，不加阴影
-      this._io = null;
-    }
   },
 
   /** 重拉第一页；返回 Promise 供下拉刷新收尾 */

@@ -1,60 +1,37 @@
 /* 二手首页（A 成员，11-14）：只引用 app.wxss 的设计令牌，不写死主题色 */
 
-/* 吸顶时补的顶部导航栏：盖住胶囊下方到吸顶条之间的区域 */
-.home-topbar {
-  position: fixed;
+/* ---------------- 顶部整块吸附 ---------------- */
+.home-bar {
+  position: -webkit-sticky;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 9;
-  display: flex;
-  align-items: flex-end;
-  padding: 0 var(--space) 8rpx;
+  z-index: 10;
+  padding: 0 var(--space) 10rpx;
   background-color: var(--color-bg);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.16s ease;
 }
-.home-topbar--show {
-  opacity: 1;
+.home-bar__safe {
+  overflow: hidden;
 }
-.home-topbar__title {
-  font-size: var(--font-lg);
-  font-weight: 600;
-  color: var(--color-text);
-  letter-spacing: 1rpx;
+.home-bar__head {
+  display: flex;
+  align-items: center;
 }
-
-/* ---------------- 标题 ---------------- */
-.home-head {
-  padding: var(--space) var(--space) 0;
-}
-.home-head__title {
+.home-bar__title {
   font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: 2rpx;
-  line-height: 1.3;
+  line-height: 1;
 }
-.home-head__sub {
-  margin-top: 8rpx;
+.home-bar__subrow {
+  display: block;
+}
+.home-bar__sub {
+  display: block;
+  margin: 6rpx 0;
   font-size: var(--font-sm);
+  line-height: 1.4;
   color: var(--color-text-3);
-}
-
-/* ---------------- 吸顶区 ---------------- */
-.home-sentinel {
-  height: 2rpx;
-}
-.home-sticky {
-  position: -webkit-sticky;
-  position: sticky;
-  z-index: 10;
-  padding: var(--space-sm) var(--space);
-  background-color: var(--color-bg);
-}
-.home-sticky--stuck {
-  box-shadow: 0 1rpx 0 var(--color-divider), 0 8rpx 16rpx rgba(122, 93, 64, 0.08);
 }
 
 /* 搜索胶囊：只是入口，不是 input */
@@ -62,6 +39,7 @@
   display: flex;
   align-items: center;
   height: 76rpx;
+  margin-top: 10rpx;
   padding: 0 28rpx;
   border-radius: var(--radius-full);
   background-color: var(--color-bg-white);
@@ -105,7 +83,7 @@
 .home-cats {
   width: 100%;
   height: 60rpx;
-  margin-top: var(--space-sm);
+  margin-top: 10rpx;
   white-space: nowrap;
 }
 .home-cats::-webkit-scrollbar {
@@ -139,7 +117,7 @@
   align-items: center;
   justify-content: space-between;
   height: 56rpx;
-  margin-top: 12rpx;
+  margin-top: 8rpx;
 }
 .home-sort__count {
   flex: 1;

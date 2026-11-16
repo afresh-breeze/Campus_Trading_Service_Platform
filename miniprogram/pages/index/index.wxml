@@ -1,20 +1,16 @@
 <!-- 二手市场（A 成员，11-14）：列表、分类、排序、下拉刷新、上拉加载 -->
-<nav-top />
-
 <view class="page home">
-  <!-- 吸顶时补一条带标题的顶栏，盖住状态栏/胶囊区域，避免列表从吸顶条上方露出 -->
-  <view class="home-topbar {{stuck ? 'home-topbar--show' : ''}}" style="height: {{stickyTop}}px">
-    <text class="home-topbar__title">二手市场</text>
-  </view>
+  <!-- 整块吸附：块从屏幕最顶(top:0)开始覆盖且背景不透明，列表从它下方滚过。
+       标题行与右上角胶囊齐平（安全区占位到胶囊顶、行高=胶囊高），滚动全程冻结不动。 -->
+  <view class="home-bar">
+    <view class="home-bar__safe" style="height: {{stickyTop}}px"></view>
+    <view class="home-bar__head" style="height: {{barHead}}px">
+      <text class="home-bar__title">二手市场</text>
+    </view>
+    <view class="home-bar__subrow">
+      <text class="home-bar__sub">同校闲置好物，当面交易更放心</text>
+    </view>
 
-  <view class="home-head">
-    <view class="home-head__title">二手市场</view>
-    <view class="home-head__sub">同校闲置好物，当面交易更放心</view>
-  </view>
-
-  <view class="home-sentinel"></view>
-
-  <view class="home-sticky {{stuck ? 'home-sticky--stuck' : ''}}" style="top: {{stickyTop}}px">
     <!-- 搜索只做入口：点击跳到搜索结果页，不在首页弹键盘 -->
     <view class="home-search" bindtap="onSearchTap" hover-class="home-search--hover" aria-label="搜索商品">
       <view class="home-search__icon"></view>
