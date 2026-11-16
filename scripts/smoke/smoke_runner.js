@@ -141,6 +141,30 @@ function todayStr() {
   p.onSizesChange(ev(['small', 'medium']));
   check('规格多选生效', JSON.stringify(p.data.itemSizes) === '["small","medium"]', p.data.itemSizes);
 
+  console.log('\n[2.1] 可接范围搜索（11-16 乱码修复：searchLandmarks 返回对象非字符串）');
+  p.setData({ servicePlaces: ['第1教学楼'], areaKw: '' });
+  p.onAreaSearch({ detail: { value: '教' } });
+  const rs = p.data.areaResults;
+  check('结果 name 是字符串（不再 [object Object]）', rs.length > 0 && typeof rs[0].name === 'string', rs.slice(0, 2));
+  check('结果带所属片区', !!rs[0].zone, rs[0]);
+  check('已选地标显示勾选态', rs.some((r) => r.name === '第1教学楼' && r.checked === true), rs.filter((r) => r.checked));
+  // 点结果切换：勾一个未选的（第2教学楼），片区已在列表里不会重复加
+  p.onSearchPlaceTap({ currentTarget: { dataset: { name: '第2教学楼' } } });
+  check('点结果勾选地标', p.data.servicePlaces.indexOf('第2教学楼') > -1, p.data.servicePlaces);
+  p.onSearchPlaceTap({ currentTarget: { dataset: { name: '第2教学楼' } } });
+  check('再点取消勾选', p.data.servicePlaces.indexOf('第2教学楼') < 0, p.data.servicePlaces);
+  // 片区未勾时点结果连带勾上（搜真实地标关键字；「桃园」是片区无下级地标，searchLandmarks 搜不到属正常）
+  p.onAreaSearch({ detail: { value: '图书馆' } });
+  const tao = p.data.areaResults[0];
+  check('「图书馆」有可搜地标', !!tao && !!tao.zone, p.data.areaResults);
+  if (tao) {
+    p.onSearchPlaceTap({ currentTarget: { dataset: { name: tao.name } } });
+    check('未勾片区时连带勾上片区', p.data.serviceAreas.indexOf(tao.zone) > -1 && p.data.servicePlaces.indexOf(tao.name) > -1, {
+      areas: p.data.serviceAreas,
+      places: p.data.servicePlaces
+    });
+  }
+
   console.log('\n[3] 计划增删改（11-16：once 改为自定义起止日期区间）');
   p.onSlotTypeChange(ev('once'));
   p.onSlotDateChange(ev(tomorrow()));

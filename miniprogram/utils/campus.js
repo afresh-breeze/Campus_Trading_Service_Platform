@@ -164,7 +164,9 @@ function zoneOfPlace(place) {
 
 /**
  * 搜索联想：按正式名或别名模糊匹配地标，返回最多 limit 条。
- * 供发布页、找跑腿页的搜索框使用。
+ * 供发布页、找跑腿页、接单设置的搜索框使用。
+ * 无下级地标的片区（图书馆/运动场/校医院/校外/宿舍园各片区）本身也是合法地点，
+ * 一并纳入搜索，否则搜「图书馆」「校医院」会空（11-16 修复）。
  */
 function searchLandmarks(keyword, limit) {
   const kw = String(keyword || '').trim().toLowerCase();
@@ -182,6 +184,16 @@ function searchLandmarks(keyword, limit) {
     if (hit) {
       out.push(l);
       if (out.length >= max) break;
+    }
+  }
+  if (out.length < max) {
+    for (let i = 0; i < ZONES.length; i++) {
+      const z = ZONES[i];
+      if (placesOfZone(z.name).length) continue; // 有下级地标的片区不作为地点直接搜出
+      if (z.name.toLowerCase().indexOf(kw) > -1) {
+        out.push({ name: z.name, zone: z.name, aliases: [] });
+        if (out.length >= max) break;
+      }
     }
   }
   return out;

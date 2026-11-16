@@ -373,17 +373,24 @@ Page({
   buildSearchResults(kw) {
     if (!kw) return [];
     const places = this.data.servicePlaces;
-    return campus.searchLandmarks(kw, 20).map((name) => ({
-      name: name,
-      zone: campus.zoneOfPlace(name) || '',
-      checked: places.indexOf(name) > -1
-    }));
+    // searchLandmarks 返回 landmark 对象 {name, zone, aliases}，不是字符串（11-16 乱码修复）
+    return campus.searchLandmarks(kw, 20).map((l) => {
+      const name = typeof l === 'string' ? l : l.name;
+      const zone = typeof l === 'object' && l.zone ? l.zone : campus.zoneOfPlace(name);
+      return {
+        name: name,
+        zone: zone || '',
+        checked: places.indexOf(name) > -1
+      };
+    });
   },
 
   /** 点搜索结果 = 切换该地标勾选；片区没勾就连带勾上（servicePlaces 必须挂在 serviceAreas 下） */
   onSearchPlaceTap(e) {
     const name = e.currentTarget.dataset.name;
-    const zone = campus.zoneOfPlace(name);
+    let zone = campus.zoneOfPlace(name);
+    // 片区级地点（图书馆/运动场/校医院等无下级地标的片区）：片区名即地点名
+    if (!zone && campus.isValidZone(name)) zone = name;
     if (!name || !zone) return;
     const d = this.data;
     let places = d.servicePlaces.slice();
