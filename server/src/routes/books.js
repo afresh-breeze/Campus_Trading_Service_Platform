@@ -9,6 +9,10 @@ const router = express.Router();
 const BOOK_FIELDS = `book_id AS bookId, isbn, title, author, publisher, edition,
   price_ref AS priceRef, cover_url AS coverUrl`;
 
+const BOOK_SEARCH_FIELDS = `${BOOK_FIELDS},
+  (SELECT COUNT(*) FROM items i
+    WHERE i.book_id = books.book_id AND i.status = 'on_sale') AS onSaleCount`;
+
 router.use(auth);
 
 router.get('/search', async (req, res, next) => {
@@ -24,7 +28,7 @@ router.get('/search', async (req, res, next) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT ${BOOK_FIELDS}
+      `SELECT ${BOOK_SEARCH_FIELDS}
          FROM books
         WHERE title LIKE ? ESCAPE '!'
            OR isbn LIKE ? ESCAPE '!'

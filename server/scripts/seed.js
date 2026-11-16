@@ -95,6 +95,97 @@ const BOOKS = [
     edition: '2023 年版',
     priceRef: 35.0,
     coverUrl: null
+  },
+  // 11-16 追加：书籍卡片/搜索结果页测试用书目
+  {
+    isbn: '9787040396645',
+    title: '高等数学（第七版）下册',
+    author: '同济大学数学系',
+    publisher: '高等教育出版社',
+    edition: '第七版',
+    priceRef: 39.0,
+    coverUrl: '/demo/book-calculus.png'
+  },
+  {
+    isbn: '9787040589818',
+    title: '高等数学（第八版）上册',
+    author: '同济大学数学系',
+    publisher: '高等教育出版社',
+    edition: '第八版',
+    priceRef: 49.0,
+    coverUrl: '/demo/book-calculus.png'
+  },
+  {
+    isbn: '9787302561234',
+    title: '大学物理（第四版）上册',
+    author: '张三慧',
+    publisher: '清华大学出版社',
+    edition: '第四版',
+    priceRef: 48.0,
+    coverUrl: null
+  },
+  {
+    isbn: '9787040510409',
+    title: '概率论与数理统计（第五版）',
+    author: '盛骤、谢式千、潘承毅',
+    publisher: '高等教育出版社',
+    edition: '第五版',
+    priceRef: 36.0,
+    coverUrl: '/demo/book-calculus.png'
+  },
+  {
+    isbn: '9787302511321',
+    title: '离散数学（第六版）',
+    author: '耿素云、屈婉玲、张立昂',
+    publisher: '清华大学出版社',
+    edition: '第六版',
+    priceRef: 35.0,
+    coverUrl: '/demo/book-data-structure.png'
+  },
+  {
+    isbn: '9787040406641',
+    title: '数据库系统概论（第五版）',
+    author: '王珊、萨师煊',
+    publisher: '高等教育出版社',
+    edition: '第五版',
+    priceRef: 42.0,
+    coverUrl: '/demo/book-data-structure.png'
+  },
+  {
+    isbn: '9787302482133',
+    title: '软件工程导论（第六版）',
+    author: '张海藩、牟永敏',
+    publisher: '清华大学出版社',
+    edition: '第六版',
+    priceRef: 39.5,
+    coverUrl: '/demo/book-network.png'
+  },
+  {
+    isbn: '9787560633508',
+    title: '操作系统（第四版）',
+    author: '汤小丹、梁红兵、哲凤屏、汤子瀛',
+    publisher: '西安电子科技大学出版社',
+    edition: '第四版',
+    priceRef: 45.0,
+    coverUrl: '/demo/book-network.png'
+  },
+  {
+    isbn: '9787040599008',
+    title: '马克思主义基本原理（2023 年版）',
+    author: '本书编写组',
+    publisher: '高等教育出版社',
+    edition: '2023 年版',
+    priceRef: 23.0,
+    coverUrl: null
+  },
+  {
+    isbn: '9787040599015',
+    title: '中国近现代史纲要（2023 年版）',
+    author: '本书编写组',
+    publisher: '高等教育出版社',
+    edition: '2023 年版',
+    priceRef: 26.0,
+    coverUrl: null
   }
 ];
 
@@ -422,6 +513,279 @@ const ITEMS = [
     viewCount: 26,
     daysAgo: 7,
     images: ['/demo/storage-box.jpg']
+  },
+  // 11-16 追加：书籍商品测试数据（多版本/多库存/多状态）
+  {
+    sellerNo: '2023001',
+    category: '图书教材',
+    bookIsbn: '9787040396638',
+    itemType: 'book',
+    title: '高等数学（第七版）上册 有少量笔记',
+    description: '重点章节有铅笔笔记，可擦除，书页完整。',
+    price: 12.0,
+    originalPrice: 45.0,
+    conditionLevel: 'fair',
+    negotiable: 1,
+    location: '李园',
+    status: 'on_sale',
+    viewCount: 31,
+    daysAgo: 0,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023002',
+    category: '图书教材',
+    bookIsbn: '9787040396638',
+    itemType: 'book',
+    title: '高等数学（第七版）上册 已预订',
+    description: '已被同学预订，用于展示已预订状态。',
+    price: 16.0,
+    originalPrice: 45.0,
+    conditionLevel: 'good',
+    negotiable: 0,
+    location: '橘园',
+    status: 'reserved',
+    viewCount: 22,
+    daysAgo: 4,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023003',
+    category: '图书教材',
+    bookIsbn: '9787040396645',
+    itemType: 'book',
+    title: '高等数学（第七版）下册 几乎全新',
+    description: '买来没怎么翻，无笔记无划线。',
+    price: 17.0,
+    originalPrice: 39.0,
+    conditionLevel: 'like_new',
+    negotiable: 1,
+    location: '桃园',
+    status: 'on_sale',
+    viewCount: 18,
+    daysAgo: 1,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023001',
+    category: '图书教材',
+    bookIsbn: '9787040396645',
+    itemType: 'book',
+    title: '高等数学（第七版）下册 已售出',
+    description: '已售出，仅用于状态展示，不计入在售数。',
+    price: 13.0,
+    originalPrice: 39.0,
+    conditionLevel: 'good',
+    negotiable: 0,
+    location: '梅园',
+    status: 'sold',
+    viewCount: 12,
+    daysAgo: 9,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023002',
+    category: '图书教材',
+    bookIsbn: '9787040589818',
+    itemType: 'book',
+    title: '高等数学（第八版）上册 全新未拆',
+    description: '买重复了，塑封还在，未拆封。',
+    price: 29.0,
+    originalPrice: 49.0,
+    conditionLevel: 'new',
+    negotiable: 0,
+    location: '中心图书馆',
+    status: 'on_sale',
+    viewCount: 44,
+    daysAgo: 2,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023001',
+    category: '图书教材',
+    bookIsbn: '9787302561234',
+    itemType: 'book',
+    title: '大学物理（第四版）上册 九成新',
+    description: '课后题没写过，书脊平整，无缺页。',
+    price: 20.0,
+    originalPrice: 48.0,
+    conditionLevel: 'good',
+    negotiable: 1,
+    location: '北区教学区',
+    status: 'on_sale',
+    viewCount: 26,
+    daysAgo: 3,
+    images: ['/demo/cet-books.jpg']
+  },
+  {
+    sellerNo: '2023003',
+    category: '图书教材',
+    bookIsbn: '9787302561234',
+    itemType: 'book',
+    title: '大学物理（第四版）上册 少量划线',
+    description: '公式部分有荧光笔划线，不影响阅读。',
+    price: 24.0,
+    originalPrice: 48.0,
+    conditionLevel: 'good',
+    negotiable: 0,
+    location: '南区教学区',
+    status: 'on_sale',
+    viewCount: 17,
+    daysAgo: 5,
+    images: ['/demo/cet-books.jpg']
+  },
+  {
+    sellerNo: '2023002',
+    category: '图书教材',
+    bookIsbn: '9787040510409',
+    itemType: 'book',
+    title: '概率论与数理统计（第五版）',
+    description: '考研复习用书，笔记集中在最后几章。',
+    price: 14.0,
+    originalPrice: 36.0,
+    conditionLevel: 'good',
+    negotiable: 1,
+    location: '李园',
+    status: 'on_sale',
+    viewCount: 35,
+    daysAgo: 6,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023001',
+    category: '图书教材',
+    bookIsbn: '9787040510409',
+    itemType: 'book',
+    title: '概率论与数理统计（第五版） 暂不出',
+    description: '暂时下架，仅用于展示已下架状态。',
+    price: 10.0,
+    originalPrice: 36.0,
+    conditionLevel: 'fair',
+    negotiable: 1,
+    location: '楠园',
+    status: 'off_shelf',
+    viewCount: 9,
+    daysAgo: 10,
+    images: ['/demo/book-calculus.png']
+  },
+  {
+    sellerNo: '2023003',
+    category: '图书教材',
+    bookIsbn: '9787302511321',
+    itemType: 'book',
+    title: '离散数学（第六版） 期末用书',
+    description: '期末复习用完，书内干净，附一张公式纸。',
+    price: 19.0,
+    originalPrice: 35.0,
+    conditionLevel: 'like_new',
+    negotiable: 1,
+    location: '竹园',
+    status: 'on_sale',
+    viewCount: 21,
+    daysAgo: 1,
+    images: ['/demo/book-data-structure.png']
+  },
+  {
+    sellerNo: '2023002',
+    category: '图书教材',
+    bookIsbn: '9787040406641',
+    itemType: 'book',
+    title: '数据库系统概论（第五版）',
+    description: '数据库课程教材，重点章节有标签贴。',
+    price: 21.0,
+    originalPrice: 42.0,
+    conditionLevel: 'good',
+    negotiable: 1,
+    location: '桃园',
+    status: 'on_sale',
+    viewCount: 29,
+    daysAgo: 4,
+    images: ['/demo/book-data-structure.png']
+  },
+  {
+    sellerNo: '2023001',
+    category: '图书教材',
+    bookIsbn: '9787302482133',
+    itemType: 'book',
+    title: '软件工程导论（第六版） 划线较多',
+    description: '专业课教材，划线和批注较多，价格便宜出。',
+    price: 15.0,
+    originalPrice: 39.5,
+    conditionLevel: 'fair',
+    negotiable: 1,
+    location: '杏园',
+    status: 'on_sale',
+    viewCount: 14,
+    daysAgo: 7,
+    images: ['/demo/book-network.png']
+  },
+  {
+    sellerNo: '2023003',
+    category: '图书教材',
+    bookIsbn: '9787040599008',
+    itemType: 'book',
+    title: '马克思主义基本原理（2023 年版）',
+    description: '公共课教材，几乎没翻，无笔记。',
+    price: 8.0,
+    originalPrice: 23.0,
+    conditionLevel: 'good',
+    negotiable: 0,
+    location: '中心图书馆',
+    status: 'on_sale',
+    viewCount: 19,
+    daysAgo: 2,
+    images: ['/demo/cet-books.jpg']
+  },
+  {
+    sellerNo: '2023002',
+    category: '图书教材',
+    bookIsbn: '9787560633508',
+    itemType: 'book',
+    title: '操作系统（第四版） 计算机专业课',
+    description: '计算机专业课教材，书角轻微磨损，内容完整。',
+    price: 18.0,
+    originalPrice: 45.0,
+    conditionLevel: 'like_new',
+    negotiable: 1,
+    location: '北区教学区',
+    status: 'on_sale',
+    viewCount: 23,
+    daysAgo: 3,
+    images: ['/demo/book-network.png']
+  },
+  {
+    sellerNo: '2023001',
+    category: '图书教材',
+    bookIsbn: '9787117265421',
+    itemType: 'book',
+    title: '计算机网络（第 8 版） 第二本',
+    description: '同款第二本，保存良好，适合备用。',
+    price: 20.0,
+    originalPrice: 59.0,
+    conditionLevel: 'good',
+    negotiable: 1,
+    location: '南区教学区',
+    status: 'on_sale',
+    viewCount: 16,
+    daysAgo: 0,
+    images: ['/demo/book-network.png']
+  },
+  {
+    sellerNo: '2023002',
+    category: '图书教材',
+    bookIsbn: '9787302129399',
+    itemType: 'book',
+    title: '数据结构（C 语言版） 已预订',
+    description: '已被预订，仅用于展示状态，不计入在售数。',
+    price: 17.0,
+    originalPrice: 39.0,
+    conditionLevel: 'like_new',
+    negotiable: 0,
+    location: '北区教学区',
+    status: 'reserved',
+    viewCount: 11,
+    daysAgo: 5,
+    images: ['/demo/book-data-structure.png']
   }
 ];
 
@@ -877,14 +1241,18 @@ async function main() {
   }
 }
 
-main()
-  .then(() => pool.end())
-  .catch(async (err) => {
-    console.error('seed 失败：', err.message);
-    try {
-      await pool.end();
-    } catch (e) {
-      // ignore close error
-    }
-    process.exitCode = 1;
-  });
+if (require.main === module) {
+  main()
+    .then(() => pool.end())
+    .catch(async (err) => {
+      console.error('seed 失败：', err.message);
+      try {
+        await pool.end();
+      } catch (e) {
+        // ignore close error
+      }
+      process.exitCode = 1;
+    });
+}
+
+module.exports = { BOOKS, ITEMS, DEMO_USERS };

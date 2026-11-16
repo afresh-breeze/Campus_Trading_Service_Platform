@@ -1,12 +1,230 @@
-<!-- 搜索结果（A 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">搜索结果</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待A成员实现。
+<!-- 搜索结果（A 成员，11-16）：书目区 + 商品区 -->
+<view class="page search-page">
+  <!-- 顶部整块吸附：安全区到胶囊顶，返回键与胶囊同排，搜索框常驻 -->
+  <view class="search-bar">
+    <view class="search-bar__safe" style="height: {{stickyTop}}px"></view>
+    <view class="search-bar__head" style="height: {{barHead}}px">
+      <view class="search-back" bindtap="onBack" hover-class="search-back--hover" aria-label="返回">
+        <view class="search-back__chevron"></view>
+      </view>
     </view>
-    <view class="t-sub placeholder-path">pages/search/result</view>
+    <view class="search-bar__row">
+      <view class="search-input">
+        <view class="search-input__icon"></view>
+        <input
+          class="search-input__field"
+          value="{{keyword}}"
+          placeholder="搜索商品 / 书名 / 作者 / 地点"
+          placeholder-class="search-input__ph"
+          confirm-type="search"
+          maxlength="100"
+          focus="{{autoFocus}}"
+          bindinput="onInput"
+          bindfocus="onInputFocus"
+          bindblur="onInputBlur"
+          bindconfirm="onConfirm"
+        />
+        <view wx:if="{{keyword}}" class="search-input__clear" bindtap="onClearInput" aria-label="清空">×</view>
+      </view>
+      <view class="search-submit" bindtap="onSubmitTap" hover-class="search-submit--hover">搜索</view>
+    </view>
+
+    <!-- 输入时的书目联想：首行固定「搜索 xxx」，下面最多 5 本匹配书目 -->
+    <view wx:if="{{showSuggest && suggestKeyword}}" class="search-suggest">
+      <view
+        class="search-suggest__row search-suggest__row--action"
+        data-keyword="{{suggestKeyword}}"
+        bindtap="onSuggestSearchTap"
+        hover-class="search-suggest__row--hover"
+      >
+        <view class="search-suggest__icon"></view>
+        <text class="search-suggest__action">搜索「{{suggestKeyword}}」</text>
+      </view>
+
+      <view wx:if="{{suggestLoading}}" class="search-suggest__loading">联想中…</view>
+
+      <block wx:for="{{suggestions}}" wx:key="bookId">
+        <view
+          class="search-suggest__row"
+          data-title="{{item.title}}"
+          bindtap="onSuggestBookTap"
+          hover-class="search-suggest__row--hover"
+        >
+          <view class="search-suggest__cover">
+            <image wx:if="{{item.coverUrl}}" class="search-suggest__img" src="{{item.coverUrl}}" mode="aspectFill" />
+            <view wx:else class="search-suggest__cover-empty"></view>
+          </view>
+          <view class="search-suggest__body">
+            <view class="search-suggest__title">{{item.title}}</view>
+            <view class="search-suggest__meta">{{item.author || '作者未知'}} · {{item.publisher || '出版社未知'}}</view>
+          </view>
+          <text wx:if="{{item.onSaleCount !== null}}" class="search-suggest__count">{{item.onSaleCount > 0 ? item.onSaleCount + ' 件在售' : '暂无在售'}}</text>
+        </view>
+      </block>
+    </view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：A ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 未登录：登录引导，不发请求 -->
+  <view wx:if="{{!isLogin}}" class="search-state">
+    <empty-state
+      title="登录后搜索二手好物"
+      desc="登录后即可搜索商品、书名和取件地点"
+      action-text="去登录"
+      bind:action="onLogin"
+    />
+  </view>
+
+  <!-- 初始态：最近搜索 / 搜索提示 -->
+  <block wx:elif="{{!submittedKeyword}}">
+    <view wx:if="{{history.length}}" class="search-history">
+      <view class="search-history__head">
+        <text class="search-history__title">最近搜索</text>
+        <text class="search-history__clear" bindtap="onClearHistory" hover-class="search-history__clear--hover">清空</text>
+      </view>
+      <view class="search-history__list">
+        <view
+          wx:for="{{history}}"
+          wx:key="*this"
+          class="search-history__chip"
+          data-keyword="{{item}}"
+          bindtap="onKeywordTap"
+          hover-class="search-history__chip--hover"
+        >{{item}}</view>
+      </view>
+    </view>
+
+    <view wx:else class="search-tips">
+      <text class="search-tips__title">搜索二手好物</text>
+      <text class="search-tips__desc">支持商品名、书名、作者、取件地点</text>
+      <view class="search-tips__chips">
+        <view class="search-tips__chip" data-keyword="耳机" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">耳机</view>
+        <view class="search-tips__chip" data-keyword="高等数学" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">高等数学</view>
+        <view class="search-tips__chip" data-keyword="桃园" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">桃园</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 搜索结果 -->
+  <block wx:else>
+    <!-- 相关图书：只显示有在售商品的书，默认 3 条可展开 -->
+    <view wx:if="{{booksLoading && !books.length}}" class="search-books">
+      <view class="search-books__head">
+        <text class="search-books__title">相关图书</text>
+        <text class="search-books__count">搜索中…</text>
+      </view>
+    </view>
+
+    <view wx:if="{{books.length}}" class="search-books">
+      <view class="search-books__head">
+        <text class="search-books__title">相关图书</text>
+        <text class="search-books__count">{{books.length}} 本</text>
+      </view>
+
+      <view wx:if="{{activeBook}}" class="search-filter" bindtap="clearBookFilter" hover-class="search-filter--hover">
+        <text class="search-filter__text">仅看《{{activeBook.title}}》</text>
+        <text class="search-filter__x">×</text>
+      </view>
+
+      <view class="search-books__list">
+        <block wx:for="{{books}}" wx:key="bookId">
+          <view
+            wx:if="{{booksExpanded || index < bookPreview}}"
+            class="book-card {{activeBook && activeBook.bookId === item.bookId ? 'book-card--active' : ''}}"
+            data-id="{{item.bookId}}"
+            data-title="{{item.title}}"
+            bindtap="onBookTap"
+            hover-class="book-card--hover"
+          >
+            <view class="book-card__cover">
+              <image wx:if="{{item.coverUrl}}" class="book-card__img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load />
+              <view wx:else class="book-card__cover-empty">暂无封面</view>
+            </view>
+            <view class="book-card__body">
+              <view class="book-card__title">{{item.title}}</view>
+              <view class="book-card__line">{{item.author || '作者未知'}} · {{item.publisher || '出版社未知'}}</view>
+              <view class="book-card__isbn">ISBN {{item.isbn || '—'}}</view>
+              <view class="book-card__foot">
+                <text wx:if="{{item.onSaleCount !== null}}" class="book-card__count">{{item.onSaleCount}} 件在售</text>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <view wx:if="{{books.length > bookPreview}}" class="search-books__toggle" bindtap="onBooksToggle" hover-class="search-books__toggle--hover">
+        <text>{{booksExpanded ? '收起' : '展开全部 ' + books.length + ' 本'}}</text>
+      </view>
+    </view>
+
+    <!-- 计数 + 排序 -->
+    <view class="search-sort">
+      <text class="search-sort__count">{{countReady ? '共 ' + total + ' 件在售' : '搜索中…'}}</text>
+      <view class="search-sort__ops">
+        <view class="search-sort__item {{sort === 'latest' ? 'search-sort__item--active' : ''}}" bindtap="onSortLatest">
+          <text>最新</text>
+        </view>
+        <view class="search-sort__divider"></view>
+        <view
+          class="search-sort__item search-sort__item--price {{(sort === 'price_asc' || sort === 'price_desc') ? 'search-sort__item--active' : ''}}"
+          bindtap="onSortPrice"
+        >
+          <text>价格</text>
+          <text class="search-sort__arrow">{{sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 首屏骨架：只用占位块，不编假数据 -->
+    <block wx:if="{{firstLoading}}">
+      <view class="search-sk" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="search-sk__cover"></view>
+        <view class="search-sk__body">
+          <view class="search-sk__line search-sk__line--lg"></view>
+          <view class="search-sk__line search-sk__line--md"></view>
+          <view class="search-sk__line search-sk__line--sm"></view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 首屏失败：给重试，不给白屏 -->
+    <view wx:elif="{{error}}" class="search-state">
+      <view class="card search-state__card">
+        <text class="t-title">加载失败</text>
+        <text class="t-sub search-state__desc">{{error}}</text>
+        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+      </view>
+    </view>
+
+    <!-- 空态：书目筛选无货 / 关键词无结果分开 -->
+    <view wx:elif="{{!items.length}}" class="search-state">
+      <empty-state
+        wx:if="{{activeBook}}"
+        title="这本书暂时没有在售商品"
+        desc="取消书目筛选，看看其他相关商品"
+        action-text="查看全部结果"
+        bind:action="clearBookFilter"
+      />
+      <empty-state
+        wx:else
+        title="没有找到相关商品"
+        desc="换个关键词试试，或缩短搜索词"
+        action-text="清空搜索"
+        bind:action="onClearInput"
+      />
+    </view>
+
+    <block wx:else>
+      <view class="search-items">
+        <view class="search-items__item" wx:for="{{items}}" wx:key="itemId">
+          <item-card mode="list" item="{{item}}" show-time="{{true}}" bind:tap="onTapItem" />
+        </view>
+      </view>
+
+      <view class="search-more">
+        <text wx:if="{{loadingMore}}" class="search-more__text">加载中…</text>
+        <text wx:elif="{{hasMore}}" class="search-more__text">上拉加载更多</text>
+        <text wx:else class="search-more__text">没有更多了</text>
+      </view>
+    </block>
+  </block>
 </view>

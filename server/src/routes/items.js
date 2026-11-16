@@ -112,8 +112,9 @@ router.get('/', async (req, res, next) => {
     where.push(`(v.title LIKE ? ESCAPE '!'
       OR v.description LIKE ? ESCAPE '!'
       OR v.bookTitle LIKE ? ESCAPE '!'
-      OR v.bookAuthor LIKE ? ESCAPE '!')`);
-    params.push(pattern, pattern, pattern, pattern);
+      OR v.bookAuthor LIKE ? ESCAPE '!'
+      OR v.location LIKE ? ESCAPE '!')`);
+    params.push(pattern, pattern, pattern, pattern, pattern);
   }
 
   if (req.query.bookId !== undefined && req.query.bookId !== '') {
