@@ -178,12 +178,15 @@
 .cd-inputbar__placeholder {
   color: var(--color-text-4, #b3a695);
 }
+/* 发送按钮：宽度 = 「发送」二字 56rpx + 左右各 10rpx（合计 10px），76rpx 固定。
+   不用 width:auto/fit-content —— 微信 button 默认样式 width:184px 在部分环境兜不住，
+   固定值最稳（11-16 反馈：按钮只比文字宽 10px） */
 .cd-inputbar__send {
   flex: none;
-  width: auto;
+  width: 76rpx;
   min-width: 0;
   margin-left: 16rpx;
-  padding: 0 36rpx;
+  padding: 0;
   min-height: 64rpx;
   line-height: 64rpx;
   font-size: var(--font-md, 28rpx);
