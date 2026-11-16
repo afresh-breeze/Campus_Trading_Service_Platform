@@ -9,6 +9,11 @@ const { ok, fail } = require('../utils/response');
 
 const router = express.Router();
 
+// 鉴权挂载（B 修复，11-16）：本文件所有接口都读 req.user.userId，
+// 但此前从未 router.use(auth)，导致 /api/conversations、/unread-count 等全部 500。
+// 与 items/errands 等路由保持同一写法：router 定义后立即挂载。
+router.use(auth);
+
 const BIZ_TYPES = ['item', 'errand'];
 const MSG_TYPES = ['text', 'image'];
 const MAX_CONTENT_LENGTH = 500;
