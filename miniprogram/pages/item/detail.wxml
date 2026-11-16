@@ -153,15 +153,19 @@
     >{{item.text}}</button>
   </view>
   <view wx:else class="detail-bar__row">
-    <button
-      class="btn detail-bar__fav {{isFavorited ? 'btn-ghost detail-bar__fav--on' : 'btn-ghost'}}"
-      disabled="{{favoriting}}"
-      loading="{{favoriting}}"
-      bindtap="onFavorite"
-    >
-      <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
-      <text wx:if="{{favoriteCount}}" class="detail-bar__count">{{favoriteCount}}</text>
-    </button>
-    <button class="btn btn-primary detail-bar__contact" bindtap="onContact">联系卖家</button>
+    <view class="detail-bar__cell detail-bar__cell--fav">
+      <button
+        class="btn detail-bar__fav {{isFavorited ? 'btn-ghost detail-bar__fav--on' : 'btn-ghost'}}"
+        disabled="{{favoriting}}"
+        loading="{{favoriting}}"
+        bindtap="onFavorite"
+      >
+        <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
+        <text wx:if="{{favoriteCount}}" class="detail-bar__count">{{favoriteCount}}</text>
+      </button>
+    </view>
+    <view class="detail-bar__cell detail-bar__cell--contact">
+      <button class="btn btn-primary detail-bar__contact" bindtap="onContact">联系卖家</button>
+    </view>
   </view>
 </view>
