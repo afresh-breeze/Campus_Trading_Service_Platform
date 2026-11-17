@@ -194,6 +194,7 @@ Page({
     pageTitle: '接单设置',
     mode: '', // '' = 接单设置；'online' = 上线接单
     loading: true,
+    loadError: '',
     saving: false,
 
     isOnline: false,
@@ -267,16 +268,20 @@ Page({
   },
 
   loadProfile() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: '' });
     http
       .get('/api/users/me/runner-profile', {}, { silent: true })
       .then((profile) => {
         this.applyProfile(profile || {});
       })
       .catch((err) => {
-        this.setData({ loading: false });
-        util.toast((err && err.message) || '接单设置加载失败');
+        // 走到这里说明没拉到档案：给错误卡片 + 重试，绝不能让空表单被当成本地设置
+        this.setData({ loading: false, loadError: (err && err.message) || '请检查网络后重试' });
       });
+  },
+
+  onRetryLoad() {
+    this.loadProfile();
   },
 
   applyProfile(p) {

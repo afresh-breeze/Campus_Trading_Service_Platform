@@ -102,18 +102,22 @@ App({
   /** 写 tabBar 红点；消息 tab 索引固定为 2 */
   setUnreadBadge(count) {
     const index = 2;
+    // 设置页的「消息通知」开关（本地存储 cs_notify_enabled，未设置过视为开启）：
+    // 关掉后不再画红点，但未读数仍正常同步到 globalData——开关只管「显不显示」
+    const muted = wx.getStorageSync('cs_notify_enabled') === false;
+    const n = muted ? 0 : count;
     // 启用自定义 tabBar 后 wx.setTabBarBadge 不生效，优先让组件自己画
     const pages = getCurrentPages();
     const current = pages[pages.length - 1];
     const bar = current && typeof current.getTabBar === 'function' && current.getTabBar();
     if (bar && typeof bar.setBadge === 'function') {
-      bar.setBadge(count);
+      bar.setBadge(n);
       return;
     }
-    if (count > 0) {
+    if (n > 0) {
       wx.setTabBarBadge({
         index: index,
-        text: count > 99 ? '99+' : String(count),
+        text: n > 99 ? '99+' : String(n),
         fail: () => {}
       });
     } else {

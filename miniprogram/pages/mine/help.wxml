@@ -1,12 +1,55 @@
-<!-- 帮助与反馈（B 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">帮助与反馈</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
+<!-- 帮助与反馈（B 成员，11-17）：常见问题折叠 + 意见反馈 -->
+<nav-top back title="帮助与反馈" fixed />
+
+<view class="page page-body hp">
+  <view class="hp-section__title">常见问题</view>
+
+  <view class="card hp-faq">
+    <view wx:for="{{faqs}}" wx:key="q" class="hp-faq__item">
+      <view
+        class="hp-faq__q"
+        data-index="{{index}}"
+        bindtap="onToggleFaq"
+        hover-class="hp-faq__q--hover"
+      >
+        <text class="hp-faq__q-text">{{item.q}}</text>
+        <text class="hp-faq__arrow {{openIndex === index ? 'hp-faq__arrow--open' : ''}}">›</text>
+      </view>
+      <view wx:if="{{openIndex === index}}" class="hp-faq__a">{{item.a}}</view>
     </view>
-    <view class="t-sub placeholder-path">pages/mine/help</view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <view class="hp-section__title">意见反馈</view>
+
+  <view class="card hp-form">
+    <textarea
+      class="hp-form__input"
+      value="{{content}}"
+      maxlength="{{maxLen}}"
+      placeholder="写下你遇到的问题或建议，我们会尽快看"
+      placeholder-class="hp-form__placeholder"
+      bindinput="onInput"
+      auto-height
+    />
+    <view class="hp-form__foot">
+      <text class="hp-form__count">{{contentLen}}/{{maxLen}}</text>
+      <view class="hp-form__ops">
+        <button
+          wx:if="{{content}}"
+          class="hp-form__clear"
+          style="width: 96rpx; min-width: 0; padding: 0; margin: 0 16rpx 0 0;"
+          bindtap="onClear"
+        >清空</button>
+        <button
+          class="btn btn-primary btn-sm hp-form__submit"
+          style="width: 160rpx; min-width: 0; padding: 0; margin: 0;"
+          loading="{{submitting}}"
+          disabled="{{submitting || !content}}"
+          bindtap="onSubmit"
+        >提交</button>
+      </view>
+    </view>
+  </view>
+
+  <text class="hp-note">反馈仅记录内容，不会附带你的聊天记录与订单信息</text>
 </view>

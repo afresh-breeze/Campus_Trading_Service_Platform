@@ -91,7 +91,7 @@
 
 **最危险的拖法**：10 个页面一起开工，每个都写一半。正确做法是**一个页面一个分支，写完接口联调通过再开下一个**；公共层和组件必须 11-08 前定型，否则 A 的 6 个页面会跟着返工。
 
-### 0.4 当前进度（更新至 11-13）与接下来的事
+### 0.4 当前进度（更新至 11-17）与接下来的事
 
 > 这一节每完成一个阶段就改写一次。**只写有证据的进度**：代码入库、编译通过、A 确认，三者之一才算数。
 
@@ -330,7 +330,27 @@
 
 **未做（顺延）**：真机双账号 5 秒互发验收（`?mode=online` 上线状态依赖 A 的 `GET /api/runners` 真实数据）；开发者工具全页编译留证截图。
 
-#### 14）已知阻塞（写在这里，避免口头遗忘）
+#### 14）11-17 当日任务：UI 走查第二轮（`style/ui-walkthrough` 口径）
+
+**P0 清零**：`mine/profile`、`mine/settings`、`mine/help` 三页此前仍是 11-06 的占位骨架，本轮全部落地。
+
+| 页面 | 落地内容 | 口径要点 |
+| --- | --- | --- |
+| `mine/profile` | 头像 / 昵称 / 学院 / 手机号 + 只读学号·信用分·账号状态 | 昵称按 **Unicode 码点**计数 2-12（`Array.from`，emoji 不算 2）；头像必须 `/uploads/` 相对路径，>5MB 先 `wx.compressImage`，上传失败保留旧图只提示；手机号 11 位数字（后端不校验号段）；**users 表无 bio 列 → 不渲染简介**（手册 §6.4 提的简介需 A 加列） |
+| `mine/settings` | 通知开关 / 清理缓存 / 版本 / 退出登录 | 开关存 `cs_notify_enabled` 并**真联动** `app.setUnreadBadge`（关掉不画红点，未读数照常同步）；清缓存**保留 token 与用户信息**；退出走 `clearSession` + `reLaunch` |
+| `mine/help` | 8 条 FAQ 折叠 + 意见反馈 | FAQ 写真实行为（大厅只出 pending+hall、私单不出大厅、slot 只在时段内在线、轮询 3 秒、上传 5MB/格式）；反馈前端限 200 字（后端上限 500，不冲突），只提交 `content`（表无 type/status） |
+
+**三态补齐**：`mine/runner` 的 `loading` 原先只在 JS 里设、WXML 无加载分支 → 加载中会渲染空表单（易被误读成「设置被清空」）；失败只 toast。改为**骨架屏 + 错误卡片 + 重试**。
+
+**交互反馈**：大厅筛选 chip / 排序按钮、接单设置计划条「编辑·删除」补 `hover-class`（原先纯 view/text 按下无反馈）。
+
+**时间与版本口径**：`util.timeDivider()` 收编聊天时间分隔（原在 `chat/detail.js` 自造切片）；新增 `utils/version.js` 作为版本号单一来源（原 `v0.3.0` 两处硬编码）。
+
+**验证**：契约 **145/0**；冒烟 **440/0**（新增 `smoke_mine_pages.js` 30 条：字段回填、码点校验、保存同步缓存、清缓存保留登录态、FAQ 折叠、反馈上限）；`wxml_check` 全 PASS。术语抽查：**无「未接单」**，状态词与 `status-tag` 一致。
+
+**清单**：`docs/UI走查记录-B.md`「第二轮」共 11 条 —— B 侧 8 条已修完（P0 3 / P1 1 / P2 4）；**A 侧 `mine/items`、`mine/favorites` 仍占位，是当前唯一 P0 阻塞**。
+
+#### 15）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。

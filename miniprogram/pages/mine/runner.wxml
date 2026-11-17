@@ -3,6 +3,21 @@
 <nav-top back title="{{pageTitle}}" fixed />
 <view class="page page-body">
 
+  <!-- 三态（11-17 走查补）：加载中给骨架屏，失败给错误卡片 + 重试。
+       此前 loading 只在 JS 里设、WXML 直接渲染空表单，用户会以为「设置被清空了」 -->
+  <view wx:if="{{loading}}" class="sk-card">
+    <view class="sk-line sk-line--lg"></view>
+    <view class="sk-line sk-line--md"></view>
+    <view class="sk-line sk-line--sm"></view>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="card rn-state">
+    <text class="t-title">设置加载失败</text>
+    <text class="t-sub rn-state__desc">{{loadError}}</text>
+    <button class="btn btn-primary btn-block" bindtap="onRetryLoad">重试</button>
+  </view>
+
+  <block wx:else>
   <!-- 顶部状态条：在线状态一眼可见，不要只靠按钮颜色 -->
   <view class="status-bar {{isOnline ? 'status-bar--on' : 'status-bar--off'}}">
     <view class="status-bar__dot"></view>
@@ -117,8 +132,8 @@
             </text>
           </view>
           <view class="slot-row__ops" wx:if="{{s.status === 'future'}}">
-            <text class="slot-op" data-id="{{s.id}}" bindtap="onEditSlot">编辑</text>
-            <text class="slot-op slot-op--danger" data-id="{{s.id}}" bindtap="onDeleteSlot">删除</text>
+            <text class="slot-op" data-id="{{s.id}}" bindtap="onEditSlot" hover-class="slot-op--hover">编辑</text>
+            <text class="slot-op slot-op--danger" data-id="{{s.id}}" bindtap="onDeleteSlot" hover-class="slot-op--hover">删除</text>
           </view>
         </view>
       </block>
@@ -247,4 +262,5 @@
     </block>
   </view>
   <view class="safe-bottom"></view>
+  </block>
 </view>

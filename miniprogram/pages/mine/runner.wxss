@@ -283,3 +283,20 @@
   color: var(--color-danger);
   background-color: var(--color-bg-white);
 }
+
+/* 加载失败态（11-17 走查补：原先前端只 toast，页面仍是空表单） */
+.rn-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx var(--space);
+}
+.rn-state__desc {
+  margin: 12rpx 0 32rpx;
+  text-align: center;
+}
+
+/* 11-17 走查：计划条上的「编辑/删除」是纯文字，按下要有反馈 */
+.slot-op--hover {
+  opacity: 0.55;
+}

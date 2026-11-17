@@ -350,3 +350,11 @@
 .fab--hover {
   opacity: 0.88;
 }
+
+/* 11-17 走查：筛选/排序按下要有反馈（选中态是结果，不是按下反馈） */
+.chip--hover {
+  background-color: var(--color-surface-2);
+}
+.sort-btn--hover {
+  opacity: 0.6;
+}

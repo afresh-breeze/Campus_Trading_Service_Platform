@@ -25,6 +25,7 @@
           data-type="itemSize"
           data-value="{{item.value}}"
           bindtap="onFilterTap"
+          hover-class="chip--hover"
         >{{item.label}}</view>
       </view>
       <view class="hall-bar__entry" bindtap="onGoRunner" hover-class="hall-bar__entry--hover">
@@ -42,17 +43,20 @@
           data-type="timeType"
           data-value="{{item.value}}"
           bindtap="onFilterTap"
+          hover-class="chip--hover"
         >{{item.label}}</view>
       </view>
       <view class="sort-ops">
         <text
           class="sort-btn {{filters.sort === 'latest' ? 'sort-btn--active' : ''}}"
           bindtap="onSortLatest"
+          hover-class="sort-btn--hover"
         >最新</text>
         <view class="sort-divider"></view>
         <text
           class="sort-btn sort-btn--price {{filters.sort !== 'latest' ? 'sort-btn--active' : ''}}"
           bindtap="onSortReward"
+          hover-class="sort-btn--hover"
         >报酬{{filters.sort === 'reward_desc' ? ' ↓' : (filters.sort === 'reward_asc' ? ' ↑' : '')}}</text>
       </view>
     </view>

@@ -1,12 +1,100 @@
-<!-- 个人资料（B 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">个人资料</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/mine/profile</view>
+<!-- 个人资料（B 成员，11-17）：头像 / 昵称 / 学院 / 手机号 + 只读学号/信用分/账号状态 -->
+<nav-top back title="个人资料" fixed />
+
+<view class="page page-body pf">
+  <!-- 加载态：骨架屏（不用「加载中…」纯文字，避免布局跳动） -->
+  <view wx:if="{{loading}}" class="sk-card">
+    <view class="sk-line sk-line--lg"></view>
+    <view class="sk-line sk-line--md"></view>
+    <view class="sk-line sk-line--sm"></view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 错误态：区分「未登录」与「网络失败」，给对应出路 -->
+  <view wx:elif="{{error}}" class="card pf-state">
+    <text class="t-title">{{error}}</text>
+    <text class="t-sub pf-state__desc">{{errorDesc}}</text>
+    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重试'}}</button>
+  </view>
+
+  <block wx:else>
+    <!-- 头像：点击更换，上传成功先预览，点「保存」才落库 -->
+    <view class="card pf-row" bindtap="onChooseAvatar" hover-class="pf-row--hover">
+      <text class="pf-row__label">头像</text>
+      <view class="pf-avatar">
+        <image wx:if="{{avatarUrl}}" class="pf-avatar__img" src="{{avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="pf-avatar__text">{{initial}}</text>
+      </view>
+      <text class="pf-row__hint">{{uploading ? '上传中…' : '点击更换'}}</text>
+    </view>
+
+    <!-- 表单 -->
+    <view class="card pf-form">
+      <view class="field">
+        <text class="field-label">昵称</text>
+        <input
+          class="field-input"
+          value="{{nickname}}"
+          maxlength="12"
+          placeholder="2-12 个字符"
+          placeholder-class="field-placeholder"
+          data-key="nickname"
+          bindinput="onInput"
+        />
+      </view>
+      <view wx:if="{{errors.nickname}}" class="field-error">{{errors.nickname}}</view>
+
+      <view class="field">
+        <text class="field-label">学院</text>
+        <input
+          class="field-input"
+          value="{{college}}"
+          maxlength="100"
+          placeholder="选填，如：计算机科学与技术学院"
+          placeholder-class="field-placeholder"
+          data-key="college"
+          bindinput="onInput"
+        />
+      </view>
+      <view wx:if="{{errors.college}}" class="field-error">{{errors.college}}</view>
+
+      <view class="field">
+        <text class="field-label">手机号</text>
+        <input
+          class="field-input"
+          value="{{phone}}"
+          maxlength="11"
+          type="number"
+          placeholder="选填，11 位数字"
+          placeholder-class="field-placeholder"
+          data-key="phone"
+          bindinput="onInput"
+        />
+      </view>
+      <view wx:if="{{errors.phone}}" class="field-error">{{errors.phone}}</view>
+    </view>
+
+    <!-- 只读信息 -->
+    <view class="card pf-info">
+      <view class="pf-info__row">
+        <text class="pf-info__label">学号</text>
+        <text class="pf-info__value">{{studentNo || '—'}}</text>
+      </view>
+      <view class="pf-info__row">
+        <text class="pf-info__label">信用分</text>
+        <text class="pf-info__value">{{creditScore}}</text>
+      </view>
+      <view class="pf-info__row">
+        <text class="pf-info__label">账号状态</text>
+        <status-tag domain="user" status="{{status}}" plain="{{false}}" />
+      </view>
+    </view>
+
+    <button
+      class="btn btn-primary btn-block pf-save"
+      loading="{{saving}}"
+      disabled="{{saving}}"
+      bindtap="onSave"
+    >保存</button>
+    <text class="pf-note">学院与手机号可随时修改；头像更换后需点「保存」生效</text>
+  </block>
 </view>

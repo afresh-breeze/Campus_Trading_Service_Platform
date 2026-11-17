@@ -35,12 +35,9 @@ const ITEM_STATUS_TEXT = {
 };
 const SIZE_TEXT = { small: '小件', medium: '中件', large: '大件' };
 
-/** 'YYYY-MM-DD HH:mm:ss' → 今天显示 HH:mm，否则 MM-DD HH:mm */
+/** 'YYYY-MM-DD HH:mm:ss' → 今天显示 HH:mm，否则 MM-DD HH:mm（实现已收进 utils/util.js） */
 function dividerTime(v) {
-  const full = util.formatTime(v);
-  if (!full) return '';
-  const today = util.formatTime(new Date()).slice(0, 10);
-  return full.slice(0, 10) === today ? full.slice(11, 16) : full.slice(5, 16);
+  return util.timeDivider(v);
 }
 
 /** 后端消息行 → 展示结构（含时间分隔计算） */

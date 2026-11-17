@@ -10,8 +10,9 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const { APP_VERSION } = require('../../utils/version');
 
-const APP_VERSION = 'v0.3.0';
+// 版本号单一来源见 utils/version.js（11-17 走查：三个页面各写一份会漂移）
 const TAB_INDEX = 3;
 
 // 四项统计的口径必须写进标签，否则并列展示时用户会把「完成」理解成
