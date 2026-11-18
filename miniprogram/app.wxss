@@ -28,6 +28,9 @@ page {
   --color-divider: #F1EAE0;
   --color-bg: #F4F1E7;
   --color-bg-white: #FFFFFF;
+  /* 按压反馈面（hover-class）：与 divider 同色。
+     11-18 A 复查：此前 hall/profile/settings/help 用了它但这里没定义，hover 反馈实际不生效 */
+  --color-surface-2: #F1EAE0;
 
   /* 圆角 / 阴影 / 间距 */
   --radius-sm: 8rpx;

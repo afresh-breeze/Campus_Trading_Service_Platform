@@ -1,6 +1,6 @@
 // 代取详情页逻辑冒烟测试：stub 掉 Page/wx/getApp，用 mock 数据跑 apply() 分支
 const path = require('path');
-const REPO = 'E:/Qin/Computer/数据库·/Campus_Trading_Service_Platform/miniprogram';
+const REPO = path.join(__dirname, '..', '..', 'miniprogram');
 
 let captured = null;
 global.Page = (cfg) => { captured = cfg; };

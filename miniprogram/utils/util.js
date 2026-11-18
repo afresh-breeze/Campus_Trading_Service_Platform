@@ -35,6 +35,15 @@ function timeDivider(input) {
   return full.slice(0, 10) === today ? full.slice(11, 16) : full.slice(5, 16);
 }
 
+/**
+ * 只取时分：'2026-11-17 18:00:00' → '18:00'
+ * 走 formatTime 保证解析口径一致（- 转 /、容错），页面不再自己切片
+ */
+function hhmm(input) {
+  const full = formatTime(input);
+  return full ? full.slice(11, 16) : '';
+}
+
 /** 相对时间：刚刚 / 5 分钟前 / 3 小时前 / 昨天 / 11-05 */
 function fromNow(input) {
   if (!input) return '';
@@ -135,6 +144,7 @@ module.exports = {
   REGEX,
   formatTime,
   timeDivider,
+  hhmm,
   fromNow,
   formatPrice,
   formatBadge,

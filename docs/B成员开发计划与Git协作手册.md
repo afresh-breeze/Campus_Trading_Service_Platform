@@ -350,6 +350,8 @@
 
 **清单**：`docs/UI走查记录-B.md`「第二轮」共 11 条 —— B 侧 8 条已修完（P0 3 / P1 1 / P2 4）；**A 侧 `mine/items`、`mine/favorites` 仍占位，是当前唯一 P0 阻塞**。
 
+**A 复查修复（11-18）**：A 对 B 文件提出 4 条（P1 1 / P2 2 / P3 1）已全部闭环——头像链路（`tempFilePath` + `adapter.fullUrl` 双修）、冒烟脚本路径可移植（`__dirname` 定位）、`--color-surface-2` 在 `app.wxss` 正式定义、走查记录 #32 误报撤回 + `util.hhmm` 收编 manualUntil 切片。明细见走查记录「A 复查修复」一节。
+
 #### 15）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。

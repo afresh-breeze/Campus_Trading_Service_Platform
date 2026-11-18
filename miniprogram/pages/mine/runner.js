@@ -179,7 +179,8 @@ function statusTextOf(p) {
       ? !!p.isOnline
       : !!p.isOnline && (active || manualUntilFuture(p.manualUntil));
   if (reallyOnline) {
-    if (p.manualUntil) return '当前在线至 ' + String(p.manualUntil).slice(11, 16);
+    // 11-18 A 复查：时间格式统一走 util（原来这里直接 slice）
+    if (p.manualUntil) return '当前在线至 ' + util.hhmm(p.manualUntil);
     return p.availabilityType === 'now' ? '当前在线' : '当前在线（计划时段内）';
   }
   if (p.availabilityType === 'slot') {

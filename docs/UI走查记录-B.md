@@ -108,7 +108,7 @@
 | 20 页状态 | B 侧 14 页 + A 侧 6 页里，B 侧 3 页（`mine/profile`、`mine/settings`、`mine/help`）本轮前仍是 11-06 的占位骨架 → **本轮全部落地**，这是清零 P0 的关键 |
 | 三态覆盖 | 8 个列表/详情页（大厅、消息列表、聊天页、我的代取、找跑腿、代取详情、商品详情、搜索结果）**三态齐全**；本轮补上接单设置页缺失的加载态/错误态 |
 | 点击反馈 | 卡片与按钮全覆盖；本轮补 4 处纯 `view/text` 可点元素（大厅筛选 chip、排序按钮、接单设置「编辑/删除」） |
-| 时间口径 | 全站时间都走 `utils/util.js`（`formatTime` / `fromNow` / 本轮新增 `timeDivider`），页面里没有第二套格式化 |
+| 时间口径 | 全站时间都走 `utils/util.js`（`formatTime` / `fromNow` / `timeDivider` / 本轮 11-18 补的 `hhmm`）；11-17 记录时 `mine/runner` 的 manualUntil 还有自造切片，11-18 A 复查后已收进 util，页面内现已无第二套格式化 |
 | 文案口径 | 状态词统一「待接单 / 进行中 / 已完成 / 已取消」，全仓库检索**无「未接单」**；聊天对象统一「联系 TA」，pending 大厅单统一「联系发布者」 |
 
 ## 7. 本轮问题清单（P0 已清零）
@@ -124,10 +124,10 @@
 | 29 | `chat/detail` | 时间分隔在页面里自造 `slice(0,10)/slice(11,16)`，与「所有时间走 util」口径不符 | 新增 `util.timeDivider()`，页面只调用 | P2 | B | ✅ 已修 |
 | 30 | `mine/index` / `mine/settings` | 版本号 `v0.3.0` 两处硬编码，改版本必漏改一处 | 新增 `utils/version.js` 单一来源 | P2 | B | ✅ 已修 |
 | 31 | `mine/items`、`mine/favorites` | 仍为 11-06 占位骨架，个人中心「我的发布/我的收藏」两个入口进去是空白页 | 与 `item-card list` 一致的列表 + 空态「还没有发布过商品」 | **P0（阻塞）** | A | ⬜ 待 A 落地 |
-| 32 | `pages/item/detail`（A） | 图片加载失败时无占位（轮播留白），与 `item-card` 的占位底色口径不一致 | 加 `binderror` 兜底或统一占位底 | P2 | A | ⬜ 建议 A 处理 |
+| ~~32~~ | `pages/item/detail`（A） | ~~图片加载失败时无占位~~ → **误报，撤回（11-18 A 复查）**：已核实 `item/detail.wxml` 图片有 `binderror` + 「暂无图片」兜底，本轮记录时漏看 | — | — | — | ✅ 已核实，非问题 |
 | 33 | 全局 `.page` | 非 tab 页（详情/发布/设置/聊天）套 `.page` 会多出约 150rpx 底部空白（第一轮 #20） | 拆 `.page` / `.page--tab`，需动 A 的 `pages/index/index.wxml` | P2 | B（需 A 同意） | ⬜ 待 A 确认 |
 
-**统计**：本轮 11 条，B 侧 8 条已全部修完（P0 3 条、P1 1 条、P2 4 条），A 侧 2 条待落地/建议，1 条待 A 同意。
+**统计**：本轮 11 条，B 侧 8 条已全部修完（P0 3 条、P1 1 条、P2 4 条）；#32 经 A 复查为误报已撤回；A 侧剩 #31（items/favorites 占位）待落地 + #33 待 A 同意。
 
 ## 8. 本轮验证证据
 
@@ -148,3 +148,18 @@
 | 开发者工具全页编译留证 | 需在本机跑一遍并截图（11-18 截图归档时一起做，`report/assets/`） | B |
 | 真机双账号互发 | M2 遗留，依赖 A 的 `GET /api/runners` 真实数据 | B + A |
 | `.page` 拆 `--tab` | 影响 4 个 tab 页，其中 1 个是 A 的文件 | 待 A 确认 |
+
+---
+
+# A 复查修复（11-18）
+
+A 对 B 文件提出 4 条问题，逐条处理如下（P1 1 / P2 2 / P3 1，全部闭环）：
+
+| # | 级别 | A 指出的问题 | 修复 |
+| --- | --- | --- | --- |
+| R1 | **P1** | `profile.js` 取 `res.tempFiles[0].path`——`wx.chooseMedia` 实际返回 `tempFilePath`，上传拿到 undefined；且 `profile.wxml` 把相对路径 `/uploads/...` 直接绑给 `<image>`，显示不出来 | 两处同修：选图改 `tempFiles[0].tempFilePath`（与 A 的 `item/publish.js` 同口径）；data 拆成 `avatarRaw`（存相对路径，保存时提交）+ `avatarUrl`（`adapter.fullUrl` 补全后给 `<image>`），与「我的」页口径一致 |
+| R2 | P2 | `smoke_mine_pages.js`、`smoke_detail.js` 硬编码 `E:/Qin/...`，换机器 MODULE_NOT_FOUND，手册里「440/0」无法在别的机器复现 | REPO 改 `path.join(__dirname, '..', '..', 'miniprogram')`，脚本随仓库移动 |
+| R3 | P2 | `hall/profile/settings/help` 四个 wxss 用了 `--color-surface-2`，但 `app.wxss` 没定义 → 新补的 hover 反馈实际不生效 | `app.wxss` 正式定义 `--color-surface-2: #F1EAE0`（与 divider 同色，按压反馈面），全局生效；chat/detail 等带 fallback 的旧写法不受影响 |
+| R4 | P3 | 走查记录 #32 说商品详情图片无兜底，但 `item/detail.wxml` 已有 `binderror` +「暂无图片」；且文档称时间全走 util，`runner.js` 的 manualUntil 仍直接切片 | #32 撤回并标注误报（见上表）；`runner.js` 改用新增 `util.hhmm()`，页面内自造切片清零，时间口径表述同步修正 |
+
+**验证（11-18 复跑）**：契约 145/0；冒烟 440/0（脚本已可移植）；`wxml_check` 全 PASS。

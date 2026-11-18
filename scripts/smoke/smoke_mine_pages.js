@@ -1,7 +1,7 @@
 // 我的三页冒烟（11-17 走查新增）：个人资料 / 设置 / 帮助与反馈
 // stub 掉 Page/wx/getApp，用 utils/mock.js 的真实返回跑各分支
 const path = require('path');
-const REPO = 'E:/Qin/Computer/数据库·/Campus_Trading_Service_Platform/miniprogram';
+const REPO = path.join(__dirname, '..', '..', 'miniprogram');
 
 const store = {};
 const toasts = [];

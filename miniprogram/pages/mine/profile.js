@@ -8,6 +8,7 @@
 //   · 头像 > 5MB 先 wx.compressImage 压缩；上传失败保留旧头像并提示（手册 §6.4 边界）
 //   · 当前用户统一读 GET /api/auth/me（接口文档 §2：不要再调 GET /api/users/me）
 const http = require('../../utils/request');
+const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
 const config = require('../../config');
 
@@ -26,8 +27,10 @@ Page({
     errorDesc: '',
     saving: false,
     uploading: false,
-    // 表单
+    // 表单（11-18 A 复查修复）：avatarUrl 给 <image> 显示用（adapter.fullUrl 补全后的完整地址），
+    // avatarRaw 保存后端要的 /uploads/ 相对路径——直接把相对路径绑给 image 是显示不出来的
     avatarUrl: '',
+    avatarRaw: '',
     nickname: '',
     college: '',
     phone: '',
@@ -53,7 +56,8 @@ Page({
         const nickname = String(u.nickname || '');
         this.setData({
           loading: false,
-          avatarUrl: u.avatarUrl || '',
+          avatarRaw: u.avatarUrl || '',
+          avatarUrl: adapter.fullUrl(u.avatarUrl),
           nickname: nickname,
           college: u.college || '',
           phone: u.phone || '',
@@ -101,7 +105,8 @@ Page({
             count: 1,
             mediaType: ['image'],
             sizeType: ['compressed'],
-            success: (res) => resolve(res.tempFiles[0].path),
+            // wx.chooseMedia 返回的是 tempFilePath，不是 path（11-18 A 复查：原写法上传拿到 undefined）
+            success: (res) => resolve((res.tempFiles[0] || {}).tempFilePath || ''),
             fail: reject
           });
         } else {
@@ -121,7 +126,7 @@ Page({
         return http.upload(path).then((res) => {
           const url = (res && res.url) || '';
           if (!url) throw { code: -1, message: '上传返回为空' };
-          this.setData({ uploading: false, avatarUrl: url });
+          this.setData({ uploading: false, avatarRaw: url, avatarUrl: adapter.fullUrl(url) });
           util.toast('头像已更新，记得保存');
         });
       })
@@ -188,7 +193,7 @@ Page({
       nickname: String(this.data.nickname || '').trim(),
       college: String(this.data.college || '').trim(),
       phone: String(this.data.phone || '').trim(),
-      avatarUrl: this.data.avatarUrl || ''
+      avatarUrl: this.data.avatarRaw || ''
     };
     this.setData({ saving: true });
     http
