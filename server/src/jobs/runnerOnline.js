@@ -33,7 +33,9 @@ async function runOnce(now = new Date()) {
       await pool.query(
         `UPDATE runner_profiles
             SET is_online = ?, manual_until = NULL
-          WHERE user_id = ?`,
+          WHERE user_id = ?
+            AND availability_type = 'slot'
+            AND (manual_until IS NULL OR manual_until <= NOW())`,
         [shouldOnline, row.userId]
       );
       updated += 1;

@@ -3,7 +3,7 @@
 -- 内容：campus_service 库 + 14 张表 + 索引 + 约束
 -- 执行：mysql -u root -p < database/schema.sql
 -- 警告：脚本会 DROP 并重建 14 张表，已有数据请先备份
--- 执行顺序：schema.sql → objects.sql → seed.sql → server/npm run seed
+-- 执行顺序：schema.sql → objects.sql → server/scripts/seed.js（cd server && npm run seed）
 -- ============================================================
 
 -- 应用账号由管理员单独创建，密码不要写进本文件、不要提交到 Git：

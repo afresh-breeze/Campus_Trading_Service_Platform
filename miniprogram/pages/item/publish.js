@@ -536,6 +536,7 @@ Page({
   },
 
   onBookKeywordFocus() {
+    if (this.data.bookFocus) this.setData({ bookFocus: false });
     const keyword = this.data.bookKeyword.trim();
     if (!keyword) return;
     this.clearBookBlurTimer();
@@ -693,10 +694,6 @@ Page({
       bookSuggestError: false,
       'errors.book': ''
     });
-  },
-
-  onBookFocusDone() {
-    if (this.data.bookFocus) this.setData({ bookFocus: false });
   },
 
   onOpenManualBook() {

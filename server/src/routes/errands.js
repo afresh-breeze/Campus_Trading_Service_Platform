@@ -88,6 +88,9 @@ function readStatusFilter(value) {
   if (value === undefined || value === '') {
     return { status: '', error: '' };
   }
+  if (typeof value !== 'string') {
+    return { status: '', error: '订单状态不合法' };
+  }
   const status = readTrimmed(value);
   if (!ERRAND_STATUSES.includes(status)) {
     return { status: '', error: '订单状态不合法' };
@@ -286,6 +289,9 @@ router.get('/', async (req, res, next) => {
     return fail(res, 400, statusFilter.error);
   }
   const status = statusFilter.status || 'pending';
+  if (status !== 'pending') {
+    return fail(res, 400, '大厅只支持待接单');
+  }
 
   const areaFilter = readAreaFilter(req.query.area);
   if (areaFilter.error) {
@@ -399,7 +405,16 @@ router.get('/mine', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   const body = req.body || {};
 
-  const visibility = readTrimmed(body.visibility) || 'hall';
+  let visibility = 'hall';
+  if (body.visibility !== undefined && body.visibility !== null && body.visibility !== '') {
+    if (typeof body.visibility !== 'string') {
+      return fail(res, 400, '可见性不合法');
+    }
+    visibility = body.visibility.trim();
+    if (!visibility) {
+      return fail(res, 400, '可见性不合法');
+    }
+  }
   if (!ERRAND_VISIBILITIES.includes(visibility)) {
     return fail(res, 400, '可见性不合法');
   }
@@ -495,12 +510,6 @@ router.put('/:id', async (req, res, next) => {
     return fail(res, 400, '订单 ID 不合法');
   }
 
-  const parsed = parseErrandPayload(req.body || {});
-  if (parsed.error) {
-    return fail(res, 400, parsed.error);
-  }
-  const data = parsed.data;
-
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -523,6 +532,13 @@ router.put('/:id', async (req, res, next) => {
       await conn.rollback();
       return fail(res, 409, '只有未发布的待接单私单可以修改');
     }
+
+    const parsed = parseErrandPayload(req.body || {});
+    if (parsed.error) {
+      await conn.rollback();
+      return fail(res, 400, parsed.error);
+    }
+    const data = parsed.data;
 
     await conn.query(
       `UPDATE errand_orders

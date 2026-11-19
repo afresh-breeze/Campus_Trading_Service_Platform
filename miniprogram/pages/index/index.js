@@ -270,7 +270,7 @@ Page({
     }
     wx.navigateTo({
       url: '/pages/item/publish',
-      fail: () => util.toast('发布页尚未实现')
+      fail: () => util.toast('发布页打开失败')
     });
   },
 

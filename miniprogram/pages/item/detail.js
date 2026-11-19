@@ -165,6 +165,7 @@ Page({
 
   onLoad(options) {
     this._reqSeq = 0;
+    this._viewCounted = false;
     const id = Number(options && options.id || 0);
     if (!Number.isInteger(id) || id <= 0) {
       this.setData({
@@ -194,9 +195,10 @@ Page({
     else this.setData({ loading: true, error: '', errorDesc: '', canRetry: false });
 
     return http
-      .get('/api/items/' + id, {}, { silent: true })
+      .get('/api/items/' + id, this._viewCounted ? { view: 0 } : {}, { silent: true })
       .then((raw) => {
         if (seq !== this._reqSeq) return null;
+        this._viewCounted = true;
         this.applyDetail(raw);
         return raw;
       })

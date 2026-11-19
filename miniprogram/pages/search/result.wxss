@@ -1,5 +1,10 @@
 /* 搜索结果（A 成员，11-16）：只引用 app.wxss 的设计令牌，不写死主题色 */
 
+/* 非 tab 页不避让 tabBar，覆盖 .page 的 150rpx 留白 */
+.search-page {
+  padding-bottom: calc(var(--space) + env(safe-area-inset-bottom));
+}
+
 /* ---------------- 顶部整块吸附 ---------------- */
 .search-bar {
   position: -webkit-sticky;
