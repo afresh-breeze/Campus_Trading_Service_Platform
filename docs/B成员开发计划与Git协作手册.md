@@ -352,14 +352,28 @@
 
 **A 复查修复（11-18）**：A 对 B 文件提出 4 条（P1 1 / P2 2 / P3 1）已全部闭环——头像链路（`tempFilePath` + `adapter.fullUrl` 双修）、冒烟脚本路径可移植（`__dirname` 定位）、`--color-surface-2` 在 `app.wxss` 正式定义、走查记录 #32 误报撤回 + `util.hhmm` 收编 manualUntil 切片。明细见走查记录「A 复查修复」一节。
 
-#### 15）已知阻塞（写在这里，避免口头遗忘）
+#### 15）11-19 当日任务：负向测试（`fix/negative-cases` 口径）
+
+手册表格 12 条场景（断网 / 401 / 404 / 500 / 空表单 / 报酬非法值 / 超长消息 / 越权 / 连点防重 / 轮询泄漏 / 长文本 / 新账号空态）逐条过：
+
+- **新增 `scripts/smoke/smoke_negative.js`（40 条 / 0 失败）**：把 12 条中可代码级验证的全部自动化——
+  401 清会话回登录（带 redirect）、未登录拦截与回跳分流、断网错误态不卡 loading、500 统一文案不泄内部、
+  空表单 0 请求、报酬 abc/-1/9999 全拦（前端 0<r≤200 收紧）、消息空/501 字 400、越权 403 文案透出、
+  连点 3 次只发 1 次（submitting 守卫 + 刷新后才解禁）、聊天进出 10 次无残留定时器、长文本省略、空态。
+- **12 / 12 全过，无新增 bug**；`docs/bug清单.md` 建档（Open 3 条：favorites 待 A、.page 拆分待确认、取消收藏即时刷新复验；Fixed 留痕 7 条）。
+- **测试记录**：`docs/负向测试记录-B.md`（12 条表格 + 3 条口径备注 + 待实机截图清单）。
+- **调试收获（写脚本时踩的）**：`request()` 在 `config.MOCK=true` 时短路走 mock，stub `wx.request` 必须先把内存里的 `config.MOCK` 切 false（脚本内改运行时对象、测完恢复，不动文件）；`detail.doAction` 走 `http.post` 且 `fetch()` 依赖 `data.id`，测试漏设 id 会让 submitting 提前复位（假象）。
+
+**验证**：契约 **145/0**；冒烟 **480/0**（新增 negative 40 条）。
+
+#### 16）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
 - ~~mock 与后端字段/校验不一致~~ → **已整改（11-11 复盘）**：`utils/mock.js` 经两轮对齐后共 **39 条路由**（服务端 40 条 − `POST /api/upload` 文件上传接口，该接口不适合 mock），入参校验、返回字段、失败码逐条对齐 `server/src/routes/*.js`；`scripts/mock-contract-test.js` 已扩到 **88 项断言全过**，作为回归门槛。**后端新增接口必须同步 mock 与断言**，否则 MOCK 模式会直接报「mock 未登记该接口」。
 - ~~代取详情页无入口~~ → **已解除（11-12）**：`pages/errand/hall` 已实现列表并接好 `bindtap → /pages/errand/detail?id=`。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
-- ~~A 的 6 个二手页面仍为占位骨架~~ → **部分解除（11-15）**：A 已交付二手首页 `pages/index/*`（列表/筛选/排序/吸顶，并用了 B 的 `item-card show-time`）；其余二手页面仍等 A。
+- ~~A 的 6 个二手页面仍为占位骨架~~ → **基本解除（11-18，A 推 `48a90a8`）**：A 已交付二手首页、商品详情、发布商品、搜索结果、**我的发布（只读列表）**；**仅剩 `mine/favorites`（我的收藏）待 A**。
 - **后端无 stats 聚合接口**：个人中心四项统计用 `items/mine`、`favorites`、`errands/mine` 的 `total` 派生，`/api/errands/mine` 必须支持 `status` 筛选（mock 已对齐）。
 
 ### 0.5 每天建议节奏
