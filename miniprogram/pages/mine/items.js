@@ -7,9 +7,9 @@
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 const adapter = require('../../utils/adapter');
+const listCommon = require('./list-common');
 
 const PAGE_PATH = '/pages/mine/items';
-const PAGE_SIZE = 10;
 
 const TABS = [
   { key: 'on_sale', label: '在售' },
@@ -32,20 +32,6 @@ function emptyOf(status) {
     desc: '去在售里看看已发布的商品',
     action: '去在售看看'
   };
-}
-
-/** 与 nav-top fixed 同口径：胶囊底部 + 6px，让 tab 吸在导航栏下方 */
-function getNavBottom() {
-  try {
-    const menu = wx.getMenuButtonBoundingClientRect
-      ? wx.getMenuButtonBoundingClientRect()
-      : null;
-    if (menu && menu.bottom) return menu.bottom + 6;
-    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-    return (win.statusBarHeight || 20) + 44;
-  } catch (e) {
-    return 64;
-  }
 }
 
 const DEFAULT_EMPTY = emptyOf('on_sale');
@@ -74,12 +60,12 @@ Page({
     this._loading = false;
     this._loadingStartedAt = 0;
     this._loadingWatchdog = null;
-    this.setData({ stickyTop: getNavBottom() });
+    this.setData({ stickyTop: listCommon.getNavBottom() });
   },
 
   onShow() {
-    if (!this.hasLogin()) {
-      if (!this._loginRedirected) this.redirectToLogin();
+    if (!listCommon.hasLogin()) {
+      if (!this._loginRedirected) listCommon.redirectToLogin(PAGE_PATH);
       this.setData({ loading: false, error: '请先登录' });
       return;
     }
@@ -88,7 +74,7 @@ Page({
     // 返回页面时若旧 loading 还挂着但列表已有数据，先把骨架放掉
     if (this.data.items.length && this.data.loading) {
       this._loading = false;
-      this.clearLoadingWatchdog();
+      listCommon.clearLoadingWatchdog(this);
       this.setData({ loading: false });
     }
     // 首次加载/刷新已在进行中就不要重复发请求，等它自己收尾
@@ -104,11 +90,11 @@ Page({
 
   onUnload() {
     this._reqSeq += 1;
-    this.clearLoadingWatchdog();
+    listCommon.clearLoadingWatchdog(this);
   },
 
   onPullDownRefresh() {
-    if (!this.hasLogin()) {
+    if (!listCommon.hasLogin()) {
       wx.stopPullDownRefresh();
       return;
     }
@@ -116,34 +102,10 @@ Page({
   },
 
   onReachBottom() {
-    if (!this.hasLogin()) return;
+    if (!listCommon.hasLogin()) return;
     if (!this.data.hasMore || !this.data.items.length) return;
     if (this.data.loading || this.data.loadingMore || this.data.refreshing) return;
     this.loadMore();
-  },
-
-  hasLogin() {
-    const app = getApp();
-    return !!(app && typeof app.isLogin === 'function' && app.isLogin());
-  },
-
-  clearLoadingWatchdog() {
-    if (this._loadingWatchdog) {
-      clearTimeout(this._loadingWatchdog);
-      this._loadingWatchdog = null;
-    }
-  },
-
-  redirectToLogin() {
-    this._loginRedirected = true;
-    const app = getApp();
-    if (app && typeof app.requireLogin === 'function') {
-      app.requireLogin(PAGE_PATH);
-      return;
-    }
-    wx.redirectTo({
-      url: '/pages/login/login?redirect=' + encodeURIComponent(PAGE_PATH)
-    });
   },
 
   // ---------------- 数据 ----------------
@@ -152,7 +114,7 @@ Page({
     return http
       .get(
         '/api/items/mine',
-        { status, page, pageSize: PAGE_SIZE },
+        { status, page, pageSize: listCommon.PAGE_SIZE },
         { silent: true }
       )
       .then((res) => {
@@ -169,170 +131,15 @@ Page({
   },
 
   loadFirst() {
-    const status = this.data.status;
-    const seq = (this._reqSeq += 1);
-    this._loading = true;
-    this._loadingStartedAt = Date.now();
-    this.clearLoadingWatchdog();
-    this._loadingWatchdog = setTimeout(() => {
-      this._loadingWatchdog = null;
-      if (seq !== this._reqSeq) return;
-      this._loading = false;
-      this.setData({ loading: false, error: '加载超时，请下拉刷新重试' });
-    }, 10000);
-
-    this.setData({
-      loading: true,
-      loadingMore: false,
-      refreshing: false,
-      error: '',
-      items: [],
-      total: 0,
-      page: 1,
-      hasMore: true
-    });
-    try {
-      wx.pageScrollTo({ scrollTop: 0, duration: 0, fail: () => {} });
-    } catch (e) {
-      // 页面还没就绪时滚动失败，不影响列表请求
-    }
-
-    let request;
-    try {
-      request = this.fetchPage(status, 1);
-    } catch (err) {
-      this._loading = false;
-      this.clearLoadingWatchdog();
-      this.setData({
-        loading: false,
-        items: [],
-        total: 0,
-        hasMore: false,
-        error: (err && err.message) || '加载失败，请重试'
-      });
-      return Promise.resolve();
-    }
-
-    return request
-      .then((result) => {
-        if (seq !== this._reqSeq) return;
-        this._loading = false;
-        this.clearLoadingWatchdog();
-        const items = this.toCards(result.rows);
-        this.setData({
-          items,
-          total: result.total,
-          page: 1,
-          hasMore: items.length < result.total,
-          loading: false,
-          error: ''
-        });
-      })
-      .catch((err) => {
-        if (seq !== this._reqSeq) return;
-        this._loading = false;
-        this.clearLoadingWatchdog();
-        this.setData({
-          loading: false,
-          items: [],
-          total: 0,
-          hasMore: false,
-          error: (err && err.message) || '请检查网络后重试'
-        });
-      });
+    return listCommon.loadFirst(this);
   },
 
-  /** 按已加载页数静默刷新，保持列表深度与滚动位置 */
   refreshLoaded() {
-    if (!this.hasLogin()) return Promise.resolve();
-    if (!this.data.items.length) {
-      // 已有首屏请求在飞就等它，避免重复请求互相顶掉
-      if (
-        this.data.loading &&
-        this._loading &&
-        Date.now() - this._loadingStartedAt < 5000
-      ) {
-        return Promise.resolve();
-      }
-      return this.loadFirst();
-    }
-
-    const status = this.data.status;
-    const loadedPage = Math.max(1, this.data.page || 1);
-    const seq = (this._reqSeq += 1);
-    this.setData({ refreshing: true, loadingMore: false, error: '' });
-
-    const requests = [];
-    for (let page = 1; page <= loadedPage; page += 1) {
-      requests.push(this.fetchPage(status, page));
-    }
-
-    return Promise.all(requests)
-      .then((results) => {
-        if (seq !== this._reqSeq) return;
-        const seen = {};
-        const cards = [];
-        results.forEach((result) => {
-          result.rows.forEach((row) => {
-            const card = adapter.toItem(row);
-            if (!card.itemId || seen[card.itemId]) return;
-            seen[card.itemId] = true;
-            cards.push(card);
-          });
-        });
-        const total = results.length ? results[0].total : 0;
-        this.setData({
-          items: cards,
-          total,
-          page: Math.max(1, Math.ceil(cards.length / PAGE_SIZE)),
-          hasMore: cards.length < total,
-          loading: false,
-          loadingMore: false,
-          refreshing: false,
-          error: ''
-        });
-      })
-      .catch((err) => {
-        if (seq !== this._reqSeq) return;
-        this.setData({ refreshing: false, loading: false, loadingMore: false });
-        util.toast((err && err.message) || '刷新失败，请稍后重试');
-      });
+    return listCommon.refreshLoaded(this);
   },
 
   loadMore() {
-    const status = this.data.status;
-    const next = (this.data.page || 1) + 1;
-    const seq = (this._reqSeq += 1);
-    this.setData({ loadingMore: true });
-
-    return this.fetchPage(status, next)
-      .then((result) => {
-        if (seq !== this._reqSeq) return;
-        const seen = {};
-        this.data.items.forEach((item) => {
-          seen[item.itemId] = true;
-        });
-        const appended = [];
-        result.rows.forEach((row) => {
-          const card = adapter.toItem(row);
-          if (!card.itemId || seen[card.itemId]) return;
-          seen[card.itemId] = true;
-          appended.push(card);
-        });
-        const items = this.data.items.concat(appended);
-        this.setData({
-          items,
-          total: result.total,
-          page: next,
-          hasMore: items.length < result.total && result.rows.length > 0,
-          loadingMore: false
-        });
-      })
-      .catch((err) => {
-        if (seq !== this._reqSeq) return;
-        this.setData({ loadingMore: false });
-        util.toast((err && err.message) || '加载更多失败，请重试');
-      });
+    return listCommon.loadMore(this);
   },
 
   // ---------------- 交互 ----------------
@@ -379,7 +186,7 @@ Page({
 
   onRetry() {
     if (this.data.error === '请先登录') {
-      this.redirectToLogin();
+      listCommon.redirectToLogin(PAGE_PATH);
       return;
     }
     if (this.data.items.length) this.refreshLoaded();

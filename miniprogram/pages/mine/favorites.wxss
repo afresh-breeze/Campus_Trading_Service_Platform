@@ -1,13 +1,147 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 我的收藏（A 成员，11-18）：只引用 app.wxss 的设计令牌 */
+
+.fav-page {
+  /* 非 tab 页不避让 tabBar，覆盖 .page 的 150rpx 留白 */
+  padding-bottom: calc(var(--space) + env(safe-area-inset-bottom));
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
+
+/* ---------------- 吸顶状态条（复用首页分类样式） ---------------- */
+.fav-cats-wrap {
+  position: -webkit-sticky;
+  position: sticky;
+  z-index: 20;
+  padding: 8rpx 0 16rpx;
+  background-color: var(--color-bg);
 }
-.placeholder-tip {
-  margin-top: 24rpx;
+.fav-cats {
+  width: 100%;
+  height: 60rpx;
+  white-space: nowrap;
+}
+.fav-cats::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.fav-cat {
+  display: inline-flex;
+  align-items: center;
+  height: 60rpx;
+  padding: 0 26rpx;
+  margin-right: var(--space-sm);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-white);
+  font-size: 26rpx;
+  color: var(--color-text-2);
+  vertical-align: top;
+}
+.fav-cat--active {
+  border-color: transparent;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.fav-cat--hover {
+  opacity: 0.85;
+}
+
+.fav-head {
+  margin: 4rpx 4rpx 12rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+
+.fav-item {
+  position: relative;
+  margin-bottom: 16rpx;
+}
+
+/* 状态标签放卡片左上角（覆盖封面），心形放右下角 */
+.fav-status {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+  z-index: 5;
+}
+
+/* 心形回到右下角，奶茶橙色系 */
+.fav-heart {
+  position: absolute;
+  right: 12rpx;
+  bottom: 12rpx;
+  z-index: 5;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid var(--color-border);
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-card);
+  color: var(--color-primary);
+  font-size: 34rpx;
+  font-weight: 600;
+  line-height: 1;
+}
+.fav-heart--busy {
+  opacity: 0.6;
+}
+.fav-heart--hover {
+  opacity: 0.8;
+}
+
+.fav-foot {
+  padding: 12rpx 0 24rpx;
   text-align: center;
   font-size: var(--font-xs);
   color: var(--color-text-4);
+}
+
+.fav-state {
+  padding: 48rpx var(--space);
+  text-align: center;
+}
+.fav-state__desc {
+  display: block;
+  margin: 12rpx 0 28rpx;
+}
+.fav-empty {
+  padding: 40rpx 0;
+}
+
+/* 首屏骨架 */
+.fav-sk {
+  display: flex;
+  padding: 20rpx;
+}
+.fav-sk__cover {
+  flex: none;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background-color: var(--color-divider);
+}
+.fav-sk__body {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+  padding-top: 8rpx;
+}
+.fav-sk__line {
+  height: 24rpx;
+  margin-bottom: 18rpx;
+  border-radius: 8rpx;
+  background-color: var(--color-divider);
+}
+.fav-sk__line--lg {
+  width: 80%;
+  height: 32rpx;
+}
+.fav-sk__line--md {
+  width: 60%;
+}
+.fav-sk__line--sm {
+  width: 40%;
 }

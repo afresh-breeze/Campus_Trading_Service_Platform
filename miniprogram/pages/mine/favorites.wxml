@@ -1,12 +1,74 @@
-<!-- 我的收藏（A 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">我的收藏</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待A成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/mine/favorites</view>
+<!-- 我的收藏（A 成员，11-18）：item-card 只读列表 + 右下角悬浮心形取消收藏 -->
+<nav-top back title="我的收藏" fixed />
+
+<view class="page page-body fav-page">
+  <!-- 吸顶状态条：复用首页分类的横滑椭圆条，与我的发布一致 -->
+  <view class="fav-cats-wrap" style="top: {{stickyTop}}px">
+    <scroll-view class="fav-cats" scroll-x show-scrollbar="{{false}}">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="fav-cat {{status === item.key ? 'fav-cat--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTabChange"
+        hover-class="fav-cat--hover"
+      >{{item.label}}</view>
+    </scroll-view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：A ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 首屏骨架 -->
+  <block wx:if="{{loading}}">
+    <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="card fav-sk">
+      <view class="fav-sk__cover"></view>
+      <view class="fav-sk__body">
+        <view class="fav-sk__line fav-sk__line--lg"></view>
+        <view class="fav-sk__line fav-sk__line--md"></view>
+        <view class="fav-sk__line fav-sk__line--sm"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 首屏失败 / 未登录兜底 -->
+  <view wx:elif="{{error}}" class="card fav-state">
+    <text class="t-title">{{error === '请先登录' ? '请先登录' : '加载失败'}}</text>
+    <text class="t-sub fav-state__desc">{{error === '请先登录' ? '登录后查看你收藏的商品' : error}}</text>
+    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重新加载'}}</button>
+  </view>
+
+  <!-- 空态 -->
+  <view wx:elif="{{!items.length}}" class="fav-empty">
+    <empty-state
+      title="{{emptyTitle}}"
+      desc="{{emptyDesc}}"
+      action-text="{{emptyActionText}}"
+      bind:action="onEmptyAction"
+    />
+  </view>
+
+  <block wx:else>
+    <view class="fav-head">共 {{total}} 件</view>
+
+    <view wx:for="{{items}}" wx:key="itemId" class="fav-item">
+      <item-card
+        item="{{item}}"
+        mode="list"
+        show-time="{{true}}"
+        bind:tap="onTapItem"
+      />
+      <!-- 状态标签放左侧（item-card 自带标签已通过 status='' 隐藏），心形放右下角 -->
+      <view class="fav-status">
+        <status-tag domain="item" status="{{item.rawStatus}}" plain="{{false}}" />
+      </view>
+      <view
+        class="fav-heart {{cancelingId === item.itemId ? 'fav-heart--busy' : ''}}"
+        data-id="{{item.itemId}}"
+        catchtap="onCancelFavorite"
+        hover-class="fav-heart--hover"
+        aria-label="取消收藏"
+      >{{cancelingId === item.itemId ? '…' : '♥'}}</view>
+    </view>
+
+    <view wx:if="{{loadingMore}}" class="fav-foot">加载中…</view>
+    <view wx:elif="{{!hasMore}}" class="fav-foot">没有更多了</view>
+  </block>
 </view>

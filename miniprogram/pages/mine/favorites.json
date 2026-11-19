@@ -1,6 +1,11 @@
 {
   "navigationBarTitleText": "我的收藏",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {
-    "nav-top": "/components/nav-top/index"
+    "nav-top": "/components/nav-top/index",
+    "item-card": "/components/item-card/index",
+    "empty-state": "/components/empty-state/index",
+    "status-tag": "/components/status-tag/index"
   }
 }
