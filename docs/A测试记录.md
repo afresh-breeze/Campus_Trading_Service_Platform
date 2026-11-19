@@ -1,6 +1,6 @@
 # A 测试记录（后端 / 数据库 / 二手页面）
 
-> 负责人：A ｜ 最后更新：2026-11-18 ｜ 对应提交：`3752f88`（发布页）、`48a90a8`（我的发布）、`cfc81cd`（文档）
+> 负责人：A ｜ 最后更新：2026-11-19 ｜ 对应提交：`3752f88`（发布页）、`48a90a8`（我的发布）、`530d37c`（A 记录）；我的收藏与全量审计修订在工作区
 >
 > 本文件只记录 A 负责的后端、数据库对象和二手 6 页；B 的 UI / 聊天用例见 B 的测试记录。M1 / M2 尚未正式验收，本文不把“待 DevTools 验收”写成通过。
 
@@ -12,7 +12,7 @@
 | 系统 | Windows 10.0.26200（x64） |
 | Node | v24.18.0 |
 | 小程序基础库 | 3.5.5 |
-| 后端 | `http://127.0.0.1:3000`（用户前台运行，A 不 kill / 重启） |
+| 后端 | `http://127.0.0.1:3000`（用户前台运行，A 不 kill / 重启；status 过滤验证由用户重启后执行） |
 | 数据库 | 本机 MySQL，`mysql` CLI / Navicat 均可操作 |
 | 演示账号 | 2023001 / 2023002 / 2023003，密码 `123456` |
 | 演示数据 | 约 35 件商品、16 本书目、6 个分类；状态分布会随测试变化 |
@@ -31,11 +31,13 @@
 | 代码 | A 页面 / 后端 JS 语法 | PASS | `node --check` 全部通过 |
 | 页面逻辑 | 发布商品页冒烟 | PASS 43/43 | 表单校验、图片上传、书目联想、手动建书、跳转；提交 `3752f88` |
 | 页面逻辑 | 我的发布列表 / 生命周期 | PASS | 状态标签保留、列表无状态操作按钮、双 onShow 只发一次请求、旧 loading 复位、`pageScrollTo` 抛错仍能加载、真实接口返回 5 条 |
-| 真实接口 | 健康、鉴权、分类、书目、上传、列表、状态权限 | PASS | 见 §4；只做只读或可恢复操作 |
+| 页面逻辑 | 我的收藏列表 / 取消收藏 | PASS | 四状态切换、取消/404/空态/分页/登录定向检查；status 真接口已重启验证 |
+| 真实接口 | 健康、鉴权、分类、书目、上传、列表、状态权限 | PASS | 见 §4；另含 4.1 后端审计边界复测，10 项通过（A-10 为代码级守卫） |
 | 协作验证 | B 的 chat 鉴权冒烟 | PASS 15/15 | `node scripts/chat-auth-smoke.js` |
 | 协作验证 | B 的我的三页冒烟 | PASS 30/30 | `node scripts/smoke/smoke_mine_pages.js`（B 已修复脚本路径） |
+| 冒烟合计 | 本地 12 个 smoke 脚本 | PASS 480/0 | 2026-11-19 全量复跑，含 B 的 negative 40 条 |
 | 页面验收 | DevTools 视觉 / 真实 UI 发布 | 待验收 | 需用户在本机微信开发者工具执行 |
-| 里程碑 | M1 / M2 端到端 | 未执行 | 我的收藏仍占位；M2 双账号未验收，不能声称通过 |
+| 里程碑 | M1 / M2 端到端 | 未执行 | 我的收藏已实现（工作区）；M2 双账号未验收，不能声称通过 |
 | 回归 | 29 / 60 条全量用例、性能、并发、安全 | 未执行 | 按手册 11-20 / 11-21 回归阶段执行 |
 
 ## 3. 数据库对象用例
@@ -83,8 +85,28 @@
 | API-22 | 收藏 / 取消收藏 | 2023001 | 计数与列表一致 | 本轮未执行 | 未执行 |
 | API-23 | `POST /api/feedback` | 已登录 | 写入反馈 | 本轮未执行 | 未执行 |
 | API-24 | 并发接单 / 409 竞态 | 双账号 | 只有一人成功 | 本轮未执行 | 未执行 |
+| API-25 | 收藏删除 / 恢复 | 2023001 对商品 94 `DELETE` 后 `POST` 收藏 | 收藏数 4→3→4，数据恢复 | 两次均 `code=0`，商品已恢复收藏 | PASS |
+| API-26 | `GET /api/favorites?status=` | 四状态分别查询 | 只返回该状态收藏，total 为该状态数 | all=3，on_sale=3，reserved/sold/off_shelf=0，sum=3；非法 status 400 | PASS |
 
 > API-20 的状态变更属于测试数据操作：测试后已把商品 94 恢复为 `on_sale`；没有新建商品或书目。
+> API-13/API-25 记录的是执行时点的收藏数（4）；API-26 是后续时点（3）。演示数据会随取消/重新收藏变化，以实时接口为准。
+
+### 4.1 2026-11-19 后端审计修订复测（用户重启 3000 后）
+
+| 编号 | 用例 | 实际 | 结果 |
+| --- | --- | --- | --- |
+| A-01 | `GET /api/items?sort=constructor` | 400，`排序方式不合法` | PASS |
+| A-02 | `GET /api/errands?status=completed` | 400，`大厅只支持待接单` | PASS |
+| A-03 | `GET /api/favorites?status=on_sale&status=sold` | 400，`商品状态不合法` | PASS |
+| A-04 | `GET /api/items/99?view=0` ×2 与默认请求交错 | 29 → 30 → 30，后续 `view=0` 不再增加 | PASS |
+| A-05 | `POST /api/items` 售价 `0.001` | 400，`售价最多两位小数`；在售总数 5→5，无测试商品 | PASS |
+| A-06 | `POST /api/items` 原价 `0.001` | 400，`原价最多两位小数`；无测试商品 | PASS |
+| A-07 | `POST /api/upload` 字段名 `image` | 400，`请使用 file 字段上传单张图片` | PASS |
+| A-08 | `POST /api/errands` `visibility=false` | 400，`可见性不合法` | PASS |
+| A-09 | 非发布者 `PUT /api/errands/:id`（空 body） | 新建私单 20 → 2023002 PUT 返回 403「只有发布者可以修改订单」→ 2023001 取消，状态 cancelled | PASS |
+| A-10 | `runnerOnline` 覆盖新 `manual_until` 的并发窗口 | 未来 `manual_until` 跳过更新；空值更新 SQL 带 `manual_until IS NULL OR manual_until <= NOW()` 守卫 | PASS（代码级） |
+
+> A-04 让商品 99 的浏览量 29→30，多计 1 次属于测试副作用；A-05/A-06 未创建商品；A-09 创建了审计私单 20，测试后已由发布者取消（状态 cancelled）。
 
 ## 5. 页面与脚本用例
 
@@ -94,12 +116,15 @@
 | P-02 | 我的发布 | 四状态横滑筛选、只读列表、状态标签、分页/刷新、onShow 静默刷新 | PASS（定向） | 卡片状态保留、无 `actions`/操作栏；真实接口 5 条正常 |
 | P-03 | 我的发布 | 从详情返回时不重复请求、旧 loading 复位、`pageScrollTo` 抛错仍继续加载 | PASS | 针对“返回后骨架屏不结束”的回归检查 |
 | P-04 | 首页 / 详情 / 搜索 | 已实现页面逻辑与接口链路 | 部分 | 代码已推送；最终视觉/交互待 DevTools |
-| P-05 | 我的收藏 | 列表 / 取消收藏 / 空态 | 未执行 | 页面尚未实现（下一步） |
+| P-05 | 我的收藏 | 四状态横滑筛选、左上角状态标签、右下角心形取消、404、空态、分页、登录 | PASS（定向） | Node 冒烟 + 真实收藏接口；status 查询重启后已验证；DevTools 视觉待验收 |
 | S-01 | mock 契约 | 141+ 条接口契约 | PASS 145/145 | `node scripts/mock-contract-test.js` |
 | S-02 | WXML | 全项目 26 个 wxml | PASS 26/26 | `node scripts/smoke/wxml_check.js` |
 | S-03 | JS 语法 | A 页面与后端路由 | PASS | `node --check` |
 | S-04 | B chat 鉴权 | 无 token / 带 token / 会话列表 | PASS 15/15 | `node scripts/chat-auth-smoke.js` |
 | S-05 | B 我的三页 | 加载回填、缓存、FAQ、反馈 | PASS 30/30 | `node scripts/smoke/smoke_mine_pages.js` |
+| S-06 | 本地 smoke 合计 | 12 个脚本全量复跑 | PASS 480/0 | chat/detail/hall/runner/publish/item-card/negative 等 |
+| S-07 | B 负向测试 | 断网/401/404/500/空表单/越权/连点/定时器/空态 | PASS 40/0 | `node scripts/smoke/smoke_negative.js` |
+| S-08 | 列表公共逻辑 | items/favorites 首屏、分页、串行刷新、取消、刷新失败回退 | PASS 13/13 | 临时 Node 冒烟；`pages/mine/list-common.js` |
 
 ## 6. 缺陷与修复
 
@@ -108,20 +133,30 @@
 | DEF-01 | P1 | 从商品详情返回「我的发布」偶发骨架屏不结束：连续 onShow 可能重复发首屏请求、旧 `loading` 残留、`wx.pageScrollTo` 同步抛错会中断请求 | 双 onShow 只保留一个请求；有数据时先复位 loading；包住 `pageScrollTo`；10 秒看门狗转错误卡；已用生命周期检查和真实后端验证 | `48a90a8` |
 | DEF-02 | P1/P2 | B 的个人资料头像取了 `tempFiles[0].path`、`<image>` 直接绑相对路径；B 冒烟脚本硬编码 `E:/Qin`；`--color-surface-2` 未定义 | A 复查报告后由 B 在 `efec4cc` 修复；A 未修改 B 文件 | B `efec4cc` |
 | DEF-03 | P3 | B 的 UI 走查 #32 称商品详情图片无兜底，实际已有 `binderror` + 「暂无图片」 | B 已在 `efec4cc` 撤回该误报 | B `efec4cc` |
+| DEF-04 | P1 | 我的收藏空态文案写死，切到已售/已预订/已下架空列表仍显示「还没有收藏/去逛逛」 | 改为动态绑定 `emptyTitle/emptyDesc/emptyActionText`；分状态空态和动作恢复正常 | 工作区 |
+| DEF-05 | P2 | 详情页每次 onShow 重拉都会给 `view_count` +1，返回/状态刷新造成虚高 | 详情页仅在首次请求计数，后续带 `view=0`；后端只在非 `view=0` 时 +1 | 工作区 |
+| DEF-06 | P2 | 全量审计的后端边界：favorites `status` 非字符串静默跳过；`sort` 原型键绕过；errands `visibility` 非字符串默认 hall；大厅 `status=completed` 仍返回；售价 0.001 未拦；上传错误字段 500；runnerOnline 可能覆盖新 manual_until；PUT 私单先校验 body 后查归属 | 已分别加类型/白名单/枚举/两位小数/LIMIT_UNEXPECTED_FILE/条件 UPDATE/先锁行后解析；接口文档升 v0.10；重启后 8 项实测通过，PUT 非发布者/runner 并发未实测 | 工作区 |
+| DEF-07 | P3 | 发布页 `bookFocus` 无 focus 复位，「更换」第二次不聚焦；首页「发布页尚未实现」文案过期 | 聚焦时复位 `bookFocus`；文案改为「发布页打开失败」 | 工作区 |
+| DEF-08 | P2 | 我的发布/收藏 onShow 并行刷新 N 页；收藏取消后刷新失败可能分页 offset；两页列表加载逻辑重复 | 抽出 `pages/mine/list-common.js`；`refreshLoaded` 串行请求；收藏取消刷新失败回退第 1 页；专项冒烟 13/13 | 工作区 |
 
-当前 A 侧没有已知未修复 P0；我的收藏仍是功能缺口，M1 / M2 未验收。
+当前 A 侧没有已知未修复 P0；我的收藏已实现（工作区），M1 / M2 未验收。
+
+- 本轮全量审计的后端修订（DEF-06）已在用户重启 3000 后复测：A-01~A-09 实测通过；A-10 为代码级守卫测试；A-09 的审计私单 20 已取消。
+- P2 列表逻辑已抽到 `pages/mine/list-common.js`，items/favorites 首屏、分页、串行刷新、取消和刷新失败回退专项 13/13。
+- B 的 `f499f00` 已拉入并跑通 negative 40/0；A 未修改 B 文件。
+- B 的 `utils/mock.js` 尚未同步 v0.10：MOCK 模式下 favorites `status`、详情 `view=0`、价格两位小数、大厅 `status` 与真实后端有偏差（已记 bug清单 B-4，待 B 处理）。
 
 ## 7. 数据清理与安全
 
 - 合法上传测试生成的 `/uploads/...` 文件已删除；非图片上传被后端拒绝，未落盘。
 - 状态机测试只在商品 94 上做 `reserved → on_sale`，测试后已恢复；没有新建商品、书目或用户。
 - 没有修改 `database/` 下 DDL / 对象；没有提交 `server/.env`、上传文件或 dump。
-- 服务端 3000 由用户前台运行，A 没有 kill / 重启；`.tmp-sql2er/` 是未跟踪临时目录，不属于交付文件。
+- 服务端 3000 由用户前台运行，A 没有 kill / 重启；本次后端复测与 status 过滤验证由用户重启后执行；`.tmp-sql2er/` 是未跟踪临时目录，不属于交付文件。
 
 ## 8. 结论与待办
 
 - A 负责的数据库对象、后端接口契约和已实现二手页面，逻辑 / 接口 / 冒烟检查通过；但这不是 M1 / M2 验收结论。
-- 待办：我的收藏页面；发布页与我的发布的 DevTools 视觉/真实发布验收；M1 二手闭环；M2 双账号端到端；29 / 60 条全量用例与性能/并发/安全回归。
+- 待办：我的收藏 DevTools 视觉/真实 UI 取消；发布页与我的发布的 DevTools 视觉/真实发布验收；M1 二手闭环；M2 双账号端到端；29 / 60 条全量用例与性能/并发/安全回归。
 - B 的文档（UI 走查、开发日志、README-导入说明）仍把 `mine/items` 写成占位，待 B 更新；A 不修改 B 文件。
 
 ## 9. 复现命令

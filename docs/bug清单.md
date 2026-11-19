@@ -8,9 +8,8 @@
 
 | # | 页面 | 现象 | 期望 | 严重 | 负责人 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
-| B-1 | `mine/items`、`mine/favorites` | ~~占位骨架~~ → **11-18 A 已交付 `mine/items`（只读列表）；`mine/favorites` 待确认** | 与 item-card list 一致的列表 + 空态 | ~~P0~~ → P1（剩 favorites） | A | 🟡 部分 |
 | B-2 | 全局 `.page` | 非 tab 页套 `.page` 底部多约 150rpx 空白（避让悬浮 tabBar 的 padding 对非 tab 页多余） | 拆 `.page` / `.page--tab` | P2 | B（需 A 同意动 `pages/index/index.wxml`） | ⬜ 待确认 |
-| B-3 | 二手收藏页 | `mine/favorites` 取消收藏后列表要即时移除（走查第一轮 #19 提过交互要求） | 即时刷新 | P1 | A | ⬜ 待 A 落地后复验 |
+| B-4 | `utils/mock.js` | 未同步 A 的 v0.10 契约：favorites 忽略 `status`；items/:id 忽略 `view=0` 仍计数；POST items 未拦两位小数；大厅 `status` 仍允许已完成 | 按接口文档 v0.10 同步 mock/契约测试 | P2 | B | ⬜ 待 B |
 
 ## 二、已修复（Fixed，留痕）
 
@@ -23,6 +22,7 @@
 | F-5 | 冒烟脚本 | 硬编码 `E:/Qin/...` 不可移植 | `efec4cc` 改 `__dirname` 相对定位 | P2 | 11-18 |
 | F-6 | `mine/runner` | 加载中渲染空表单（易误读「设置被清空」）、失败只 toast | `bec9651` 骨架屏 + 错误卡片 + 重试 | P1 | 11-17 |
 | F-7 | UI 对比度 | 亮橙底白字 ≈2:1（按钮/标签/链接共 4 处） | 11-11 第一轮走查，统一压深棕 `#79513D` | P0 | 11-11 |
+| F-8 | `mine/items`、`mine/favorites` | 两页此前占位；收藏取消后列表不即时移除 | `mine/items` `48a90a8` 只读列表；`mine/favorites` 工作区：四状态筛选、状态标签左上、右下心形取消、取消后本地移除+静默刷新 | P1 | 11-19（favorites 未提交，待 DevTools） |
 
 ## 三、复验记录
 
