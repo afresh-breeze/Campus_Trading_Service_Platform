@@ -8,8 +8,7 @@
 
 | # | 页面 | 现象 | 期望 | 严重 | 负责人 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
-| B-2 | 全局 `.page` | 非 tab 页套 `.page` 底部多约 150rpx 空白（避让悬浮 tabBar 的 padding 对非 tab 页多余） | 拆 `.page` / `.page--tab` | P2 | B（需 A 同意动 `pages/index/index.wxml`） | ⬜ 待确认 |
-| B-4 | `utils/mock.js` | 未同步 A 的 v0.10 契约：favorites 忽略 `status`；items/:id 忽略 `view=0` 仍计数；POST items 未拦两位小数；大厅 `status` 仍允许已完成 | 按接口文档 v0.10 同步 mock/契约测试 | P2 | B | ⬜ 待 B |
+| （无 —— 11-20 起清单清空，新问题往下追加） | | | | | | |
 
 ## 二、已修复（Fixed，留痕）
 
@@ -22,10 +21,13 @@
 | F-5 | 冒烟脚本 | 硬编码 `E:/Qin/...` 不可移植 | `efec4cc` 改 `__dirname` 相对定位 | P2 | 11-18 |
 | F-6 | `mine/runner` | 加载中渲染空表单（易误读「设置被清空」）、失败只 toast | `bec9651` 骨架屏 + 错误卡片 + 重试 | P1 | 11-17 |
 | F-7 | UI 对比度 | 亮橙底白字 ≈2:1（按钮/标签/链接共 4 处） | 11-11 第一轮走查，统一压深棕 `#79513D` | P0 | 11-11 |
-| F-8 | `mine/items`、`mine/favorites` | 两页此前占位；收藏取消后列表不即时移除 | `mine/items` `48a90a8` 只读列表；`mine/favorites` 工作区：四状态筛选、状态标签左上、右下心形取消、取消后本地移除+静默刷新 | P1 | 11-19（favorites 未提交，待 DevTools） |
+| F-8 | `mine/items`、`mine/favorites` | 两页此前占位；收藏取消后列表不即时移除 | `mine/items` `48a90a8` 只读列表；`mine/favorites` `e9fc5b4`：四状态筛选、状态标签左上、右下心形取消、取消后本地移除+静默刷新 | P1 | 11-19（B 11-20 复核确认已提交入库） |
+| F-9 | 全局 `.page`（原 B-2） | 非 tab 页套 `.page` 底部多约 150rpx 空白（避让悬浮 tabBar 的 padding 对非 tab 页多余） | 11-20 A 同意后拆分：`app.wxss` 拆 `.page`/`.page--tab`，B 侧 3 个 tab 页加 `page--tab`，`index/index` 由 A 自加；`wxml_check` 全 PASS | P2 | 11-20 |
+| F-10 | `utils/mock.js`（原 B-4） | 未同步 A 的 v0.10 契约：favorites 忽略 `status`；items/:id 忽略 `view=0` 仍计数；POST items 未拦两位小数；大厅 `status` 仍允许已完成 | 11-20 五组校验对齐 + 文案逐字对齐 `3e19a51`（含 status/visibility 非字符串边界）；契约测试 `[12]` 节 16 条，契约 **161/0**、冒烟 480/0 | P2 | 11-20 |
 
 ## 三、复验记录
 
 | 日期 | 复验内容 | 结论 |
 | --- | --- | --- |
 | 11-19 | 负向测试 12 条（断网/401/404/500/空表单/非法报酬/超长消息/越权/连点/定时器泄漏/长文本/空态） | 12/12 通过，无新增 bug；证据 `scripts/smoke/smoke_negative.js` 40/0 |
+| 11-20 | A 复核 4 项：mock v0.10 同步（B-4→F-10）、`.page--tab` 拆分（B-2→F-9）、B-1/B-3 关闭（F-8）、B 文档纠偏 | 全部闭环：契约 161/0、冒烟 480/0、`wxml_check` 全 PASS；已 fetch A 的 `d8dc508`，favorites 随 `e9fc5b4` 确认交付，mock 文案与 `3e19a51` 逐字核对一致 |

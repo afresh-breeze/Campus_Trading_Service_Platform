@@ -527,6 +527,58 @@ const OK_ERRAND = {
     '该在线计划不存在'
   );
 
+  console.log('\n[12] 接口 v0.10：favorites status / view=0 / 两位小数 / 大厅 status / visibility 类型');
+
+  // 1) GET /api/favorites：status 过滤 + 非法值 400
+  await expectFailMsg('favorites status 非法 → 400', '/api/favorites', 'GET', { status: 'purchased' }, '商品状态不合法');
+  const v010FavAll = await mock.run('/api/favorites', 'GET', {});
+  const v010FavSold = await mock.run('/api/favorites', 'GET', { status: 'sold' });
+  check('favorites 默认全量 ≥1 且 status=sold 过滤为 0', v010FavAll.total >= 1 && v010FavSold.total === 0, { all: v010FavAll.total, sold: v010FavSold.total });
+
+  // 2) POST /api/items：金额最多两位小数（0.001 这类直接 400）
+  await expectFailMsg('售价 0.001 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数售价', price: 0.001 }, '售价最多保留两位小数');
+  await expectFailMsg('原价 12.345 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数原价', price: 12, originalPrice: 12.345 }, '原价最多保留两位小数');
+
+  // 合法两位小数可创建 → 收藏 → 转 reserved → status 过滤双向成立
+  const v010Item = await mock.run('/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '两位小数校验品', price: 12.34 });
+  const v010Id = v010Item.itemId;
+  check('售价 12.34（两位小数）可创建', !!v010Id, v010Item);
+  await mock.run('/api/items/' + v010Id + '/favorite', 'POST', {});
+  await mock.run('/api/items/' + v010Id + '/status', 'PUT', { status: 'reserved' });
+  const v010FavReserved = await mock.run('/api/favorites', 'GET', { status: 'reserved' });
+  const v010FavOnSale = await mock.run('/api/favorites', 'GET', { status: 'on_sale' });
+  check('favorites status=reserved 含刚转的收藏', (v010FavReserved.list || []).some((i) => i.itemId === v010Id), v010FavReserved.total);
+  check('favorites status=on_sale 不含已 reserved 的', !(v010FavOnSale.list || []).some((i) => i.itemId === v010Id), v010FavOnSale.total);
+
+  // 3) GET /api/items/:id：view=0 不增加 viewCount
+  const v010ViewBase = (await mock.run('/api/items/' + v010Id, 'GET', {})).viewCount;
+  const v010ViewKeep = (await mock.run('/api/items/' + v010Id, 'GET', { view: 0 })).viewCount;
+  const v010ViewInc = (await mock.run('/api/items/' + v010Id, 'GET', {})).viewCount;
+  check('view=0 浏览量不 +1', v010ViewKeep === v010ViewBase, { before: v010ViewBase, after: v010ViewKeep });
+  check('不带 view 照常 +1', v010ViewInc === v010ViewBase + 1, { before: v010ViewBase, after: v010ViewInc });
+
+  // 4) GET /api/errands：大厅 status 只允许 pending（其他值 400）
+  await expectFailMsg('大厅 status=taken → 400', '/api/errands', 'GET', { status: 'taken' }, '大厅只允许查询待接单订单');
+  await expectFailMsg('大厅 status=completed → 400', '/api/errands', 'GET', { status: 'completed' }, '大厅只允许查询待接单订单');
+  const v010Hall = await mock.run('/api/errands', 'GET', { status: 'pending', page: 1, pageSize: 50 });
+  check('大厅 status=pending 正常返回', v010Hall.total >= 1, v010Hall.total);
+
+  // 5) POST /api/errands：visibility 非字符串 → 400（数字/布尔都不放行）
+  await expectFailMsg(
+    'visibility 传数字 → 400',
+    '/api/errands',
+    'POST',
+    { pickupArea: '桃园', pickupPlace: '桃园', deliveryLocation: '教学楼A', itemSize: 'small', itemDesc: '书本', reward: 3, timeType: 'asap', visibility: 1 },
+    '可见性不合法'
+  );
+  await expectFailMsg(
+    'visibility 传布尔 → 400',
+    '/api/errands',
+    'POST',
+    { pickupArea: '桃园', pickupPlace: '桃园', deliveryLocation: '教学楼A', itemSize: 'small', itemDesc: '书本', reward: 3, timeType: 'asap', visibility: true },
+    '可见性不合法'
+  );
+
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);
 })();

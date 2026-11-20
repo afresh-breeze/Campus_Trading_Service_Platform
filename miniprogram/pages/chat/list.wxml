@@ -1,6 +1,6 @@
 <!-- 消息列表（B 成员，11-14，tab 3）：会话卡片 + 未读红点 -->
 <nav-top />
-<view class="page page-body">
+<view class="page page--tab page-body">
 
   <!-- 登录门 -->
   <view wx:if="{{!isLogin}}" class="cl-state">

@@ -1021,6 +1021,13 @@ const MAX_PRICE = 99999999.99;
 const MAX_REWARD = 99999999.99;
 const ERRAND_VISIBILITIES = ['private', 'hall'];
 
+/** v0.10：金额最多两位小数（对齐 DECIMAL(10,2)）——超过即视为非法 */
+function hasOverTwoDecimals(value) {
+  const s = String(value);
+  const dot = s.indexOf('.');
+  return dot > -1 && s.length - dot - 1 > 2;
+}
+
 /** 对齐 server/src/utils/item.js toNumber：数字或纯数字字符串，其它一律 null（null / '' 也算 null） */
 function toNumberStrict(value) {
   if (typeof value === 'number' && isFinite(value)) return value;
@@ -1532,6 +1539,8 @@ const routes = {
     const price = toNumberStrict(body.price);
     if (price === null || price <= 0) return fail(400, '售价必须大于 0');
     if (price > MAX_PRICE) return fail(400, '售价超出范围');
+    // v0.10：金额最多两位小数（DECIMAL(10,2)），0.001 这类直接 400
+    if (hasOverTwoDecimals(price)) return fail(400, '售价最多保留两位小数');
 
     let originalPrice = null;
     if (body.originalPrice !== undefined && body.originalPrice !== null && body.originalPrice !== '') {
@@ -1539,6 +1548,7 @@ const routes = {
       if (originalPrice === null) return fail(400, '原价格式不正确');
       if (originalPrice < 0) return fail(400, '原价不能为负数');
       if (originalPrice > MAX_PRICE) return fail(400, '原价超出范围');
+      if (hasOverTwoDecimals(originalPrice)) return fail(400, '原价最多保留两位小数');
     }
 
     // 后端缺省成色是 good（items.js:49），不是必填
@@ -1603,7 +1613,8 @@ const routes = {
     if (!itemId) return fail(400, '商品 ID 不合法');
     const found = items.find((i) => i.itemId === itemId);
     if (!found) return fail(404, '商品不存在');
-    found.viewCount += 1;
+    // v0.10：view=0 表示浏览计数不 +1（轮询/收藏刷新等内部取详情用）
+    if (String(data.view) !== '0') found.viewCount += 1;
 
     const images = (found.firstImage ? [{ imageId: 1, url: found.firstImage, sortNo: 1 }] : []);
     const seller = userOf(found.sellerId) || {};
@@ -1663,13 +1674,17 @@ const routes = {
   },
 
   // 我的收藏（对照 favorites.js：返回商品卡片 + favoritedAt）
+  // v0.10：支持 status 过滤（on_sale/reserved/sold/off_shelf），非法值 400
   'GET /api/favorites': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
-    const list = favoriteIds
+    const status = readTrimmed(data.status);
+    if (status && ITEM_STATUSES.indexOf(status) < 0) return fail(400, '商品状态不合法');
+    let list = favoriteIds
       .map((id) => items.find((i) => i.itemId === id))
-      .filter((i) => !!i)
-      .map((i) => Object.assign(itemCard(i), { favoritedAt: i.createdAt }));
+      .filter((i) => !!i);
+    if (status) list = list.filter((i) => i.status === status);
+    list = list.map((i) => Object.assign(itemCard(i), { favoritedAt: i.createdAt }));
     return delay({
       list: pageOf(list, pg),
       total: list.length,
@@ -1759,11 +1774,12 @@ const routes = {
   // ---------------- 代取（对照 errands.js） ----------------
   // 大厅只出 visibility='hall'（后端 SQL 硬编码），私单只能从详情页 / 会话卡片进入
   // 筛选：area / itemSize / timeType 同维度 OR、跨维度 AND；sort 三档；total 为筛选后总数
+  // v0.10：大厅 status 只允许 pending（缺省 pending），其他值 400
   'GET /api/errands': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
     const status = readTrimmed(data.status) || 'pending';
-    if (ERRAND_STATUSES.indexOf(status) < 0) return fail(400, '订单状态不合法');
+    if (status !== 'pending') return fail(400, '大厅只允许查询待接单订单');
     const filters = parseHallFilters(data);
     if (filters.error) return fail(400, filters.error);
 
@@ -1806,10 +1822,15 @@ const routes = {
   },
 
   // 发布代取：visibility 缺省 hall；传 private 则只建私单，不进大厅
+  // v0.10：visibility 传了但不是字符串（如数字/布尔）直接 400
   'POST /api/errands': (data) => {
     const body = data || {};
-    const visibility = readTrimmed(body.visibility) || 'hall';
-    if (ERRAND_VISIBILITIES.indexOf(visibility) < 0) return fail(400, '可见性不合法');
+    let visibility = 'hall';
+    if (body.visibility !== undefined && body.visibility !== null && body.visibility !== '') {
+      if (typeof body.visibility !== 'string') return fail(400, '可见性不合法');
+      visibility = body.visibility.trim() || 'hall';
+      if (ERRAND_VISIBILITIES.indexOf(visibility) < 0) return fail(400, '可见性不合法');
+    }
 
     const parsed = parseErrandPayload(body);
     if (parsed.error) return fail(400, parsed.error);
