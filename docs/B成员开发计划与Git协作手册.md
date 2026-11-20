@@ -382,10 +382,10 @@
 - `GET /api/favorites` 支持 `status` 过滤（`on_sale/reserved/sold/off_shelf`，非法值 400「商品状态不合法」）；
 - `GET /api/items/:id` 支持 `view=0`，浏览量不 +1（不带 view 照常 +1）；
 - `POST /api/items` 拒绝售价/原价超过两位小数（`0.001` → 400，金额对齐 `DECIMAL(10,2)`）；
-- `GET /api/errands` 大厅 `status` 只允许 `pending`（其他值 400「大厅只允许查询待接单订单」；`hall.js` 本来就固定传 pending，无回归）;
+- `GET /api/errands` 大厅 `status` 只允许 `pending`（其他值 400「大厅只支持待接单」，status 非字符串 400「订单状态不合法」；`hall.js` 本来就固定传 pending，无回归）;
 - `POST /api/errands` 的 `visibility` 传非字符串（数字/布尔）直接 400，不再被静默当成缺省 hall。
 
-`scripts/mock-contract-test.js` 新增 `[12]` 节 14 条断言：**契约 145/0 → 159/0**。
+`scripts/mock-contract-test.js` 新增 `[12]` 节 16 条断言（含 favorites/大厅 status 非字符串边界）：**契约 145/0 → 161/0**；fetch 到 A 的 `d8dc508` 后已与 `3e19a51` 真实路由逐字核对文案并二次对齐（`8b801de`）。
 
 **② 全局 `.page` / `.page--tab` 拆分（A 复核 B-2，A 已同意，已修）**：`app.wxss` 把 150rpx 底部避让从 `.page` 挪到新的 `.page--tab`（仅 tab 页需要避让悬浮胶囊 tabBar）；B 侧 3 个 tab 页根节点加 `page--tab`（`errand/hall`、`chat/list`、`mine/index`），**`pages/index/index.wxml` 属 A，由 A 自加**（已在群里对齐口径）；其余 14 个非 tab 页底部多余留白随之消失，页面代码零改动。
 
@@ -393,7 +393,7 @@
 
 **④ 测试用例主笔（手册 §4.3 11-20 计划）**：新增 `docs/测试用例.md`（60+ 条，编号/模块/前置/步骤/预期/实际/结论/执行人）与 `docs/B测试记录.md`（B 侧 UI/聊天约 40 条执行记录，引用冒烟证据）。
 
-**验证**：契约 **159/0**；冒烟 **480/0**（12 脚本无回归）；`wxml_check` 3 个改动的 tab 页全 PASS。
+**验证**：契约 **161/0**；冒烟 **480/0**（12 脚本无回归）；`wxml_check` 3 个改动的 tab 页全 PASS。
 
 ### 0.5 每天建议节奏
 

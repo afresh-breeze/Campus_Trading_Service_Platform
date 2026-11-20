@@ -116,7 +116,7 @@ module.exports = {
 1. 三个公共组件：`components/item-card`、`components/empty-state`、`components/status-tag`
 2. **全部 20 个业务页面**：登录注册（B）、二手六页（A）、代取五页 + 我的四页 + 聊天两页 + 个人中心四页（B）
 3. 自定义 tabBar（悬浮胶囊、图标+文字、滑动动画）、`components/nav-top`（全站自定义导航栏）
-4. `utils/mock.js` 与后端逐条对齐（契约测试 159/0）+ 12 个冒烟脚本 480/0
+4. `utils/mock.js` 与后端逐条对齐（契约测试 161/0）+ 12 个冒烟脚本 480/0
 
 下一批：
 1. 真机截图归档（`report/assets/`）与课程设计报告材料

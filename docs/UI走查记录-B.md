@@ -99,7 +99,7 @@
 
 > 对应手册 §4.3「11-17：UI 走查第二轮（全局统一）」。本轮验收口径：**走查清单清零 P0；文案与术语表一致**。
 > A 已交付：二手首页、商品详情、发布商品、搜索结果（`pages/index/*`、`item/detail`、`item/publish`、`search/result`）；
-> **仍未交付**：`mine/items`、`mine/favorites`（仍为占位骨架，属 A 的 P1）。**11-20 更新：mine/items 已于 11-18 交付，mine/favorites 随 A 11-19 推送交付，A 六页至此全部实现（本地旧副本待 fetch 恢复后对齐复核）。**
+> **仍未交付**：`mine/items`、`mine/favorites`（仍为占位骨架，属 A 的 P1）。**11-20 更新：mine/items 已于 11-18 交付，mine/favorites 随 A `e9fc5b4`（11-19 推送）交付，A 六页至此全部实现（已 fetch `d8dc508` 复核确认）。**
 
 ## 6. 本轮前提与结论
 
