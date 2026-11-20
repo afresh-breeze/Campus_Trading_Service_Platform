@@ -1540,7 +1540,7 @@ const routes = {
     if (price === null || price <= 0) return fail(400, '售价必须大于 0');
     if (price > MAX_PRICE) return fail(400, '售价超出范围');
     // v0.10：金额最多两位小数（DECIMAL(10,2)），0.001 这类直接 400
-    if (hasOverTwoDecimals(price)) return fail(400, '售价最多保留两位小数');
+    if (hasOverTwoDecimals(price)) return fail(400, '售价最多两位小数');
 
     let originalPrice = null;
     if (body.originalPrice !== undefined && body.originalPrice !== null && body.originalPrice !== '') {
@@ -1548,7 +1548,7 @@ const routes = {
       if (originalPrice === null) return fail(400, '原价格式不正确');
       if (originalPrice < 0) return fail(400, '原价不能为负数');
       if (originalPrice > MAX_PRICE) return fail(400, '原价超出范围');
-      if (hasOverTwoDecimals(originalPrice)) return fail(400, '原价最多保留两位小数');
+      if (hasOverTwoDecimals(originalPrice)) return fail(400, '原价最多两位小数');
     }
 
     // 后端缺省成色是 good（items.js:49），不是必填
@@ -1674,12 +1674,16 @@ const routes = {
   },
 
   // 我的收藏（对照 favorites.js：返回商品卡片 + favoritedAt）
-  // v0.10：支持 status 过滤（on_sale/reserved/sold/off_shelf），非法值 400
+  // v0.10：支持 status 过滤（on_sale/reserved/sold/off_shelf），非字符串或非法值 400「商品状态不合法」
   'GET /api/favorites': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
-    const status = readTrimmed(data.status);
-    if (status && ITEM_STATUSES.indexOf(status) < 0) return fail(400, '商品状态不合法');
+    let status = '';
+    if (data.status !== undefined && data.status !== '') {
+      if (typeof data.status !== 'string') return fail(400, '商品状态不合法');
+      status = data.status.trim();
+      if (ITEM_STATUSES.indexOf(status) < 0) return fail(400, '商品状态不合法');
+    }
     let list = favoriteIds
       .map((id) => items.find((i) => i.itemId === id))
       .filter((i) => !!i);
@@ -1774,12 +1778,16 @@ const routes = {
   // ---------------- 代取（对照 errands.js） ----------------
   // 大厅只出 visibility='hall'（后端 SQL 硬编码），私单只能从详情页 / 会话卡片进入
   // 筛选：area / itemSize / timeType 同维度 OR、跨维度 AND；sort 三档；total 为筛选后总数
-  // v0.10：大厅 status 只允许 pending（缺省 pending），其他值 400
+  // v0.10：status 非字符串 400「订单状态不合法」；大厅只允许 pending，其他值 400「大厅只支持待接单」
   'GET /api/errands': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
-    const status = readTrimmed(data.status) || 'pending';
-    if (status !== 'pending') return fail(400, '大厅只允许查询待接单订单');
+    let status = 'pending';
+    if (data.status !== undefined && data.status !== '') {
+      if (typeof data.status !== 'string') return fail(400, '订单状态不合法');
+      status = data.status.trim() || 'pending';
+    }
+    if (status !== 'pending') return fail(400, '大厅只支持待接单');
     const filters = parseHallFilters(data);
     if (filters.error) return fail(400, filters.error);
 
@@ -1822,13 +1830,14 @@ const routes = {
   },
 
   // 发布代取：visibility 缺省 hall；传 private 则只建私单，不进大厅
-  // v0.10：visibility 传了但不是字符串（如数字/布尔）直接 400
+  // v0.10：visibility 传了但不是字符串、或 trim 后为空，都直接 400（对齐 errands.js）
   'POST /api/errands': (data) => {
     const body = data || {};
     let visibility = 'hall';
     if (body.visibility !== undefined && body.visibility !== null && body.visibility !== '') {
       if (typeof body.visibility !== 'string') return fail(400, '可见性不合法');
-      visibility = body.visibility.trim() || 'hall';
+      visibility = body.visibility.trim();
+      if (!visibility) return fail(400, '可见性不合法');
       if (ERRAND_VISIBILITIES.indexOf(visibility) < 0) return fail(400, '可见性不合法');
     }
 

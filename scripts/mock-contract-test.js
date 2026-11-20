@@ -529,15 +529,16 @@ const OK_ERRAND = {
 
   console.log('\n[12] 接口 v0.10：favorites status / view=0 / 两位小数 / 大厅 status / visibility 类型');
 
-  // 1) GET /api/favorites：status 过滤 + 非法值 400
+  // 1) GET /api/favorites：status 过滤 + 非法值 400（含非字符串）
   await expectFailMsg('favorites status 非法 → 400', '/api/favorites', 'GET', { status: 'purchased' }, '商品状态不合法');
+  await expectFailMsg('favorites status 传数字 → 400', '/api/favorites', 'GET', { status: 1 }, '商品状态不合法');
   const v010FavAll = await mock.run('/api/favorites', 'GET', {});
   const v010FavSold = await mock.run('/api/favorites', 'GET', { status: 'sold' });
   check('favorites 默认全量 ≥1 且 status=sold 过滤为 0', v010FavAll.total >= 1 && v010FavSold.total === 0, { all: v010FavAll.total, sold: v010FavSold.total });
 
   // 2) POST /api/items：金额最多两位小数（0.001 这类直接 400）
-  await expectFailMsg('售价 0.001 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数售价', price: 0.001 }, '售价最多保留两位小数');
-  await expectFailMsg('原价 12.345 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数原价', price: 12, originalPrice: 12.345 }, '原价最多保留两位小数');
+  await expectFailMsg('售价 0.001 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数售价', price: 0.001 }, '售价最多两位小数');
+  await expectFailMsg('原价 12.345 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数原价', price: 12, originalPrice: 12.345 }, '原价最多两位小数');
 
   // 合法两位小数可创建 → 收藏 → 转 reserved → status 过滤双向成立
   const v010Item = await mock.run('/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '两位小数校验品', price: 12.34 });
@@ -558,8 +559,9 @@ const OK_ERRAND = {
   check('不带 view 照常 +1', v010ViewInc === v010ViewBase + 1, { before: v010ViewBase, after: v010ViewInc });
 
   // 4) GET /api/errands：大厅 status 只允许 pending（其他值 400）
-  await expectFailMsg('大厅 status=taken → 400', '/api/errands', 'GET', { status: 'taken' }, '大厅只允许查询待接单订单');
-  await expectFailMsg('大厅 status=completed → 400', '/api/errands', 'GET', { status: 'completed' }, '大厅只允许查询待接单订单');
+  await expectFailMsg('大厅 status 传数字 → 400', '/api/errands', 'GET', { status: 1 }, '订单状态不合法');
+  await expectFailMsg('大厅 status=taken → 400', '/api/errands', 'GET', { status: 'taken' }, '大厅只支持待接单');
+  await expectFailMsg('大厅 status=completed → 400', '/api/errands', 'GET', { status: 'completed' }, '大厅只支持待接单');
   const v010Hall = await mock.run('/api/errands', 'GET', { status: 'pending', page: 1, pageSize: 50 });
   check('大厅 status=pending 正常返回', v010Hall.total >= 1, v010Hall.total);
 
