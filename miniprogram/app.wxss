@@ -99,7 +99,10 @@ scroll-view {
 .page {
   min-height: 100vh;
   background-color: var(--color-bg);
-  /* 悬浮胶囊 tabBar 会遮挡底部内容，预留高度 */
+}
+/* B-2：底部避让只属于 tab 页（悬浮胶囊 tabBar 会遮挡内容），
+   非 tab 页（详情/发布等）不再多出一条底部留白 */
+.page--tab {
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 .page-body {

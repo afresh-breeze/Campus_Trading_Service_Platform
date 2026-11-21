@@ -1,7 +1,7 @@
 # 小程序地基代码 v1 —— 导入与验通说明
 
 > 本包是 **公共层地基**，目标：在微信开发者工具里能一次编译通过、能登录、能切换 4 个 tab。
-> 业务页面目前只有**登录、注册、我的（tab 4）**已实现，其余 **17 个页面仍是占位页**（含 4 个 tab 中的二手/代取/消息），后续按里程碑逐个替换实现。
+> **11-20 更新：20 个业务页面已全部实现（B 14 页 + A 6 页），无占位页残留**；本节以下的地基口径（结构/导入/接口约定）继续有效。
 
 ## 一、工程结构
 
@@ -22,7 +22,7 @@ Campus_Trading_Service_Platform/
       ├─ login/                 # ✅ 已实现
       ├─ register/              # ✅ 已实现
       ├─ mine/index/            # ✅ 已实现（tab 4 个人中心）
-      └─ ... 其余 17 个占位页
+      └─ ... 其余 17 个页面均已实现（B 14 页 + A 6 页，2026-11-20 起无占位页）
 ```
 
 ## 二、导入步骤（3 步）
@@ -49,7 +49,7 @@ Campus_Trading_Service_Platform/
 | 随便填学号 + 6 位以上密码，点登录 | Toast「登录成功」→ 跳到二手首页（tab 1） |
 | 点「还没有账号？去注册」 | 进注册页，选校区、填两次密码，注册成功同样进首页 |
 | 底部 tabBar | 4 个 tab 全部可点：二手 / 代取 / 消息 / 我的 |
-| 退出登录 | 「我的」页后续会加，暂时清缓存即可（工具菜单 → 清缓存 → 清除数据缓存） |
+| 退出登录 | 「我的」页右上设置入口或页内退出按钮（二次确认后 reLaunch 回登录页） |
 
 因为 `config.js` 里 `MOCK = true`，此时**完全不需要后端**，登录用的是 `utils/mock.js` 里的假 token。
 
@@ -89,38 +89,38 @@ module.exports = {
 
 | # | 路径 | 标题 | 负责人 | 状态 |
 | --- | --- | --- | --- | --- |
-| 1 | pages/login/login | 登录 | B | ✅ 已实现 |
-| 2 | pages/register/register | 注册 | B | ✅ 已实现 |
-| 3 | pages/index/index | 二手市场 | A | 占位（tab） |
-| 4 | pages/search/result | 搜索结果 | A | 占位 |
-| 5 | pages/item/detail | 商品详情 | A | 占位 |
-| 6 | pages/item/publish | 发布商品 | A | 占位 |
-| 7 | pages/mine/items | 我的发布 | A | 占位 |
-| 8 | pages/mine/favorites | 我的收藏 | A | 占位 |
-| 9 | pages/errand/hall | 代取大厅 | B | 占位（tab） |
-| 10 | pages/errand/publish | 发布代取 | B | 占位 |
-| 11 | pages/errand/detail | 代取详情 | B | 占位 |
-| 12 | pages/errand/runners | 找跑腿 | B | 占位 |
-| 13 | pages/mine/errands | 我的代取 | B | 占位 |
-| 14 | pages/mine/runner | 接单设置 / 上线 | B | 占位 |
-| 15 | pages/chat/list | 消息 | B | 占位（tab） |
-| 16 | pages/chat/detail | 聊天 | B | 占位 |
-| 17 | pages/mine/index | 我的 | B | ✅ 已实现（tab） |
-| 18 | pages/mine/profile | 个人资料 | B | 占位 |
-| 19 | pages/mine/settings | 设置 | B | 占位 |
-| 20 | pages/mine/help | 帮助与反馈 | B | 占位 |
+| 1 | pages/login/login | 登录 | B | ✅ 已实现（11-08） |
+| 2 | pages/register/register | 注册 | B | ✅ 已实现（11-08） |
+| 3 | pages/index/index | 二手市场 | A | ✅ 已实现（11-14，tab） |
+| 4 | pages/search/result | 搜索结果 | A | ✅ 已实现（11-14） |
+| 5 | pages/item/detail | 商品详情 | A | ✅ 已实现（11-14） |
+| 6 | pages/item/publish | 发布商品 | A | ✅ 已实现（11-14） |
+| 7 | pages/mine/items | 我的发布 | A | ✅ 已实现（11-18） |
+| 8 | pages/mine/favorites | 我的收藏 | A | ✅ 已实现（11-19 推送交付） |
+| 9 | pages/errand/hall | 代取大厅 | B | ✅ 已实现（11-12，tab） |
+| 10 | pages/errand/publish | 发布代取 | B | ✅ 已实现（11-13） |
+| 11 | pages/errand/detail | 代取详情 | B | ✅ 已实现（11-12） |
+| 12 | pages/errand/runners | 找跑腿 | B | ✅ 已实现（11-15） |
+| 13 | pages/mine/errands | 我的代取 | B | ✅ 已实现（11-15） |
+| 14 | pages/mine/runner | 接单设置 / 上线 | B | ✅ 已实现（11-13） |
+| 15 | pages/chat/list | 消息 | B | ✅ 已实现（11-14/15，tab） |
+| 16 | pages/chat/detail | 聊天 | B | ✅ 已实现（11-14/15） |
+| 17 | pages/mine/index | 我的 | B | ✅ 已实现（11-11，tab） |
+| 18 | pages/mine/profile | 个人资料 | B | ✅ 已实现（11-17） |
+| 19 | pages/mine/settings | 设置 | B | ✅ 已实现（11-17） |
+| 20 | pages/mine/help | 帮助与反馈 | B | ✅ 已实现（11-17） |
 
 ## 八、已完成与下一批
 
-已完成：
+已完成（截至 11-20）：
 1. 三个公共组件：`components/item-card`、`components/empty-state`、`components/status-tag`
-2. **「我的」页（tab 4）**：用户卡 + 四项统计 + 我的发布/我的收藏/我的代取/接单设置 + 设置/帮助/关于 + 退出登录，含下拉刷新与 `onShow` 刷新
+2. **全部 20 个业务页面**：登录注册（B）、二手六页（A）、代取五页 + 我的四页 + 聊天两页 + 个人中心四页（B）
 3. 自定义 tabBar（悬浮胶囊、图标+文字、滑动动画）、`components/nav-top`（全站自定义导航栏）
+4. `utils/mock.js` 与后端逐条对齐（契约测试 161/0）+ 12 个冒烟脚本 480/0
 
 下一批：
-1. 代取大厅（tab 2）：筛选 + 卡片列表 + 右下角「找代取」+ 下拉刷新 + 触底加载
-2. 代取详情（状态机 UI + 接单/完成/撤回/释放 + 409 冲突处理）
-3. 聊天列表与聊天页
+1. 真机截图归档（`report/assets/`）与课程设计报告材料
+2. `docs/测试用例.md` 全量执行与结论回填
 
 ## 九、常见报错速查
 
