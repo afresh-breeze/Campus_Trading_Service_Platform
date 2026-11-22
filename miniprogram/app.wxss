@@ -53,6 +53,35 @@ page {
   --font-xl: 36rpx;
   --font-2xl: 44rpx;
 
+  /* ---- UI 优化方案 4.1（11-22）：节奏 / 动效 / 阴影令牌 ---- */
+  --space-page: 32rpx;
+  --space-section: 48rpx;
+  --radius-card: 24rpx;
+  --radius-inner: 16rpx;
+
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* 覆盖原 --shadow-card：两层柔影，贴近的 2rpx + 扩散 12rpx，避免黑色重影 */
+  --shadow-card:
+    0 2rpx 4rpx rgba(121, 81, 61, 0.04),
+    0 12rpx 32rpx rgba(121, 81, 61, 0.08);
+  --shadow-card-hover:
+    0 4rpx 12rpx rgba(121, 81, 61, 0.06),
+    0 20rpx 48rpx rgba(121, 81, 61, 0.12);
+  --shadow-bar: 0 -8rpx 32rpx rgba(121, 81, 61, 0.08);
+
+  /* 兼容别名：B 的旧页面止血（方案 4.1），后续 P2 再逐页替换为正式令牌 */
+  --color-surface: var(--color-bg-white);
+  --color-primary-soft: var(--color-primary-light);
+  --color-text-1: var(--color-text);
+  --color-primary-strong: var(--color-primary-dark);
+  --font-md: var(--font-base);
+
   background-color: var(--color-bg);
   color: var(--color-text);
   font-size: var(--font-base);
@@ -106,16 +135,16 @@ scroll-view {
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 .page-body {
-  padding: var(--space);
+  padding: var(--space-page);
 }
 .card {
   background-color: var(--color-bg-white);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
-  padding: var(--space);
+  padding: 28rpx;
 }
 .card + .card {
-  margin-top: var(--space-sm);
+  margin-top: 20rpx;
 }
 
 /* ---------------- 文字 ---------------- */
@@ -171,6 +200,14 @@ scroll-view {
   background-color: var(--color-bg-white);
   color: var(--color-text);
   border: none;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) ease-out;
+}
+.btn--press {
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 .btn::after {
   border: none;
@@ -297,4 +334,63 @@ scroll-view {
 }
 .safe-bottom {
   height: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------------- UI 优化方案 4.3：全局工具类（11-22） ---------------- */
+/* 按压反馈：只动 transform / opacity，避免重排 */
+.u-press {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.u-press--hover {
+  transform: scale(0.985);
+  opacity: 0.94;
+}
+
+/* 首屏入场：最多 6 个，延迟由页面内联 style 控制 */
+@keyframes u-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.u-enter {
+  animation: u-fade-up var(--dur-slow) var(--ease-out) both;
+}
+
+/* 骨架 shimmer：替代各页面的 opacity pulse */
+@keyframes sk-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+.sk-block {
+  background: linear-gradient(90deg, #efe6d8 25%, #faf6ee 37%, #efe6d8 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+
+/* 分组标题：左侧短竖条，给详情/表单页建立节奏 */
+.t-section {
+  display: flex;
+  align-items: center;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.t-section::before {
+  content: '';
+  width: 6rpx;
+  height: 26rpx;
+  margin-right: 12rpx;
+  border-radius: 3rpx;
+  background: var(--color-primary);
 }

@@ -47,7 +47,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-primary-soft, #efe4d8);
-  color: var(--color-primary, #79513d);
+  color: var(--color-primary-dark);
   font-size: var(--font-md, 28rpx);
   font-weight: 600;
 }
@@ -77,7 +77,7 @@
   margin-left: 16rpx;
   font-size: var(--font-md, 28rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
 }
 .cd-biz-sub {
   margin: 16rpx 20rpx 0;
@@ -127,7 +127,7 @@
   position: relative;
 }
 .cd-bubble--mine {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
 }
 .cd-bubble--mine .cd-bubble__text {
   color: #ffffff;
@@ -201,6 +201,6 @@
   border-radius: 999rpx;
 }
 .cd-inputbar__send--on {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
 }

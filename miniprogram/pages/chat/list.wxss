@@ -38,7 +38,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-primary-soft, #efe4d8);
-  color: var(--color-primary, #79513d);
+  color: var(--color-primary-dark);
   font-size: var(--font-lg, 32rpx);
   font-weight: 600;
 }

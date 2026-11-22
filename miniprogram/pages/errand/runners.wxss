@@ -25,7 +25,7 @@
 .rp-order__reward {
   font-size: var(--font-lg, 32rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
   margin-right: 16rpx;
 }
 .rp-order__time {
@@ -75,7 +75,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-primary-soft, #efe4d8);
-  color: var(--color-primary, #79513d);
+  color: var(--color-primary-dark);
   font-size: var(--font-lg, 32rpx);
   font-weight: 600;
 }
@@ -115,7 +115,7 @@
   display: block;
   font-size: var(--font-lg, 32rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
 }
 .rp-card__price-label {
   font-size: var(--font-xs, 22rpx);
@@ -157,7 +157,7 @@
   padding: 0 32rpx;
   font-size: var(--font-sm, 26rpx);
   line-height: 2.2;
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
   border-radius: 999rpx;
 }

@@ -17,7 +17,7 @@
   border-radius: 12rpx;
 }
 .me-tabs__item--active {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
   font-weight: 600;
 }
@@ -41,7 +41,7 @@
   color: var(--color-text-2, #6b5b4d);
 }
 .me-chip--active {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
 }
 .me-chip--hover {
@@ -103,7 +103,7 @@
   flex-shrink: 0;
 }
 .me-order__dot--from {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
 }
 .me-order__dot--to {
   background: var(--color-success, #4a8c5c);
@@ -120,7 +120,7 @@
   display: block;
   font-size: var(--font-lg, 32rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
 }
 .me-order__reward-label {
   font-size: var(--font-xs, 22rpx);
@@ -180,7 +180,7 @@
   color: var(--color-text-2, #6b5b4d);
 }
 .me-act--primary {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
 }
 .me-act--danger {
