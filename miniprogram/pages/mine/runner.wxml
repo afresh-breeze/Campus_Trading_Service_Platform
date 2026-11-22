@@ -14,7 +14,7 @@
   <view wx:elif="{{loadError}}" class="card rn-state">
     <text class="t-title">设置加载失败</text>
     <text class="t-sub rn-state__desc">{{loadError}}</text>
-    <button class="btn btn-primary btn-block" bindtap="onRetryLoad">重试</button>
+    <button hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetryLoad">重试</button>
   </view>
 
   <block wx:else>
@@ -192,8 +192,8 @@
       </view>
 
       <view class="slot-ops">
-        <button class="btn btn-sm btn-ghost" wx:if="{{editingId}}" bindtap="onCancelEdit">取消编辑</button>
-        <button class="btn btn-sm btn-primary" disabled="{{saving}}" bindtap="onAddSlot">
+        <button hover-class="btn--press" class="btn btn-sm btn-ghost" wx:if="{{editingId}}" bindtap="onCancelEdit">取消编辑</button>
+        <button hover-class="btn--press" class="btn btn-sm btn-primary" disabled="{{saving}}" bindtap="onAddSlot">
           {{editingId ? '保存这条计划' : '添加计划'}}
         </button>
       </view>
@@ -241,14 +241,14 @@
     <block wx:if="{{mode === 'online'}}">
       <!-- 按计划且不在时段内时不显示「立即下线」：本来就没在线，说了反而不一致 -->
       <button
-        class="btn btn-ghost btn-block"
+        hover-class="btn--press" class="btn btn-ghost btn-block"
         wx:if="{{isOnline && (availabilityType === 'now' || hasActiveSlot)}}"
         disabled="{{saving}}"
         bindtap="onTapOffline"
       >
         立即下线
       </button>
-      <button class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapMainBottom">
+      <button hover-class="btn--press" class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapMainBottom">
         {{saving ? '处理中…' : (availabilityType === 'slot' && !hasActiveSlot ? '保存设置' : (isOnline ? '保存设置' : '保存并上线'))}}
       </button>
       <view class="t-sub form-footnote" wx:if="{{availabilityType === 'slot' && !hasActiveSlot && nextOnlineText}}">
@@ -256,7 +256,7 @@
       </view>
     </block>
     <block wx:else>
-      <button class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapSave">
+      <button hover-class="btn--press" class="btn btn-primary btn-block" disabled="{{saving}}" bindtap="onTapSave">
         {{saving ? '保存中…' : '保存设置'}}
       </button>
     </block>

@@ -311,6 +311,7 @@ scroll-view {
 
 /* ---------------- 悬浮加号按钮（列表页右下角） ---------------- */
 .fab {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   position: fixed;
   right: 32rpx;
   /* 上移避开悬浮胶囊 tabBar */

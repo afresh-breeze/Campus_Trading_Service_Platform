@@ -7,8 +7,8 @@
   <view class="card cd-fatal">
     <text class="t-title">{{fatalError}}</text>
     <text class="t-sub cd-fatal__desc">{{fatalDesc}}</text>
-    <button wx:if="{{canRetry}}" class="btn btn-primary btn-block" bindtap="onRetryInit">重试</button>
-    <button wx:else class="btn btn-ghost btn-block" bindtap="onBack">返回</button>
+    <button wx:if="{{canRetry}}" hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetryInit">重试</button>
+    <button wx:else hover-class="btn--press" class="btn btn-ghost btn-block" bindtap="onBack">返回</button>
   </view>
 </view>
 

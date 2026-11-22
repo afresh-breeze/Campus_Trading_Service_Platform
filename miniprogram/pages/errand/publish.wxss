@@ -91,3 +91,9 @@
   line-height: 1.6;
   padding: 0 var(--space);
 }
+
+/* 地点选择入口行按压反馈（wxml 已引用，此前无定义） */
+.field--hover {
+  background-color: var(--color-surface-2);
+  transform: scale(0.995);
+}

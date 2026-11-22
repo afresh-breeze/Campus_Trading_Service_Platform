@@ -11,6 +11,7 @@
 }
 
 .st-row {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   min-height: 108rpx;
@@ -22,6 +23,7 @@
 }
 .st-row--hover {
   background-color: var(--color-surface-2);
+  transform: scale(0.995);
 }
 .st-row__main {
   flex: 1;

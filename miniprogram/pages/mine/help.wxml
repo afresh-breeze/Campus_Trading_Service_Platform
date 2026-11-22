@@ -41,7 +41,7 @@
           bindtap="onClear"
         >清空</button>
         <button
-          class="btn btn-primary btn-sm hp-form__submit"
+          hover-class="btn--press" class="btn btn-primary btn-sm hp-form__submit"
           style="width: 160rpx; min-width: 0; padding: 0; margin: 0;"
           loading="{{submitting}}"
           disabled="{{submitting || !content}}"

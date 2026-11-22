@@ -160,10 +160,10 @@
 
   <!-- 底部操作 -->
   <view class="form-actions">
-    <button class="btn btn-ghost btn-block" disabled="{{submitting}}" bindtap="onTapPrivate" wx:if="{{!isEdit}}">
+    <button hover-class="btn--press" class="btn btn-ghost btn-block" disabled="{{submitting}}" bindtap="onTapPrivate" wx:if="{{!isEdit}}">
       存为私单，先找跑腿
     </button>
-    <button class="btn btn-primary btn-block" disabled="{{submitting}}" bindtap="onTapSubmit">
+    <button hover-class="btn--press" class="btn btn-primary btn-block" disabled="{{submitting}}" bindtap="onTapSubmit">
       {{submitting ? '提交中…' : (isEdit ? '保存修改' : '发布到大厅')}}
     </button>
     <view class="t-sub form-footnote" wx:if="{{!isEdit}}">

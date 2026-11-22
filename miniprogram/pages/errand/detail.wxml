@@ -13,9 +13,9 @@
       <text class="t-title">{{error}}</text>
       <text class="t-sub detail-state__desc">{{errorDesc}}</text>
       <!-- 临时失败先给「重试」，404 只给「回大厅」（P1-2） -->
-      <button wx:if="{{canRetry}}" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
+      <button wx:if="{{canRetry}}" hover-class="btn--press" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
       <button
-        class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn"
+        hover-class="btn--press" class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn"
         bindtap="onBackHall"
       >回代取大厅</button>
     </view>

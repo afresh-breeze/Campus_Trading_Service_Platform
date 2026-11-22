@@ -59,16 +59,19 @@
   overflow: hidden;
 }
 .area-search__item {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   padding: 18rpx 20rpx;
   background-color: var(--color-bg-white);
 }
 .area-search__item + .area-search__item {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   border-top: 1rpx solid var(--color-divider);
 }
 .area-search__item--hover {
   background-color: var(--color-primary-light);
+  transform: scale(0.98);
 }
 .area-search__name {
   flex: 1;
@@ -298,5 +301,6 @@
 
 /* 11-17 走查：计划条上的「编辑/删除」是纯文字，按下要有反馈 */
 .slot-op--hover {
-  opacity: 0.55;
+  transform: scale(0.94);
+  opacity: 0.7;
 }

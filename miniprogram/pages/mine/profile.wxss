@@ -6,6 +6,7 @@
 
 /* 头像行 */
 .pf-row {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   padding: var(--space);
@@ -13,6 +14,7 @@
 }
 .pf-row--hover {
   background-color: var(--color-surface-2);
+  transform: scale(0.995);
 }
 .pf-row__label {
   width: 150rpx;

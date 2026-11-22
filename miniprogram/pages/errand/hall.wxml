@@ -81,7 +81,7 @@
     <view class="card hall-state__card">
       <text class="t-title">加载失败</text>
       <text class="t-sub hall-state__desc">{{error}}</text>
-      <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+      <button hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
     </view>
   </view>
 

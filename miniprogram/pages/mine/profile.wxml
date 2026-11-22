@@ -13,7 +13,7 @@
   <view wx:elif="{{error}}" class="card pf-state">
     <text class="t-title">{{error}}</text>
     <text class="t-sub pf-state__desc">{{errorDesc}}</text>
-    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重试'}}</button>
+    <button hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重试'}}</button>
   </view>
 
   <block wx:else>
@@ -90,7 +90,7 @@
     </view>
 
     <button
-      class="btn btn-primary btn-block pf-save"
+      hover-class="btn--press" class="btn btn-primary btn-block pf-save"
       loading="{{saving}}"
       disabled="{{saving}}"
       bindtap="onSave"
