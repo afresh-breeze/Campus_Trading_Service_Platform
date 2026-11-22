@@ -1,12 +1,170 @@
-<!-- 商品详情（A 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">商品详情</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待A成员实现。
+<!-- 商品详情（A 成员，11-16）：轮播、信息、卖家、收藏/联系/状态管理 -->
+<nav-top back fixed />
+
+<view class="detail {{showBar ? 'detail--bar' : ''}}">
+  <!-- 首屏骨架 -->
+  <block wx:if="{{loading}}">
+    <view class="card detail-sk">
+      <view class="detail-sk__gallery"></view>
+      <view class="detail-sk__line detail-sk__line--lg"></view>
+      <view class="detail-sk__line detail-sk__line--md"></view>
+      <view class="detail-sk__line detail-sk__line--sm"></view>
     </view>
-    <view class="t-sub placeholder-path">pages/item/detail</view>
+    <view class="card detail-sk">
+      <view class="detail-sk__line detail-sk__line--md"></view>
+      <view class="detail-sk__line"></view>
+      <view class="detail-sk__line"></view>
+    </view>
+  </block>
+
+  <!-- 加载失败 / 404 / 非法 id -->
+  <view wx:elif="{{error}}" class="detail-state">
+    <view class="card detail-state__card">
+      <text class="t-title">{{error}}</text>
+      <text class="t-sub detail-state__desc">{{errorDesc}}</text>
+      <button wx:if="{{canRetry}}" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
+      <button class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn" bindtap="onBackHome">回二手市场</button>
+    </view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：A ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <block wx:else>
+    <!-- ① 图片轮播 -->
+    <view class="card gallery">
+      <swiper
+        wx:if="{{images.length}}"
+        class="gallery__swiper"
+        current="{{imageIndex}}"
+        circular="{{false}}"
+        indicator-dots="{{false}}"
+        bindchange="onSwiperChange"
+      >
+        <swiper-item wx:for="{{images}}" wx:key="*this">
+          <image
+            wx:if="{{!imageErrors[index]}}"
+            class="gallery__img"
+            src="{{item}}"
+            mode="aspectFill"
+            data-index="{{index}}"
+            binderror="onImageError"
+            bindtap="onPreviewImage"
+          />
+          <view wx:else class="gallery__empty">暂无图片</view>
+        </swiper-item>
+      </swiper>
+      <view wx:else class="gallery__empty gallery__empty--full">暂无图片</view>
+      <view wx:if="{{images.length > 1}}" class="gallery__count">{{imageIndex + 1}}/{{images.length}}</view>
+    </view>
+
+    <!-- ② 状态 / 价格 / 标题 -->
+    <view class="card detail-head">
+      <view class="detail-head__tags">
+        <view class="detail-head__tag">
+          <status-tag domain="item" status="{{item.status}}" plain="{{false}}" />
+        </view>
+        <view wx:if="{{isOwner}}" class="detail-head__tag">
+          <text class="tag tag-primary">我发布的</text>
+        </view>
+        <view wx:if="{{item.negotiable}}" class="detail-head__tag">
+          <text class="tag tag-warning">可议价</text>
+        </view>
+      </view>
+
+      <view class="detail-head__price">
+        <text class="detail-head__yuan">¥</text>
+        <text class="detail-head__num">{{priceText}}</text>
+        <text wx:if="{{originalText}}" class="detail-head__origin">{{originalText}}</text>
+      </view>
+
+      <text class="detail-head__title">{{item.title || '未命名商品'}}</text>
+
+      <view class="detail-head__meta">
+        <text wx:if="{{conditionText}}" class="tag tag-gray">{{conditionText}}</text>
+        <text wx:if="{{categoryName}}" class="tag tag-gray">{{categoryName}}</text>
+      </view>
+    </view>
+
+    <!-- ③ 商品信息 -->
+    <view class="card detail-info">
+      <text class="detail-info__title">商品信息</text>
+      <view class="detail-info__row">
+        <text class="detail-info__k">交易地点</text>
+        <text class="detail-info__v">{{locationText}}</text>
+      </view>
+      <view wx:if="{{bookTitle}}" class="detail-info__row">
+        <text class="detail-info__k">关联教材</text>
+        <text class="detail-info__v">{{bookTitle}}</text>
+      </view>
+      <view class="detail-info__row">
+        <text class="detail-info__k">发布时间</text>
+        <text class="detail-info__v">{{createdText}}</text>
+      </view>
+      <view class="detail-info__row">
+        <text class="detail-info__k">浏览次数</text>
+        <text class="detail-info__v">{{viewCount}}</text>
+      </view>
+      <view class="detail-info__row">
+        <text class="detail-info__k">收藏人数</text>
+        <text class="detail-info__v">{{favoriteCount}}</text>
+      </view>
+    </view>
+
+    <!-- ④ 商品描述 -->
+    <view class="card detail-desc">
+      <text class="detail-desc__title">商品描述</text>
+      <text class="detail-desc__text {{descLong && !descExpanded ? 'detail-desc__text--clamp' : ''}}">{{descriptionText}}</text>
+      <text wx:if="{{descLong}}" class="detail-desc__toggle" bindtap="onToggleDesc">{{descExpanded ? '收起' : '展开全文'}}</text>
+    </view>
+
+    <!-- ⑤ 卖家 -->
+    <view class="card detail-seller">
+      <image wx:if="{{seller.avatarUrl}}" class="detail-seller__avatar" src="{{seller.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="detail-seller__avatar detail-seller__avatar--text">{{seller.initial}}</view>
+      <view class="flex-1 detail-seller__info">
+        <text class="detail-seller__name ellipsis">{{seller.name}}</text>
+        <text class="detail-seller__sub">{{seller.creditText}}</text>
+      </view>
+      <text class="detail-seller__role">卖家</text>
+    </view>
+
+    <!-- ⑥ 卖家无可用状态操作时的说明 -->
+    <view wx:if="{{isOwner && !actions.length}}" class="detail-hint">
+      <text wx:if="{{item.status === 'sold'}}">商品已售出，交易已完成，无可用操作</text>
+      <text wx:else>当前状态无可用操作</text>
+    </view>
+
+    <!-- ⑦ 直接进入时的固定出路 -->
+    <view class="detail-home" bindtap="onBackHome" hover-class="detail-home--hover">
+      <text class="detail-home__text">回二手市场</text>
+    </view>
+  </block>
+</view>
+
+<!-- 底部操作栏：买家收藏/联系，卖家状态管理 -->
+<view wx:if="{{showBar}}" class="detail-bar">
+  <view wx:if="{{isOwner}}" class="detail-bar__row">
+    <button
+      wx:for="{{actions}}"
+      wx:key="key"
+      class="btn detail-bar__btn {{item.primary ? 'btn-primary' : 'btn-ghost'}}"
+      data-key="{{item.key}}"
+      disabled="{{submitting}}"
+      loading="{{submitting && actionKey === item.key}}"
+      bindtap="onAction"
+    >{{item.text}}</button>
+  </view>
+  <view wx:else class="detail-bar__row">
+    <view class="detail-bar__cell detail-bar__cell--fav">
+      <button
+        class="btn detail-bar__fav {{isFavorited ? 'btn-ghost detail-bar__fav--on' : 'btn-ghost'}}"
+        disabled="{{favoriting}}"
+        loading="{{favoriting}}"
+        bindtap="onFavorite"
+      >
+        <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
+      </button>
+    </view>
+    <view class="detail-bar__cell detail-bar__cell--contact">
+      <button class="btn btn-primary detail-bar__contact" bindtap="onContact">联系卖家</button>
+    </view>
+  </view>
 </view>

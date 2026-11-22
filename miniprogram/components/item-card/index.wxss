@@ -116,6 +116,15 @@
   margin: 0 8rpx;
 }
 
+/* list 模式的相对发布时间：贴在「成色 · 地点」行末尾，不占额外高度 */
+.card__time {
+  margin-left: auto;
+  padding-left: 16rpx;
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--color-text-3, #9A8875);
+}
+
 .card__foot {
   margin-top: auto;
   padding-top: 12rpx;

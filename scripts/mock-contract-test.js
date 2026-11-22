@@ -10,6 +10,10 @@
  * 维护约定：后端新增/改动接口时，先改 mock.js，再在这里补一条断言。
  * 变更：2026-11-12 按 A 的全面排查补 [3] 私单全流程、[4] 代取校验等价、
  *       [7] 商品/书目/用户校验等价，并修正「登录学号 5 位 → 400」这条**错误契约**。
+ *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权）、[10] 大厅筛选
+ *       （area/itemSize/timeType/sort，同维度 OR + 跨维度 AND + 筛选后 total）。
+ *       2026-11-15 A 的实现（f3d44dc）推送后，[10] 的 400 改为**逐字断言文案**，
+ *       并澄清 timeType 合法筛选项含 range（与订单类型一致）、参数支持字符串数组。
  */
 const path = require('path');
 const REPO = require('path').join(__dirname, '..', 'miniprogram', 'utils');
@@ -256,6 +260,326 @@ const OK_ERRAND = {
   await expectFail('注册昵称 1 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: 'a', password: '123456' }, 400);
   await expectFail('注册昵称 13 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: '一二三四五六七八九十一二三', password: '123456' }, 400);
   await expectFail('注册学号 5 位 400', '/api/auth/register', 'POST', { studentNo: '12345', nickname: '五六', password: '123456' }, 400);
+
+  console.log('\n[9] 会话发起权限：私单只允许发布者（P0-4）');
+  // 2004 = 当前用户（1）发布的未发布私单
+  const convOwnPrivate = await mock.run('/api/conversations', 'POST', {
+    peerId: 6,
+    bizType: 'errand',
+    bizId: 2004
+  });
+  check('自己发布的私单可以发起会话', !!convOwnPrivate.conversationId, convOwnPrivate);
+  // 2008 = 别人（5）的私单：不拦的话，知道 publisherId + orderId 就能先插会话，
+  // 再靠 isErrandChatPeer 拿到查看/接单授权（越权）
+  await expectFailMsg(
+    '别人的私单发起会话 → 403',
+    '/api/conversations',
+    'POST',
+    { peerId: 5, bizType: 'errand', bizId: 2008 },
+    '私单只能由发布者发起会话'
+  );
+  // 2001 = 大厅单：任何登录用户都能就它发起咨询
+  const convHall = await mock.run('/api/conversations', 'POST', {
+    peerId: 5,
+    bizType: 'errand',
+    bizId: 2001
+  });
+  check('大厅单可以自由发起会话', !!convHall.conversationId, convHall);
+  await expectFailMsg(
+    '订单不存在 → 404',
+    '/api/conversations',
+    'POST',
+    { peerId: 5, bizType: 'errand', bizId: 999999 },
+    '订单不存在'
+  );
+  // 11-16 回归：大厅单 2009/2010/2011 的发布人（11/12/13）此前不在 mock 用户表，
+  // userOf() 查不到 → 404「对方用户不存在」→ 详情页「联系发布者」直接「会话不存在」
+  for (const pair of [[2009, 11], [2010, 12], [2011, 13]]) {
+    const r = await mock.run('/api/conversations', 'POST', {
+      peerId: pair[1],
+      bizType: 'errand',
+      bizId: pair[0]
+    });
+    check('大厅单 #' + pair[0] + '（发布人 ' + pair[1] + '）可以发起会话', !!r.conversationId, r);
+  }
+  await expectFailMsg(
+    '对方用户不存在 → 404',
+    '/api/conversations',
+    'POST',
+    { peerId: 99, bizType: 'errand', bizId: 2001 },
+    '对方用户不存在'
+  );
+
+  console.log('\n[10] 大厅筛选：area / itemSize / timeType / sort（A 侧扩展契约）');
+  // 断言写成「相对快照」的形式：前面 [1]~[9] 会新建订单，写死 id 列表会随用例增删而碎。
+  const idsOf = (r) => (r.list || []).map((e) => e.orderId).join(',');
+  const hallAll = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50 });
+  const base = hallAll.list;
+  check('基线非空（否则下面全是假通过）', base.length >= 5, base.length);
+  check('基线全部是 pending + hall', base.every((e) => e.status === 'pending' && e.visibility === 'hall'));
+
+  /** 断言行集 = 基线里满足 pred 的那批（顺序仍按发布时间倒序） */
+  const expectFiltered = async (name, query, pred) => {
+    const r = await mock.run('/api/errands', 'GET', Object.assign({ page: 1, pageSize: 50 }, query));
+    const want = base.filter(pred).map((e) => e.orderId).join(',');
+    check(name, idsOf(r) === want && r.total === base.filter(pred).length, {
+      got: idsOf(r),
+      want: want,
+      total: r.total
+    });
+    return r;
+  };
+
+  const sortLatest = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, sort: 'latest' });
+  check('sort=latest 与不传等价', idsOf(sortLatest) === idsOf(hallAll), idsOf(sortLatest));
+
+  const sortDesc = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, sort: 'reward_desc' });
+  const descOk = sortDesc.list.every((e, i, a) => i === 0 || Number(a[i - 1].reward) >= Number(e.reward));
+  check('sort=reward_desc 报酬单调不增', descOk, sortDesc.list.map((e) => e.reward));
+  const sortAsc = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, sort: 'reward_asc' });
+  const ascOk = sortAsc.list.every((e, i, a) => i === 0 || Number(a[i - 1].reward) <= Number(e.reward));
+  check('sort=reward_asc 报酬单调不减', ascOk, sortAsc.list.map((e) => e.reward));
+  check('排序不改变 total', sortDesc.total === hallAll.total && sortAsc.total === hallAll.total);
+
+  // 同维度 OR
+  await expectFiltered('area 同维度 OR（桃园+中心图书馆）', { area: '桃园,中心图书馆' }, (e) =>
+    ['桃园', '中心图书馆'].indexOf(e.pickupArea) >= 0
+  );
+  await expectFiltered('itemSize 同维度 OR（small+medium）', { itemSize: 'small,medium' }, (e) =>
+    ['small', 'medium'].indexOf(e.itemSize) >= 0
+  );
+  const timeOr = await expectFiltered('timeType 同维度 OR（asap+deadline）', { timeType: 'asap,deadline' }, (e) =>
+    ['asap', 'deadline'].indexOf(e.timeType) >= 0
+  );
+  check('timeType 筛选排除 range 单', timeOr.list.every((e) => e.timeType !== 'range'));
+
+  // 跨维度 AND
+  await expectFiltered('跨维度 AND（中心图书馆 + small）', { area: '中心图书馆', itemSize: 'small' }, (e) =>
+    e.pickupArea === '中心图书馆' && e.itemSize === 'small'
+  );
+  await expectFiltered(
+    '跨维度 AND 无交集 → 空列表',
+    { area: '桃园', timeType: 'asap' },
+    (e) => e.pickupArea === '桃园' && e.timeType === 'asap'
+  );
+
+  // 空串 = 不限（前端「不限」不传参，但要能容忍误传空串）
+  const emptyVal = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 50, area: '', itemSize: '  ' });
+  check('筛选值为空串 → 视为不限', idsOf(emptyVal) === idsOf(hallAll), idsOf(emptyVal));
+
+  // 筛选 + 分页共存：每页都要带同样的筛选条件，total 是筛选后总数而不是全表
+  const smallAll = base.filter((e) => e.itemSize === 'small');
+  const pg1 = await mock.run('/api/errands', 'GET', { page: 1, pageSize: 1, itemSize: 'small' });
+  const pg2 = await mock.run('/api/errands', 'GET', { page: 2, pageSize: 1, itemSize: 'small' });
+  check(
+    '筛选后第 1 页 = 筛选结果的第 1 条',
+    idsOf(pg1) === String(smallAll[0].orderId) && pg1.total === smallAll.length,
+    idsOf(pg1) + '/' + pg1.total
+  );
+  check(
+    '筛选后第 2 页（total 仍为筛选后总数）',
+    idsOf(pg2) === String(smallAll[1].orderId) && pg2.total === smallAll.length,
+    idsOf(pg2) + '/' + pg2.total
+  );
+
+  // 非法值：2026-11-15 起按 A 的真实实现（f3d44dc）**逐字断言 400 文案**。
+  const filter400 = [
+    ['area 非法片区', { area: '火星' }, '取件片区不在可选范围内'],
+    ['area 部分非法', { area: '桃园,火星' }, '取件片区不在可选范围内'],
+    ['area 传非字符串元素', { area: ['桃园', 5] }, '参数错误'],
+    ['itemSize 非法', { itemSize: 'huge' }, '物品规格不合法'],
+    ['itemSize 传数字', { itemSize: 123 }, '参数错误'],
+    ['timeType 非法', { timeType: 'someday' }, '时间类型不合法'],
+    ['sort 非法', { sort: 'popular' }, '排序方式不合法'],
+    ['sort 传数字', { sort: 1 }, '排序方式不合法']
+  ];
+  for (let i = 0; i < filter400.length; i += 1) {
+    const q = Object.assign({ page: 1, pageSize: 50 }, filter400[i][1]);
+    const r = await mock.run('/api/errands', 'GET', q).then(
+      (ok) => ({ ok: true, data: ok }),
+      (err) => ({ ok: false, err: err })
+    );
+    check(
+      filter400[i][0] + ' → 400「' + filter400[i][2] + '」',
+      r.ok === false && r.err.code === 400 && r.err.message === filter400[i][2],
+      r.ok ? 'mock 放行' : r.err
+    );
+  }
+
+  // timeType 的合法筛选项与订单类型一致：range 也可筛（11-13 曾误判为不可筛，A 的 f3d44dc 澄清）
+  await expectFiltered('timeType=range 单独筛选', { timeType: 'range' }, (e) => e.timeType === 'range');
+  await expectFiltered('timeType 三值全选 = 不限', { timeType: 'asap,deadline,range' }, () => true);
+  // 字符串数组入参等价于逗号分隔
+  await expectFiltered('area 传字符串数组等价逗号串', { area: ['桃园', '中心图书馆'] }, (e) =>
+    ['桃园', '中心图书馆'].indexOf(e.pickupArea) >= 0
+  );
+
+  console.log('\n[11] 接单设置 / 上线：runner-profile 与 online（对照 users.js）');
+  // PUT /me/runner-profile 的校验逐字对齐（文案来自 users.js）
+  const profile400 = [
+    ['片区为空', { serviceAreas: [] }, '服务片区至少选择一个'],
+    ['片区非法', { serviceAreas: ['火星'] }, '服务片区不在可选范围内'],
+    ['地标跨片区', { serviceAreas: ['桃园'], servicePlaces: ['第16教学楼'] }, '地标与片区不匹配'],
+    ['在线方式非法', { serviceAreas: ['桃园'], availabilityType: 'abc' }, '在线方式不合法'],
+    ['计划非数组', { serviceAreas: ['桃园'], availabilityType: 'now', timeSlots: 'x' }, '在线计划格式错误'],
+    [
+      '计划起止倒置',
+      {
+        serviceAreas: ['桃园'],
+        availabilityType: 'now',
+        timeSlots: [{ id: 'a', type: 'once', date: '2026-12-01', start: '18:00', end: '09:00' }]
+      },
+      '在线计划格式错误'
+    ],
+    [
+      '计划 id 非字符串',
+      {
+        serviceAreas: ['桃园'],
+        availabilityType: 'now',
+        timeSlots: [{ id: 1, type: 'once', date: '2026-12-01', start: '09:00', end: '10:00' }]
+      },
+      '在线计划格式错误'
+    ],
+    ['规格非法', { serviceAreas: ['桃园'], availabilityType: 'now', itemSizes: ['huge'] }, '可接规格不合法'],
+    ['报价负数', { serviceAreas: ['桃园'], availabilityType: 'now', basePrice: -1 }, '报价不能为负数'],
+    ['备注非字符串', { serviceAreas: ['桃园'], availabilityType: 'now', remark: 123 }, '备注格式不正确']
+  ];
+  for (let i = 0; i < profile400.length; i += 1) {
+    const body = Object.assign({ itemSizes: ['small'] }, profile400[i][1]);
+    const r = await mock.run('/api/users/me/runner-profile', 'PUT', body).then(
+      (ok) => ({ ok: true, data: ok }),
+      (err) => ({ ok: false, err: err })
+    );
+    check(
+      'runner-profile ' + profile400[i][0] + ' → 400「' + profile400[i][2] + '」',
+      r.ok === false && r.err.code === 400 && r.err.message === profile400[i][2],
+      r.ok ? 'mock 放行' : r.err
+    );
+  }
+
+  // slot 型没有未来计划会被拦；正常保存后字段回读一致
+  const noFuture = await mock.run('/api/users/me/runner-profile', 'PUT', {
+    serviceAreas: ['桃园'],
+    itemSizes: ['small'],
+    availabilityType: 'slot',
+    timeSlots: []
+  }).then(
+    (ok) => ({ ok: true, data: ok }),
+    (err) => ({ ok: false, err: err })
+  );
+  check(
+    'slot 型无未来计划 → 400「按计划上线至少需要一条未来计划」',
+    noFuture.ok === false && noFuture.err.message === '按计划上线至少需要一条未来计划',
+    noFuture.ok ? 'mock 放行' : noFuture.err
+  );
+
+  const savedProfile = await mock.run('/api/users/me/runner-profile', 'PUT', {
+    serviceAreas: ['桃园', '李园'],
+    servicePlaces: ['桃园'],
+    itemSizes: ['medium', 'small'],
+    availabilityType: 'slot',
+    timeSlots: [
+      { id: 's1', type: 'weekly', from: '2026-11-01', weekdays: [3, 1], start: '09:00', end: '12:00' },
+      { id: 's2', type: 'once', date: '2026-12-20', start: '14:00', end: '16:00' }
+    ],
+    basePrice: '3.5',
+    remark: ' 测试备注 '
+  });
+  check('保存后 serviceAreas 去重保序', JSON.stringify(savedProfile.serviceAreas) === '["桃园","李园"]', savedProfile.serviceAreas);
+  check('保存后 itemSizes 按后端顺序排序', JSON.stringify(savedProfile.itemSizes) === '["small","medium"]', savedProfile.itemSizes);
+  check('保存后 weekly weekdays 升序', JSON.stringify(savedProfile.timeSlots[0].weekdays) === '[1,3]', savedProfile.timeSlots[0]);
+  check('保存后 basePrice 字符串转数字', savedProfile.basePrice === 3.5, savedProfile.basePrice);
+  check('保存后 remark 去首尾空白', savedProfile.remark === '测试备注', savedProfile.remark);
+
+  // once 落在 weekly 命中日内 → 重叠 400
+  const overlap = await mock.run('/api/users/me/runner-profile', 'PUT', {
+    serviceAreas: ['桃园'],
+    itemSizes: ['small'],
+    availabilityType: 'slot',
+    timeSlots: [
+      { id: 's1', type: 'weekly', from: '2026-11-01', weekdays: [1], start: '09:00', end: '12:00' },
+      { id: 's2', type: 'once', date: '2026-11-16', start: '10:00', end: '11:00' } // 2026-11-16 是周一
+    ]
+  }).then(
+    (ok) => ({ ok: true, data: ok }),
+    (err) => ({ ok: false, err: err })
+  );
+  check('once 与 weekly 重叠 → 400「在线计划格式错误」', overlap.ok === false && overlap.err.message === '在线计划格式错误', overlap.ok ? 'mock 放行' : overlap.err);
+
+  // PUT /me/online 的校验
+  await expectFailMsg('online isOnline 非布尔 → 400', '/api/users/me/online', 'PUT', { isOnline: 'yes' }, 'isOnline 必须为布尔值');
+  await expectFailMsg(
+    'online 方式非法 → 400',
+    '/api/users/me/online',
+    'PUT',
+    { isOnline: true, availabilityType: 'abc' },
+    '在线方式不合法'
+  );
+  await expectFailMsg('scope 非法 → 400', '/api/users/me/online', 'PUT', { isOnline: true, scope: 'bad', scheduleId: 's1' }, 'scope 不合法');
+  await expectFailMsg('缺 scheduleId → 400', '/api/users/me/online', 'PUT', { isOnline: true, scope: 'once' }, 'scheduleId 不能为空');
+  const onlineNow = await mock.run('/api/users/me/online', 'PUT', { isOnline: true, availabilityType: 'now' });
+  check('now 型上线返回 isOnline/availabilityType/manualUntil', onlineNow.isOnline === true && onlineNow.availabilityType === 'now' && onlineNow.manualUntil === null, onlineNow);
+  await expectFailMsg(
+    '下线引用不存在的计划 → 400',
+    '/api/users/me/online',
+    'PUT',
+    { isOnline: false, availabilityType: 'slot', scope: 'future', scheduleId: 'nope' },
+    '该在线计划不存在'
+  );
+
+  console.log('\n[12] 接口 v0.10：favorites status / view=0 / 两位小数 / 大厅 status / visibility 类型');
+
+  // 1) GET /api/favorites：status 过滤 + 非法值 400（含非字符串）
+  await expectFailMsg('favorites status 非法 → 400', '/api/favorites', 'GET', { status: 'purchased' }, '商品状态不合法');
+  await expectFailMsg('favorites status 传数字 → 400', '/api/favorites', 'GET', { status: 1 }, '商品状态不合法');
+  const v010FavAll = await mock.run('/api/favorites', 'GET', {});
+  const v010FavSold = await mock.run('/api/favorites', 'GET', { status: 'sold' });
+  check('favorites 默认全量 ≥1 且 status=sold 过滤为 0', v010FavAll.total >= 1 && v010FavSold.total === 0, { all: v010FavAll.total, sold: v010FavSold.total });
+
+  // 2) POST /api/items：金额最多两位小数（0.001 这类直接 400）
+  await expectFailMsg('售价 0.001 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数售价', price: 0.001 }, '售价最多两位小数');
+  await expectFailMsg('原价 12.345 → 400', '/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '三位小数原价', price: 12, originalPrice: 12.345 }, '原价最多两位小数');
+
+  // 合法两位小数可创建 → 收藏 → 转 reserved → status 过滤双向成立
+  const v010Item = await mock.run('/api/items', 'POST', { itemType: 'normal', categoryId: 1, title: '两位小数校验品', price: 12.34 });
+  const v010Id = v010Item.itemId;
+  check('售价 12.34（两位小数）可创建', !!v010Id, v010Item);
+  await mock.run('/api/items/' + v010Id + '/favorite', 'POST', {});
+  await mock.run('/api/items/' + v010Id + '/status', 'PUT', { status: 'reserved' });
+  const v010FavReserved = await mock.run('/api/favorites', 'GET', { status: 'reserved' });
+  const v010FavOnSale = await mock.run('/api/favorites', 'GET', { status: 'on_sale' });
+  check('favorites status=reserved 含刚转的收藏', (v010FavReserved.list || []).some((i) => i.itemId === v010Id), v010FavReserved.total);
+  check('favorites status=on_sale 不含已 reserved 的', !(v010FavOnSale.list || []).some((i) => i.itemId === v010Id), v010FavOnSale.total);
+
+  // 3) GET /api/items/:id：view=0 不增加 viewCount
+  const v010ViewBase = (await mock.run('/api/items/' + v010Id, 'GET', {})).viewCount;
+  const v010ViewKeep = (await mock.run('/api/items/' + v010Id, 'GET', { view: 0 })).viewCount;
+  const v010ViewInc = (await mock.run('/api/items/' + v010Id, 'GET', {})).viewCount;
+  check('view=0 浏览量不 +1', v010ViewKeep === v010ViewBase, { before: v010ViewBase, after: v010ViewKeep });
+  check('不带 view 照常 +1', v010ViewInc === v010ViewBase + 1, { before: v010ViewBase, after: v010ViewInc });
+
+  // 4) GET /api/errands：大厅 status 只允许 pending（其他值 400）
+  await expectFailMsg('大厅 status 传数字 → 400', '/api/errands', 'GET', { status: 1 }, '订单状态不合法');
+  await expectFailMsg('大厅 status=taken → 400', '/api/errands', 'GET', { status: 'taken' }, '大厅只支持待接单');
+  await expectFailMsg('大厅 status=completed → 400', '/api/errands', 'GET', { status: 'completed' }, '大厅只支持待接单');
+  const v010Hall = await mock.run('/api/errands', 'GET', { status: 'pending', page: 1, pageSize: 50 });
+  check('大厅 status=pending 正常返回', v010Hall.total >= 1, v010Hall.total);
+
+  // 5) POST /api/errands：visibility 非字符串 → 400（数字/布尔都不放行）
+  await expectFailMsg(
+    'visibility 传数字 → 400',
+    '/api/errands',
+    'POST',
+    { pickupArea: '桃园', pickupPlace: '桃园', deliveryLocation: '教学楼A', itemSize: 'small', itemDesc: '书本', reward: 3, timeType: 'asap', visibility: 1 },
+    '可见性不合法'
+  );
+  await expectFailMsg(
+    'visibility 传布尔 → 400',
+    '/api/errands',
+    'POST',
+    { pickupArea: '桃园', pickupPlace: '桃园', deliveryLocation: '教学楼A', itemSize: 'small', itemDesc: '书本', reward: 3, timeType: 'asap', visibility: true },
+    '可见性不合法'
+  );
 
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);

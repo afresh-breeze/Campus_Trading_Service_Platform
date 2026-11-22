@@ -1,12 +1,119 @@
-<!-- 二手市场（A 成员负责） -->
-<nav-top />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">二手市场</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待A成员实现。
+<!-- 二手市场（A 成员，11-14）：列表、分类、排序、下拉刷新、上拉加载 -->
+<view class="page home">
+  <!-- 整块吸附：块从屏幕最顶(top:0)开始覆盖且背景不透明，列表从它下方滚过。
+       标题行与右上角胶囊齐平（安全区占位到胶囊顶、行高=胶囊高），滚动全程冻结不动。 -->
+  <view class="home-bar">
+    <view class="home-bar__safe" style="height: {{stickyTop}}px"></view>
+    <view class="home-bar__head" style="height: {{barHead}}px">
+      <text class="home-bar__title">二手市场</text>
     </view>
-    <view class="t-sub placeholder-path">pages/index/index</view>
+    <view class="home-bar__subrow">
+      <text class="home-bar__sub">同校闲置好物，当面交易更放心</text>
+    </view>
+
+    <!-- 搜索只做入口：点击跳到搜索结果页，不在首页弹键盘 -->
+    <view class="home-search" bindtap="onSearchTap" hover-class="home-search--hover" aria-label="搜索商品">
+      <view class="home-search__icon"></view>
+      <text class="home-search__ph">搜索商品 / 书名 / 作者</text>
+    </view>
+
+    <block wx:if="{{isLogin}}">
+      <scroll-view class="home-cats" scroll-x show-scrollbar="{{false}}">
+        <view
+          wx:for="{{categories}}"
+          wx:key="categoryId"
+          class="home-cat {{categoryId === item.categoryId ? 'home-cat--active' : ''}}"
+          data-id="{{item.categoryId}}"
+          bindtap="onCategoryTap"
+        >{{item.name}}</view>
+      </scroll-view>
+
+      <view class="home-sort">
+        <text class="home-sort__count">{{countReady ? '共 ' + total + ' 件在售' : ''}}</text>
+        <view class="home-sort__ops">
+          <view
+            class="home-sort__item {{sort === 'latest' ? 'home-sort__item--active' : ''}}"
+            bindtap="onSortLatest"
+          >
+            <text>最新</text>
+          </view>
+          <view class="home-sort__divider"></view>
+          <view
+            class="home-sort__item home-sort__item--price {{(sort === 'price_asc' || sort === 'price_desc') ? 'home-sort__item--active' : ''}}"
+            bindtap="onSortPrice"
+          >
+            <text>价格</text>
+            <text class="home-sort__arrow">{{sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
   </view>
-  <view class="t-sub placeholder-tip">负责人：A ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 未登录：给出登录引导，不发列表请求 -->
+  <view wx:if="{{!isLogin}}" class="home-state">
+    <empty-state
+      title="登录后浏览二手市场"
+      desc="登录后即可查看同校同学发布的闲置商品"
+      action-text="去登录"
+      bind:action="onLogin"
+    />
+  </view>
+
+  <!-- 首屏骨架：只用占位块，不编假数据 -->
+  <block wx:elif="{{firstLoading}}">
+    <view class="home-sk" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="home-sk__cover"></view>
+      <view class="home-sk__body">
+        <view class="home-sk__line home-sk__line--lg"></view>
+        <view class="home-sk__line home-sk__line--md"></view>
+        <view class="home-sk__line home-sk__line--sm"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 首屏失败：给重试，不给白屏 -->
+  <view wx:elif="{{error}}" class="home-state">
+    <view class="card home-state__card">
+      <text class="t-title">加载失败</text>
+      <text class="t-sub home-state__desc">{{error}}</text>
+      <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+    </view>
+  </view>
+
+  <!-- 空态：整体无商品和分类无商品分开，出口不同 -->
+  <view wx:elif="{{!list.length}}" class="home-state">
+    <empty-state
+      wx:if="{{categoryId > 0}}"
+      title="这个分类暂时没有在售商品"
+      desc="换个分类看看，或者发布一件闲置"
+      action-text="查看全部"
+      bind:action="onViewAll"
+    />
+    <empty-state
+      wx:else
+      title="还没有在售的商品"
+      desc="发布你的第一件闲置，让它遇到刚好需要的同学"
+      action-text="去发布"
+      bind:action="onPublish"
+    />
+  </view>
+
+  <block wx:else>
+    <view class="home-list">
+      <view class="home-list__item" wx:for="{{list}}" wx:key="itemId">
+        <item-card mode="list" item="{{item}}" show-time="{{true}}" bind:tap="onTapItem" />
+      </view>
+    </view>
+
+    <!-- 上拉加载：三态文案，避免「到底了还在转圈」 -->
+    <view class="home-more">
+      <text wx:if="{{loadingMore}}" class="home-more__text">加载中…</text>
+      <text wx:elif="{{hasMore}}" class="home-more__text">上拉加载更多</text>
+      <text wx:else class="home-more__text">没有更多了</text>
+    </view>
+  </block>
+
+  <!-- 我要卖：登录后才显示 FAB -->
+  <view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover" aria-label="我要卖">＋</view>
 </view>

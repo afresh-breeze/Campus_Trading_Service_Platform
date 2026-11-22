@@ -1,12 +1,200 @@
-<!-- 我的代取（B 成员负责） -->
-<nav-top back />
+<!-- 我的代取（B 成员，11-15）：两个 tab + 状态分组/筛选 + 快捷操作 -->
+<nav-top back title="{{pageTitle}}" />
 <view class="page page-body">
-  <view class="card">
-    <view class="t-title">我的代取</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待B成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/mine/errands</view>
+
+  <!-- 登录门 -->
+  <view wx:if="{{!isLogin}}" class="me-state">
+    <empty-state title="登录后查看我的代取" desc="发布与接单的记录都在这里" action-text="去登录" bind:action="onLogin" />
   </view>
-  <view class="t-sub placeholder-tip">负责人：B ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <block wx:else>
+    <!-- 角色切换：我发布的 / 我接的 -->
+    <view class="me-tabs">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="me-tabs__item {{role === item.key ? 'me-tabs__item--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTabChange"
+        hover-class="me-tabs__item--hover"
+      >{{item.label}}</view>
+    </view>
+
+    <!-- 状态筛选：全部 + 四状态（带数量） -->
+    <scroll-view class="me-chips" scroll-x>
+      <view
+        wx:for="{{chips}}"
+        wx:key="key"
+        class="me-chip {{status === item.key ? 'me-chip--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onChipChange"
+        hover-class="me-chip--hover"
+      >
+        {{item.label}}<text wx:if="{{item.key && counts[item.key]}}" class="me-chip__count">{{counts[item.key]}}</text>
+      </view>
+    </scroll-view>
+
+    <!-- 首屏加载 -->
+    <block wx:if="{{loading}}">
+      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="sk-line sk-line--lg"></view>
+        <view class="sk-line sk-line--md"></view>
+        <view class="sk-line sk-line--sm"></view>
+      </view>
+    </block>
+
+    <!-- 失败：给重试 -->
+    <view wx:elif="{{error}}" class="me-state">
+      <view class="card me-state__card">
+        <text class="t-title">加载失败</text>
+        <text class="t-sub me-state__desc">{{error}}</text>
+        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+      </view>
+    </view>
+
+    <!-- 真空态：给出路 -->
+    <view wx:elif="{{status === '' && !sections.length}}" class="me-state">
+      <empty-state
+        title="{{role === 'publisher' ? '你还没有发布过代取' : '你还没有接过代取'}}"
+        desc="{{role === 'publisher' ? '发一条，让顺路的同学帮你带' : '去代取大厅挑一单顺路的吧'}}"
+        action-text="{{role === 'publisher' ? '去发布代取' : '去代取大厅'}}"
+        bind:action="onEmptyAction"
+      />
+    </view>
+    <view wx:elif="{{status !== '' && !list.length}}" class="me-state">
+      <empty-state title="该状态下暂无订单" desc="换个状态看看，或选「全部」" />
+    </view>
+
+    <block wx:else>
+      <!-- 全部：按状态分组，每组带数量 -->
+      <block wx:if="{{status === ''}}">
+        <view wx:for="{{sections}}" wx:key="status" wx:for-item="section" class="me-section">
+          <view class="me-section__head">
+            <text class="me-section__title">{{section.label}}</text>
+            <text class="me-section__count">{{section.count}} 单</text>
+          </view>
+          <view
+            wx:for="{{section.list}}"
+            wx:key="orderId"
+            wx:for-item="card"
+            class="card me-order"
+            data-id="{{card.orderId}}"
+            bindtap="onTapOrder"
+            hover-class="me-order--hover"
+          >
+            <view class="me-order__top">
+              <view class="me-order__route">
+                <view class="me-order__line">
+                  <view class="me-order__dot me-order__dot--from"></view>
+                  <text class="me-order__place ellipsis">{{card.fromText}}</text>
+                </view>
+                <view class="me-order__line">
+                  <view class="me-order__dot me-order__dot--to"></view>
+                  <text class="me-order__place ellipsis">{{card.toText}}</text>
+                </view>
+              </view>
+              <view class="me-order__reward">
+                <text class="me-order__price">¥{{card.rewardText}}</text>
+                <text class="me-order__reward-label">报酬</text>
+              </view>
+            </view>
+
+            <view class="me-order__meta">
+              <status-tag domain="errand" status="{{card.status}}" />
+              <text wx:if="{{card.visibility === 'private'}}" class="tag tag-gray me-order__tag">私单</text>
+              <text class="tag tag-gray me-order__tag">{{card.sizeText}}</text>
+              <text class="tag tag-warning me-order__tag">{{card.timeText}}</text>
+            </view>
+
+            <text wx:if="{{card.itemDesc}}" class="me-order__desc ellipsis-2">{{card.itemDesc}}</text>
+
+            <view class="me-order__foot">
+              <text class="me-order__who ellipsis">{{card.counterpartyText}}{{card.createdText ? ' · ' + card.createdText : ''}}</text>
+              <text class="me-order__go">查看详情 ›</text>
+            </view>
+
+            <!-- 快捷操作：完成/释放/撤回/联系（真校验在动作接口） -->
+            <view wx:if="{{card.actions.length}}" class="me-order__actions">
+              <button
+                wx:for="{{card.actions}}"
+                wx:key="key"
+                wx:for-item="act"
+                class="me-act {{act.key === 'cancel' ? 'me-act--danger' : (act.key === 'complete' ? 'me-act--primary' : '')}}"
+                size="mini"
+                data-key="{{act.key}}"
+                data-id="{{card.orderId}}"
+                catchtap="onAction"
+                disabled="{{submitting}}"
+              >{{act.text}}</button>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 具体状态：平铺列表 -->
+      <block wx:else>
+        <view
+          wx:for="{{list}}"
+          wx:key="orderId"
+          class="card me-order"
+          data-id="{{item.orderId}}"
+          bindtap="onTapOrder"
+          hover-class="me-order--hover"
+        >
+          <view class="me-order__top">
+            <view class="me-order__route">
+              <view class="me-order__line">
+                <view class="me-order__dot me-order__dot--from"></view>
+                <text class="me-order__place ellipsis">{{item.fromText}}</text>
+              </view>
+              <view class="me-order__line">
+                <view class="me-order__dot me-order__dot--to"></view>
+                <text class="me-order__place ellipsis">{{item.toText}}</text>
+              </view>
+            </view>
+            <view class="me-order__reward">
+              <text class="me-order__price">¥{{item.rewardText}}</text>
+              <text class="me-order__reward-label">报酬</text>
+            </view>
+          </view>
+
+          <view class="me-order__meta">
+            <status-tag domain="errand" status="{{item.status}}" />
+            <text wx:if="{{item.visibility === 'private'}}" class="tag tag-gray me-order__tag">私单</text>
+            <text class="tag tag-gray me-order__tag">{{item.sizeText}}</text>
+            <text class="tag tag-warning me-order__tag">{{item.timeText}}</text>
+          </view>
+
+          <text wx:if="{{item.completedText}}" class="me-order__completed">{{item.completedText}}</text>
+          <text wx:elif="{{item.itemDesc}}" class="me-order__desc ellipsis-2">{{item.itemDesc}}</text>
+
+          <view class="me-order__foot">
+            <text class="me-order__who ellipsis">{{item.counterpartyText}}{{item.createdText ? ' · ' + item.createdText : ''}}</text>
+            <text class="me-order__go">查看详情 ›</text>
+          </view>
+
+          <view wx:if="{{item.actions.length}}" class="me-order__actions">
+            <button
+              wx:for="{{item.actions}}"
+              wx:key="key"
+              wx:for-item="act"
+              class="me-act {{act.key === 'cancel' ? 'me-act--danger' : (act.key === 'complete' ? 'me-act--primary' : '')}}"
+              size="mini"
+              data-key="{{act.key}}"
+              data-id="{{item.orderId}}"
+              catchtap="onAction"
+              disabled="{{submitting}}"
+            >{{act.text}}</button>
+          </view>
+        </view>
+      </block>
+
+      <!-- 超过 50 条提示（后端分页上限） -->
+      <view wx:if="{{truncated}}" class="me-more">
+        <text class="me-more__text">共 {{total}} 条，仅展示最近 50 条</text>
+      </view>
+    </block>
+  </block>
+
+  <view class="safe-bottom"></view>
 </view>

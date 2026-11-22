@@ -3,48 +3,145 @@
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 
-/* ---------------- 顶部 ---------------- */
-.hall-head {
-  padding: var(--space) var(--space) var(--space-sm);
+/* ---------------- 顶部整块吸附（含状态栏占位） ----------------
+   块从屏幕最顶(top:0)开始覆盖且背景不透明：列表滚过时被整块挡住，
+   不会从标题上方透出来；safe 撑出状态栏/胶囊高度，标题位置与系统导航一致。 */
+.hall-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 var(--space) 10rpx;
+  background-color: var(--color-bg);
 }
-.hall-head__row {
+/* 状态栏 + 胶囊占位：不渲染任何内容，只撑高把标题顶到与胶囊齐平 */
+.hall-bar__safe {
+  overflow: hidden;
+}
+/* 标题行：行高由 js 按胶囊实际高度内联写入，与胶囊完全同排；字号恒定不缩放 */
+.hall-bar__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
-.hall-head__title {
+.hall-bar__title {
   font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: 2rpx;
+  line-height: 1;
 }
-/* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线） */
-.hall-head__entry {
+/* 副标题 + 我要接单 同排：入口从标题行挪下来，给胶囊让位 */
+.hall-bar__subrow {
   display: flex;
   align-items: center;
-  height: 60rpx;
+  justify-content: space-between;
+  margin-top: 6rpx;
+}
+.hall-bar__sub {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-sm);
+  line-height: 1.4;
+  color: var(--color-text-3);
+}
+/* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线）。
+   高度与 chip 一致（52rpx），保证「我要接单」顶部与规格行 chip 顶部齐平（11-16 反馈） */
+.hall-bar__entry {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 52rpx;
   padding: 0 20rpx;
   border-radius: var(--radius-full);
   background-color: var(--color-primary-light);
 }
-.hall-head__entry--hover {
+.hall-bar__entry--hover {
   opacity: 0.85;
 }
-.hall-head__entry-text {
+.hall-bar__entry-text {
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-primary-dark);
 }
-.hall-head__entry-arrow {
+.hall-bar__entry-arrow {
   margin-left: 6rpx;
   font-size: var(--font-base);
   color: var(--color-primary-dark);
 }
-.hall-head__sub {
+.hall-bar__subrow {
   display: block;
-  margin-top: 10rpx;
+}
+.hall-bar__sub {
+  display: block;
+  margin-bottom: 6rpx;
   font-size: var(--font-sm);
+  line-height: 1.4;
   color: var(--color-text-3);
+}
+
+/* ---------------- 吸顶筛选条 ---------------- */
+/* ---------------- 吸顶筛选条（在 hall-bar 内部，随整块吸附） ---------------- */
+.filter-row {
+  display: flex;
+  align-items: center;
+  min-height: 56rpx;
+}
+.filter-row + .filter-row {
+  margin-top: 10rpx;
+}
+.filter-row__label {
+  flex: none;
+  width: 64rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
+.filter-chips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 10rpx;
+}
+.chip {
+  flex: none;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 22rpx;
+  margin-right: 12rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-white);
+  font-size: 24rpx;
+  color: var(--color-text-2);
+}
+.chip--active {
+  border-color: transparent;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+/* 排序：纯文字按钮，同二手首页的交互（最新 / 报酬↑↓） */
+.sort-ops {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin-left: var(--space-sm);
+}
+.sort-btn {
+  font-size: 24rpx;
+  color: var(--color-text-2);
+  padding: 4rpx 10rpx;
+}
+.sort-btn--active {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.sort-divider {
+  width: 1rpx;
+  height: 24rpx;
+  margin: 0 6rpx;
+  background-color: var(--color-divider);
 }
 
 /* ---------------- 状态区（空 / 错 / 未登录） ---------------- */
@@ -107,6 +204,23 @@
 }
 .order--hover {
   background-color: var(--color-bg);
+}
+/* 卡片主体：左缩略图 + 右内容 */
+.order__main {
+  display: flex;
+}
+.order__thumb {
+  flex: none;
+  /* 与二手首页 item-card list 封面同尺寸（200×200，圆角 12rpx），两个列表视觉一致（11-16 反馈） */
+  width: 200rpx;
+  height: 200rpx;
+  margin-right: 20rpx;
+  border-radius: 12rpx;
+  background-color: var(--color-divider);
+}
+.order__body {
+  flex: 1;
+  min-width: 0;
 }
 .order__top {
   display: flex;
@@ -175,11 +289,15 @@
   flex: none;
   margin-right: var(--space-xs);
 }
-.order__remark {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--font-xs);
-  color: var(--color-text-3);
+.order__desc {
+  display: -webkit-box;
+  margin-top: 12rpx;
+  font-size: var(--font-sm);
+  line-height: 1.45;
+  color: var(--color-text-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .order__foot {
@@ -189,6 +307,23 @@
   margin-top: var(--space-sm);
   padding-top: var(--space-sm);
   border-top: 1rpx solid var(--color-divider);
+}
+.order__avatar {
+  flex: none;
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 12rpx;
+  border-radius: 50%;
+  background-color: var(--color-divider);
+}
+/* 无头像时的首字占位：深色字 + 浅底，不用白字压主色 */
+.order__avatar--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
 }
 .order__who {
   flex: 1;
@@ -214,4 +349,12 @@
 }
 .fab--hover {
   opacity: 0.88;
+}
+
+/* 11-17 走查：筛选/排序按下要有反馈（选中态是结果，不是按下反馈） */
+.chip--hover {
+  background-color: var(--color-surface-2);
+}
+.sort-btn--hover {
+  opacity: 0.6;
 }

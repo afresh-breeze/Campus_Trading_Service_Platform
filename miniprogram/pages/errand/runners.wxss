@@ -1,13 +1,193 @@
-.placeholder-note {
+/* 找跑腿匹配页（B 成员，11-15） */
+
+/* ---- 私单摘要 ---- */
+.rp-order {
+  margin-bottom: 20rpx;
+}
+.rp-order__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rp-order__route {
   margin-top: 16rpx;
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
+.rp-order__route-text {
+  font-size: var(--font-md, 28rpx);
+  color: var(--color-text-1, #3b2f26);
+  font-weight: 600;
 }
-.placeholder-tip {
+.rp-order__meta {
+  display: flex;
+  align-items: baseline;
+  margin-top: 12rpx;
+}
+.rp-order__reward {
+  font-size: var(--font-lg, 32rpx);
+  font-weight: 700;
+  color: var(--color-primary, #79513d);
+  margin-right: 16rpx;
+}
+.rp-order__time {
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-2, #6b5b4d);
+}
+.rp-order__hint {
+  margin-top: 12rpx;
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+
+/* ---- 筛选面板 ---- */
+.rp-filter {
+  margin-bottom: 20rpx;
+}
+.rp-filter__btn {
   margin-top: 24rpx;
+}
+
+/* ---- 结果头 ---- */
+.rp-head {
+  margin: 8rpx 4rpx 16rpx;
+}
+.rp-head__text {
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+
+/* ---- 跑腿卡 ---- */
+.rp-card {
+  margin-bottom: 20rpx;
+}
+.rp-card__top {
+  display: flex;
+  align-items: center;
+}
+.rp-card__avatar {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+.rp-card__avatar--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft, #efe4d8);
+  color: var(--color-primary, #79513d);
+  font-size: var(--font-lg, 32rpx);
+  font-weight: 600;
+}
+.rp-card__info {
+  flex: 1;
+  min-width: 0;
+}
+.rp-card__name-row {
+  display: flex;
+  align-items: center;
+}
+.rp-card__name {
+  font-size: var(--font-md, 28rpx);
+  font-weight: 600;
+  color: var(--color-text-1, #3b2f26);
+  margin-right: 12rpx;
+}
+.rp-card__online {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-4, #b3a695);
+}
+.rp-card__online--on {
+  color: var(--color-success, #4a8c5c);
+}
+.rp-card__stats {
+  display: block;
+  margin-top: 6rpx;
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+.rp-card__price-wrap {
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+.rp-card__price {
+  display: block;
+  font-size: var(--font-lg, 32rpx);
+  font-weight: 700;
+  color: var(--color-primary, #79513d);
+}
+.rp-card__price-label {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+.rp-card__meta {
+  margin-top: 16rpx;
+}
+.rp-card__area {
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-2, #6b5b4d);
+}
+.rp-card__sizes {
+  margin-top: 12rpx;
+}
+.rp-card__size {
+  margin-right: 12rpx;
+}
+.rp-card__remark {
+  display: block;
+  margin-top: 12rpx;
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-2, #6b5b4d);
+}
+.rp-card__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--color-border, #eee6d8);
+}
+.rp-card__tip {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+.rp-contact {
+  margin: 0;
+  padding: 0 32rpx;
+  font-size: var(--font-sm, 26rpx);
+  line-height: 2.2;
+  background: var(--color-primary, #79513d);
+  color: #ffffff;
+  border-radius: 999rpx;
+}
+.rp-contact--hover {
+  opacity: 0.85;
+}
+
+/* ---- 状态区 ---- */
+.rp-state {
+  padding: 40rpx 0;
+}
+.rp-state__card {
   text-align: center;
-  font-size: var(--font-xs);
-  color: var(--color-text-4);
+}
+.rp-state__desc {
+  display: block;
+  margin: 12rpx 0 24rpx;
+}
+.rp-state__tip {
+  margin-top: 20rpx;
+  text-align: center;
+  display: block;
+}
+
+/* ---- 加载更多 ---- */
+.rp-more {
+  text-align: center;
+  padding: 16rpx 0 8rpx;
+}
+.rp-more__text {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-4, #b3a695);
 }

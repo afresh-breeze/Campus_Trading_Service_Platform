@@ -1,13 +1,96 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 个人资料（B 成员，11-17） */
+
+.pf {
+  padding-top: 16rpx;
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
+
+/* 头像行 */
+.pf-row {
+  display: flex;
+  align-items: center;
+  padding: var(--space);
+  margin-bottom: var(--space-sm);
 }
-.placeholder-tip {
-  margin-top: 24rpx;
-  text-align: center;
+.pf-row--hover {
+  background-color: var(--color-surface-2);
+}
+.pf-row__label {
+  width: 150rpx;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.pf-avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pf-avatar__img {
+  width: 112rpx;
+  height: 112rpx;
+}
+.pf-avatar__text {
+  font-size: 44rpx;
+  color: var(--color-text-2);
+}
+.pf-row__hint {
+  margin-left: auto;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+
+/* 表单卡片：字段之间不再叠 border，卡片自身圆角裁切 */
+.pf-form {
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+.pf-form .field:last-child {
+  border-bottom: none;
+}
+
+/* 只读信息 */
+.pf-info {
+  padding: var(--space) var(--space) 8rpx;
+  margin-bottom: var(--space);
+}
+.pf-info__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72rpx;
+}
+.pf-info__label {
+  font-size: var(--font-base);
+  color: var(--color-text-2);
+}
+.pf-info__value {
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+
+/* 错误态 */
+.pf-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx var(--space);
+}
+.pf-state__desc {
+  margin: 12rpx 0 32rpx;
+}
+
+.pf-save {
+  margin: 0 var(--space);
+}
+.pf-note {
+  display: block;
+  margin: 20rpx var(--space) 0;
   font-size: var(--font-xs);
   color: var(--color-text-4);
+  text-align: center;
 }

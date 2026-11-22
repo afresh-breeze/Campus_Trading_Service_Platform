@@ -13,7 +13,7 @@
 
 /* 有底部操作栏时才让出高度 */
 .detail--bar {
-  padding-bottom: calc(190rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(230rpx + env(safe-area-inset-bottom));
 }
 
 /* ---------------- 加载 / 错误 ---------------- */
@@ -187,8 +187,31 @@
   margin-top: 16rpx;
   font-size: var(--font-sm);
 }
+.detail-people__tip {
+  display: block;
+  margin-top: 10rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+  text-align: center;
+}
 
 /* ---------------- 无可用操作时的说明 ---------------- */
+.detail-backhall {
+  margin: var(--space) var(--space) 0;
+  padding: 22rpx 0;
+  text-align: center;
+  border-radius: var(--radius);
+  background-color: var(--color-bg-white);
+  box-shadow: var(--shadow-card);
+}
+.detail-backhall--hover {
+  background-color: var(--color-bg);
+}
+.detail-backhall__text {
+  font-size: var(--font-sm);
+  color: var(--color-accent);
+}
+
 .detail-hint {
   margin-top: 24rpx;
   font-size: var(--font-sm);
@@ -204,10 +227,21 @@
   bottom: 0;
   z-index: 30;
   display: flex;
+  flex-direction: column;
   padding: 16rpx var(--space) calc(16rpx + env(safe-area-inset-bottom));
   background-color: var(--color-bg-white);
   border-top: 1rpx solid var(--color-border);
   box-shadow: 0 -4rpx 16rpx rgba(122, 93, 64, 0.06);
+}
+/* 聊天说明小字（原卡片里的 tip），在按钮行上方 */
+.detail-bar__tip {
+  margin-bottom: 10rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+  text-align: center;
+}
+.detail-bar__row {
+  display: flex;
 }
 .detail-bar__btn {
   flex: 1;

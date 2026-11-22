@@ -65,7 +65,7 @@
 ### 0.2 三个最重要的交付
 
 1. **11-07（M0）**：数据库 14 张表 DDL 完成，注册/登录/`/api/auth/me` 跑通，B 能登录。
-2. **11-11（M1）**：二手闭环完成——注册 → 发布 → 独立搜索页（书籍卡片 + 同书优先）→ 详情 → 收藏 → 下架，A 的 6 个页面可用。
+2. **11-11（M1）**：二手闭环完成——注册 → 发布 → 独立搜索页（书籍卡片 + 同书优先）→ 详情 → 收藏 → 下架，A 的 6 个页面可用。实际我的发布/我的收藏页面延至 11-18 完成，M1 尚未正式验收。
 3. **11-21（M3）**：所有数据库对象齐全，核心功能可用，功能冻结。
 
 这三个节点守住，11-30 就不会慌。任何一个节点失守，立刻按 8.6 砍功能，不要拖。
@@ -201,7 +201,6 @@
 | --- | --- | --- |
 | `database/schema.sql` | A | 建库建表；B 只读 |
 | `database/objects.sql` | A | 视图/过程/函数/触发器；B 只读 |
-| `database/seed.sql` | A | 分类、书目等静态数据 |
 | `database/campus_service_dump.sql` | A | 11-21、11-26 的最终 dump |
 | `server/src/app.js` | A | 所有路由挂载由 A 一次写好；B 不碰 |
 | `server/src/db.js` | A | 连接池 |
@@ -1502,9 +1501,11 @@ git push -u origin feature/item-detail
    - `pages/mine/favorites`：列表；取消收藏（`wx.showModal` 确认）；点击进详情；空状态。
    - `pages/search/result`：独立搜索结果页。顶部搜索框；先请求 `GET /api/books/search?keyword=`，有匹配书籍时显示书籍卡片（封面、书名、出版社、作者、ISBN）；下方请求 `GET /api/items` 显示商品；同书商品优先（先 `GET /api/items?bookId=`，再请求普通关键词结果并去重）；点击书籍卡片按 `bookId` 过滤；空状态显示“没有找到相关书籍/商品”。
    - 三个页面都支持下拉刷新、加载更多；复用 B 的 `item-card` 或简化卡片。
+   > 2026-11-18 实现校准：我的发布最终改为**只读列表**，状态操作只在商品详情页；顶部状态筛选改为首页同款横滑椭圆条，卡片保留状态标签。
+   > 2026-11-19 实现校准：我的收藏最终为四状态筛选（首页同款横滑椭圆条）；状态标签放卡片左上角（页面 `status-tag`，隐藏 `item-card` 自带标签），右下角奶茶橙色心形取消收藏；`GET /api/favorites` 增加可选 `status`（接口文档 v0.10）。
 3. **18:00-19:30 全流程联调**：
    - 用 2023001 登录 → 首页搜索“数据结构” → 搜索结果页书籍卡片 → 点击卡片过滤同书商品 → 详情 → 收藏 → 我的收藏；
-   - 用 2023002 登录 → 发布 → 我的发布 → 标记预订 → 取消预订 → 下架 → 重新上架 → 标记售出；
+   - 用 2023002 登录 → 发布 → 我的发布 → 点卡片进详情 → 标记预订 → 取消预订 → 下架 → 重新上架 → 标记售出；
    - 2023001 的收藏列表里，已售出/已预订/下架商品如何显示？按产品决定：显示但置灰，或过滤。MVP 建议显示并带状态标签。
    - 按《课程设计开发计划.md》7.1 的 29 条用例挑二手相关先跑一遍。
 4. **19:30-21:00 ER 图**：
@@ -1962,7 +1963,6 @@ git push origin dev
      ```bash
      mysql -u root -p < database/schema.sql
      mysql -u root -p < database/objects.sql
-     mysql -u root -p < database/seed.sql
      cd server && npm run seed
      ```
 
@@ -2605,8 +2605,8 @@ git pull origin dev
      ```text
      <末三位><姓名>--Campus Service Platform/
      ├─ readme.txt
-     ├─ database/        # schema.sql、objects.sql、seed.sql、campus_service_dump.sql、er_diagram.png
-     ├─ server/          # 源码 + package.json + package-lock.json + .env.example
+     ├─ database/        # schema.sql、objects.sql、campus_service_dump.sql、er_diagram.png
+     ├─ server/          # 源码 + package.json + package-lock.json + .env.example（seed.js 在 server/scripts/）
      ├─ miniprogram/     # 小程序源码
      ├─ docs/            # 接口文档、测试用例、AI 辅助记录、截图
      └─ report/          # 报告、PPT（视频太大可单独提交）
@@ -2862,10 +2862,11 @@ git tag -l
 database/
 ├─ schema.sql              # 建库、14 张表、索引、约束
 ├─ objects.sql             # 视图、函数、存储过程、触发器
-├─ seed.sql                # 分类、书目等静态数据
 ├─ campus_service_dump.sql # 最终备份（11-20/21 生成）
 └─ er_diagram.png          # ER 图导出（也可放 report/assets）
 ```
+
+> 演示数据不在 `database/seed.sql`，在 `server/scripts/seed.js`（`cd server && npm run seed`）。
 
 执行顺序（Navicat 或命令行二选一）：
 
@@ -2874,8 +2875,8 @@ database/
 1. 双击 `campus_service` 连接 → 右键 `campus_service` 库 → `新建查询`。
 2. 点查询窗口的“打开文件”，选 `database/schema.sql` → 点“运行”。
 3. 刷新左侧表列表，确认 14 张表都在。
-4. 同样方式运行 `database/objects.sql`、`database/seed.sql`。
-5. 最后在 `server` 目录执行 `npm run seed`（演示账号 + 商品）。
+4. 同样方式运行 `database/objects.sql`。
+5. 最后在 `server` 目录执行 `npm run seed`（演示账号 + 分类/书目/商品）。
 
 **命令行：**
 
@@ -2886,10 +2887,7 @@ mysql -u root -p < database/schema.sql
 # 2. 建对象（可重复执行）
 mysql -u root -p < database/objects.sql
 
-# 3. 静态数据
-mysql -u root -p < database/seed.sql
-
-# 4. 演示账号 + 演示商品（bcrypt 哈希）
+# 3. 演示账号 + 分类/书目/商品（server/scripts/seed.js）
 cd server
 npm run seed
 ```
@@ -3298,7 +3296,7 @@ mysql -u root -p < database/campus_service_dump.sql
 
 - `mysqldump` 默认在 `C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump`；Git Bash 能直接调用，找不到就用完整路径。
 - 恢复前确认目标库，别把演示库覆盖了。
-- 最终 zip 里的 dump 和 `schema.sql`/`objects.sql`/`seed.sql` 保持同一版本；不要用旧 dump 配新代码。
+- 最终 zip 里的 dump 和 `schema.sql`/`objects.sql`/演示数据（`server/scripts/seed.js`）保持同一版本；不要用旧 dump 配新代码。
 
 ---
 
@@ -3349,8 +3347,8 @@ A 的页面依赖这些文件（都是 B 的，A 只使用，不改）：
 | 2 | 发布商品 | `pages/item/publish` | 普通/书籍、图片上传、校验 | 11-09 |
 | 3 | 商品详情 | `pages/item/detail` | 轮播、卖家、收藏、联系 | 11-10 |
 | 4 | 搜索结果 | `pages/search/result` | 书籍卡片、同书商品优先、商品推荐 | 11-11 |
-| 5 | 我的发布 | `pages/mine/items` | 状态 tab、下架/上架/售出 | 11-11 |
-| 6 | 我的收藏 | `pages/mine/favorites` | 列表、取消收藏 | 11-11 |
+| 5 | 我的发布 | `pages/mine/items` | 状态筛选（只读列表）；状态修改在商品详情页 | 11-18 |
+| 6 | 我的收藏 | `pages/mine/favorites` | 状态筛选、列表、取消收藏 | 11-18 |
 
 每个页面 4 个文件：`.js`、`.json`、`.wxml`、`.wxss`。`.json` 里写标题和组件引用：
 
@@ -3678,7 +3676,7 @@ uploadOne(filePath) {
 - `isOwner=true`（`GET /api/items/:id` 返回）时，详情页显示「卖家管理」，隐藏收藏和联系卖家；买家只看到状态标签，不显示管理按钮。
 - 卖家管理按钮按状态显示：在售 → 标记预订 / 标记售出 / 下架；已预订 → 取消预订 / 标记售出；已下架 → 重新上架；已售出 → 无操作。点击调 `PUT /api/items/:id/status`，成功后 `loadDetail()`；403 / 409 用 toast 提示。
 - 从聊天页顶部卡片进入详情时，卖家可直接改状态；返回聊天页后聊天页 `onShow` 会重新拉 context，把卡片状态刷新成最新值。
-- 详情页和「我的发布」共用同一个状态接口，权限规则不能在前端复制一份判断；前端只决定按钮显隐，后端仍然校验卖家身份和非法跳转。
+- 状态修改只在商品详情页调用 `PUT /api/items/:id/status`；「我的发布」只读、按状态筛选，不复制前端权限判断；后端仍然校验卖家身份和非法跳转。
 - `onShow` 重新拉一次，防止从聊天/收藏返回后状态过期。
 - 图片 404：用本地占位图兜底。
 
@@ -3686,22 +3684,21 @@ uploadOne(filePath) {
 
 **我的发布：**
 
-- tabs：在售 `on_sale`、已预订 `reserved`、已售 `sold`、已下架 `off_shelf`。
-- 列表复用卡片；每个卡片底部操作按钮：
-  - 在售：标记预订、下架、标记售出。
-  - 已预订：取消预订、标记售出。
-  - 已下架：重新上架。
-  - 已售出：无操作。
-- 操作前 `wx.showModal` 确认；操作后刷新当前 tab。
-- 空状态：“还没有发布过商品，去发布一个吧”，带按钮跳发布页。
-- 下拉刷新、上拉加载。
+- 顶部四个状态横滑椭圆条：在售 `on_sale`、已预订 `reserved`、已售 `sold`、已下架 `off_shelf`，复用首页分类样式，默认在售；`nav-top fixed` + 状态条吸顶。
+- 列表复用 `item-card` list，卡片保留状态标签；**页面只读，不提供标记预订/标记售出/下架/重新上架等操作按钮**。
+- 状态修改统一进商品详情页（卖家管理按钮 + `wx.showModal` 确认 + `PUT /api/items/:id/status`）；操作成功后返回本页，`onShow` 按已加载页数静默刷新，位置不跳。
+- 列表顶部显示当前状态「共 N 件」；每页 10 条、下拉刷新、上拉加载；切换状态清空并重拉第 1 页。
+- 空状态：在售「还没有在售的商品」+「去发布」；其他 tab「还没有已预订/已售/已下架的商品」+「去在售看看」。
+- 未登录直接进页：`app.requireLogin('/pages/mine/items')` 带 redirect 跳登录。
+- 不做编辑/删除；不显示浏览/收藏数。
 
 **我的收藏：**
 
-- 列表用 `GET /api/favorites`；卡片显示商品状态。
-- 取消收藏：`wx.showModal` 确认 → `DELETE /api/items/:id/favorite` → 从列表移除。
-- 点击卡片进详情；如果商品已预订/下架/售出，详情页仍可看，状态标签照常显示。
-- 空状态：“还没有收藏，去逛逛吧”。
+- 顶部四个状态横滑椭圆条：在售/已预订/已售/已下架，复用首页分类样式，默认在售；`GET /api/favorites?status=` 按状态筛选，不传时返回全部。
+- 列表复用 `item-card` list；卡片保留状态标签，`show-time` 显示商品发布时间；点击卡片进详情。
+- 右下角悬浮实心心形取消收藏；状态标签放卡片左上角（隐藏 `item-card` 自带标签，页面用 `status-tag` 显示）；心形用奶茶橙系；`wx.showModal` 确认 → `DELETE /api/items/:id/favorite` → 本地移除并静默刷新。
+- 每页 10 条、下拉刷新、上拉加载；`onShow` 按已加载页数静默刷新。
+- 空状态按状态区分：在售「还没有收藏的在售商品」+「去逛逛」；其他 tab「还没有收藏的…商品」+「去在售看看」。
 
 ### 6.8 UI 与异常状态
 
@@ -3738,8 +3735,8 @@ uploadOne(filePath) {
 - [ ] 搜索结果页：书籍卡片字段完整；点击卡片按 `bookId` 过滤；同书商品优先；无书籍时仍显示商品。
 - [ ] 发布普通商品、书籍商品；图片上传、删除；表单校验。
 - [ ] 详情轮播、卖家信息、收藏/取消、联系卖家跳转；卖家本人可见状态管理，买家不可见。
-- [ ] 我的发布四个 tab、标记预订/取消预订、下架/上架/售出。
-- [ ] 我的收藏列表、取消收藏、进详情。
+- [ ] 我的发布四个 tab 筛选、卡片状态标签、点卡片进详情完成标记预订/取消预订、下架/上架/售出。
+- [ ] 我的收藏：四状态筛选、卡片状态标签、右下角心形取消收藏、进详情。
 
 **边界：**
 
@@ -4255,7 +4252,7 @@ B 当前阻塞：
 3. 多图上传（改成 1 张图）。
 4. 首页价格区间筛选（保留关键词搜索和分类）。
 5. 商品浏览量 `view_count`。
-6. 我的发布里的“标记预订 / 取消预订”（保留标记售出、下架/上架）。
+6. 商品详情页里的“标记预订 / 取消预订”（保留标记售出、下架/上架）。
 
 **绝对不能砍：**
 
@@ -4803,8 +4800,8 @@ report/assets/
 | 10 | 发布商品 | 普通模式 | 表单、图片上传、议价开关 | 7.4 |
 | 11 | 发布商品 | 书籍模式 | ISBN/书名/作者/出版社 | 7.4 |
 | 12 | 发布商品 | 校验失败 | 价格为空/图片未传的提示 | 7.4 |
-| 13 | 我的发布 | 正常 | 在售/已预订/已售/已下架标签、操作按钮 | 7.5 |
-| 14 | 我的收藏 | 正常 | 收藏列表、取消收藏 | 7.5 |
+| 13 | 我的发布 | 正常 | 在售/已预订/已售/已下架状态筛选、卡片状态标签；状态操作在详情页 | 7.5 |
+| 14 | 我的收藏 | 正常 | 四状态筛选、卡片左上状态标签、右下心形取消收藏 | 7.5 |
 | 15 | 并发接单 | 失败提示 | 第二个账号点接单收到“已被接单” | 7.6/6.7 |
 
 #### 9.3.4 图表（draw.io）清单
@@ -5194,7 +5191,6 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 ├─ database/
 │  ├─ schema.sql
 │  ├─ objects.sql
-│  ├─ seed.sql
 │  ├─ campus_service_dump.sql
 │  ├─ demo_checks.sql
 │  └─ er_diagram.png
@@ -5252,7 +5248,6 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 1. 导入数据库
    mysql -u root -p < database/schema.sql
    mysql -u root -p campus_service < database/objects.sql
-   mysql -u root -p campus_service < database/seed.sql
    cd server && npm install && npm run seed
    （或直接导入 database/campus_service_dump.sql）
 
@@ -5357,10 +5352,10 @@ A：课程重点是数据库设计和数据库对象，手写 SQL 能让建表�
 - [ ] 搜索结果页：书籍卡片、同书商品优先、点击书籍按 `bookId` 过滤。
 - [ ] 详情：轮播、卖家、收藏状态、联系卖家入口；卖家本人可从详情页改状态，买家只读。
 - [ ] 收藏/取消收藏，`favorite_count` 触发器正确。
-- [ ] 我的发布/我的收藏可用，在售/已预订/已售/已下架能切换。
+- [ ] 我的发布/我的收藏可用；两页都能按状态筛选，我的发布状态切换在商品详情页完成，我的收藏右下角心形取消。
 - [ ] 空/加载/错误三态齐全。
 - [ ] 3 个账号能完成“注册 → 发布 → 搜索 → 详情 → 收藏 → 标记预订 → 取消预订 → 下架”。
-- [ ] 接口文档更新到 v0.2，`main` 有 `v0.2-m1` tag。
+- [ ] 接口文档更新到 v0.10，`main` 有 `v0.2-m1` tag。
 
 #### M2（11-16）：代取 + 聊天闭环
 
@@ -5563,7 +5558,6 @@ Campus_Trading_Service_Platform/
 ├─ database/
 │  ├─ schema.sql
 │  ├─ objects.sql
-│  ├─ seed.sql
 │  ├─ demo_checks.sql
 │  ├─ campus_service_dump.sql
 │  └─ er_diagram.png
@@ -5631,14 +5625,13 @@ Campus_Trading_Service_Platform/
 
 **重置演示数据：**
 
-Navicat：依次打开并运行 `database/schema.sql`、`database/objects.sql`、`database/seed.sql`，再在 `server` 目录执行 `npm run seed`。
+Navicat：依次打开并运行 `database/schema.sql`、`database/objects.sql`，再在 `server` 目录执行 `npm run seed`。
 
 命令行：
 
 ```bash
 mysql -u root -p campus_service < database/schema.sql
 mysql -u root -p campus_service < database/objects.sql
-mysql -u root -p campus_service < database/seed.sql
 cd server && npm run seed
 ```
 
@@ -5731,7 +5724,7 @@ npm run start                   # 生产启动
 mysql -u root -p                                    # 登录
 mysql -u root -p < database/schema.sql              # 建库建表
 mysql -u root -p campus_service < database/objects.sql
-mysql -u root -p campus_service < database/seed.sql
+cd server && npm run seed                           # 演示账号 + 分类/书目/商品
 mysqldump -u root -p --databases campus_service \
   --routines --triggers > database/campus_service_dump.sql
 mysql -u root -p campus_service < database/campus_service_dump.sql
@@ -5843,7 +5836,6 @@ SQL：
 | `docs/A测试记录.md` | A 的联调、并发、性能测试记录 | A |
 | `database/schema.sql` | 建库、建表、索引、约束 | A |
 | `database/objects.sql` | 视图、过程、函数、触发器 | A |
-| `database/seed.sql` | 分类、书目等静态数据 | A |
 | `database/demo_checks.sql` | 答辩演示 SQL | A |
 | `server/src/app.js` | Express 入口 | A |
 | `server/src/db.js` | MySQL 连接池 | A |

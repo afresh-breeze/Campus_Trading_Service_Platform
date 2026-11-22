@@ -1,6 +1,10 @@
 {
   "navigationBarTitleText": "找跑腿",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {
-    "nav-top": "/components/nav-top/index"
+    "nav-top": "/components/nav-top/index",
+    "empty-state": "/components/empty-state/index",
+    "place-picker": "/components/place-picker/index"
   }
 }

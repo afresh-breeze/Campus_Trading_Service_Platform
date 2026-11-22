@@ -102,18 +102,22 @@ App({
   /** 写 tabBar 红点；消息 tab 索引固定为 2 */
   setUnreadBadge(count) {
     const index = 2;
+    // 设置页的「消息通知」开关（本地存储 cs_notify_enabled，未设置过视为开启）：
+    // 关掉后不再画红点，但未读数仍正常同步到 globalData——开关只管「显不显示」
+    const muted = wx.getStorageSync('cs_notify_enabled') === false;
+    const n = muted ? 0 : count;
     // 启用自定义 tabBar 后 wx.setTabBarBadge 不生效，优先让组件自己画
     const pages = getCurrentPages();
     const current = pages[pages.length - 1];
     const bar = current && typeof current.getTabBar === 'function' && current.getTabBar();
     if (bar && typeof bar.setBadge === 'function') {
-      bar.setBadge(count);
+      bar.setBadge(n);
       return;
     }
-    if (count > 0) {
+    if (n > 0) {
       wx.setTabBarBadge({
         index: index,
-        text: count > 99 ? '99+' : String(count),
+        text: n > 99 ? '99+' : String(n),
         fail: () => {}
       });
     } else {
@@ -136,12 +140,20 @@ App({
     }
   },
 
-  /** 登录成功后统一落盘 */
+  /**
+   * 登录成功后统一落盘。
+   * 必须先把上一位用户的未读数/角标清零再刷新：换账号登录时 unreadCount 不会自己归零，
+   * 新用户会顶着上一个账号的红点进来（P1-1）。
+   */
   setSession(token, userInfo) {
     this.globalData.token = token || '';
     this.globalData.userInfo = userInfo || null;
+    this.globalData.unreadCount = 0;
     wx.setStorageSync(config.STORAGE_KEY.TOKEN, this.globalData.token);
     wx.setStorageSync(config.STORAGE_KEY.USER, this.globalData.userInfo);
+    this.setUnreadBadge(0);
+    // 登录/注册成功后才拉未读；失败不阻塞登录流程
+    this.refreshUnread();
   },
 
   /** 清空登录态 */

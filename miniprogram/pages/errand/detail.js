@@ -10,9 +10,14 @@
 //   2. 非发布者、非接单者、且没就该单建过会话的人，详情接口直接 404（不是 403）；
 //   3. 谈妥后跑腿可直接接单，不必先发布到大厅；发布者也可点「发布到大厅」。
 //
-// 未接入项：canEdit（编辑未发布私单）要跳发布页带 id 回填，而
-//   pages/errand/publish 目前仍是占位页（11-13 前落地）。这里**先不渲染编辑按钮**，
-//   避免点进占位页造成"点了没反应"的假故障；发布页落地后在此补一个按钮即可。
+// 未接入项：无（canEdit 编辑按钮 11-13 随发布页落地一并挂上，跳
+//   /pages/errand/publish?id= 回填编辑；发布页 PUT 成功后 navigateBack 回本页）。
+//
+// 本次修（P1-2/6/7/8、P2-4/6/8）：
+//   · 404 与临时失败分开：404 只给「回大厅」，网络失败给「重试」；
+//   · 补完成时间、正常态固定「回代取大厅」入口（单页栈时没有返回键）；
+//   · 取消类操作不再被提为主色，弹窗标题跟随动作名；
+//   · 身份判断等 /api/auth/me 回来再算，避免冷启动把发布者当第三方。
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
@@ -33,25 +38,36 @@ function timeText(order) {
 }
 
 /**
- * 底部按钮：顺序 = 主操作 → 私单发布 → 撤回 → 释放
+ * 底部按钮：顺序 = 主操作 → 私单发布 → 找跑腿 → 编辑 → 撤回 → 释放
  * 有主操作时它一定是主色按钮；若只有次要操作，把第一个提为主色，避免整条栏都是灰按钮
  */
 function buildActions(order) {
   const list = [];
   if (order.canTake) list.push({ key: 'take', text: '接单', primary: true });
   if (order.canComplete) list.push({ key: 'complete', text: '确认完成', primary: true });
+  // edit 放在 publish 之后：待发布私单的主色应留给「发布到大厅」这个关键下一步
   if (order.canPublish) list.push({ key: 'publish', text: '发布到大厅', primary: false });
+  // 待发布私单可以反复回找跑腿页挑人（谈崩了不一定要发大厅）
+  if (order.canEdit) list.push({ key: 'findRunner', text: '找跑腿', primary: false });
+  if (order.canEdit) list.push({ key: 'edit', text: '编辑订单', primary: false });
   if (order.canCancel) {
     list.push({
       key: 'cancel',
       text: order.status === 'taken' ? '撤回订单' : '取消订单',
-      primary: false
+      primary: false,
+      // 取消/撤回是破坏性操作：用 danger 样式，且**不参与**「提为主色」
+      danger: true
     });
   }
   if (order.canRelease) list.push({ key: 'release', text: '释放订单', primary: false });
 
+  // 只有「非破坏性」的次要操作才允许被提为主色，
+  // 否则「我发布的待接单大厅单」只有取消时，破坏性按钮会变成唯一主按钮（P1-8）
   const hasPrimary = list.some((a) => a.primary);
-  if (!hasPrimary && list.length) list[0].primary = true;
+  if (!hasPrimary) {
+    const firstSafe = list.filter((a) => !a.danger)[0];
+    if (firstSafe) firstSafe.primary = true;
+  }
   return list;
 }
 
@@ -69,6 +85,8 @@ Page({
     timeText: '',
     createdText: '',
     takenText: '',
+    completedText: '',
+    canRetry: false,
     isPublisher: false,
     isRunner: false,
     publisherInitial: '发',
@@ -76,6 +94,9 @@ Page({
     runnerInitial: '接',
     runnerAvatarUrl: '',
     chatPeerId: 0,
+    chatShow: false,
+    chatLabel: '联系 TA',
+    chatTip: '',
     actions: [],
     actionKey: '',
     submitting: false
@@ -108,8 +129,10 @@ Page({
 
   fetch() {
     if (!this.data.id) return Promise.resolve();
-    return http
-      .get('/api/errands/' + this.data.id, {}, { silent: true })
+    // 身份（isPublisher/isRunner/chatPeerId）依赖当前用户；冷启动时如果只有 token、
+    // 缓存 cs_user 缺失，必须等 /api/auth/me 回来再算，否则发布者会被当成第三方（P2-6）。
+    return this.ensureUser()
+      .then(() => http.get('/api/errands/' + this.data.id, {}, { silent: true }))
       .then((order) => {
         this.apply(order || {});
         return order;
@@ -118,6 +141,28 @@ Page({
         this.applyError(err);
         return null;
       });
+  },
+
+  /** 当前用户信息兜底：没有 userId 时补一次 /api/auth/me（失败不阻塞页面） */
+  ensureUser() {
+    const app = getApp();
+    const me = (app && app.globalData && app.globalData.userInfo) || {};
+    if (me && me.userId) return Promise.resolve(me);
+    if (!http || !app || !app.globalData || !app.globalData.token) return Promise.resolve(me);
+    return http
+      .get('/api/auth/me', {}, { silent: true })
+      .then((user) => {
+        if (user) {
+          app.globalData.userInfo = user;
+          try {
+            wx.setStorageSync('cs_user', user);
+          } catch (e) {
+            /* 忽略缓存写失败 */
+          }
+        }
+        return user || me;
+      })
+      .catch(() => me);
   },
 
   apply(order) {
@@ -129,10 +174,22 @@ Page({
     const isRunner = !!order.runnerId && Number(order.runnerId) === myId;
     const publisherNick = order.publisherNickname || '发布者';
 
-    // 联系谁：我是发布者找接单人；其他人（接单者 / 聊过私单的跑腿）找发布者
+    // 联系谁：我是发布者找接单人；其他人（接单者 / 聊过私单的跑腿 / 大厅单的潜在跑腿）找发布者
     let chatPeerId = 0;
     if (isPublisher) chatPeerId = Number(order.runnerId || 0);
     else chatPeerId = Number(order.publisherId || 0);
+
+    // 聊天入口的口径（A 15:11 反馈「没接单聊天的入口」）：
+    //   · taken/completed：发布者找接单人、其他人找发布者（原口径）；
+    //   · pending 大厅单：非发布者可先联系发布者问清楚再接单——后端 chat.js 只拦
+    //     「私单非发布者建会话」，大厅单任意登录用户都能建，放开是安全的；
+    //   · pending 私单：非发布者本来就进不来详情页（404，除非已是会话方），
+    //     能进来的会话方继续聊也合理；
+    //   · cancelled：不再给聊天入口。
+    const canChat = !!chatPeerId && order.status !== 'cancelled';
+    const chatLabel = !isPublisher && order.status === 'pending' ? '联系发布者' : '联系 TA';
+    const chatTip =
+      canChat && !isPublisher && order.status === 'pending' ? '有疑问可以先联系发布者，谈妥后再接单' : '';
 
     this.setData({
       loading: false,
@@ -149,6 +206,7 @@ Page({
       timeText: timeText(order),
       createdText: util.fromNow(order.createdAt),
       takenText: order.takenAt ? '接单于 ' + util.formatTime(order.takenAt) : '已接单',
+      completedText: order.completedAt ? util.formatTime(order.completedAt) : '',
       isPublisher,
       isRunner,
       publisherInitial: publisherNick.slice(0, 1),
@@ -156,10 +214,23 @@ Page({
       runnerInitial: (order.runnerNickname || '接').slice(0, 1),
       runnerAvatarUrl: adapter.fullUrl(order.runnerAvatar),
       chatPeerId,
-      actions: buildActions(order)
+      chatShow: canChat,
+      chatLabel,
+      chatTip,
+      // 聊天入口并进底部操作栏（11-16 反馈：联系发布者和接单放一起，卡片里只留发布人信息）
+      actions: (function () {
+        const list = buildActions(order);
+        if (canChat) list.unshift({ key: 'chat', text: chatLabel, primary: false });
+        return list;
+      })()
     });
   },
 
+  /**
+   * 404 与临时失败分开处理（P1-2/P2-8）：
+   *   404 可能是「ID 不存在」「被删除」「私单无权查看」三种，统一给一句中性说明 + 回大厅；
+   *   网络/后端异常给「重试」，别让用户只能离开页面。
+   */
   applyError(err) {
     const code = err && err.code;
     if (code === 404) {
@@ -167,21 +238,34 @@ Page({
         loading: false,
         order: null,
         actions: [],
-        error: '订单不存在或已删除',
-        errorDesc: '私单只有发布者、接单者，以及和发布者聊过这单的人可以查看'
+        canRetry: false,
+        error: '订单不存在或无法查看',
+        errorDesc: '可能已被删除；如果是私单，只有发布者、接单者和聊过这单的人可以查看'
       });
       return;
     }
     this.setData({
       loading: false,
+      canRetry: true,
       error: '加载失败',
       errorDesc: (err && err.message) || '请检查网络后重试'
     });
   },
 
+  onRetry() {
+    this.setData({ loading: true, error: '', errorDesc: '', canRetry: false });
+    this.fetch();
+  },
+
   onAction(e) {
     const key = e.currentTarget.dataset.key;
     if (this.data.submitting) return;
+
+    // 聊天是跳转类动作，不弹确认，必须在 cfg 判空之前处理（同 edit/findRunner）
+    if (key === 'chat') {
+      this.onContact();
+      return;
+    }
 
     const map = {
       take: {
@@ -197,11 +281,10 @@ Page({
         ok: '已确认完成'
       },
       cancel: {
-        confirm:
-          this.data.order && this.data.order.status === 'taken'
-            ? '撤回后订单退回待接单（大厅单回大厅、私单仍为私单），确认？'
-            : '取消后订单作废，不再出现在大厅，确认？',
-        title: '确认撤回',
+        confirm: this.cancelConfirmText(),
+        // 标题跟随动作名：pending 是「取消订单」，taken 才是「撤回订单」（P1-8）
+        title:
+          this.data.order && this.data.order.status === 'taken' ? '确认撤回' : '确认取消',
         url: '/api/errands/{id}/cancel'
       },
       release: {
@@ -218,6 +301,33 @@ Page({
       }
     };
 
+    // 编辑/找跑腿是「跳转类」动作，不弹确认，也**不在 map 里**——
+    // 必须放在 cfg 判空之前，否则 edit 键取不到 cfg 会被直接 return（11-13~11-15 的空点击 bug）
+    if (key === 'edit') {
+      wx.navigateTo({
+        url: '/pages/errand/publish?id=' + this.data.id,
+        fail: () => util.toast('编辑页打开失败')
+      });
+      return;
+    }
+    if (key === 'findRunner') {
+      const order = this.data.order || {};
+      const query = [
+        'orderId=' + order.orderId,
+        'area=' + encodeURIComponent(order.pickupArea || ''),
+        'place=' + encodeURIComponent(order.pickupPlace || ''),
+        'timeType=' + (order.timeType || 'asap'),
+        'itemSize=' + (order.itemSize || '')
+      ];
+      if (order.timeStart) query.push('timeStart=' + encodeURIComponent(order.timeStart));
+      if (order.deadline) query.push('deadline=' + encodeURIComponent(order.deadline));
+      wx.navigateTo({
+        url: '/pages/errand/runners?' + query.join('&'),
+        fail: () => util.toast('找跑腿页打开失败')
+      });
+      return;
+    }
+
     const cfg = map[key];
     if (!cfg) return;
 
@@ -227,7 +337,6 @@ Page({
       http
         .post(cfg.url.replace('{id}', this.data.id), {}, { silent: true })
         .then((res) => {
-          this.setData({ submitting: false, actionKey: '' });
           // cancel 的文案由后端返回的 visibility 决定：私单退回待接单 ≠ 回大厅
           if (key === 'cancel') {
             const data = res || {};
@@ -237,13 +346,28 @@ Page({
           } else {
             util.toast(cfg.ok || '操作成功');
           }
-          this.fetch();
+          // 刷新完成前不解禁按钮：否则状态还没变，用户能在窗口内再点一次（P2-4）
+          return this.fetch().then(() => {
+            this.setData({ submitting: false, actionKey: '' });
+          });
         })
         .catch((err) => {
           this.setData({ submitting: false, actionKey: '' });
           this.handleActionError(err);
         });
     });
+  },
+
+  /** 取消/撤回的确认文案：私单从未进过大厅，不能说「不再出现在大厅」（P1-8） */
+  cancelConfirmText() {
+    const order = this.data.order || {};
+    if (order.status === 'taken') {
+      return '撤回后订单退回待接单（大厅单回大厅、私单仍为私单），确认？';
+    }
+    if (order.visibility === 'private') {
+      return '取消后订单直接作废，无法恢复，确认？';
+    }
+    return '取消后订单作废，将不再出现在大厅，确认？';
   },
 
   /**
@@ -276,7 +400,7 @@ Page({
     // 聊天页 11-13~14 落地前是占位页，URL 契约先按手册 §6.14 写死
     wx.navigateTo({
       url: '/pages/chat/detail?peerId=' + peerId + '&bizType=errand&bizId=' + order.orderId,
-      fail: () => util.toast('聊天页尚未实现')
+      fail: () => util.toast('聊天页打开失败')
     });
   },
 

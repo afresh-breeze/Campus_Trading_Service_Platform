@@ -1,0 +1,3931 @@
+{
+  "info": {
+    "_postman_id": "campus-service-a-2026",
+    "name": "CampusService",
+    "description": "校园交易服务平台接口回归集合（A 维护，v0.10 口径）。\n\n使用前：1) 服务端已在 http://127.0.0.1:3000 启动；2) 用 Collection Runner 按默认顺序整组运行（登录在 00 段，token 自动写入集合变量）；3) 运行前建议重跑 server/scripts/seed.js 恢复演示数据，运行后会创建测试商品/代取/消息/反馈。\n\n29 条核心用例中，除「6MB 图片超限」和「1000 商品性能/EXPLAIN」需手工执行外，其余都在本集合中有对应请求；纯前端用例（气泡显示、按钮显隐、页面跳转）不在本集合范围。\n\n上传请求引用仓库内文件：server/assets/demo/book-calculus.png 与 docs/postman/assets/not-image.txt；Postman 桌面端导入后如文件路径失效需重新选择。\n\n运行后的数据清理：重跑 server/scripts/seed.js 会重建演示商品/收藏/代取并重置接单设置；聊天会话、消息和 feedback 不会被 seed 清空，上传测试图片会留在 server/uploads/，需要时手工清理。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000"
+    },
+    {
+      "key": "token1",
+      "value": ""
+    },
+    {
+      "key": "token2",
+      "value": ""
+    },
+    {
+      "key": "token3",
+      "value": ""
+    },
+    {
+      "key": "userId1",
+      "value": ""
+    },
+    {
+      "key": "userId2",
+      "value": ""
+    },
+    {
+      "key": "userId3",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": "1"
+    },
+    {
+      "key": "bookId",
+      "value": ""
+    },
+    {
+      "key": "bookIsbn",
+      "value": ""
+    },
+    {
+      "key": "existingItemId",
+      "value": ""
+    },
+    {
+      "key": "favItemId",
+      "value": ""
+    },
+    {
+      "key": "favCountBefore",
+      "value": ""
+    },
+    {
+      "key": "favCountAfter",
+      "value": ""
+    },
+    {
+      "key": "viewCountA",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    },
+    {
+      "key": "testItemTitle",
+      "value": ""
+    },
+    {
+      "key": "syncItemId",
+      "value": ""
+    },
+    {
+      "key": "syncItemTitle",
+      "value": ""
+    },
+    {
+      "key": "uploadUrl",
+      "value": ""
+    },
+    {
+      "key": "errandId",
+      "value": ""
+    },
+    {
+      "key": "errandId2",
+      "value": ""
+    },
+    {
+      "key": "errandId3",
+      "value": ""
+    },
+    {
+      "key": "privateErrandId",
+      "value": ""
+    },
+    {
+      "key": "pastErrandId",
+      "value": ""
+    },
+    {
+      "key": "conversationId",
+      "value": ""
+    },
+    {
+      "key": "lastMessageId",
+      "value": ""
+    },
+    {
+      "key": "favIds",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 健康与认证",
+      "description": "第一段执行：三条登录请求会把 token1/2/3 和 userId1/2/3 写入集合变量，后续所有请求依赖它们。",
+      "item": [
+        {
+          "name": "健康检查",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('数据库正常', () => pm.expect(j.data.db).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "登录 · 用户1（2023001）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentNo\": \"2023001\",\n  \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 token', () => pm.expect(j.data.token.length).to.be.above(10));",
+                  "pm.test('学号正确', () => pm.expect(j.data.userInfo.studentNo).to.eql('2023001'));",
+                  "pm.collectionVariables.set('token1', j.data.token);",
+                  "pm.collectionVariables.set('userId1', String(j.data.userInfo.userId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "登录 · 用户2（2023002）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentNo\": \"2023002\",\n  \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 token', () => pm.expect(j.data.token.length).to.be.above(10));",
+                  "pm.collectionVariables.set('token2', j.data.token);",
+                  "pm.collectionVariables.set('userId2', String(j.data.userInfo.userId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "登录 · 用户3（2023003）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentNo\": \"2023003\",\n  \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 token', () => pm.expect(j.data.token.length).to.be.above(10));",
+                  "pm.collectionVariables.set('token3', j.data.token);",
+                  "pm.collectionVariables.set('userId3', String(j.data.userInfo.userId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "当前用户信息",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('学号正确', () => pm.expect(j.data.studentNo).to.eql('2023001'));",
+                  "pm.test('与登录用户一致', () => pm.expect(String(j.data.userId)).to.eql(pm.collectionVariables.get('userId1')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "登录密码错误（用例2）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentNo\": \"2023001\",\n  \"password\": \"wrongpass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=401', () => pm.expect(j.code).to.eql(401));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('学号或密码错误'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "未登录访问商品列表（用例3）",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/items"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=401', () => pm.expect(j.code).to.eql(401));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('请先登录'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "注册重复学号（用例1）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentNo\": \"2023001\",\n  \"password\": \"123456\",\n  \"nickname\": \"重复注册测试\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=409', () => pm.expect(j.code).to.eql(409));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('该学号已注册'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 上传",
+      "description": "上传图片供发商品和聊天图片消息复用；非图片用例（用例7）在这里。6MB 超限（用例6）需手工选文件，不放进自动化。",
+      "item": [
+        {
+          "name": "上传图片（成功）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "server/assets/demo/book-calculus.png"
+                }
+              ]
+            },
+            "description": "file 字段选择仓库内 server/assets/demo/book-calculus.png；用 Postman 桌面端导入后如路径失效需重新选文件。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回相对路径', () => pm.expect(j.data.url).to.match(/^\\/uploads\\//));",
+                  "pm.collectionVariables.set('uploadUrl', j.data.url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "上传非图片（用例7）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "docs/postman/assets/not-image.txt"
+                }
+              ]
+            },
+            "description": "file 字段选择 docs/postman/assets/not-image.txt。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('只支持 jpg/png/webp 图片'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 用户与跑腿",
+      "description": "会修改用户2的接单设置（now 模式）并短暂上线，用于验证找跑腿匹配；跑完重跑 seed 可恢复。",
+      "item": [
+        {
+          "name": "他人公开资料",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{userId2}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回昵称', () => pm.expect(j.data.nickname).to.be.a('string'));",
+                  "pm.test('不返回学号', () => pm.expect(j.data).to.not.have.property('studentNo'));",
+                  "pm.test('不返回手机号', () => pm.expect(j.data).to.not.have.property('phone'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "修改我的资料",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"林小满\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('昵称已保存', () => pm.expect(j.data.userInfo.nickname).to.eql('林小满'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "保存接单设置（用户2）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/me/runner-profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceAreas\": [\n    \"桃园\"\n  ],\n  \"servicePlaces\": [],\n  \"availabilityType\": \"now\",\n  \"timeSlots\": [],\n  \"itemSizes\": [\n    \"small\",\n    \"medium\"\n  ],\n  \"basePrice\": 5,\n  \"remark\": \"Postman 回归\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('片区已保存', () => pm.expect(j.data.serviceAreas).to.include('桃园'));",
+                  "pm.test('用户正确', () => pm.expect(String(j.data.userId)).to.eql(pm.collectionVariables.get('userId2')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "回显接单设置（用户2）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/me/runner-profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('回显片区', () => pm.expect(j.data.serviceAreas).to.include('桃园'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "上线（用户2）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/me/online",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isOnline\": true,\n  \"availabilityType\": \"now\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('在线', () => pm.expect(j.data.isOnline).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "找跑腿匹配",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/runners?area=%E6%A1%83%E5%9B%AD&timeType=asap&itemSize=small"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const list = j.data.list || [];",
+                  "const hit = list.find((x) => String(x.userId) === pm.collectionVariables.get('userId2'));",
+                  "pm.test('匹配到用户2', () => pm.expect(hit).to.be.an('object'));",
+                  "pm.test('不返回手机号', () => pm.expect(hit).to.not.have.property('phone'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "下线（恢复）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/me/online",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isOnline\": false,\n  \"availabilityType\": \"now\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已下线', () => pm.expect(j.data.isOnline).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 书目与商品",
+      "description": "覆盖用例4/5/8/9/12/13/19/21/28。会创建一个测试商品并最终置为已售出，同时把首条他人在售商品作为收藏目标。",
+      "item": [
+        {
+          "name": "分类列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('6 个分类', () => pm.expect(j.data.list.length).to.eql(6));",
+                  "pm.collectionVariables.set('categoryId', String(j.data.list[0].categoryId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "书目联想（高等数学）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/books/search?keyword=%E9%AB%98%E7%AD%89%E6%95%B0%E5%AD%A6"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('有匹配书目', () => pm.expect(j.data.list.length).to.be.above(0));",
+                  "const b = j.data.list.find((x) => x.isbn) || j.data.list[0];",
+                  "pm.collectionVariables.set('bookId', String(b.bookId));",
+                  "pm.collectionVariables.set('bookIsbn', b.isbn);",
+                  "pm.test('字段完整', () => { pm.expect(b).to.have.property('title'); pm.expect(b).to.have.property('onSaleCount'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "新增书目（ISBN 已存在，复用）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isbn\": \"{{bookIsbn}}\",\n  \"title\": \"Postman 复用书目\",\n  \"priceRef\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('复用已有书目', () => pm.expect(j.data.created).to.eql(false));",
+                  "pm.test('返回同一 bookId', () => pm.expect(String(j.data.bookId)).to.eql(pm.collectionVariables.get('bookId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "商品列表（首页）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?page=1&pageSize=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const list = j.data.list || [];",
+                  "pm.test('有在售商品', () => pm.expect(list.length).to.be.above(0));",
+                  "pm.test('total 为数字', () => pm.expect(j.data.total).to.be.a('number'));",
+                  "const uid = Number(pm.collectionVariables.get('userId1'));",
+                  "const pick = list.find((x) => Number(x.sellerId) !== uid) || list[0];",
+                  "pm.collectionVariables.set('existingItemId', String(pick.itemId));",
+                  "pm.test('卡片字段完整', () => { pm.expect(pick).to.have.property('title'); pm.expect(pick).to.have.property('price'); pm.expect(pick).to.have.property('firstImage'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "搜索无结果（用例8）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?keyword=NoSuchKeywordXYZ987"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('空列表', () => pm.expect(j.data.list.length).to.eql(0));",
+                  "pm.test('total=0', () => pm.expect(j.data.total).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "搜索 SQL 注入（用例19）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?keyword=%27%20OR%201%3D1%20--"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('按普通字符串处理', () => pm.expect(j.data.list.length).to.eql(0));",
+                  "pm.test('未返回全表', () => pm.expect(j.data.total).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "分页边界（用例9）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?page=99999&pageSize=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('超出页为空列表', () => pm.expect(j.data.list.length).to.eql(0));",
+                  "pm.test('total 仍正确', () => pm.expect(j.data.total).to.be.above(0));",
+                  "pm.test('页码回显', () => pm.expect(j.data.page).to.eql(99999));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "非法排序（审计 A-01）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?sort=constructor"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('排序方式不合法'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "商品详情 view=0（第一次）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{existingItemId}}?view=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('字段完整', () => { pm.expect(j.data).to.have.property('title'); pm.expect(j.data).to.have.property('images'); pm.expect(j.data).to.have.property('seller'); });",
+                  "pm.collectionVariables.set('viewCountA', String(j.data.viewCount));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "商品详情 view=0（第二次，不增加浏览量）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{existingItemId}}?view=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('浏览量不变', () => pm.expect(j.data.viewCount).to.eql(Number(pm.collectionVariables.get('viewCountA'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布商品 · 缺标题（用例4）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"itemType\":\"normal\",\"categoryId\":{{categoryId}},\"price\":9.99}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('标题不能为空'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布商品 · 负价格（用例5）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"itemType\":\"normal\",\"categoryId\":{{categoryId}},\"title\":\"PostmanNeg\",\"price\":-1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('售价必须大于 0'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布商品 · 售价三位小数（审计 A-05）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"itemType\":\"normal\",\"categoryId\":{{categoryId}},\"title\":\"PostmanPrice\",\"price\":0.001}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('售价最多两位小数'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布商品 · 原价三位小数（审计 A-06）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"itemType\":\"normal\",\"categoryId\":{{categoryId}},\"title\":\"PostmanPrice\",\"price\":9.99,\"originalPrice\":0.001}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('原价最多两位小数'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布商品（成功）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"itemType\":\"normal\",\"categoryId\":{{categoryId}},\"title\":\"{{testItemTitle}}\",\"description\":\"Postman 集合回归创建的测试商品\",\"price\":8.88,\"originalPrice\":19.90,\"conditionLevel\":\"good\",\"negotiable\":true,\"location\":\"桃园\",\"images\":[{\"url\":\"{{uploadUrl}}\",\"sortNo\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('testItemTitle', 'PostmanTestItem' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 itemId', () => pm.expect(j.data.itemId).to.be.a('number'));",
+                  "pm.collectionVariables.set('itemId', String(j.data.itemId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "首页列表包含新商品",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?keyword={{testItemTitle}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('按关键词命中', () => pm.expect(j.data.list.some((x) => String(x.itemId) === pm.collectionVariables.get('itemId'))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "新商品详情",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}?view=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('标题一致', () => pm.expect(j.data.title).to.eql(pm.collectionVariables.get('testItemTitle')));",
+                  "pm.test('在售', () => pm.expect(j.data.status).to.eql('on_sale'));",
+                  "pm.test('本人发布', () => pm.expect(j.data.isOwner).to.eql(true));",
+                  "pm.test('图片 1 张', () => pm.expect(j.data.images.length).to.eql(1));",
+                  "pm.test('收藏数为 0', () => pm.expect(j.data.favoriteCount).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "我的发布包含新商品",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/mine?status=on_sale"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('列表含新商品', () => pm.expect(j.data.list.some((x) => String(x.itemId) === pm.collectionVariables.get('itemId'))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "非卖家改状态（用例12）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"off_shelf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=403', () => pm.expect(j.code).to.eql(403));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('只能操作自己发布的商品'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "标记预订",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"reserved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('状态为已预订', () => pm.expect(j.data.status).to.eql('reserved'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "已预订不出现在首页（用例28）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?keyword={{testItemTitle}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('列表不出现', () => pm.expect(j.data.list.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "详情仍显示已预订（用例28）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}?view=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('状态为已预订', () => pm.expect(j.data.status).to.eql('reserved'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "取消预订恢复在售",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"on_sale\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('恢复在售', () => pm.expect(j.data.status).to.eql('on_sale'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "下架商品",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"off_shelf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已下架', () => pm.expect(j.data.status).to.eql('off_shelf'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "下架后不出现在列表（用例13）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?keyword={{testItemTitle}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('列表不出现', () => pm.expect(j.data.list.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重新上架",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"on_sale\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('恢复在售', () => pm.expect(j.data.status).to.eql('on_sale'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "标记已售出",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"sold\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已售出', () => pm.expect(j.data.status).to.eql('sold'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "已售出再上架（用例17）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{itemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"on_sale\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=409', () => pm.expect(j.code).to.eql(409));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('当前状态不能变更为目标状态'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 收藏",
+      "description": "覆盖用例10/11/20。先自动挑选一条“未收藏的他人在售商品”作为目标，结束后取消收藏恢复原状。",
+      "item": [
+        {
+          "name": "收藏目标候选（读取已收藏）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/favorites?pageSize=50"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const ids = (j.data.list || []).map((x) => String(x.itemId));",
+                  "pm.collectionVariables.set('favIds', ids.join(','));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "挑选未收藏的他人在售商品",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items?page=1&pageSize=50"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const uid = Number(pm.collectionVariables.get('userId1'));",
+                  "const favIds = (pm.collectionVariables.get('favIds') || '').split(',').filter(Boolean);",
+                  "const pick = (j.data.list || []).find((x) => Number(x.sellerId) !== uid && !favIds.includes(String(x.itemId)));",
+                  "pm.test('找到未收藏的他人在售商品', () => pm.expect(pick).to.be.an('object'));",
+                  "pm.collectionVariables.set('favItemId', String(pick.itemId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "收藏前记录收藏数",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{favItemId}}?view=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.collectionVariables.set('favCountBefore', String(j.data.favoriteCount));",
+                  "pm.test('收藏前未收藏', () => pm.expect(j.data.isFavorited).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "收藏商品",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{favItemId}}/favorite"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已收藏', () => pm.expect(j.data.favorited).to.eql(true));",
+                  "pm.test('收藏数 +1', () => pm.expect(j.data.favoriteCount).to.eql(Number(pm.collectionVariables.get('favCountBefore')) + 1));",
+                  "pm.collectionVariables.set('favCountAfter', String(j.data.favoriteCount));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重复收藏（用例10）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{favItemId}}/favorite"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('幂等', () => pm.expect(j.data.favoriteCount).to.eql(Number(pm.collectionVariables.get('favCountAfter'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "触发器计数一致（用例20）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{favItemId}}?view=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('收藏数一致', () => pm.expect(j.data.favoriteCount).to.eql(Number(pm.collectionVariables.get('favCountAfter'))));",
+                  "pm.test('已收藏标记', () => pm.expect(j.data.isFavorited).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "我的收藏包含该商品",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/favorites"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('列表包含收藏', () => pm.expect(j.data.list.some((x) => String(x.itemId) === pm.collectionVariables.get('favItemId'))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "收藏按状态筛选",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/favorites?status=on_sale"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const list = j.data.list || [];",
+                  "pm.test('全部为在售', () => pm.expect(list.every((x) => x.status === 'on_sale')).to.eql(true));",
+                  "pm.test('包含目标商品', () => pm.expect(list.some((x) => String(x.itemId) === pm.collectionVariables.get('favItemId'))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "收藏状态参数重复（审计 A-03）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/favorites?status=on_sale&status=sold"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('商品状态不合法'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "取消收藏",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{favItemId}}/favorite"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已取消', () => pm.expect(j.data.favorited).to.eql(false));",
+                  "pm.test('收藏数恢复', () => pm.expect(j.data.favoriteCount).to.eql(Number(pm.collectionVariables.get('favCountBefore'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重复取消收藏（用例11）",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{favItemId}}/favorite"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('不报错', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('计数不变', () => pm.expect(j.data.favoriteCount).to.eql(Number(pm.collectionVariables.get('favCountBefore'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "取消后收藏列表不含",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/favorites"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('目标商品已移除', () => pm.expect(j.data.list.some((x) => String(x.itemId) === pm.collectionVariables.get('favItemId'))).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 代取",
+      "description": "覆盖用例14/15/16/17/23/24/25/26。会创建多张代取单，大部分在流程末尾取消；提前完成的一张保留为 completed。",
+      "item": [
+        {
+          "name": "代取大厅列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands?page=1&pageSize=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const list = j.data.list || [];",
+                  "pm.test('返回数组', () => pm.expect(Array.isArray(list)).to.eql(true));",
+                  "pm.test('均为待接单大厅单', () => pm.expect(list.every((x) => x.status === 'pending' && x.visibility === 'hall')).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "大厅状态筛选非法（审计 A-02）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands?status=completed"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('大厅只支持待接单'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布大厅单（取消流转）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖\",\"remark\":\"到楼栋门口打电话\",\"reward\":5.00,\"timeType\":\"asap\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('进入大厅', () => pm.expect(j.data.visibility).to.eql('hall'));",
+                  "pm.collectionVariables.set('errandId', String(j.data.orderId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "代取详情（发布者）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('发布者按钮', () => { pm.expect(j.data.canCancel).to.eql(true); pm.expect(j.data.canTake).to.eql(false); });",
+                  "pm.test('发布者正确', () => pm.expect(String(j.data.publisherId)).to.eql(pm.collectionVariables.get('userId1')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接自己发布的单（用例14）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=403', () => pm.expect(j.code).to.eql(403));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('不能接自己发布的订单'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接单（用户2，取消流转）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已接单', () => pm.expect(j.data.status).to.eql('taken'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重复接单（用户3，用例15）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token3}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=409', () => pm.expect(j.code).to.eql(409));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('该订单已被接单'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "非发布者确认完成（用例16）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}/complete"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=403', () => pm.expect(j.code).to.eql(403));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('只有发布者可以确认完成'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接单者详情权限",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('可释放不可完成', () => { pm.expect(j.data.canRelease).to.eql(true); pm.expect(j.data.canComplete).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布者撤回已接单（用例23）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('回到待接单', () => pm.expect(j.data.status).to.eql('pending'));",
+                  "pm.test('退回大厅提示', () => pm.expect(j.message).to.include('退回大厅'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "撤回后详情清空接单人",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('接单人为空', () => pm.expect(j.data.runnerId).to.eql(null));",
+                  "pm.test('可见性不变', () => pm.expect(j.data.visibility).to.eql('hall'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "再取消待接单（用例25）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已取消', () => pm.expect(j.data.status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布大厅单（释放流转）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖\",\"remark\":\"到楼栋门口打电话\",\"reward\":5.00,\"timeType\":\"asap\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.collectionVariables.set('errandId2', String(j.data.orderId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接单（用户2，释放流转）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId2}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已接单', () => pm.expect(j.data.status).to.eql('taken'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接单者释放（用例24）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId2}}/release"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('回到待接单', () => pm.expect(j.data.status).to.eql('pending'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布者取消（清理）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId2}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已取消', () => pm.expect(j.data.status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布大厅单（完成流转）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖\",\"remark\":\"到楼栋门口打电话\",\"reward\":5.00,\"timeType\":\"asap\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.collectionVariables.set('errandId3', String(j.data.orderId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接单（用户2，完成流转）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId3}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已接单', () => pm.expect(j.data.status).to.eql('taken'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "确认完成",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId3}}/complete"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已完成', () => pm.expect(j.data.status).to.eql('completed'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "已完成再释放（用例17）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId3}}/release"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=409', () => pm.expect(j.code).to.eql(409));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('当前订单不能释放'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "已完成再撤回（用例17）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{errandId3}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=409', () => pm.expect(j.code).to.eql(409));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('当前订单不能撤回'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布私单",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖\",\"remark\":\"到楼栋门口打电话\",\"reward\":5.00,\"timeType\":\"asap\",\"visibility\":\"private\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('私单未发布', () => { pm.expect(j.data.visibility).to.eql('private'); pm.expect(j.message).to.include('尚未发布'); });",
+                  "pm.collectionVariables.set('privateErrandId', String(j.data.orderId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "非参与者查看私单",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token3}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=404', () => pm.expect(j.code).to.eql(404));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('订单不存在'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "非发布者修改私单（审计 A-09）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖\",\"remark\":\"到楼栋门口打电话\",\"reward\":5.00,\"timeType\":\"asap\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=403', () => pm.expect(j.code).to.eql(403));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('只有发布者可以修改订单'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "修改私单",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖（已修改）\",\"remark\":\"到楼栋门口打电话\",\"reward\":6.00,\"timeType\":\"asap\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('保存成功', () => pm.expect(j.data.visibility).to.eql('private'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "私单发布到大厅",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}/publish"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已公开', () => { pm.expect(j.data.visibility).to.eql('hall'); pm.expect(j.data.status).to.eql('pending'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "接单（用户2，私单）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已接单', () => pm.expect(j.data.status).to.eql('taken'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发布者撤回",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('回到待接单', () => pm.expect(j.data.status).to.eql('pending'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "再取消（清理）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{privateErrandId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已取消', () => pm.expect(j.data.status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "截止时间已过的单（用例26）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 过期单\",\"reward\":5.00,\"timeType\":\"deadline\",\"deadline\":\"2020-01-01 00:00:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('允许发布', () => pm.expect(j.data.orderId).to.be.a('number'));",
+                  "pm.collectionVariables.set('pastErrandId', String(j.data.orderId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "过期单仍为待接单（用例26）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{pastErrandId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('不自动取消', () => pm.expect(j.data.status).to.eql('pending'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "取消过期单（清理）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/{{pastErrandId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已取消', () => pm.expect(j.data.status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "可见性非法（审计 A-08）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pickupArea\":\"桃园\",\"pickupPlace\":\"桃园\",\"deliveryLocation\":\"桃园 3 栋 512\",\"itemSize\":\"small\",\"itemDesc\":\"Postman 测试外卖\",\"remark\":\"到楼栋门口打电话\",\"reward\":5.00,\"timeType\":\"asap\",\"visibility\":false}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('可见性不合法'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "我的代取（发布者）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/mine?role=publisher"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('包含刚发布的单', () => pm.expect(j.data.list.some((x) => String(x.orderId) === pm.collectionVariables.get('errandId'))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "我的代取（接单者）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/mine?role=runner"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('有接单记录', () => pm.expect(j.data.total).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "我的代取角色非法",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/mine?role=foo"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('role 只能是 publisher 或 runner'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "代取不存在",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands/999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=404', () => pm.expect(j.code).to.eql(404));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('订单不存在'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "大厅筛选与排序",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/errands?area=%E6%A1%83%E5%9B%AD&itemSize=small&timeType=asap&sort=reward_desc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const list = j.data.list || [];",
+                  "pm.test('筛选生效', () => pm.expect(list.every((x) => x.pickupArea === '桃园' && x.itemSize === 'small' && x.timeType === 'asap')).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 聊天",
+      "description": "覆盖用例18/27/29。先创建一张新的在售商品和用户2→用户1的会话，验证上下文状态同步、文本/图片消息、未读与越权。",
+      "item": [
+        {
+          "name": "发布状态同步商品",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"itemType\":\"normal\",\"categoryId\":{{categoryId}},\"title\":\"{{syncItemTitle}}\",\"description\":\"Postman 聊天上下文状态同步\",\"price\":9.99,\"conditionLevel\":\"good\",\"negotiable\":false,\"location\":\"桃园\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('syncItemTitle', 'PostmanSyncItem' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 itemId', () => pm.expect(j.data.itemId).to.be.a('number'));",
+                  "pm.collectionVariables.set('syncItemId', String(j.data.itemId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "创建商品会话（用户2→用户1）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"peerId\":{{userId1}},\"bizType\":\"item\",\"bizId\":{{syncItemId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回会话', () => pm.expect(j.data.conversationId).to.be.a('number'));",
+                  "pm.collectionVariables.set('conversationId', String(j.data.conversationId));",
+                  "pm.test('对方正确', () => pm.expect(String(j.data.peerId)).to.eql(pm.collectionVariables.get('userId1')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重复创建会话（幂等）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"peerId\":{{userId1}},\"bizType\":\"item\",\"bizId\":{{syncItemId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回同一会话', () => pm.expect(String(j.data.conversationId)).to.eql(pm.collectionVariables.get('conversationId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "会话列表（用户2）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const c = j.data.list.find((x) => String(x.conversationId) === pm.collectionVariables.get('conversationId'));",
+                  "pm.test('包含该会话', () => pm.expect(c).to.be.an('object'));",
+                  "pm.test('卡片字段完整', () => { pm.expect(c).to.have.property('peerNickname'); pm.expect(c).to.have.property('unreadCount'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "聊天上下文（在售）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/context"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('商品卡片', () => pm.expect(j.data.bizType).to.eql('item'));",
+                  "pm.test('商品一致', () => pm.expect(String(j.data.bizSummary.itemId)).to.eql(pm.collectionVariables.get('syncItemId')));",
+                  "pm.test('在售', () => pm.expect(j.data.bizSummary.status).to.eql('on_sale'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "卖家标记预订",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{syncItemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"reserved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('已预订', () => pm.expect(j.data.status).to.eql('reserved'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "上下文状态同步（用例29）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/context"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('卡片状态更新', () => pm.expect(j.data.bizSummary.status).to.eql('reserved'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "卖家恢复在售",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/items/{{syncItemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"on_sale\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('恢复在售', () => pm.expect(j.data.status).to.eql('on_sale'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发送文本消息",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Postman 联调消息\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 messageId', () => pm.expect(j.data.messageId).to.be.a('number'));",
+                  "pm.collectionVariables.set('lastMessageId', String(j.data.messageId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "拉取消息",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages?afterId=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const m = j.data.list.find((x) => String(x.messageId) === pm.collectionVariables.get('lastMessageId'));",
+                  "pm.test('包含刚发送的消息', () => pm.expect(m).to.be.an('object'));",
+                  "pm.test('isMine 正确', () => pm.expect(m.isMine).to.eql(true));",
+                  "pm.test('消息类型 text', () => pm.expect(m.msgType).to.eql('text'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "用户2 标记已读",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/read",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"lastMessageId\":{{lastMessageId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('未读清零', () => pm.expect(j.data.unreadCount).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "卖家会话列表未读",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const c = j.data.list.find((x) => String(x.conversationId) === pm.collectionVariables.get('conversationId'));",
+                  "pm.test('卖家有未读', () => pm.expect(c.unreadCount).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "卖家标记已读",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/read"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('未读清零', () => pm.expect(j.data.unreadCount).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "总未读数",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/unread-count"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 count', () => pm.expect(j.data.count).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "越权拉消息（用例18）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token3}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=403', () => pm.expect(j.code).to.eql(403));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('无权查看该会话'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "发送图片消息（用例27）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"msgType\":\"image\",\"content\":\"{{uploadUrl}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('发送成功', () => pm.expect(j.data.messageId).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "会话预览为 [图片]（用例27）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "const c = j.data.list.find((x) => String(x.conversationId) === pm.collectionVariables.get('conversationId'));",
+                  "pm.test('预览为 [图片]', () => pm.expect(c.lastMessage).to.eql('[图片]'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "图片消息内容非法（用例27）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"msgType\": \"image\",\n  \"content\": \"https://example.com/x.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('图片地址不合法'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "非参与者发消息",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token3}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"越权消息\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=403', () => pm.expect(j.code).to.eql(403));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('无权在该会话发送消息'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 反馈",
+      "item": [
+        {
+          "name": "提交反馈",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/feedback",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Postman 回归测试反馈\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=0', () => pm.expect(j.code).to.eql(0));",
+                  "pm.test('返回 feedbackId', () => pm.expect(j.data.feedbackId).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "空反馈",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/feedback",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"   \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json();",
+                  "pm.test('code=400', () => pm.expect(j.code).to.eql(400));",
+                  "pm.test('message 匹配', () => pm.expect(j.message).to.include('反馈内容不能为空'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

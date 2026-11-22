@@ -53,6 +53,11 @@ function readPrice(value) {
   return { provided: true, value: number };
 }
 
+function hasAtMostTwoDecimals(value) {
+  const cents = value * 100;
+  return Math.abs(cents - Math.round(cents)) < 1e-6;
+}
+
 function parseImages(value) {
   if (value === undefined || value === null) {
     return { images: [], error: '' };
@@ -96,7 +101,7 @@ router.get('/', async (req, res, next) => {
   const sort = req.query.sort === undefined || req.query.sort === ''
     ? 'latest'
     : req.query.sort;
-  if (typeof sort !== 'string' || !SORTS[sort]) {
+  if (typeof sort !== 'string' || !Object.prototype.hasOwnProperty.call(SORTS, sort)) {
     return fail(res, 400, '排序方式不合法');
   }
 
@@ -112,8 +117,9 @@ router.get('/', async (req, res, next) => {
     where.push(`(v.title LIKE ? ESCAPE '!'
       OR v.description LIKE ? ESCAPE '!'
       OR v.bookTitle LIKE ? ESCAPE '!'
-      OR v.bookAuthor LIKE ? ESCAPE '!')`);
-    params.push(pattern, pattern, pattern, pattern);
+      OR v.bookAuthor LIKE ? ESCAPE '!'
+      OR v.location LIKE ? ESCAPE '!')`);
+    params.push(pattern, pattern, pattern, pattern, pattern);
   }
 
   if (req.query.bookId !== undefined && req.query.bookId !== '') {
@@ -256,6 +262,9 @@ router.post('/', async (req, res, next) => {
   if (price > MAX_PRICE) {
     return fail(res, 400, '售价超出范围');
   }
+  if (!hasAtMostTwoDecimals(price)) {
+    return fail(res, 400, '售价最多两位小数');
+  }
 
   let originalPrice = null;
   if (body.originalPrice !== undefined && body.originalPrice !== null && body.originalPrice !== '') {
@@ -268,6 +277,9 @@ router.post('/', async (req, res, next) => {
     }
     if (originalPrice > MAX_PRICE) {
       return fail(res, 400, '原价超出范围');
+    }
+    if (!hasAtMostTwoDecimals(originalPrice)) {
+      return fail(res, 400, '原价最多两位小数');
     }
   }
 
@@ -360,12 +372,15 @@ router.get('/:id', async (req, res, next) => {
   }
 
   try {
-    const [updateResult] = await pool.query(
-      'UPDATE items SET view_count = view_count + 1 WHERE item_id = ?',
-      [itemId]
-    );
-    if (updateResult.affectedRows === 0) {
-      return fail(res, 404, '商品不存在');
+    const shouldCountView = req.query.view !== '0';
+    if (shouldCountView) {
+      const [updateResult] = await pool.query(
+        'UPDATE items SET view_count = view_count + 1 WHERE item_id = ?',
+        [itemId]
+      );
+      if (updateResult.affectedRows === 0) {
+        return fail(res, 404, '商品不存在');
+      }
     }
 
     const [rows] = await pool.query(

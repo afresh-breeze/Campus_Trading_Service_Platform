@@ -9,6 +9,11 @@ const { ok, fail } = require('../utils/response');
 
 const router = express.Router();
 
+// 鉴权挂载（B 修复，11-16）：本文件所有接口都读 req.user.userId，
+// 但此前从未 router.use(auth)，导致 /api/conversations、/unread-count 等全部 500。
+// 与 items/errands 等路由保持同一写法：router 定义后立即挂载。
+router.use(auth);
+
 const BIZ_TYPES = ['item', 'errand'];
 const MSG_TYPES = ['text', 'image'];
 const MAX_CONTENT_LENGTH = 500;
@@ -155,12 +160,22 @@ router.post('/', async (req, res, next) => {
         return fail(res, 404, '商品不存在');
       }
     } else if (bizId > 0) {
+      // P0-4：私单的查看/接单授权依赖「存在该单会话」（errands.js 的 isErrandChatPeer
+      // 与 sp_take_errand），所以建会话这一步必须自己把关：私单只允许发布者发起。
+      // 否则知道 publisherId + orderId 的人可以先插一条会话，再据此查看甚至接走私单。
+      // 大厅单（visibility='hall'）不受限，任何人都可以就它发起咨询。
       const [orderRows] = await pool.query(
-        'SELECT order_id FROM errand_orders WHERE order_id = ?',
+        `SELECT order_id AS orderId, publisher_id AS publisherId, visibility
+           FROM errand_orders
+          WHERE order_id = ?`,
         [bizId]
       );
       if (!orderRows.length) {
         return fail(res, 404, '订单不存在');
+      }
+      const order = orderRows[0];
+      if (order.visibility === 'private' && Number(order.publisherId) !== Number(userId)) {
+        return fail(res, 403, '私单只能由发布者发起会话');
       }
     }
 

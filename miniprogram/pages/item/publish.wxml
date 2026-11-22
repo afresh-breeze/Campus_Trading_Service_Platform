@@ -1,12 +1,353 @@
-<!-- 发布商品（A 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">发布商品</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待A成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/item/publish</view>
+<!-- 发布商品（A 成员，11-16）：普通/书籍两种模式，图片上传与表单校验 -->
+<nav-top back title="发布商品" fixed />
+
+<view class="page page-body publish-page">
+  <!-- 模式切换：切换只换书籍区，已填内容全部保留 -->
+  <view class="mode-switch">
+    <view
+      class="mode-switch__item {{mode === 'normal' ? 'mode-switch__item--on' : ''}}"
+      data-mode="normal"
+      bindtap="onModeChange"
+    >普通商品</view>
+    <view
+      class="mode-switch__item {{mode === 'book' ? 'mode-switch__item--on' : ''}}"
+      data-mode="book"
+      bindtap="onModeChange"
+    >书籍</view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：A ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 书籍信息 -->
+  <view wx:if="{{mode === 'book'}}" class="card" id="field-book">
+    <view class="t-title">书籍信息</view>
+    <view class="t-sub form-tip">书籍商品必须关联书目；找不到时可手动新建</view>
+
+    <block wx:if="{{bookSelected}}">
+      <view class="book-selected">
+        <view class="book-selected__body">
+          <view class="book-selected__title">{{bookSelected.title}}</view>
+          <view class="book-selected__meta">{{bookSelected.metaText}}</view>
+          <view wx:if="{{bookSelected.isbnText}}" class="book-selected__isbn">{{bookSelected.isbnText}}</view>
+        </view>
+        <view class="book-selected__actions">
+          <view class="book-selected__action" bindtap="onChangeBook">更换</view>
+          <view class="book-selected__action book-selected__action--muted" bindtap="onClearBookSelection">取消</view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view class="field-wrap">
+        <view class="field">
+          <view class="field-label">书名/ISBN</view>
+          <input
+            class="field-input"
+            value="{{bookKeyword}}"
+            focus="{{bookFocus}}"
+            placeholder="输入书名、ISBN 或作者"
+            placeholder-class="field-placeholder"
+            confirm-type="search"
+            maxlength="100"
+            bindinput="onBookKeywordInput"
+            bindfocus="onBookKeywordFocus"
+            bindblur="onBookKeywordBlur"
+            bindconfirm="onBookKeywordConfirm"
+          />
+        </view>
+        <text wx:if="{{errors.book}}" class="field-error">{{errors.book}}</text>
+      </view>
+
+      <!-- 书目联想：最多 5 条，含 0 在售的书目（发布页允许关联） -->
+      <view wx:if="{{bookSuggestVisible && bookKeyword}}" class="book-suggest">
+        <view wx:if="{{bookSuggestLoading}}" class="book-suggest__loading">查找中…</view>
+        <block wx:elif="{{bookSuggestions.length}}">
+          <view
+            wx:for="{{bookSuggestions}}"
+            wx:key="bookId"
+            class="book-suggest__row"
+            data-id="{{item.bookId}}"
+            bindtap="onBookSelect"
+            hover-class="book-suggest__row--hover"
+          >
+            <view class="book-suggest__body">
+              <view class="book-suggest__title">{{item.title}}</view>
+              <view class="book-suggest__meta">{{item.metaText}}</view>
+            </view>
+            <text wx:if="{{item.countText}}" class="book-suggest__count">{{item.countText}}</text>
+          </view>
+        </block>
+        <view wx:else class="book-suggest__empty">
+          {{bookSuggestError ? '书目搜索失败，请重试或手动新建' : '没有找到相关书目'}}
+        </view>
+      </view>
+
+      <view wx:if="{{!bookManualOpen}}" class="book-manual-link" bindtap="onOpenManualBook">
+        找不到？手动新建书目 ›
+      </view>
+
+      <view wx:else class="manual-book">
+        <view class="t-sub form-tip">提交发布时会自动创建书目；ISBN 已存在则复用已有书目</view>
+
+        <view class="field-wrap" id="field-manual-title">
+          <view class="field">
+            <view class="field-label">书名<text class="req">*</text></view>
+            <input
+              class="field-input"
+              value="{{manualBook.title}}"
+              placeholder="必填"
+              placeholder-class="field-placeholder"
+              maxlength="200"
+              data-field="title"
+              bindinput="onManualBookInput"
+            />
+          </view>
+          <text wx:if="{{errors.manualTitle}}" class="field-error">{{errors.manualTitle}}</text>
+        </view>
+
+        <view class="field-wrap" id="field-manual-isbn">
+          <view class="field">
+            <view class="field-label">ISBN</view>
+            <input
+              class="field-input"
+              value="{{manualBook.isbn}}"
+              placeholder="选填，有则复用已有书目"
+              placeholder-class="field-placeholder"
+              maxlength="20"
+              data-field="isbn"
+              bindinput="onManualBookInput"
+            />
+          </view>
+          <text wx:if="{{errors.manualIsbn}}" class="field-error">{{errors.manualIsbn}}</text>
+        </view>
+
+        <view class="field-wrap" id="field-manual-author">
+          <view class="field">
+            <view class="field-label">作者</view>
+            <input
+              class="field-input"
+              value="{{manualBook.author}}"
+              placeholder="选填"
+              placeholder-class="field-placeholder"
+              maxlength="100"
+              data-field="author"
+              bindinput="onManualBookInput"
+            />
+          </view>
+          <text wx:if="{{errors.manualAuthor}}" class="field-error">{{errors.manualAuthor}}</text>
+        </view>
+
+        <view class="field-wrap" id="field-manual-publisher">
+          <view class="field">
+            <view class="field-label">出版社</view>
+            <input
+              class="field-input"
+              value="{{manualBook.publisher}}"
+              placeholder="选填"
+              placeholder-class="field-placeholder"
+              maxlength="100"
+              data-field="publisher"
+              bindinput="onManualBookInput"
+            />
+          </view>
+          <text wx:if="{{errors.manualPublisher}}" class="field-error">{{errors.manualPublisher}}</text>
+        </view>
+
+        <view class="book-manual-cancel" bindtap="onCloseManualBook">取消手动新建</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 商品图片 -->
+  <view class="card" id="field-images">
+    <view class="t-title">商品图片</view>
+    <view class="t-sub form-tip">选填，最多 3 张；第一张作为列表封面</view>
+    <view class="img-grid">
+      <view
+        wx:for="{{images}}"
+        wx:key="id"
+        class="img-item"
+        data-id="{{item.id}}"
+        bindtap="onImageTap"
+      >
+        <image class="img-item__img" src="{{item.displayUrl}}" mode="aspectFill" />
+        <view wx:if="{{item.status === 'uploading'}}" class="img-item__mask">上传中…</view>
+        <view wx:if="{{item.status === 'failed'}}" class="img-item__mask img-item__mask--fail">
+          <view>上传失败</view>
+          <view>点击重试</view>
+        </view>
+        <view class="img-item__del" data-id="{{item.id}}" catchtap="onDeleteImage">×</view>
+      </view>
+      <view
+        wx:if="{{images.length < maxImages}}"
+        class="img-item img-item--add"
+        bindtap="onChooseImages"
+        hover-class="img-item--hover"
+      >
+        <view class="img-item__plus">+</view>
+        <view class="img-item__add-text">添加图片</view>
+      </view>
+    </view>
+    <text wx:if="{{errors.images}}" class="field-error field-error--block">{{errors.images}}</text>
+  </view>
+
+  <!-- 基本信息 -->
+  <view class="card">
+    <view class="t-title">基本信息</view>
+
+    <view class="field-wrap" id="field-title">
+      <view class="field">
+        <view class="field-label">标题<text class="req">*</text></view>
+        <input
+          class="field-input"
+          value="{{form.title}}"
+          placeholder="如：高数上册 九成新"
+          placeholder-class="field-placeholder"
+          maxlength="100"
+          data-field="title"
+          bindinput="onFieldInput"
+        />
+      </view>
+      <text wx:if="{{errors.title}}" class="field-error">{{errors.title}}</text>
+    </view>
+
+    <view class="field-wrap" id="field-description">
+      <view class="field field--top">
+        <view class="field-label">描述</view>
+        <textarea
+          class="field-textarea"
+          value="{{form.description}}"
+          placeholder="补充成色、使用情况、交易方式等"
+          placeholder-class="field-placeholder"
+          maxlength="2000"
+          data-field="description"
+          bindinput="onFieldInput"
+        />
+      </view>
+      <view class="field-count">{{descCount}}/2000</view>
+    </view>
+  </view>
+
+  <!-- 价格与成色 -->
+  <view class="card">
+    <view class="t-title">价格与成色</view>
+
+    <view class="field-wrap" id="field-price">
+      <view class="field">
+        <view class="field-label">售价<text class="req">*</text></view>
+        <input
+          class="field-input"
+          type="digit"
+          value="{{form.price}}"
+          placeholder="0.00"
+          placeholder-class="field-placeholder"
+          maxlength="11"
+          data-field="price"
+          bindinput="onFieldInput"
+        />
+        <text class="field-unit">元</text>
+      </view>
+      <text wx:if="{{errors.price}}" class="field-error">{{errors.price}}</text>
+    </view>
+
+    <view class="field-wrap" id="field-original">
+      <view class="field">
+        <view class="field-label">原价</view>
+        <input
+          class="field-input"
+          type="digit"
+          value="{{form.originalPrice}}"
+          placeholder="选填"
+          placeholder-class="field-placeholder"
+          maxlength="11"
+          data-field="originalPrice"
+          bindinput="onFieldInput"
+        />
+        <text class="field-unit">元</text>
+      </view>
+      <text wx:if="{{errors.originalPrice}}" class="field-error">{{errors.originalPrice}}</text>
+    </view>
+
+    <picker
+      class="field-picker"
+      mode="selector"
+      range="{{conditionLabels}}"
+      value="{{conditionIndex}}"
+      bindchange="onConditionChange"
+    >
+      <view class="field">
+        <view class="field-label">成色</view>
+        <view class="field-input field-input--picker">{{conditionLabels[conditionIndex]}}</view>
+        <view class="picker-arrow">›</view>
+      </view>
+    </picker>
+
+    <view class="field">
+      <view class="field-label">可议价</view>
+      <view class="field-input field-input--switch">
+        <switch checked="{{negotiable}}" color="#79513D" bindchange="onNegotiableChange" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类与地点 -->
+  <view class="card">
+    <view class="t-title">分类与地点</view>
+
+    <view class="field-wrap" id="field-category">
+      <picker
+        wx:if="{{categories.length}}"
+        class="field-picker"
+        mode="selector"
+        range="{{categoryNames}}"
+        value="{{categoryIndex < 0 ? 0 : categoryIndex}}"
+        bindchange="onCategoryChange"
+      >
+        <view class="field">
+          <view class="field-label">分类<text class="req">*</text></view>
+          <view class="field-input {{categoryName ? '' : 'field-input--muted'}}">{{categoryName || '请选择分类'}}</view>
+          <view class="picker-arrow">›</view>
+        </view>
+      </picker>
+      <view wx:else class="field" bindtap="onRetryCategories">
+        <view class="field-label">分类<text class="req">*</text></view>
+        <view class="field-input field-input--muted">{{categoriesLoading ? '分类加载中…' : (categoriesError || '分类加载失败，点击重试')}}</view>
+      </view>
+      <text wx:if="{{errors.category}}" class="field-error">{{errors.category}}</text>
+    </view>
+
+    <view class="field-wrap" id="field-location">
+      <view class="field">
+        <view class="field-label">交易地点</view>
+        <input
+          class="field-input"
+          value="{{form.location}}"
+          placeholder="如：桃园 3 栋楼下"
+          placeholder-class="field-placeholder"
+          maxlength="100"
+          data-field="location"
+          bindinput="onFieldInput"
+        />
+      </view>
+    </view>
+
+    <view class="place-chips">
+      <view
+        wx:for="{{placeChips}}"
+        wx:key="*this"
+        class="place-chip {{placeSelected[item] ? 'place-chip--on' : ''}}"
+        data-place="{{item}}"
+        bindtap="onPlaceChip"
+      >{{item}}</view>
+    </view>
+    <view class="place-tip">可多选，选中项自动用「，」连接</view>
+  </view>
+
+  <!-- 底部固定发布 -->
+  <view class="publish-bar">
+    <view class="publish-bar__tip">{{imageUploading ? '图片上传中，请稍候…' : '发布即表示你确认商品信息真实有效'}}</view>
+    <button
+      class="btn btn-primary btn-block"
+      disabled="{{submitting || imageUploading}}"
+      bindtap="onSubmit"
+    >{{submitting ? '发布中…' : '发布'}}</button>
+  </view>
 </view>

@@ -47,6 +47,9 @@ router.post('/', auth, (req, res, next) => {
       if (err.code === 'INVALID_FILE_TYPE') {
         return fail(res, 400, '只支持 jpg/png/webp 图片');
       }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return fail(res, 400, '请使用 file 字段上传单张图片');
+      }
       return next(err);
     }
     if (!req.file) {

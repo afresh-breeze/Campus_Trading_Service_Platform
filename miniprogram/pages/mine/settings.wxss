@@ -1,13 +1,58 @@
-.placeholder-note {
-  margin-top: 16rpx;
+/* 设置（B 成员，11-17） */
+
+.st {
+  padding-top: 16rpx;
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
+
+.st-group {
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
 }
-.placeholder-tip {
-  margin-top: 24rpx;
-  text-align: center;
+
+.st-row {
+  display: flex;
+  align-items: center;
+  min-height: 108rpx;
+  padding: 0 var(--space);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+.st-row:last-child {
+  border-bottom: none;
+}
+.st-row--hover {
+  background-color: var(--color-surface-2);
+}
+.st-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16rpx 0;
+}
+.st-row__label {
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+.st-row__desc {
+  margin-top: 6rpx;
   font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.st-row__arrow {
+  flex: none;
+  margin-left: 12rpx;
+  font-size: 32rpx;
   color: var(--color-text-4);
+}
+.st-row__value {
+  flex: none;
+  margin-left: 12rpx;
+  font-size: var(--font-base);
+  color: var(--color-text-3);
+}
+
+.st-logout {
+  margin: var(--space) var(--space) 0;
 }

@@ -1,6 +1,18 @@
-<view class="nav-top" style="height:{{spacerH}}px">
-  <view wx:if="{{canBack}}" class="nav-top__back" bindtap="onBack" hover-class="nav-top__back--hover" aria-label="返回">
-    <view class="nav-top__chevron"></view>
+<!--
+  nav-top：自定义导航栏下的顶部安全区
+  - 高度 = 状态栏 + 胶囊按钮（取 getMenuButtonBoundingClientRect().bottom），保证内容不被系统状态栏和右上角胶囊遮挡
+  - back=true 时在有页面栈的二级页左上角渲染一个悬浮返回按钮（原生导航栏关闭后系统返回键不存在）
+  - 不传 title 时不渲染任何标题，页面内容从胶囊下方开始
+  - fixed=true（11-16）：返回按钮随页面滚动固定在顶部不消失。
+    结构：外层节点保留文档流占位（内容不被盖），bar 本体 fixed 悬浮 + 不透明背景。
+    默认 false，不影响既有页面（聊天、详情、二手等）的滚动表现。
+-->
+<view class="nav-top">
+  <view wx:if="{{fixed}}" class="nav-top__ph" style="height:{{spacerH}}px"></view>
+  <view class="nav-top__bar {{fixed ? 'nav-top__bar--fixed' : ''}}" style="height:{{spacerH}}px">
+    <view wx:if="{{canBack}}" class="nav-top__back" bindtap="onBack" hover-class="nav-top__back--hover" aria-label="返回">
+      <view class="nav-top__chevron"></view>
+    </view>
+    <text wx:if="{{title}}" class="nav-top__title">{{title}}</text>
   </view>
-  <text wx:if="{{title}}" class="nav-top__title">{{title}}</text>
 </view>

@@ -164,7 +164,9 @@ function zoneOfPlace(place) {
 
 /**
  * 搜索联想：按正式名或别名模糊匹配地标，返回最多 limit 条。
- * 供发布页、找跑腿页的搜索框使用。
+ * 供发布页、找跑腿页、接单设置的搜索框使用。
+ * 无下级地标的片区（图书馆/运动场/校医院/校外/宿舍园各片区）本身也是合法地点，
+ * 一并纳入搜索，否则搜「图书馆」「校医院」会空（11-16 修复）。
  */
 function searchLandmarks(keyword, limit) {
   const kw = String(keyword || '').trim().toLowerCase();
@@ -184,18 +186,32 @@ function searchLandmarks(keyword, limit) {
       if (out.length >= max) break;
     }
   }
+  if (out.length < max) {
+    for (let i = 0; i < ZONES.length; i++) {
+      const z = ZONES[i];
+      if (placesOfZone(z.name).length) continue; // 有下级地标的片区不作为地点直接搜出
+      if (z.name.toLowerCase().indexOf(kw) > -1) {
+        out.push({ name: z.name, zone: z.name, aliases: [] });
+        if (out.length >= max) break;
+      }
+    }
+  }
   return out;
 }
 
 /**
- * 统一展示格式：「北区教学区 · 第16教学楼」。
- * 片区不合法返回 ''；地标为空时显示「片区 · 全区」。
+ * 统一展示格式：
+ *   有下级地标的片区 → 「北区教学区 · 第16教学楼」/「北区教学区 · 全区」
+ *   无下级地标的片区 → 只显示「桃园」（落库值 pickupPlace=片区名本身，
+ *   展示再带一遍「桃园 · 桃园」就重复了）
  * 四个代取页面都调这个，避免各处写法不一致。
  */
 function displayArea(zone, place) {
   if (!isValidZone(zone)) return '';
-  const p = place && isValidPlace(zone, place) ? place : '';
-  return p ? zone + ' · ' + p : zone + ' · 全区';
+  const hasPlaces = placesOfZone(zone).length > 0;
+  const p = place && place !== zone && isValidPlace(zone, place) ? place : '';
+  if (p) return zone + ' · ' + p;
+  return hasPlaces ? zone + ' · 全区' : zone;
 }
 
 module.exports = {

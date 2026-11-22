@@ -1,0 +1,90 @@
+<!-- 地点选择弹层（B 成员，11-15）：搜索 + 分类 + 片区 + 具体地标 -->
+<view class="pp-mask" wx:if="{{visible}}" bindtap="onMaskTap">
+  <view class="pp-panel" catchtap="noop">
+    <view class="pp-head">
+      <text class="pp-title">{{title}}</text>
+      <view class="pp-close" bindtap="onCancel" aria-label="关闭">✕</view>
+    </view>
+
+    <!-- 搜索：正式名或别名（25教 / 兰华楼 / 田家炳…） -->
+    <view class="pp-search">
+      <view class="pp-search__icon"></view>
+      <input
+        class="pp-search__input"
+        placeholder="搜楼名 / 别名，如 25教、兰华楼"
+        placeholder-class="pp-search__ph"
+        value="{{keyword}}"
+        confirm-type="search"
+        bindinput="onKeyword"
+      />
+      <text wx:if="{{keyword}}" class="pp-clear" bindtap="onClearKeyword">✕</text>
+    </view>
+
+    <scroll-view scroll-y class="pp-body">
+      <!-- 搜索结果 -->
+      <block wx:if="{{keyword}}">
+        <view wx:if="{{!results.length}}" class="pp-empty">没有匹配的地标，试试片区名或常用别名</view>
+        <view
+          wx:for="{{results}}"
+          wx:key="name"
+          class="pp-hit"
+          data-zone="{{item.zone}}"
+          data-place="{{item.name}}"
+          bindtap="onPickHit"
+          hover-class="pp-hit--hover"
+        >
+          <text class="pp-hit__name">{{item.name}}</text>
+          <text class="pp-hit__zone">{{item.zone}}</text>
+        </view>
+      </block>
+
+      <block wx:else>
+        <!-- 分类横滑 -->
+        <scroll-view scroll-x class="pp-cats" show-scrollbar="{{false}}">
+          <view
+            wx:for="{{categories}}"
+            wx:key="*this"
+            class="pp-cat {{cat === item ? 'pp-cat--active' : ''}}"
+            data-cat="{{item}}"
+            bindtap="onCatTap"
+          >{{item}}</view>
+        </scroll-view>
+
+        <!-- 片区网格 -->
+        <view class="pp-grid">
+          <view
+            wx:for="{{zoneList}}"
+            wx:key="*this"
+            class="pp-zone {{zone === item ? 'pp-zone--active' : ''}}"
+            data-zone="{{item}}"
+            bindtap="onZoneTap"
+          >{{item}}</view>
+        </view>
+
+        <!-- 具体地标：只读提示型片区（无下级地标）不出现 -->
+        <block wx:if="{{zone && places.length}}">
+          <view class="pp-places-title">{{placeRequired ? '具体地标（发布必须选到楼）' : '具体地标（不选 = 整个片区都算）'}}</view>
+          <view class="pp-grid">
+            <view
+              wx:for="{{places}}"
+              wx:key="*this"
+              class="pp-place {{place === item ? 'pp-place--active' : ''}}"
+              data-place="{{item}}"
+              bindtap="onPlaceTap"
+            >{{item}}</view>
+          </view>
+        </block>
+        <view wx:elif="{{zone && !places.length}}" class="pp-places-tip">该片区无细分地标，选中片区即定位到全区</view>
+      </block>
+    </scroll-view>
+
+    <view class="pp-foot">
+      <text class="pp-preview ellipsis">{{previewText || '请选择片区'}}</text>
+      <button
+        class="pp-confirm {{canConfirm ? '' : 'pp-confirm--disabled'}}"
+        disabled="{{!canConfirm}}"
+        bindtap="onConfirm"
+      >确定</button>
+    </view>
+  </view>
+</view>

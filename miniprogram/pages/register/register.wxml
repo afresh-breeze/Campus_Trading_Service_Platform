@@ -7,21 +7,36 @@
   </view>
 
   <view class="form-wrap">
-    <view class="field">
-      <text class="field-label">学号</text>
-      <input class="field-input" type="number" maxlength="20" placeholder="请输入学号（本校 15 位）" placeholder-class="field-placeholder" value="{{form.studentNo}}" data-key="studentNo" bindinput="onInput" />
+    <view class="field-wrap">
+      <view class="field">
+        <text class="field-label">学号</text>
+        <input class="field-input" type="number" maxlength="20" placeholder="请输入学号（6-20 位数字）" placeholder-class="field-placeholder" value="{{form.studentNo}}" data-key="studentNo" bindinput="onInput" />
+      </view>
+      <text wx:if="{{errors.studentNo}}" class="field-error">{{errors.studentNo}}</text>
     </view>
-    <view class="field">
-      <text class="field-label">昵称</text>
-      <input class="field-input" maxlength="12" placeholder="2-12 个字符" placeholder-class="field-placeholder" value="{{form.nickname}}" data-key="nickname" bindinput="onInput" />
+
+    <view class="field-wrap">
+      <view class="field">
+        <text class="field-label">昵称</text>
+        <input class="field-input" maxlength="12" placeholder="2-12 个字符" placeholder-class="field-placeholder" value="{{form.nickname}}" data-key="nickname" bindinput="onInput" />
+      </view>
+      <text wx:if="{{errors.nickname}}" class="field-error">{{errors.nickname}}</text>
     </view>
-    <view class="field">
-      <text class="field-label">密码</text>
-      <input class="field-input" password="{{true}}" maxlength="20" placeholder="6-20 位" placeholder-class="field-placeholder" value="{{form.password}}" data-key="password" bindinput="onInput" />
+
+    <view class="field-wrap">
+      <view class="field">
+        <text class="field-label">密码</text>
+        <input class="field-input" password="{{true}}" maxlength="20" placeholder="6-20 位" placeholder-class="field-placeholder" value="{{form.password}}" data-key="password" bindinput="onInput" />
+      </view>
+      <text wx:if="{{errors.password}}" class="field-error">{{errors.password}}</text>
     </view>
-    <view class="field">
-      <text class="field-label">确认密码</text>
-      <input class="field-input" password="{{true}}" maxlength="20" placeholder="再输入一次密码" placeholder-class="field-placeholder" value="{{form.password2}}" data-key="password2" bindinput="onInput" />
+
+    <view class="field-wrap">
+      <view class="field">
+        <text class="field-label">确认密码</text>
+        <input class="field-input" password="{{true}}" maxlength="20" placeholder="再输入一次密码" placeholder-class="field-placeholder" value="{{form.password2}}" data-key="password2" bindinput="onInput" />
+      </view>
+      <text wx:if="{{errors.password2}}" class="field-error">{{errors.password2}}</text>
     </view>
 
     <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmit">注册并登录</button>

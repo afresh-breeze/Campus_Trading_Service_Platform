@@ -9,7 +9,9 @@ Component({
 
   properties: {
     back: { type: Boolean, value: false },
-    title: { type: String, value: '' }
+    title: { type: String, value: '' },
+    // true 时返回按钮/标题 fixed 在屏幕顶，页面滚多远都不消失（长页面用，如接单设置）
+    fixed: { type: Boolean, value: false }
   },
 
   data: {

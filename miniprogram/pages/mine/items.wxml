@@ -1,12 +1,66 @@
-<!-- 我的发布（A 成员负责） -->
-<nav-top back />
-<view class="page page-body">
-  <view class="card">
-    <view class="t-title">我的发布</view>
-    <view class="t-sub placeholder-note">
-      页面骨架已注册，等待A成员实现。
-    </view>
-    <view class="t-sub placeholder-path">pages/mine/items</view>
+<!-- 我的发布（A 成员，11-18）：四状态分类 + item-card 只读列表；状态操作只在详情页 -->
+<nav-top back title="我的发布" fixed />
+
+<view class="page page-body mi-page">
+  <!-- 吸顶状态条：复用首页分类的横滑椭圆条，滚动时返回键与状态条都常驻 -->
+  <view class="mi-cats-wrap" style="top: {{stickyTop}}px">
+    <scroll-view class="mi-cats" scroll-x show-scrollbar="{{false}}">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="mi-cat {{status === item.key ? 'mi-cat--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTabChange"
+        hover-class="mi-cat--hover"
+      >{{item.label}}</view>
+    </scroll-view>
   </view>
-  <view class="t-sub placeholder-tip">负责人：A ｜ 状态：占位页（可编译、可跳转）</view>
+
+  <!-- 首屏骨架 -->
+  <block wx:if="{{loading}}">
+    <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="card mi-sk">
+      <view class="mi-sk__cover"></view>
+      <view class="mi-sk__body">
+        <view class="mi-sk__line mi-sk__line--lg"></view>
+        <view class="mi-sk__line mi-sk__line--md"></view>
+        <view class="mi-sk__line mi-sk__line--sm"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 首屏失败 / 未登录兜底 -->
+  <view wx:elif="{{error}}" class="card mi-state">
+    <text class="t-title">{{error === '请先登录' ? '请先登录' : '加载失败'}}</text>
+    <text class="t-sub mi-state__desc">{{error === '请先登录' ? '登录后查看你发布的商品' : error}}</text>
+    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重新加载'}}</button>
+  </view>
+
+  <!-- 当前 tab 真空态 -->
+  <view wx:elif="{{!items.length}}" class="mi-empty">
+    <empty-state
+      title="{{emptyTitle}}"
+      desc="{{emptyDesc}}"
+      action-text="{{emptyActionText}}"
+      bind:action="onEmptyAction"
+    />
+  </view>
+
+  <block wx:else>
+    <view class="mi-head">
+      <text>共 {{total}} 件</text>
+      <text class="mi-head__hint">状态变更请进详情</text>
+    </view>
+
+    <view wx:for="{{items}}" wx:key="itemId" class="mi-item">
+      <item-card
+        item="{{item}}"
+        mode="list"
+        show-time="{{true}}"
+        bind:tap="onTapItem"
+      />
+    </view>
+
+    <view wx:if="{{loadingMore}}" class="mi-foot">加载中…</view>
+    <view wx:elif="{{!hasMore}}" class="mi-foot">没有更多了</view>
+  </block>
 </view>

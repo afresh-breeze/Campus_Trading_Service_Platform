@@ -1,13 +1,206 @@
-.placeholder-note {
-  margin-top: 16rpx;
-}
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
-}
-.placeholder-tip {
-  margin-top: 24rpx;
+/* 聊天页（B 成员，11-14） */
+
+.cd-fatal {
   text-align: center;
-  font-size: var(--font-xs);
-  color: var(--color-text-4);
+  margin-top: 80rpx;
+}
+.cd-fatal__desc {
+  display: block;
+  margin: 12rpx 0 24rpx;
+}
+
+/* ---- 整体布局：卡片 + 消息区 + 输入条，撑满剩余高度 ---- */
+.cd-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+/* nav-top 是 flex 子项时不许被压缩，否则安全区占位塌陷、气泡顶进状态栏 */
+.cd-page .nav-top {
+  flex-shrink: 0;
+}
+
+/* ---- 业务卡片 ---- */
+.cd-biz {
+  display: flex;
+  align-items: center;
+  margin: 16rpx 20rpx;
+  padding: 16rpx 20rpx;
+  background: var(--color-surface, #ffffff);
+  border-radius: 16rpx;
+  flex-shrink: 0;
+}
+.cd-biz--hover {
+  opacity: 0.9;
+}
+.cd-biz__cover {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 12rpx;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+.cd-biz__cover--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft, #efe4d8);
+  color: var(--color-primary, #79513d);
+  font-size: var(--font-md, 28rpx);
+  font-weight: 600;
+}
+.cd-biz__info {
+  flex: 1;
+  min-width: 0;
+}
+.cd-biz__title-row {
+  display: flex;
+  align-items: center;
+}
+.cd-biz__title {
+  font-size: var(--font-sm, 26rpx);
+  font-weight: 600;
+  color: var(--color-text-1, #3b2f26);
+  margin-right: 12rpx;
+  min-width: 0;
+}
+.cd-biz__sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+.cd-biz__price {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: var(--font-md, 28rpx);
+  font-weight: 700;
+  color: var(--color-primary, #79513d);
+}
+.cd-biz-sub {
+  margin: 16rpx 20rpx 0;
+  flex-shrink: 0;
+}
+.cd-biz-sub__text {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-3, #9a8c7d);
+}
+
+/* ---- 消息区 ---- */
+.cd-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+}
+.cd-empty {
+  text-align: center;
+  padding: 80rpx 0;
+}
+.cd-empty__text {
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-4, #b3a695);
+}
+.cd-time {
+  text-align: center;
+  padding: 16rpx 0 8rpx;
+}
+.cd-time__text {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-4, #b3a695);
+}
+.cd-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 16rpx;
+}
+.cd-row--mine {
+  justify-content: flex-end;
+}
+.cd-bubble {
+  max-width: 70%;
+  padding: 16rpx 20rpx;
+  border-radius: 16rpx;
+  background: var(--color-surface, #ffffff);
+  position: relative;
+}
+.cd-bubble--mine {
+  background: var(--color-primary, #79513d);
+}
+.cd-bubble--mine .cd-bubble__text {
+  color: #ffffff;
+}
+.cd-bubble--failed {
+  border: 1rpx solid var(--color-danger, #c0563e);
+}
+.cd-bubble__text {
+  font-size: var(--font-md, 28rpx);
+  color: var(--color-text-1, #3b2f26);
+  word-break: break-all;
+}
+.cd-bubble__img {
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 8rpx;
+  display: block;
+}
+.cd-bubble__status {
+  margin-top: 6rpx;
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-4, #b3a695);
+}
+.cd-bubble__status--fail {
+  color: var(--color-danger, #c0563e);
+}
+.cd-anchor {
+  height: 8rpx;
+}
+
+/* ---- 输入条 ---- */
+.cd-inputbar {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  background: var(--color-surface, #ffffff);
+  border-top: 1rpx solid var(--color-border, #eee6d8);
+  flex-shrink: 0;
+}
+.cd-inputbar__input {
+  flex: 1;
+  min-height: 64rpx;
+  padding: 0 20rpx;
+  background: var(--color-surface-2, #f4f1e7);
+  border-radius: 999rpx;
+  font-size: var(--font-md, 28rpx);
+}
+.cd-inputbar__placeholder {
+  color: var(--color-text-4, #b3a695);
+}
+/* 输入框与发送按钮之间的缝隙：实测 button 组件会吞掉类选择器 margin-left
+   （16rpx/20rpx 都渲染成 0，截图逐像素量过），改用实体 view 占位 20rpx（10px）。
+   不要再用 margin 方案 —— 见 11-16 21:40 记录 */
+.cd-inputbar__gap {
+  flex: none;
+  width: 20rpx;
+}
+/* 发送按钮：宽度 = 「发送」二字 56rpx + 左右各 22rpx，100rpx 固定。
+   不用 width:auto/fit-content —— 微信 button 默认样式 width:184px 在部分环境兜不住，
+   固定值最稳；真正生效的宽度写在 wxml 内联 style 上（内联优先级最高） */
+.cd-inputbar__send {
+  flex: none;
+  width: 100rpx;
+  min-width: 0;
+  padding: 0;
+  min-height: 64rpx;
+  line-height: 64rpx;
+  font-size: var(--font-md, 28rpx);
+  background: var(--color-surface-2, #f4f1e7);
+  color: var(--color-text-4, #b3a695);
+  border-radius: 999rpx;
+}
+.cd-inputbar__send--on {
+  background: var(--color-primary, #79513d);
+  color: #ffffff;
 }

@@ -10,15 +10,24 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const { APP_VERSION } = require('../../utils/version');
 
-const APP_VERSION = 'v0.3.0';
+// 版本号单一来源见 utils/version.js（11-17 走查：三个页面各写一份会漂移）
 const TAB_INDEX = 3;
 
+// 四项统计的口径必须写进标签，否则并列展示时用户会把「完成」理解成
+// 「我发布的已完成」，而它实际只统计「我接的单已完成」（P1-4）。
 const STAT_ITEMS = [
   { key: 'items', label: '发布', url: '/pages/mine/items' },
   { key: 'favorites', label: '收藏', url: '/pages/mine/favorites' },
-  { key: 'errands', label: '代取', url: '/pages/mine/errands' },
-  { key: 'completed', label: '完成', url: '/pages/mine/errands' }
+  // 我发布的代取（role=publisher，全部状态）
+  { key: 'errands', label: '我发布的', url: '/pages/mine/errands?role=publisher' },
+  // 我接并已完成的代取（role=runner + status=completed）
+  {
+    key: 'completed',
+    label: '我完成的',
+    url: '/pages/mine/errands?role=runner&status=completed'
+  }
 ];
 
 const GROUPS = [

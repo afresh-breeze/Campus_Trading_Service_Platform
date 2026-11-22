@@ -1,13 +1,110 @@
-.placeholder-note {
+/* 帮助与反馈（B 成员，11-17） */
+
+.hp {
+  padding-top: 8rpx;
+}
+
+.hp-section__title {
+  margin: 24rpx var(--space) 12rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+}
+
+/* ---- FAQ 折叠 ---- */
+.hp-faq {
+  padding: 0;
+  overflow: hidden;
+}
+.hp-faq__item {
+  border-bottom: 1rpx solid var(--color-divider);
+}
+.hp-faq__item:last-child {
+  border-bottom: none;
+}
+.hp-faq__q {
+  display: flex;
+  align-items: center;
+  padding: 24rpx var(--space);
+  min-height: 88rpx;
+}
+.hp-faq__q--hover {
+  background-color: var(--color-surface-2);
+}
+.hp-faq__q-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-base);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+.hp-faq__arrow {
+  flex: none;
+  margin-left: 12rpx;
+  font-size: 32rpx;
+  color: var(--color-text-4);
+  transition: transform 0.15s ease;
+}
+.hp-faq__arrow--open {
+  transform: rotate(90deg);
+}
+.hp-faq__a {
+  padding: 0 var(--space) 24rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-2);
+  line-height: 1.7;
+}
+
+/* ---- 反馈表单 ---- */
+.hp-form {
+  padding: var(--space);
+}
+.hp-form__input {
+  width: 100%;
+  min-height: 200rpx;
+  font-size: var(--font-base);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+.hp-form__placeholder {
+  color: var(--color-text-4);
+}
+.hp-form__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 16rpx;
 }
-.placeholder-path {
-  margin-top: 12rpx;
-  font-family: Menlo, Consolas, monospace;
-}
-.placeholder-tip {
-  margin-top: 24rpx;
-  text-align: center;
+.hp-form__count {
   font-size: var(--font-xs);
   color: var(--color-text-4);
+}
+.hp-form__ops {
+  display: flex;
+  align-items: center;
+}
+.hp-form__clear {
+  /* 原生 button 默认 width:184px 且自带内边距 → 宽度/内边距一律内联 */
+  margin: 0 16rpx 0 0;
+  padding: 0;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
+  background-color: transparent;
+  line-height: 60rpx;
+  height: 60rpx;
+}
+.hp-form__clear::after {
+  border: none;
+}
+.hp-form__submit {
+  width: 160rpx;
+  min-width: 0;
+  margin: 0;
+}
+
+.hp-note {
+  display: block;
+  margin: 24rpx var(--space) 0;
+  font-size: var(--font-xs);
+  color: var(--color-text-4);
+  text-align: center;
 }

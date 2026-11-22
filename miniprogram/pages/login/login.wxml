@@ -14,7 +14,7 @@
         class="field-input"
         type="number"
         maxlength="20"
-        placeholder="请输入学号（本校 15 位）"
+        placeholder="请输入学号（6-20 位数字）"
         placeholder-class="field-placeholder"
         value="{{studentNo}}"
         bindinput="onStudentNoInput"
@@ -44,8 +44,12 @@
     </view>
   </view>
 
+  <!-- 协议可点：弹摘要，不假装有独立页面（P2-2） -->
   <view class="agreement t-sub">
-    登录即表示同意《用户协议》与《隐私政策》
+    <text>登录即表示同意</text>
+    <text class="agreement__link" data-type="user" bindtap="onOpenAgreement">《用户协议》</text>
+    <text>与</text>
+    <text class="agreement__link" data-type="privacy" bindtap="onOpenAgreement">《隐私政策》</text>
   </view>
 
   <view class="tip t-sub" wx:if="{{isMock}}">当前为本地模拟数据模式（config.js 中 MOCK = true）</view>

@@ -91,7 +91,7 @@
 
 **最危险的拖法**：10 个页面一起开工，每个都写一半。正确做法是**一个页面一个分支，写完接口联调通过再开下一个**；公共层和组件必须 11-08 前定型，否则 A 的 6 个页面会跟着返工。
 
-### 0.4 当前进度（更新至 11-12）与接下来的事
+### 0.4 当前进度（更新至 11-20）与接下来的事
 
 > 这一节每完成一个阶段就改写一次。**只写有证据的进度**：代码入库、编译通过、A 确认，三者之一才算数。
 
@@ -101,7 +101,7 @@
 | --- | --- | --- | --- |
 | M0 环境与登录打通 | 11-07 | ✅ 已过 | `app.json` 注册 20 页；`/api/health`、`/api/auth/me` 可通；登录页渲染成功，开发者工具 **0 错误 0 警告** |
 | M1 二手闭环（配合 A） | 11-11 | 🟡 配合中 | 公共层与组件已交付，A 可引用；B 侧页面尚未开始 |
-| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中 | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；小程序侧 **代取大厅 + 详情页 11-12 已落地**（见 §0.4-6、§0.4-7），剩发布/找跑腿/我的代取/接单设置与聊天页 |
+| M2 代取 + 聊天闭环 | 11-16 | 🟡 进行中（联调阶段） | 后端已就绪：A 的 `routes/errands.js` 10 个接口 11-11 已推送（707 行）、B 的 `routes/chat.js` 7 个接口 11-11 已补齐；小程序侧 **大厅 + 详情（11-12）、发布页 + 接单设置/上线页（11-13）、消息列表 + 聊天页 + 3 秒轮询（11-14 任务于 11-15 补齐）、我的代取 + 找跑腿匹配页（11-15）已全部落地**（见 §0.4-6 ~ §0.4-10）；**11-16 联调：B 本机真后端已跑通并实测接口（见 §0.4-13），chat 鉴权 bug 已修** |
 
 #### 2）公共层遗留项（A 11-10 评审提出的 7 项，已全部闭环）
 
@@ -121,7 +121,7 @@
 | --- | --- | --- |
 | `status-tag` | 状态标签，item/errand 两域 | 枚举严格对齐 `schema.sql`：item 用 `on_sale/reserved/sold/off_shelf`，errand 用 `pending/taken/completed/cancelled` |
 | `empty-state` | 空状态，几何图形拼空盒子 | **不依赖图片资源**；只在真无内容时用，加载中用骨架屏 |
-| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus`。**`coverUrl` 是组件对外名，后端返回的是 `firstImage`，必须经 `utils/adapter.js` 的 `toItem()` 转换后再传入**，页面里不要手写字段映射 |
+| `item-card` | 商品卡片，grid/list 两模式 | 字段取 `itemId/title/price/originalPrice/conditionLevel/status/coverUrl/location/sellerNickname`；成色枚举 `new/like_new/good/fair`；地点取 **`items.location`**，不是废弃的 `campus`。**`coverUrl` 是组件对外名，后端返回的是 `firstImage`，必须经 `utils/adapter.js` 的 `toItem()` 转换后再传入**，页面里不要手写字段映射。**可选 `show-time`（Boolean，默认 false，11-15 A 需求）**：仅 `list` 模式在「成色 · 地点」行末尾右对齐显示 `createdAt` 相对时间（`util.fromNow`，只有「刚刚/3 小时前/昨天/11-05」，不带「发布」二字），不占额外高度；`grid` 模式不渲染（网格等高走查 #1） |
 
 #### 4）口径修正（与 A 对齐后统一）
 
@@ -146,17 +146,17 @@
 | 手册 §4.4 要求 | 落地 |
 | --- | --- |
 | 展示状态、取件片区·地标·说明、送达地点、规格、时间、报酬、发布人、接单人 | 三段卡片：**头部**（`status-tag` + 私单标记 + 报酬 + 时间）、**路线**（取件→送达双圆点，地标与片区同名只显示一次，不出现「桃园 · 桃园」）、**信息**（规格/描述/订单号可复制/发布相对时间）+ 发布人/接单人卡（无头像时用昵称首字，不依赖图片资源） |
-| 底部按钮按 `canTake/canComplete/canCancel/canRelease` 显示，前端不自己算 | `buildActions()` 只读后端 `can*`（含 `canPublish`），顺序：主操作 → 发布到大厅 → 撤回/取消 → 释放；**无主操作时把第一个提为主色**，避免整栏全灰。私单 `canEdit` 见下方「暂不渲染」 |
+| 底部按钮按 `canTake/canComplete/canCancel/canRelease` 显示，前端不自己算 | `buildActions()` 只读后端 `can*`（含 `canPublish/canEdit`），顺序：主操作 → 发布到大厅 → 编辑 → 撤回/取消 → 释放；**无主操作时把第一个（非破坏性）提为主色**，避免整栏全灰 |
 | 接单/完成/撤回/释放 各调对应接口 | `POST /:id/take`、`/complete`、`/cancel`、`/release`，并补 `/publish`（私单发布到大厅，11-11 新增接口） |
 | 每个操作二次确认，文案写清后果 | `util.confirm()`；`taken` 状态下撤回文案单独区分「退回待接单（大厅单回大厅、私单仍为私单）」，不笼统写「回大厅」 |
 | 409 冲突提示并刷新详情 | `handleActionError()`：409 **优先透出后端 message**（接单「该订单已被接单」、发布「订单已在大厅」、撤回「当前订单不能撤回」、释放「当前订单不能释放」），前端只留「手慢了」兜底 + 重拉；404 → 整页转错误态；403 透出后端 `message`（与 `response.js` 的 `code = status` 对齐） |
-| `taken` 下「联系 TA」 | 仅 `taken/completed` 且 `chatPeerId` 存在时显示，跳 `/pages/chat/detail?peerId=<对方>&bizType=errand&bizId=<orderId>`；发布者找接单人、其他身份找发布者 |
+| 聊天入口 | **11-15 修正**：`pending/taken/completed` 且 `chatPeerId` 存在时都显示（`cancelled` 不给），跳 `/pages/chat/detail?peerId=<对方>&bizType=errand&bizId=<orderId>`；发布者找接单人（pending 无接单人不显示），非发布者找发布者——**pending 大厅单文案「联系发布者」+ 提示「有疑问可以先联系发布者，谈妥后再接单」**，后端 `chat.js` 只拦「私单非发布者建会话」，大厅单放行 |
 | `onShow` 重拉 | 已实现（从聊天页返回能看到最新状态）；另加 `onPullDownRefresh` |
 
 **顺带处理的边界**
 
 - **私单 404 不是「加载失败」**：单独给「订单不存在或已删除」+ 可见范围说明 +「回代取大厅」按钮，不放死胡同。
-- **`canEdit` 暂不渲染**：编辑需回填 `pages/errand/publish`，该页仍是占位（11-13 前落地），先不挂按钮，避免「点了没反应」的假故障；发布页落地后补一个即可（`detail.js` 头部有注释）。
+- **`canEdit` 已接入（11-13）**：发布页落地后，`detail.js` 的 `buildActions()` 补 `edit` 按钮（排在「发布到大厅」之后，避免抢主色），跳 `/pages/errand/publish?id=` 回填编辑，`PUT` 成功后 `navigateBack` 回详情。
 - **`takenAt` 统一格式化**：走 `util.formatTime` 成 `YYYY-MM-DD HH:mm`，不直接吐后端 ISO 串。
 
 **验证**：`node --check` 通过、`detail.json` 解析通过、WXML 标签配平；用 mock 数据跑 `apply()` 分支 **22 项断言全过**（5 种 `can*` 组合、三种时间口径、地标去重、报酬两位小数、`isPublisher/isRunner`、`chatPeerId` 双向、404 与缺 id 分支）。
@@ -174,7 +174,7 @@
 | 卡片：片区·地标、送达地、报酬、时间、规格、发布人 | 路线两行（实心点=取件、空心点=送达）+ 右侧报酬；第二行规格/时间标签 + 备注；底部发布人·相对时间 |
 | 点卡片进详情 | `navigateTo('/pages/errand/detail?id=')` |
 | 下拉刷新 / 上拉加载 / 三态 | 全部实现；`hasMore = 已加载数 < total`，翻页失败只 toast 不清列表；上拉用 `loadingMore` 锁防重复请求 |
-| 顶部「我要接单」入口 | `/pages/mine/runner?mode=online`（11-13 落地后生效） |
+| 顶部「我要接单」入口 | `/pages/mine/runner?mode=online`（11-13 起指向已实现的上线页） |
 | 空列表 | 空态 +「去发布代取」；未登录单独给登录引导，不在大厅里弹 401 |
 | 顶部在线人数条 | **不做**：后端无此数据（手册原话「若接口无此数据就省略，不要编」） |
 
@@ -183,15 +183,217 @@
 **验证**：`node --check`、json 解析、WXML 配平通过；stub 掉 `Page/wx/getApp/request` 直跑页面逻辑 **34 项断言全过**（派生字段、时间三态、分页追加不重复、翻页失败保留列表、首屏失败错误态、未登录、跳转参数、空列表）。
 **mock 补 3 条大厅演示单**（2009 橘园 range / 2010 第一运动场 asap / 2011 南区 large deadline），大厅从 2 条变 5 条，契约测试仍 88/0。
 
-#### 8）已知阻塞（写在这里，避免口头遗忘）
+#### 8）11-13 当日任务：发布页 + 接单设置/上线页（已完成）
+
+**8.1 `pages/errand/publish` 由占位页重写（js ~450 行 / wxml ~150 行 / wxss ~80 行）**
+
+| 手册 §6.8 要求 | 落地 |
+| --- | --- |
+| 分类+片区二级 picker、地标联动 | 分类 → 片区 → 地标三级联动；**切片区必清空地标**（§6.8 交互要点 1）；片区无下级地标时锁定「全区」，`pickupPlace` 直接传片区名（后端「片区即地标」语义） |
+| 字段校验 | `deliveryLocation ≤100`、`itemDesc ≤500` 带计数、`remark ≤255` 带计数、`itemSize` 必选、报酬**前端收紧 0<r≤200 且最多两位小数**（实时过滤非法字符）；deadline/range 时间必须晚于当前、range 起止有序 |
+| `timeType=asap` 隐藏时间选择且不传时间 | 三态 payload：asap 不携带任何时间字段（后端硬约束「字符串非空即报错」） |
+| 成功 `redirectTo` 详情 | `wx.redirectTo('/pages/errand/detail?id=')`，防止返回到空表单 |
+| 「先找跑腿」私单入口 | 以 `visibility='private'` 调 `POST /api/errands` 拿 `orderId`，带筛选条件跳 `/pages/errand/runners`（页面 11-15 落地；跳转失败兜底回详情页，不丢单） |
+| 编辑模式（`?id=`） | `GET /api/errands/:id` 回填（含 `canEdit=false` 挡回）；`PUT /api/errands/:id` 不带 `visibility`；成功 `navigateBack` 回详情 |
+| 后端校验文案落字段 | 400 文案按关键字映射回对应字段红字（片区/地标/送达/规格/描述/备注/报酬/时间） |
+
+**8.2 `pages/mine/runner` 接单设置 + 上线双入口（js ~600 行 / wxml ~150 行 / wxss ~120 行）**
+
+| 手册 §6.12 要求 | 落地 |
+| --- | --- |
+| 双模式 | 无参=接单设置（底部「保存设置」）；`?mode=online`=上线接单（底部「保存并上线 / 立即下线」） |
+| 片区多选 + 地标随动 | 25 片区按 7 分类分组 checkbox；已选片区里有下级地标的动态列出地标面板；**取消片区时其地标同步清掉** |
+| 规格多选 / 报价 / 备注 | `itemSizes ≥1`、`basePrice 0~100` 数字过滤、`remark ≤255` |
+| 在线方式 | `availabilityType` now/slot 单选；slot 要求至少一条未来计划（对齐后端文案） |
+| 计划列表增删改 | once（日期+时段）/ weekly（星期多选+起始日+时段）；`id` 生成 ≤64 字唯一字符串；起止倒置、**两两重叠**（once 落在 weekly 命中日内也算重叠）前端先拦；状态标签「进行中/未开始/已结束」；仅未开始可编辑/删除 |
+| 顶部状态条 | 「当前在线至 HH:mm」/「当前在线（随时接单）」/「计划 周X HH:MM 自动上线」/「已下线」，不只靠按钮颜色 |
+| 下线二选一 | 有进行中计划时 `wx.showActionSheet`：只这一次（`scope:'once'`）/ 取消之后所有（`scope:'future'`），都带 `scheduleId`；无进行中计划直接 `PUT online` 不带 scope |
+| 保存并上线 | 先 `PUT runner-profile` 成功再 `PUT /me/online`；上线成功 `navigateBack` 回大厅看在线状态 |
+
+**8.3 mock 与契约同步**
+
+- `PUT /api/users/me/runner-profile`、`PUT /api/users/me/online` 逐字对齐 `users.js`：`服务片区至少选择一个`、`服务片区不在可选范围内`、`地标与片区不匹配`、`在线方式不合法`、`在线计划格式错误`、`按计划上线至少需要一条未来计划`、`可接规格不合法`、`报价格式不正确`、`报价不能为负数`、`备注格式不正确/备注不能超过 255 字`、`isOnline 必须为布尔值`、`scope 不合法`、`scheduleId 不能为空`、`该在线计划不存在`、`请先保存接单设置`。
+- 计划 id 必须是**字符串**（后端 `readTrimmed`），演示数据 `阿杰` 的 `timeSlots[0].id` 由 `1` 改为 `'slot-9-1'`。
+- 契约测试新增 [11]：**92 → 136 项**（runner-profile 10 条 400 逐字、无未来计划、保存回读、重叠 400、online 5 条校验与 now 型上线）。
+
+**验证**：`node --check` ×5、WXML 配平 ×2 通过；契约测试 **136/0**；发布页冒烟 **39/0**（联动/三态 payload/校验/大厅与私单提交/编辑回填与 PUT/失败落字段）、接单设置冒烟 **43/0**（双模式/25 片区分组/地标联动清理/计划增删改与重叠/双入口保存与上线/下线二选一/状态条文案）；回归大厅 52/0、详情 23/0（2004 按钮断言更新为 `publish+edit+cancel`，主色仍 `publish`）。
+**未做**：开发者工具编译留证、真机双账号联调（`?mode=online` 上线后大厅展示在线状态依赖 A 的 `GET /api/runners`，11-15 找跑腿页一起验）。
+
+#### 9）11-15 当日任务：我的代取 + 找跑腿匹配页（已完成）
+
+**9.0 前置修复（A 反馈）**
+
+- 删除 `mock.js` 676 行重复的 `pad2`（微信开发者工具严格模式编译报错；Node 契约测试非严格模式所以 136/136 假绿）。教训：**mock.js 改动必须 `node --check` + ESM 严格模式 import 双验证**。
+- 大厅筛选契约逐字对齐 A 的 `f3d44dc`：`timeType` 合法项含 `range`、`area` 400 文案「取件片区不在可选范围内」、支持字符串数组参数（非字符串元素 →「参数错误」）、reward 并列按 `orderId DESC`。契约测试 [10] 升级逐字断言，**136 → 141 项**。
+
+**9.1 `pages/mine/errands` 我的代取（由占位页重写）**
+
+| 手册 §4.5 要求 | 落地 |
+| --- | --- |
+| 两个 tab | 我发布的（`role=publisher`）/ 我接的（`role=runner`），切 tab 重拉；支持 URL `?role=&status=` 初始定位（个人中心统计入口带参直达） |
+| 按状态分组 + 每组数量 | 「全部」一次拉取（`pageSize=50` 上限）客户端分组（待接单→进行中→已完成→已取消），组头带数量；选中具体状态时改走后端 `status` 参数（过滤只在后端，同大厅铁律）；超 50 条提示「仅展示最近 50 条」 |
+| 操作按钮（撤回/释放/完成/联系） | 快捷按钮按 `role+status`（后端原样返回字段）派生：发布者待接单→取消、进行中→完成+撤回；接单者进行中→释放；都有联系 TA（发布者找接单人、接单者找发布者）。**列表行不带 can\***，真校验在动作接口（409/403 透出后端 message 后刷新） |
+| 未发布私单可见 | 复用后端「publisher 不过滤 visibility」，卡片带「私单」灰标 |
+| 空态出路 | 发布者→去发布页；接单者→switchTab 去大厅（navigateTo 对 tab 页无效） |
+
+**9.2 `pages/errand/runners` 找跑腿匹配页（由占位页重写）**
+
+| 手册 §4.5 要求 | 落地 |
+| --- | --- |
+| `GET /api/runners` 五维筛选 | 发布页跳入 `?orderId=&area=&place=&timeType=&itemSize=[&timeStart=][&deadline=]` 全量回填；片区 picker（25 片区平铺）+ 地标联动（无下级地标=全片区，`place=area` 语义）+ 时间三态（asap 不带时间 / deadline 带截止 / range 带起止且起止有序，本地预检文案与后端逐字一致）+ 规格四选（含不限）；可改后「重新匹配」 |
+| 跑腿卡片 | 头像/昵称首字兜底、在线/离线标、随时接单/按计划上线、信用分+完成单数（后端按完成单数排序）、服务片区（超 2 个折叠「等 N 个片区」）、可接规格标签、起步价（0 显示「面议」）、备注；分页 load-more |
+| 顶部私单摘要 | 详情接口拉订单摘要 + 「谈妥后由对方在详情页接单，这里不会直接指派」提示；**本页不改订单状态** |
+| 联系 TA | 与详情页 `onContact` 同一 URL 契约（`/pages/chat/detail?peerId=&bizType=errand&bizId=`）；无 orderId 时提示先建私单 |
+| 空态出路 | 「把这单发布到大厅」（**canPublish 只信详情接口**，确认后 POST publish 成功 redirectTo 详情）或「去代取大厅看看」 |
+
+**验证**：`node --check` ×2、WXML 配平 ×2 通过；契约测试 **141/0**；找跑腿冒烟 **41/0**（URL 回填/place=area 语义/卡片派生/预检四态/片区地标联动/分页/联系/发布门闸/400 透出）、我的代取冒烟 **36/0**（状态参数直传/分组顺序与计数/role×status 按钮矩阵/完成与撤回提示/409 透出/联系跳转/双空态出口/50 条截断）；回归大厅 52/0、详情 23/0、发布 39/0、接单 43/0。
+**未做**：开发者工具编译留证、真机双账号联调（在线状态展示依赖 A 的 `GET /api/runners` 真实数据，随 M2 一起验）；聊天页仍是占位（11-14 任务顺延，联系 TA 暂落占位页）。
+
+#### 10）11-14 任务补齐（11-15 执行）：消息列表 + 聊天页 + 3 秒轮询（已完成）
+
+**10.1 `pages/chat/list` 消息列表（由占位页重写，tab 3）**
+
+| 手册 §6.13 要求 | 落地 |
+| --- | --- |
+| 会话卡片 | 头像（首字兜底）、昵称、最后消息省略、相对时间（`fromNow`）、未读红点叠头像右上角 |
+| 未读数 | >99 显示 `99+`；onShow 顺带刷全局角标（`app.refreshUnread`） |
+| 刷新 | 下拉刷新 + onShow 必刷（从聊天页回来未读/最后消息可能已变）+ 上拉翻页（按 conversationId 去重） |
+| 空态 | 「还没有消息」+ 去逛逛（switchTab 首页）；未登录给登录门 |
+
+**10.2 `pages/chat/detail` 聊天页（由占位页重写）**
+
+| 手册 §6.14 要求 | 落地 |
+| --- | --- |
+| 初始化流程 | 严格按顺序：无 conversationId 先 `POST /api/conversations`（幂等，同时补对方昵称/头像）→ `GET messages?afterId=0&limit=20` 首屏 → 滚到底 → `PUT read` 标记已读 → onShow 启动 3 秒轮询；context 业务卡片并行拉，失败不阻塞聊天 |
+| 气泡 | 自己右主色 / 对方左白底；间隔 >5 分钟显示一次时间分隔（今天 HH:mm、跨天 MM-DD HH:mm）；图片消息（msgType=image）渲染图片泡 |
+| 发送 | 乐观更新（pending 气泡 + 输入框立即清空，草稿不丢）→ 成功替换真实 messageId → 失败标红「点击重发」；空消息/超 500 字前端先拦 |
+| 轮询 | 3 秒 `afterId=本地最大 messageId` 增量 + messageId 去重 + seq 作废过期响应；只在底部时滚底（scrolltoupper/scrolltolower 维护 isAtBottom）；新的对方消息自动标记已读并刷全局角标 |
+| 已读 | 进入、onHide 各标记一次（带 lastMessageId）；onHide/onUnload **必须 clearInterval**，onShow 恢复 |
+| 业务卡片 | 商品：封面/标题/状态/价格 → 跳 item/detail；代取：订单号/规格/取件地/状态/报酬 → 跳 errand/detail；副标题「关于《xxx》」/「关于代取订单」；记录不存在 bizSummary=null 只留标题 |
+| 异常 | 403 →「无权查看该会话」+返回（不给重试）；404 →「会话不存在」；网络失败 → 骨架屏 + 重试；长按消息复制 |
+
+**验证**：`node --check` ×2、WXML 配平 ×2 通过；契约测试 **141/0**；聊天页冒烟 **47/0**（初始化链/已读与角标/增量轮询与去重/乐观发送与失败重发/空消息拦截/定时器清理/403/网络失败/两种业务卡片/卡片跳转）、消息列表冒烟 **19/0**（tab 同步/99+ 角标/翻页去重/三态/四参跳转/登录门）；回归大厅 52/0、详情 23/0、发布 39/0、接单 43/0、我的代取 36/0、找跑腿 41/0。
+**未做**：真机双账号 5 秒互发验收（需 M2 联调环境，11-16 执行）。
+
+#### 11）11-15 修复：未接单聊天入口 + 编辑按钮空点击（A 15:11 反馈后排查）
+
+| 问题 | 根因 | 修复 |
+| --- | --- | --- |
+| 大厅单 `pending` 详情页没有聊天入口（A 反馈「没接单聊天的入口」） | `detail.wxml` 的「联系 TA」写死 `status === 'taken' \|\| 'completed'`；但跑腿接单前常需先问取件码/能否晚点，后端 `chat.js` 对大厅单**不限**建会话（只拦私单非发布者） | 条件改为 `chatShow`（`chatPeerId` 存在且非 `cancelled`）；非发布者 pending 文案「联系发布者」+ 下方提示「有疑问可以先联系发布者，谈妥后再接单」；`cancelled` 不给入口 |
+| 「编辑订单」按钮点了没反应（11-13 起就存在） | `onAction()` 里 `const cfg = map[key]; if (!cfg) return;` 在 `edit` 分支**之前**，而 map 里没有 `edit` 键 → 永远提前 return | 把 `edit`/`findRunner` 两个「跳转类」动作整体移到 `cfg` 判空之前 |
+| 私单建好后无法再回去挑跑腿（只能发布到大厅） | 详情页 `buildActions` 没有回匹配页的入口 | 私单 pending（`canEdit`）新增「找跑腿」按钮（排在「发布到大厅」后，不抢主色），带 `orderId+area+place+timeType+itemSize+时间` 回 `/pages/errand/runners` |
+| `chat/detail` 403 一律显示「无权查看该会话」 | 固定文案吞掉了后端原因（如「私单只能由发布者发起会话」） | 403 标题「无法打开会话」，描述优先透出 `err.message` |
+| 占位期的 fallback 文案仍写「XX 尚未实现」 | 11-08 占位骨架遗留 | hall/publish/runner/chat 四处 fallback 改为「XX 打开失败」 |
+
+**验证**：契约 **141/0**；详情冒烟 **23 → 33**（新增 pending 聊天入口、`chatLabel/chatTip` 分支、`edit`/`findRunner` 跳转断言）、聊天页冒烟 **48/0**（403 透出后端 message）、其余六页冒烟全绿。
+
+#### 12）11-15 二轮反馈修复（9 条 UI/功能反馈）
+
+| # | 反馈 | 处理 |
+| --- | --- | --- |
+| 1 | 页面顶端空白，排序/分类要能上滑悬浮 | `errand/hall` 把「标题 + 我要接单 + 筛选条」合成**一块整体 sticky**：标题从首屏就停在最终位置，上滑只用 `onPageScroll` 把字号收小（`compact`，24/10 迟滞），**不做「大标题滚走 → 小标题补位」**（顶栏淡入 + 盖住大标题这两版都被否掉了）；行高固定，字号变化不影响布局高度 |
+| 2 | 代取没图，看不出是什么 | `errand_orders` 表**没有图片字段**（B 不能改表），先用本地品类插画（`assets/errand/food|express|doc|daily|other.png`，Pillow 生成的 192px 简笔画）按 `itemDesc/remark` 关键词匹配展示；**真图片需 A 给 errand_orders 加 image 字段**（已列需求清单） |
+| 3 | 地点选择改设计 + 搜索 + 具体教学楼 | 新增 `components/place-picker`（搜索 `searchLandmarks` 别名联想 / 分类横滑 / 片区网格 / 52 地标胶囊），替换 publish 与 runners 的三级 picker；`placeRequired=true`（发布页必须选到楼）/`false`（找跑腿可全区） |
+| 4 | 没选「按计划」不该显示时间范围 | `runner.wxml` 计划区整体包 `wx:if="{{availabilityType === 'slot'}}"`，else 显示「当前在线不需要设置时段」提示 |
+| 5 | 「随时在线」有歧义 | 改「当前在线」+ 选中项浅色小字说明「离开本页不会自动下线，请回到本页点立即下线」 |
+| 6 | 除单次/每周还要自由选某几天 | 后端 `validateTimeSlots` 只收 `once/weekly`，第三种 type 必 400 —— 把「每周循环」重做成「按星期（可多选）」+ 生效起始日，勾哪几天就哪几天（数据层就是 weekly） |
+| 7 | 「未开始」标签位置不对 | `.slot-row__text` 改 `flex:1 + min-width:0` 收缩省略，`.slot-row__tag` `flex:none`，长文案不再把标签挤下一行 |
+| 8 | 代取要排序 + 标签分类 | 筛选条接后端已有契约：规格（itemSize）/时间（timeType: 不限/尽快/限时/时段）胶囊 + 排序（最新 / 报酬↓↑），走 `resetAndFetch` 清列表重拉 |
+| 9 | 按计划上下线没成功 | 根因：后端 `effectiveOnline` 在 slot 模式只看「此刻是否在计划时段内」，非时段时调 `/me/online` 也**不会**出现在找跑腿列表，但前端谎报「已上线」。修复：页面算 `hasActiveSlot`，非时段时主按钮只保存不调上线接口，状态条「已下线 · 11/16 09:00 自动上线」+ 底部 footnote 说明；另修 `loading` 期间点按钮静默无响应（改 toast 提示） |
+
+连带：`campus.displayArea` 修正无地标片区展示（「桃园」不再显示「桃园 · 桃园」）。
+
+**验证**：契约 **141/0**；冒烟 **392/0**（hall 64 / detail 33 / publish 38 / runner 53 / mine_errands 36 / runners 47 / chat_list 19 / chat_detail 48 / item_card 25 / place_picker 29）。
+
+#### 13）11-16 当日任务：M2 联调修复（`fix/m2-integration` 口径）
+
+**联调环境（B 本机已跑通）**：
+
+- 本机 MySQL 建 `campus_service` 库（A 的 `schema.sql` 14 表 + `objects.sql` 35 个表对象/视图/存储过程，`DELIMITER $$` 需按分隔符切句执行）+ seed 数据，`server/.env` 各机自配（已 gitignore）。一键脚本 `scripts/init-dev-db.js`（B 专属 scripts/）。
+- 演示账号密码是 **`123456`**（`seed.js` 第 9 行；文档旧值 `123456` 作废），2023001/2023002/2023003 同密码。
+- 真接口实测：带 token `/api/conversations`、`/unread-count`、`/api/items`、`/api/errands` 均 200。
+- `miniprogram/config.js` 的 `MOCK` 已按 A 要求改为 **false** 提交（`6b58344`）；离线演示本地临时改回 true 不提交（`git update-index --skip-worktree` 防误提交，解除用 `--no-skip-worktree`）。
+
+**联调修复与反馈**：
+
+| # | 事项 | 处理 |
+| --- | --- | --- |
+| 1 | **chat 路由 500（联调首日真 bug）** | `routes/chat.js` 全文件读 `req.user.userId` 但从未 `router.use(auth)` → 会话列表/未读数全 500。补挂 auth（`edf392d`）；新增 `scripts/chat-auth-smoke.js` 15/0（真 express + 真 auth + 内存假 pool，无 token 401 / 合法 token 200），并用 `git stash` 回退验证过修复前全 500 |
+| 2 | 用户 6 条反馈（上午） | 大厅「我要接单」齐平 / 缩略图 200rpx / 聊天框消失根因（nav-top 挪进 `cd-page`）/ nav-top 新增 `fixed` 属性 + 接单设置页地点搜索 / 「单次」改「自定义某天到某天」（前端逐日拆 once，契约不变）/ 详情页 chat 并入底部操作栏（`b2583b6`） |
+| 3 | 用户追加 2 条 | 搜索 `[object Object]`（`searchLandmarks` 返回对象非字符串）+ 「片区即地点」搜不到（图书馆/运动场等）+ 发送按钮宽度（`92d8fc1`） |
+| 4 | 用户三轮宽度收敛 | 微信 `button` 默认样式怪癖两连：**类选择器压不住内置 `width:184px`**（必须内联 style）；**类选择器 `margin-left` 被吞渲染为 0**（截图逐像素实测证实，缝隙一直是 0）→ 缝隙改实体 `<view class="cd-inputbar__gap">` 占位 20rpx（`523e864`） |
+| 5 | 代取详情返回按钮随滚动消失 | `errand/detail.wxml` 的 `nav-top` 加 `fixed`（bar 固定 + 不透明同色背景 `#F4F1E7`） |
+| 6 | 大厅标题滚动行为 | 标题与胶囊齐平固定、删除缩小动画（`71bc180`、`e3dc846`） |
+| 7 | 「联系发布者」直接「会话不存在」 | **mock 数据自缺**：代取单 2009/2010/2011 的发布人（publisherId 11~13）不在 mock 用户表（只有 1~9），`POST /api/conversations` 的 `userOf()` 查不到 → 404「对方用户不存在」→ 聊天页落「会话不存在」。补 3 个用户（昵称/信用分与订单 publisher 字段一致）+ 契约测试加 4 条回归（三个大厅单建会话 + peerId 99 → 404）；**已核对 A 的 `seed.js` 真实库自洽（`userIds.get(publisherNo)` 从用户映射取 ID），此 bug 仅 mock** |
+
+**验证**：契约 **145/0**（11-16 补 4 条会话回归）；冒烟 **410/0**（11 个脚本已入库 `scripts/smoke/`，别再用 Temp）。
+
+**未做（顺延）**：真机双账号 5 秒互发验收（`?mode=online` 上线状态依赖 A 的 `GET /api/runners` 真实数据）；开发者工具全页编译留证截图。
+
+#### 14）11-17 当日任务：UI 走查第二轮（`style/ui-walkthrough` 口径）
+
+**P0 清零**：`mine/profile`、`mine/settings`、`mine/help` 三页此前仍是 11-06 的占位骨架，本轮全部落地。
+
+| 页面 | 落地内容 | 口径要点 |
+| --- | --- | --- |
+| `mine/profile` | 头像 / 昵称 / 学院 / 手机号 + 只读学号·信用分·账号状态 | 昵称按 **Unicode 码点**计数 2-12（`Array.from`，emoji 不算 2）；头像必须 `/uploads/` 相对路径，>5MB 先 `wx.compressImage`，上传失败保留旧图只提示；手机号 11 位数字（后端不校验号段）；**users 表无 bio 列 → 不渲染简介**（手册 §6.4 提的简介需 A 加列） |
+| `mine/settings` | 通知开关 / 清理缓存 / 版本 / 退出登录 | 开关存 `cs_notify_enabled` 并**真联动** `app.setUnreadBadge`（关掉不画红点，未读数照常同步）；清缓存**保留 token 与用户信息**；退出走 `clearSession` + `reLaunch` |
+| `mine/help` | 8 条 FAQ 折叠 + 意见反馈 | FAQ 写真实行为（大厅只出 pending+hall、私单不出大厅、slot 只在时段内在线、轮询 3 秒、上传 5MB/格式）；反馈前端限 200 字（后端上限 500，不冲突），只提交 `content`（表无 type/status） |
+
+**三态补齐**：`mine/runner` 的 `loading` 原先只在 JS 里设、WXML 无加载分支 → 加载中会渲染空表单（易被误读成「设置被清空」）；失败只 toast。改为**骨架屏 + 错误卡片 + 重试**。
+
+**交互反馈**：大厅筛选 chip / 排序按钮、接单设置计划条「编辑·删除」补 `hover-class`（原先纯 view/text 按下无反馈）。
+
+**时间与版本口径**：`util.timeDivider()` 收编聊天时间分隔（原在 `chat/detail.js` 自造切片）；新增 `utils/version.js` 作为版本号单一来源（原 `v0.3.0` 两处硬编码）。
+
+**验证**：契约 **145/0**；冒烟 **440/0**（新增 `smoke_mine_pages.js` 30 条：字段回填、码点校验、保存同步缓存、清缓存保留登录态、FAQ 折叠、反馈上限）；`wxml_check` 全 PASS。术语抽查：**无「未接单」**，状态词与 `status-tag` 一致。
+
+**清单**：`docs/UI走查记录-B.md`「第二轮」共 11 条 —— B 侧 8 条已修完（P0 3 / P1 1 / P2 4）；**A 侧 `mine/items`、`mine/favorites` 仍占位，是当前唯一 P0 阻塞**。
+
+**A 复查修复（11-18）**：A 对 B 文件提出 4 条（P1 1 / P2 2 / P3 1）已全部闭环——头像链路（`tempFilePath` + `adapter.fullUrl` 双修）、冒烟脚本路径可移植（`__dirname` 定位）、`--color-surface-2` 在 `app.wxss` 正式定义、走查记录 #32 误报撤回 + `util.hhmm` 收编 manualUntil 切片。明细见走查记录「A 复查修复」一节。
+
+#### 15）11-19 当日任务：负向测试（`fix/negative-cases` 口径）
+
+手册表格 12 条场景（断网 / 401 / 404 / 500 / 空表单 / 报酬非法值 / 超长消息 / 越权 / 连点防重 / 轮询泄漏 / 长文本 / 新账号空态）逐条过：
+
+- **新增 `scripts/smoke/smoke_negative.js`（40 条 / 0 失败）**：把 12 条中可代码级验证的全部自动化——
+  401 清会话回登录（带 redirect）、未登录拦截与回跳分流、断网错误态不卡 loading、500 统一文案不泄内部、
+  空表单 0 请求、报酬 abc/-1/9999 全拦（前端 0<r≤200 收紧）、消息空/501 字 400、越权 403 文案透出、
+  连点 3 次只发 1 次（submitting 守卫 + 刷新后才解禁）、聊天进出 10 次无残留定时器、长文本省略、空态。
+- **12 / 12 全过，无新增 bug**；`docs/bug清单.md` 建档（Open 3 条：favorites 待 A、.page 拆分待确认、取消收藏即时刷新复验；Fixed 留痕 7 条）。
+- **测试记录**：`docs/负向测试记录-B.md`（12 条表格 + 3 条口径备注 + 待实机截图清单）。
+- **调试收获（写脚本时踩的）**：`request()` 在 `config.MOCK=true` 时短路走 mock，stub `wx.request` 必须先把内存里的 `config.MOCK` 切 false（脚本内改运行时对象、测完恢复，不动文件）；`detail.doAction` 走 `http.post` 且 `fetch()` 依赖 `data.id`，测试漏设 id 会让 submitting 提前复位（假象）。
+
+**验证**：契约 **145/0**；冒烟 **480/0**（新增 negative 40 条）。
+
+#### 16）已知阻塞（写在这里，避免口头遗忘）
 
 - ~~A 的 `server/src/routes/errands.js` 仍为占位文件~~ → **已解除（11-11 复核）**：A 已推送 `routes/errands.js`，**707 行、10 个接口**全部实现（`GET /api/errands`、`GET /api/errands/mine`、`POST /api/errands`、`GET /api/errands/:id`、`PUT /api/errands/:id`、`POST /api/errands/:id/publish`、`:id/take`、`:id/complete`、`:id/cancel`、`:id/release`）。代取联调可直连真实后端，`mock.js` 退为离线兜底。
 - ~~`routes/chat.js` 为 A 的待办~~ → **归属已纠正：聊天全栈归 B**（§1.2 分工表本来就是「A 只交付数据库对象」）。11-10 的提交 `695c5df` 已交付会话/消息表、`sp_get_or_create_conversation`、`fn_unread_count`、`trg_message_after_insert`、`v_conversation_base`，`routes/chat.js` 已由 B 于 11-11 补齐，不再互相等。
 - ~~mock 与后端字段/校验不一致~~ → **已整改（11-11 复盘）**：`utils/mock.js` 经两轮对齐后共 **39 条路由**（服务端 40 条 − `POST /api/upload` 文件上传接口，该接口不适合 mock），入参校验、返回字段、失败码逐条对齐 `server/src/routes/*.js`；`scripts/mock-contract-test.js` 已扩到 **88 项断言全过**，作为回归门槛。**后端新增接口必须同步 mock 与断言**，否则 MOCK 模式会直接报「mock 未登记该接口」。
 - ~~代取详情页无入口~~ → **已解除（11-12）**：`pages/errand/hall` 已实现列表并接好 `bindtap → /pages/errand/detail?id=`。
 - 本地仓库落后远端 19+ 提交（代码经网页提交入库），**先 `pull` 再写新代码**，否则产生大量冲突。
-- **A 的 6 个二手页面仍为占位骨架**（wxml 11 行），M1 的 UI 走查与 B 侧配合验收都要等页面落地（记录见 `docs/UI走查记录-B.md` #18）。
+- ~~A 的 6 个二手页面仍为占位骨架~~ → **已全部解除（11-20 复核）**：二手首页、商品详情、发布商品、搜索结果（11-14）、我的发布（11-18 `48a90a8`）、**我的收藏（随 A 11-19 推送交付）**，A 六页全部实现；`bug清单.md` B-1/B-3 已由 A 并入 F-8 关闭。
 - **后端无 stats 聚合接口**：个人中心四项统计用 `items/mine`、`favorites`、`errands/mine` 的 `total` 派生，`/api/errands/mine` 必须支持 `status` 筛选（mock 已对齐）。
+
+#### 17）11-20 当日任务：mock 同步接口 v0.10 + `.page--tab` 拆分 + 测试用例主笔
+
+**① mock 同步接口 v0.10（A 复核 B-4，已修）**：`utils/mock.js` 五组校验对齐 A 的最新 routes——
+- `GET /api/favorites` 支持 `status` 过滤（`on_sale/reserved/sold/off_shelf`，非法值 400「商品状态不合法」）；
+- `GET /api/items/:id` 支持 `view=0`，浏览量不 +1（不带 view 照常 +1）；
+- `POST /api/items` 拒绝售价/原价超过两位小数（`0.001` → 400，金额对齐 `DECIMAL(10,2)`）；
+- `GET /api/errands` 大厅 `status` 只允许 `pending`（其他值 400「大厅只支持待接单」，status 非字符串 400「订单状态不合法」；`hall.js` 本来就固定传 pending，无回归）;
+- `POST /api/errands` 的 `visibility` 传非字符串（数字/布尔）直接 400，不再被静默当成缺省 hall。
+
+`scripts/mock-contract-test.js` 新增 `[12]` 节 16 条断言（含 favorites/大厅 status 非字符串边界）：**契约 145/0 → 161/0**；fetch 到 A 的 `d8dc508` 后已与 `3e19a51` 真实路由逐字核对文案并二次对齐（`8b801de`）。
+
+**② 全局 `.page` / `.page--tab` 拆分（A 复核 B-2，A 已同意，已修）**：`app.wxss` 把 150rpx 底部避让从 `.page` 挪到新的 `.page--tab`（仅 tab 页需要避让悬浮胶囊 tabBar）；B 侧 3 个 tab 页根节点加 `page--tab`（`errand/hall`、`chat/list`、`mine/index`），**`pages/index/index.wxml` 属 A，由 A 自加**（已在群里对齐口径）；其余 14 个非 tab 页底部多余留白随之消失，页面代码零改动。
+
+**③ 文档纠偏（A 复核提出）**：走查记录第一轮 #18/#19/#20 与第二轮 #31/#33 及遗留表全部标注 11-20 关闭结论（A 六页已交付、拆分已执行）；手册 §16 六页阻塞条目划除；README 页面表与「17 个占位页」描述更新为 20 页全实现；负向测试记录 mine/items 抽查待办闭环。
+
+**④ 测试用例主笔（手册 §4.3 11-20 计划）**：新增 `docs/测试用例.md`（60+ 条，编号/模块/前置/步骤/预期/实际/结论/执行人）与 `docs/B测试记录.md`（B 侧 UI/聊天约 40 条执行记录，引用冒烟证据）。
+
+**验证**：契约 **161/0**；冒烟 **480/0**（12 脚本无回归）；`wxml_check` 3 个改动的 tab 页全 PASS。
 
 ### 0.5 每天建议节奏
 

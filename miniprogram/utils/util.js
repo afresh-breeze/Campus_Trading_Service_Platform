@@ -24,6 +24,26 @@ function formatTime(input, withTime) {
   return date + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 
+/**
+ * 聊天时间分隔：今天 → '14:30'，今天以前 → '11-05 14:30'
+ * （11-17 走查：原先在 chat/detail.js 里自造切片，统一收到这里，页面只做展示）
+ */
+function timeDivider(input) {
+  const full = formatTime(input);
+  if (!full) return '';
+  const today = formatTime(new Date()).slice(0, 10);
+  return full.slice(0, 10) === today ? full.slice(11, 16) : full.slice(5, 16);
+}
+
+/**
+ * 只取时分：'2026-11-17 18:00:00' → '18:00'
+ * 走 formatTime 保证解析口径一致（- 转 /、容错），页面不再自己切片
+ */
+function hhmm(input) {
+  const full = formatTime(input);
+  return full ? full.slice(11, 16) : '';
+}
+
 /** 相对时间：刚刚 / 5 分钟前 / 3 小时前 / 昨天 / 11-05 */
 function fromNow(input) {
   if (!input) return '';
@@ -123,6 +143,8 @@ function toFixed2(v) {
 module.exports = {
   REGEX,
   formatTime,
+  timeDivider,
+  hhmm,
   fromNow,
   formatPrice,
   formatBadge,
