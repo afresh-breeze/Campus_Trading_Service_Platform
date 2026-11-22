@@ -82,6 +82,7 @@
       <text class="pp-preview ellipsis">{{previewText || '请选择片区'}}</text>
       <button
         class="pp-confirm {{canConfirm ? '' : 'pp-confirm--disabled'}}"
+        hover-class="pp-confirm-hover"
         disabled="{{!canConfirm}}"
         bindtap="onConfirm"
       >确定</button>

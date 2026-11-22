@@ -6,5 +6,5 @@
   </view>
   <view class="empty__title">{{title}}</view>
   <view class="empty__desc" wx:if="{{desc}}">{{desc}}</view>
-  <view class="empty__btn" wx:if="{{actionText}}" bindtap="onAction">{{actionText}}</view>
+  <view class="empty__btn" wx:if="{{actionText}}" hover-class="empty__btn--hover" bindtap="onAction">{{actionText}}</view>
 </view>
