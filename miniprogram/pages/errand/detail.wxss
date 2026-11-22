@@ -6,7 +6,7 @@
 
 .detail {
   min-height: 100vh;
-  padding: var(--space);
+  padding: var(--space-page);
   padding-bottom: calc(var(--space) + env(safe-area-inset-bottom));
   background-color: var(--color-bg);
 }
@@ -54,6 +54,7 @@
   font-size: 52rpx;
   font-weight: 700;
   color: var(--color-price);
+  font-variant-numeric: tabular-nums;
 }
 .detail-head__label {
   margin-left: 12rpx;
@@ -231,7 +232,7 @@
   padding: 16rpx var(--space) calc(16rpx + env(safe-area-inset-bottom));
   background-color: var(--color-bg-white);
   border-top: 1rpx solid var(--color-border);
-  box-shadow: 0 -4rpx 16rpx rgba(122, 93, 64, 0.06);
+  box-shadow: var(--shadow-bar);
 }
 /* 聊天说明小字（原卡片里的 tip），在按钮行上方 */
 .detail-bar__tip {

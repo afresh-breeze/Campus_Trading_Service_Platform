@@ -6,7 +6,7 @@
     <view class="head-sub t-sub">使用学号注册，仅限本校学生</view>
   </view>
 
-  <view class="form-wrap">
+  <view class="form-wrap u-enter" style="animation-delay: 60ms">
     <view class="field-wrap">
       <view class="field">
         <text class="field-label">学号</text>
@@ -39,7 +39,7 @@
       <text wx:if="{{errors.password2}}" class="field-error">{{errors.password2}}</text>
     </view>
 
-    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmit">注册并登录</button>
+    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">注册并登录</button>
   </view>
 
   <view class="row-center login-tip">

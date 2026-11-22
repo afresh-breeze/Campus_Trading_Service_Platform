@@ -11,7 +11,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 0 var(--space) 10rpx;
+  padding: 0 var(--space-page) 10rpx;
   background-color: var(--color-bg);
 }
 /* 状态栏 + 胶囊占位：不渲染任何内容，只撑高把标题顶到与胶囊齐平 */
@@ -104,7 +104,7 @@
 }
 .chip {
   flex: none;
-  height: 52rpx;
+  height: 56rpx;
   display: flex;
   align-items: center;
   padding: 0 22rpx;
@@ -169,7 +169,9 @@
   height: 24rpx;
   border-radius: var(--radius-sm);
   background-color: var(--color-divider);
-  animation: sk-pulse 1.2s ease-in-out infinite;
+  background: linear-gradient(90deg, #efe6d8 25%, #faf6ee 37%, #efe6d8 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
 }
 .sk-line + .sk-line {
   margin-top: 18rpx;
@@ -196,14 +198,18 @@
 
 /* ---------------- 订单卡片 ---------------- */
 .order {
-  margin: var(--space-sm) var(--space) 0;
-  padding: var(--space);
+  margin: 20rpx var(--space-page) 0;
+  padding: 28rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease-out;
 }
 .order--hover {
-  background-color: var(--color-bg);
+  transform: scale(0.985);
+  box-shadow: var(--shadow-card-hover);
 }
 /* 卡片主体：左缩略图 + 右内容 */
 .order__main {
@@ -263,20 +269,32 @@
 .order__reward {
   flex: none;
   text-align: right;
-  padding-left: var(--space-sm);
-  border-left: 1rpx solid var(--color-divider);
+  /* UI 优化 6.7：浅主色底胶囊 */
+  margin-left: var(--space-sm);
+  padding: 10rpx 16rpx;
+  border-radius: 12rpx;
+  background: rgba(230, 168, 116, 0.18);
 }
 .order__price {
   display: block;
-  font-size: var(--font-xl);
+  font-size: 36rpx;
   font-weight: 700;
   color: var(--color-price);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 .order__reward-label {
   display: block;
   margin-top: 2rpx;
   font-size: var(--font-xs);
   color: var(--color-text-3);
+}
+
+/* 路线连接虚线（方案 6.7） */
+.order__connector {
+  height: 20rpx;
+  margin-left: 6rpx;
+  border-left: 2rpx dashed var(--color-border);
 }
 
 .order__meta {
@@ -335,7 +353,7 @@
   flex: none;
   margin-left: var(--space-sm);
   font-size: var(--font-xs);
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
 }
 
 /* ---------------- 底部加载提示 ---------------- */

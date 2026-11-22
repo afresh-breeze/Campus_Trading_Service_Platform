@@ -378,6 +378,37 @@ scroll-view {
   animation: sk-shimmer 1.4s ease infinite;
 }
 
+/* 骨架卡片通用结构：此前只有大厅页定义过，聊天列表/详情两页引用了却无样式（漏定义），现全局化 */
+.sk-card {
+  margin: 20rpx var(--space-page) 0;
+  padding: 28rpx;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.sk-line {
+  height: 28rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #efe6d8 25%, #faf6ee 37%, #efe6d8 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+.sk-line--lg {
+  height: 32rpx;
+  width: 55%;
+}
+.sk-line--md {
+  height: 26rpx;
+  width: 80%;
+}
+.sk-line--sm {
+  height: 24rpx;
+  width: 40%;
+}
+.sk-line + .sk-line {
+  margin-top: 16rpx;
+}
+
 /* 分组标题：左侧短竖条，给详情/表单页建立节奏 */
 .t-section {
   display: flex;

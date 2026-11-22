@@ -7,7 +7,7 @@
     <view class="hero-sub">校园二手交易 · 代取跑腿</view>
   </view>
 
-  <view class="form-wrap">
+  <view class="form-wrap u-enter" style="animation-delay: 60ms">
     <view class="field">
       <text class="field-label">学号</text>
       <input
@@ -34,7 +34,7 @@
       />
     </view>
 
-    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onSubmit">
+    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
       登录
     </button>
 

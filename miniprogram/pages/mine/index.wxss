@@ -9,13 +9,28 @@
   display: flex;
   align-items: center;
   padding: 32rpx 28rpx;
-  background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
+  /* UI 优化 6.6：暖色渐变用户卡 + 右上柔光圆 */
+  background: linear-gradient(135deg, #FCE7C8 0%, #FFFFFF 70%);
+  border-radius: 28rpx;
   box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mine-hero::before {
+  content: '';
+  position: absolute;
+  right: -40rpx;
+  top: -50rpx;
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 168, 116, 0.22), transparent 70%);
+  pointer-events: none;
 }
 
 .mine-hero--hover {
-  background-color: var(--color-divider);
+  transform: scale(0.995);
 }
 
 .mine-hero__avatar {
@@ -23,6 +38,10 @@
   height: 112rpx;
   flex-shrink: 0;
   border-radius: 50%;
+  /* 4rpx 页面底色描边，头像更「立」（方案 6.6） */
+  border: 4rpx solid var(--color-bg);
+  box-sizing: content-box;
+  margin-left: 4rpx;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -56,7 +75,7 @@
 }
 
 .mine-hero__name {
-  font-size: 34rpx;
+  font-size: 36rpx;
   font-weight: 600;
   color: var(--color-text);
   max-width: 320rpx;
@@ -97,6 +116,7 @@
   align-items: center;
   gap: 6rpx;
   position: relative;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* 分隔线用伪元素，避免每格都加 border 造成首尾多一条 */
@@ -115,14 +135,16 @@
 }
 
 .mine-stats__item--hover {
-  background-color: var(--color-divider);
+  background-color: var(--color-surface-2);
+  transform: scale(0.995);
 }
 
 .mine-stats__num {
-  font-size: 34rpx;
-  font-weight: 600;
+  font-size: 38rpx;
+  font-weight: 700;
   color: var(--color-text);
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .mine-stats__label {
@@ -134,7 +156,7 @@
 .mine-group {
   margin-top: 20rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
@@ -143,15 +165,16 @@
   padding: 22rpx 28rpx 10rpx;
   font-size: 22rpx;
   color: var(--color-text-3);
-  letter-spacing: 1rpx;
+  letter-spacing: 2rpx;
 }
 
 .mine-cell {
   display: flex;
   align-items: center;
-  height: 96rpx;
+  height: 100rpx;
   padding: 0 28rpx;
   position: relative;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mine-cell::after {
@@ -169,7 +192,8 @@
 }
 
 .mine-cell--hover {
-  background-color: var(--color-divider);
+  background-color: var(--color-surface-2);
+  transform: scale(0.995);
 }
 
 .mine-cell__text {
@@ -188,6 +212,7 @@
 .mine-logout {
   margin-top: 20rpx;
   height: 96rpx;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   justify-content: center;

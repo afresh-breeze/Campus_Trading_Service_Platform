@@ -98,7 +98,8 @@
   <block wx:else>
     <!-- 列表 -->
     <view
-      class="order"
+      class="order {{index < 6 ? 'u-enter' : ''}}"
+      style="animation-delay: {{index < 6 ? index * 40 : 0}}ms"
       wx:for="{{list}}"
       wx:key="orderId"
       data-id="{{item.orderId}}"
@@ -116,6 +117,7 @@
                 <view class="order__dot order__dot--from"></view>
                 <text class="order__place ellipsis">{{item.fromText}}</text>
               </view>
+              <view class="order__connector"></view>
               <view class="order__line">
                 <view class="order__dot order__dot--to"></view>
                 <text class="order__place ellipsis">{{item.toText}}</text>

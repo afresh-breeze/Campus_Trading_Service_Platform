@@ -21,6 +21,28 @@
   text-align: center;
   line-height: 128rpx;
   box-shadow: var(--shadow-float);
+  position: relative;
+}
+/* UI 优化 6.1：logo 后两个柔和光晕圆（纯 CSS，不用图片） */
+.logo::before,
+.logo::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 168, 116, 0.28), transparent 70%);
+  pointer-events: none;
+}
+.logo::before {
+  width: 200rpx;
+  height: 200rpx;
+  left: -90rpx;
+  top: -60rpx;
+}
+.logo::after {
+  width: 150rpx;
+  height: 150rpx;
+  right: -80rpx;
+  bottom: -50rpx;
 }
 .hero-title {
   margin-top: 28rpx;

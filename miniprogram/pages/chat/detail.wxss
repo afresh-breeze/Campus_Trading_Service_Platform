@@ -29,11 +29,16 @@
   margin: 16rpx 20rpx;
   padding: 16rpx 20rpx;
   background: var(--color-surface, #ffffff);
-  border-radius: 16rpx;
+  border-radius: 20rpx;
+  box-shadow: var(--shadow-card);
   flex-shrink: 0;
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease-out;
 }
 .cd-biz--hover {
-  opacity: 0.9;
+  transform: scale(0.985);
+  box-shadow: var(--shadow-card-hover);
 }
 .cd-biz__cover {
   width: 76rpx;
@@ -122,11 +127,16 @@
 .cd-bubble {
   max-width: 70%;
   padding: 16rpx 20rpx;
-  border-radius: 16rpx;
+  /* 单角收口：对方左下收口 */
+  border-radius: 20rpx 20rpx 20rpx 6rpx;
   background: var(--color-surface, #ffffff);
+  border: 1rpx solid var(--color-border, #E9DFD0);
   position: relative;
 }
 .cd-bubble--mine {
+  /* 我方右下收口 */
+  border-radius: 20rpx 20rpx 6rpx 20rpx;
+  border: none;
   background: var(--color-primary-dark);
 }
 .cd-bubble--mine .cd-bubble__text {
@@ -163,8 +173,9 @@
   display: flex;
   align-items: center;
   padding: 16rpx 20rpx;
-  background: var(--color-surface, #ffffff);
+  background: #ffffff;
   border-top: 1rpx solid var(--color-border, #eee6d8);
+  box-shadow: var(--shadow-bar);
   flex-shrink: 0;
 }
 .cd-inputbar__input {

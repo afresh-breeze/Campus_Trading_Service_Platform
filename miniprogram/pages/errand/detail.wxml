@@ -144,6 +144,7 @@
       wx:for="{{actions}}"
       wx:key="key"
       class="btn detail-bar__btn {{item.primary ? 'btn-primary' : (item.danger ? 'btn-danger' : 'btn-ghost')}}"
+      hover-class="btn--press"
       data-key="{{item.key}}"
       disabled="{{submitting}}"
       loading="{{submitting && actionKey === item.key}}"
