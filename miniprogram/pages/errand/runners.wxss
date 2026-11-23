@@ -163,7 +163,6 @@
   border-radius: 999rpx;
 }
 .rp-contact--hover {
-  transform: scale(0.96);
   opacity: 0.9;
 }
 
@@ -197,5 +196,4 @@
 /* 地点选择入口行按压反馈（wxml 已引用，此前无定义） */
 .field--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.995);
 }

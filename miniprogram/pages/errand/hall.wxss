@@ -57,7 +57,6 @@
   background-color: var(--color-primary-light);
 }
 .hall-bar__entry--hover {
-  transform: scale(0.97);
   opacity: 0.9;
 }
 .hall-bar__entry-text {
@@ -212,7 +211,8 @@
     box-shadow 200ms ease-out;
 }
 .order--hover {
-  transform: scale(0.985);
+  /* 对齐 A 口径：opacity 压暗 + 阴影加深（不缩放，避免文字重栅格化抖动） */
+  opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
 }
 /* 卡片主体：左缩略图 + 右内容 */
@@ -370,16 +370,13 @@
   color: var(--color-text-4);
 }
 .fab--hover {
-  transform: scale(0.94);
-  opacity: 0.9;
+  opacity: 0.88;
 }
 
 /* 11-17 走查：筛选/排序按下要有反馈（选中态是结果，不是按下反馈） */
 .chip--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.97);
 }
 .sort-btn--hover {
-  transform: scale(0.97);
   opacity: 0.7;
 }

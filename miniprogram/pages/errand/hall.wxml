@@ -98,8 +98,7 @@
   <block wx:else>
     <!-- 列表 -->
     <view
-      class="order {{index < 6 ? 'u-enter' : ''}}"
-      style="animation-delay: {{index < 6 ? index * 40 : 0}}ms"
+      class="order"
       wx:for="{{list}}"
       wx:key="orderId"
       data-id="{{item.orderId}}"

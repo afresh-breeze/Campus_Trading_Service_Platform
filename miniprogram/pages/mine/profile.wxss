@@ -14,7 +14,6 @@
 }
 .pf-row--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.995);
 }
 .pf-row__label {
   width: 150rpx;

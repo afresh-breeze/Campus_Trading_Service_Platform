@@ -23,8 +23,7 @@
   font-weight: 600;
 }
 .me-tabs__item--hover {
-  transform: scale(0.97);
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
 /* ---- 状态筛选 chips ---- */
@@ -48,7 +47,6 @@
   color: #ffffff;
 }
 .me-chip--hover {
-  transform: scale(0.97);
   opacity: 0.9;
 }
 .me-chip__count {
@@ -83,7 +81,7 @@
   margin-bottom: 20rpx;
 }
 .me-order--hover {
-  transform: scale(0.985);
+  opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
 }
 .me-order__top {

@@ -30,7 +30,7 @@
 }
 
 .mine-hero--hover {
-  transform: scale(0.995);
+  opacity: 0.94;
 }
 
 .mine-hero__avatar {
@@ -136,7 +136,6 @@
 
 .mine-stats__item--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.995);
 }
 
 .mine-stats__num {
@@ -193,7 +192,6 @@
 
 .mine-cell--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.995);
 }
 
 .mine-cell__text {

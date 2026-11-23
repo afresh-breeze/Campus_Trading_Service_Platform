@@ -30,7 +30,6 @@
 }
 .hp-faq__q--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.995);
 }
 .hp-faq__q-text {
   flex: 1;

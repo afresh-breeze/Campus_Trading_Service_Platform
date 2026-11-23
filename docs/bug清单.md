@@ -24,6 +24,7 @@
 | F-8 | `mine/items`、`mine/favorites` | 两页此前占位；收藏取消后列表不即时移除 | `mine/items` `48a90a8` 只读列表；`mine/favorites` `e9fc5b4`：四状态筛选、状态标签左上、右下心形取消、取消后本地移除+静默刷新 | P1 | 11-19（B 11-20 复核确认已提交入库） |
 | F-9 | 全局 `.page`（原 B-2） | 非 tab 页套 `.page` 底部多约 150rpx 空白（避让悬浮 tabBar 的 padding 对非 tab 页多余） | 11-20 A 同意后拆分：`app.wxss` 拆 `.page`/`.page--tab`，B 侧 3 个 tab 页加 `page--tab`，`index/index` 由 A 自加；`wxml_check` 全 PASS | P2 | 11-20 |
 | F-10 | `utils/mock.js`（原 B-4） | 未同步 A 的 v0.10 契约：favorites 忽略 `status`；items/:id 忽略 `view=0` 仍计数；POST items 未拦两位小数；大厅 `status` 仍允许已完成 | 11-20 五组校验对齐 + 文案逐字对齐 `3e19a51`（含 status/visibility 非字符串边界）；契约测试 `[12]` 节 16 条，契约 **161/0**、冒烟 480/0 | P2 | 11-20 |
+| F-11 | B 侧全站按压反馈（11-22 对齐引入） | 按压时「字快速抖动」：scale 缩放使文字逐帧重栅格化；大厅/聊天列表卡片 `u-enter` 入场动画（fill both 占用 transform）与 scale 按压叠加冲突 | 11-23 全站按压改 A 口径——文字类元素一律 opacity 压暗（.btn--press/.u-press--hover/14 处页面 hover 类/empty-state/place-picker），scale 仅保留 item-card 图卡与 nav-top 纯图标；摘掉 hall 订单卡与 chat/list 会话卡的 u-enter；wxml_check PASS、契约 161/0、冒烟全过 | P1 | 11-23 |
 
 ## 三、复验记录
 

@@ -206,7 +206,7 @@ scroll-view {
     box-shadow var(--dur-base) ease-out;
 }
 .btn--press {
-  transform: scale(0.98);
+  /* 对齐 A 侧口径：按压只压暗不缩放——scale 会让文字逐帧重新栅格化，出现「字抖动」 */
   opacity: 0.92;
 }
 .btn::after {
@@ -345,7 +345,7 @@ scroll-view {
     opacity var(--dur-fast) var(--ease-out);
 }
 .u-press--hover {
-  transform: scale(0.985);
+  /* 对齐 A 侧口径：opacity 压暗（scale 会引起文字重栅格化抖动，11-23 反馈） */
   opacity: 0.94;
 }
 

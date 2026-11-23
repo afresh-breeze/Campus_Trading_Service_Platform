@@ -267,7 +267,6 @@
 }
 /* 按压反馈（组件样式隔离，hover 类需本组件自带） */
 .pp-confirm-hover {
-  transform: scale(0.98);
   opacity: 0.92;
 }
 /* 隐藏 button 默认边框（小程序 button 有 ::after 边框） */

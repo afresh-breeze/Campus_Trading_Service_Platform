@@ -40,8 +40,7 @@
       <view
         wx:for="{{list}}"
         wx:key="conversationId"
-        class="cl-conv {{index < 6 ? 'u-enter' : ''}}"
-        style="animation-delay: {{index < 6 ? index * 40 : 0}}ms"
+        class="cl-conv"
         data-id="{{item.conversationId}}"
         data-peer="{{item.peerId}}"
         data-biztype="{{item.bizType}}"

@@ -23,7 +23,6 @@
 }
 .st-row--hover {
   background-color: var(--color-surface-2);
-  transform: scale(0.995);
 }
 .st-row__main {
   flex: 1;
