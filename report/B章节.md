@@ -252,3 +252,296 @@
 | created_at | DATETIME | NOT NULL 默认当前时间 | 提交时间 |
 
 索引：idx_feedback_user_time(user_id, created_at)。
+
+---
+
+# B 章节 · 第 7 章 系统实现
+
+> 负责人：B ｜ 2026-11-23 初稿 ｜ 依据：`miniprogram/`（B 14 页 + 公共层）、`server/src/`（A 主笔，B 参与 `routes/chat.js`）
+> 截图占位说明：7.4 / 7.6 的截图随 11-20 起的截图归档统一补入 `report/assets/`，文中以 ⬜ 标注。
+
+## 7.1 系统总体架构
+
+系统采用「小程序端 + 后端服务 + 数据库」三层架构（图 7-1）：
+
+```text
+┌─────────────────────────────────────────────────┐
+│  微信小程序（miniprogram/，19,437 行）              │
+│  20 个页面 ｜ 5 个公共组件 ｜ utils 公共层            │
+│  request.js 统一封装 ←→ MOCK 模式（utils/mock.js）  │
+└──────────────────────┬──────────────────────────┘
+                       │ HTTPS / JSON
+                       │ Authorization: Bearer <token>
+┌──────────────────────▼──────────────────────────┐
+│  Express 后端（server/src/，3,765 行，19 个 JS 文件）│
+│  11 个路由模块 ｜ auth 鉴权中间件 ｜ 统一响应 ok/fail │
+│  全局错误中间件 ｜ multer 上传                       │
+└──────────────────────┬──────────────────────────┘
+                       │ mysql2 连接池，参数化 SQL
+┌──────────────────────▼──────────────────────────┐
+│  MySQL（database/，14 张表）                        │
+│  3 视图 ｜ 2 触发器组 ｜ 1 存储过程 ｜ 1 自定义函数    │
+│  ENUM + CHECK 状态机 ｜ 状态日志表                   │
+└─────────────────────────────────────────────────┘
+```
+
+（图 7-1 系统总体架构图 ⬜ 按上图绘制）
+
+三个关键设计决策：
+
+1. **统一响应契约**：后端所有接口返回 `{ code, message, data }`，`code === 0` 成功；`fail()` 的 `code` 即 HTTP 状态码，前端据此做 401/403/404/409 分支，两端无需各自的错误字典。
+2. **契约同构的 MOCK 层**：`miniprogram/utils/mock.js` 与 A 的真实路由逐字对齐（含错误文案、分页上限 50、两位小数校验），由 `scripts/mock-contract-test.js` 161 条断言锁定。后端未联调时前端可独立开发演示，切换只需改 `config.MOCK`。
+3. **权限判断前置后端**：详情/订单类接口直接返回 `canTake/canEdit/canPublish/canComplete/canCancel/canRelease` 布尔字段，前端不自行推导权限，避免两端规则漂移。
+
+## 7.2 小程序端实现
+
+**代码量统计（表 7-1）**
+
+| 部分 | 文件数 | 行数 | 说明 |
+| --- | --- | --- | --- |
+| miniprogram JS | 35 | 11,146 | 页面逻辑、公共层、custom-tab-bar |
+| miniprogram WXML | 26 | 2,898 | 页面结构 |
+| miniprogram WXSS | 27 | 5,393 | 全局设计令牌 + 页面样式 |
+| **小程序端合计** | **88** | **19,437** | — |
+| server/src JS | 19 | 3,765 | A 主笔（B 参与 chat.js） |
+| scripts 测试脚本 | 16 | 3,953 | 契约测试 + 12 个冒烟脚本（不入小程序包） |
+
+**公共层（miniprogram/utils/）**：
+
+- `request.js`：统一网络封装。约定（与 A 后端一致）：响应体 `{code,message,data}`、code 0 成功 resolve、401 清登录态跳登录（`skipAuthRedirect` 例外）、403「账号已被禁用」特判、其余 code 默认 toast；支持 `silent/loading/auth` 选项。MOCK 模式只走 mock，路由未登记明确报错，绝不回落真实网络。
+- `adapter.js`：图片地址适配（相对路径 `/uploads/...` 与 `fullUrl` 拼接）。
+- `mock.js`：与 A 路由逐字对齐的契约层（见 7.4 关键功能 2）。
+- `campus.js`：25 片区 + 52 地标唯一数据源（与 `server/src/utils/campus.js` 同步）。
+- `util.js` / `version.js`：时间格式化等工具与版本号。
+
+**公共组件（miniprogram/components/，5 个）**：`item-card`（商品卡）、`status-tag`（状态标签）、`empty-state`（空态）、`nav-top`（自定义导航）、`place-picker`（片区/地标联动选择）。另有 `custom-tab-bar` 实现半透明模糊底栏。
+
+**页面结构**：20 个页面，其中 B 独立负责 14 页（登录、注册、代取大厅、发布代取、代取详情、找跑腿、我的代取、接单设置、聊天列表、聊天详情、我的、个人资料、设置、帮助），A 负责 6 页（首页、搜索、商品详情、发布商品、我的发布、我的收藏）。页面按「登录门 → 业务页」组织，受限页通过 `app.requireLogin(path)` 守卫，登录成功带 `redirect` 回跳。
+
+## 7.3 后端接口实现
+
+> 本节由 B 依据 A 的代码归纳，代码归 A。
+
+**路由分层**：11 个路由模块挂载于 `/api` 前缀——`auth`（登录/注册）、`users`（资料）、`items`（商品）、`books`（书目）、`categories`、`favorites`、`errands`（代取）、`runners`（跑腿）、`chat`（会话/消息）、`upload`、`feedback`。固定路由注册在 `/:id` 之前（如 chat 的 `/unread-count`），避免路径参数误吞。
+
+**鉴权中间件**：`middleware/auth.js` 校验 `Authorization: Bearer <token>`，失败统一 401；禁用账号固定返回 403 +「账号已被禁用」文案（前端据此清会话踢回登录页）。路由按需挂载，公开接口（登录、注册）不挂。
+
+**统一响应**：`ok(res, data)` / `fail(res, code, message)` 两个助手，`fail` 的 code 直接作为 HTTP 状态码（400 参数错 / 401 未登录 / 403 越权 / 404 不存在 / 409 状态冲突），保证全站错误语义一致。
+
+**全局错误中间件**：兜底 500，固定返回「服务器错误」，不向外泄漏堆栈；业务校验失败则透出可读的 `message`（如「该单已被别人接走」）。
+
+## 7.4 关键功能实现
+
+每个关键功能按「需求 → 设计 → 代码片段 → 效果截图」四段写，代码只放最关键的判断。
+
+### 7.4.1 登录鉴权（前端请求层）
+
+**需求**：token 过期自动踢回登录页；但登录接口自身的 401（「学号或密码错误」）不能被误当成「登录过期」而清掉用户已有的会话。
+
+**设计**：`request.js` 在响应拦截处区分两种 401——调用方传 `skipAuthRedirect`（登录接口专用）时走普通错误分支只 toast；其余 401 统一 `clearSessionEverywhere()`（走 `app.clearSession`，连同未读数、tabBar 角标一起清）后带 redirect 跳登录页。
+
+```js
+// miniprogram/utils/request.js（节选）
+if ((status === 401 || body.code === config.UNAUTHORIZED_CODE)
+    && !opts.skipAuthRedirect) {
+  handleUnauthorized();            // 清登录态（含角标/未读）+ 跳登录页
+  reject({ code: 401, message: '登录已失效，请重新登录' });
+  return;
+}
+// 403 + 「账号已被禁用」：清会话回登录页，不留假登录态
+if (status === 403 && (body && body.message) === '账号已被禁用') { ... }
+```
+
+**效果**：输错密码只出 toast 不跳页（TC-U02）；token 过期任何请求自动回登录页且并发只跳一次（TC-U07）⬜ 截图。
+
+### 7.4.2 代取/商品状态机
+
+**需求**：状态流转只能沿合法路径进行（如已售出是终态），非法流转必须 409；前端按钮随权限字段显隐。
+
+**设计**：状态机用「映射表 + 白名单判定」固化，与 A 的 `errands.js` / `items.js` 语义一致；前端不自推权限，按钮显隐信任接口返回的 `canXxx` 字段。
+
+```js
+// miniprogram/utils/mock.js（与 A 路由逐字对齐）
+const STATUS_TRANSITIONS = {
+  on_sale:  ['reserved', 'sold', 'off_shelf'],
+  reserved: ['on_sale', 'sold'],
+  off_shelf: ['on_sale'],
+  sold: []                                // 终态
+};
+// PUT /api/items/:id/status（节选）
+const allowed = STATUS_TRANSITIONS[found.status] || [];
+if (allowed.indexOf(status) < 0) return fail(409, '当前状态不能变更为目标状态');
+```
+
+**效果**：sold → on_sale 409（A 的 Postman API-17 PASS）；前端连点接单由 `submitting` 守卫只发 1 次请求（负向场景 9）⬜ 截图。
+
+### 7.4.3 聊天会话建立（B 参与 chat.js，A 文件）
+
+**需求**：同一对用户对同一业务对象（商品/代取单）只会话建一条；私单只有发布者能发起会话。
+
+**设计**：会话表以 `chk_conversations_user_order` 约束 `user_a_id < user_b_id` 归一化 + 四元组唯一键去重；路由层调存储过程 `sp_get_or_create_conversation`，存储过程内部先查后插，配合唯一键在两端并发创建时也只留一条。
+
+```js
+// server/src/routes/chat.js（B 实现，节选）
+if (order.visibility === 'private'
+    && Number(order.publisherId) !== Number(userId)) {
+  return fail(res, 403, '私单只能由发布者发起会话');
+}
+// 存储过程保证 user_a_id < user_b_id 归一化 + 唯一键去重
+conn = await pool.getConnection();
+await conn.query('CALL sp_get_or_create_conversation(?, ?, ?, ?, @conversationId)',
+  [userId, peerId, bizType, bizId]);
+const [outRows] = await conn.query('SELECT @conversationId AS conversationId');
+```
+
+**效果**：别人私单建会话 → 403 友好提示（负向场景 8）；同一商品反复「联系对方」不产生重复会话（TC-C 系列）⬜ 截图。
+
+### 7.4.4 消息轮询与增量拉取
+
+**需求**：聊天页无 WebSocket 依赖，用定时轮询保持消息新鲜；页面隐藏必须停止轮询，进出 10 次不留定时器。
+
+**设计**：`onLoad` 拉全量，此后以 `messageId` 为游标只拉增量（后端索引 `idx_messages_conv_msg(conversation_id, message_id)` 支撑游标查询）；`onShow` 起轮询、`onHide`/`onUnload` 均 `clearInterval`，`_pollTimer` 守卫防止叠加；隐藏时顺手标记已读。
+
+```js
+// miniprogram/pages/chat/detail.js（节选）
+startPoll() {
+  if (this._pollTimer || !this.data.conversationId) return;   // 守卫不叠加
+  this._pollTimer = setInterval(() => this.pollTick(), POLL_INTERVAL);
+},
+stopPoll() {
+  if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+},
+onHide() { this.stopPoll(); this.markRead(); }   // 隐藏即停轮询 + 标已读
+```
+
+**效果**：快速进出聊天页 10 次后定时器集合为空（负向场景 10，`smoke_negative.js` [10] 断言）⬜ 截图。
+
+## 7.5 数据库访问
+
+> 数据库对象归 A，本节写访问侧的关键约定与调用点。
+
+- **连接与参数化**：全部经 `mysql2/pool` 连接池访问，语句一律 `?` 占位符传参（如 7.4.3、7.4.4 的 `pool.query(sql, [params])`），杜绝字符串拼接注入。
+- **视图调用点**：`chat.js` 的会话列表/详情读 `v_conversation_base`（一次 JOIN 出双方昵称头像），商品列表读 `v_item_list`（聚合首图/浏览数），未读数由 `fn_unread_count(conversationId, userId)` 按行计算。
+- **存储过程调用点**：`sp_get_or_create_conversation`（7.4.3）是会话创建唯一入口，保证归一化与并发去重。
+- **触发器维护**：messages 插入后由触发器回写 conversations 的 `last_message/last_time`，未读数不冗余存储、读时聚合，写侧一致。
+- **状态日志**：items/errands 状态变更由触发器写入两张状态日志表，形成完整审计轨迹。
+- **事务/乐观锁**：接单等并发敏感操作由 A 在 errands 层以条件 UPDATE（影响行数判定）处理，竞态失败返回 409「该单已被别人接走」（8.5 详述）。
+
+## 7.6 界面展示
+
+截图随归档补入 `report/assets/`，以下为拍摄清单（⬜）：
+
+| # | 截图 | 一句话说明 |
+| --- | --- | --- |
+| 1 | 登录页 | 学号密码登录，奶油纸感设计令牌 |
+| 2 | 二手首页 | 分类宫格 + 商品瀑布流（A 页） |
+| 3 | 商品详情 | 轮播图 + 成色/价格 + 收藏与联系卖家 |
+| 4 | 发布商品（book 模式） | 选书目自动带出 ISBN 与参考价 |
+| 5 | 代取大厅 | 待接单大厅卡：片区路线连接线 + 报酬胶囊 |
+| 6 | 发布代取 | 片区/地标联动选择器 + 时间三类型 |
+| 7 | 代取详情 | 状态条 + canXxx 权限按钮组 |
+| 8 | 找跑腿 | 在线跑腿列表（effectiveOnline 口径） |
+| 9 | 接单设置 | 片区多选 + 每周/单次在线计划 |
+| 10 | 聊天列表 | 会话卡 + 未读角标 |
+| 11 | 聊天详情 | 气泡流 + 500 字输入栏 |
+| 12 | 我的 | 用户卡 + 统计行 + 全部功能入口 |
+
+---
+
+# B 章节 · 第 8 章 系统测试
+
+> 负责人：B ｜ 2026-11-23 初稿 ｜ 数字口径：全部来自 `docs/测试用例.md`、`docs/B测试记录.md`、`docs/负向测试记录-B.md`、`docs/bug清单.md`、`docs/A测试记录.md`，与正文引用文件保持一致。
+
+## 8.1 测试环境与方法
+
+| 项 | 内容 |
+| --- | --- |
+| 环境 | Windows 11 + 微信开发者工具（小程序端）；Node.js + Express + MySQL（后端，A 维护） |
+| 方法 | ① **代码级冒烟测试**：12 个自写 Node 脚本（`scripts/smoke/`）直接解析 WXML/JS 断言交互逻辑，合计 480 条断言；② **契约测试**：`scripts/mock-contract-test.js` 161 条断言锁定 mock 与 A 真实路由逐字一致；③ **接口测试**：A 的 Postman 集合（newman 6.2.3，116 请求 / 378 断言）；④ **走查 + 负向测试**：两轮 UI 走查 + 12 条异常场景；⑤ **用例管理**：`docs/测试用例.md` 65 条（B 48 / A 17） |
+| 证据约定 | B 侧「实际结果」必须落到冒烟脚本编号 / 契约断言编号 / 走查记录章节，不接受口头「过了」 |
+
+## 8.2 测试用例设计
+
+用例按「模块 × 正反向」设计，正向覆盖主流程闭环，反向覆盖参数校验、越权、状态冲突。P0（阻塞演示路径）必须在演示前 100% 通过。全表见 `docs/测试用例.md`（65 条），模块分布如表 8-1：
+
+**表 8-1 用例模块分布**
+
+| 模块 | 用例数 | B（UI/聊天） | A（后端/数据库） |
+| --- | --- | --- | --- |
+| 用户与登录 | 12 | 8 | 4 |
+| 二手商品 | 11 | 8 | 3 |
+| 收藏 | 5 | 4 | 1 |
+| 代取 | 15 | 12 | 3 |
+| 聊天 | 10 | 8 | 2 |
+| 公共与全局 | 12 | 8 | 4 |
+| **合计** | **65** | **48** | **17** |
+
+## 8.3 功能测试结果
+
+**表 8-2 功能测试结果统计**（与 `docs/测试用例.md` §七 一致）
+
+| 模块 | B 通过 / B 用例 | A 执行情况 |
+| --- | --- | --- |
+| 用户与登录 | 8 / 8 | 4 条待 A 回填 |
+| 二手商品 | 8 / 8 | 3 条待 A 回填（其中 TC-I09/I10 的 mock 断言已过） |
+| 收藏 | 4 / 4 | 1 条待 A 回填 |
+| 代取 | 12 / 12 | 3 条待 A 回填 |
+| 聊天 | 8 / 8 | 2 条待 A 回填 |
+| 公共与全局 | 8 / 8 | 4 条待 A 回填 |
+| **合计** | **48 / 48（100%）** | **17 条已立、待执行** |
+
+- **B 侧 48 条全部通过，P0 用例全量 100%**（证据链：`docs/B测试记录.md` 三链映射）。
+- **A 侧自动化回归已过**：Postman 集合 **116/116 请求、378/378 断言**通过（2026-11-20 newman，总耗时 10.6s，平均响应 8ms）；数据库对象用例待 A 执行回填。
+- **自动化基线**：冒烟 **480 / 0**（12 脚本）、契约 **161 / 0**、WXML 配平检查全 PASS。每次回归数字以仓库最新提交为准。
+
+## 8.4 异常与边界测试
+
+12 条负向场景全部通过（详见 `docs/负向测试记录-B.md`，自动化断言 `smoke_negative.js` 40/0），摘要如表 8-3：
+
+**表 8-3 负向测试摘要**
+
+| # | 场景 | 结果与关键证据 |
+| --- | --- | --- |
+| 1 | token 过期/被删 | ✅ 清会话（含角标）→ 带 redirect 回登录页 |
+| 2 | 未登录点受限页 | ✅ 拦截跳登录，登录后回原页 |
+| 3 | 断网刷列表 | ✅ 错误态 + 重试；翻页失败只 toast 保留已有列表 |
+| 4 | 后端 500 | ✅ 固定「服务器错误」，不漏堆栈；业务错误透出可读 message |
+| 5 | 提交空表单 | ✅ 字段级红字拦截，请求数为 0 |
+| 6 | 报酬 abc / -1 / 9999 | ✅ 前端全部拦截（0 < r ≤ 200） |
+| 7 | 消息发空 / 501 字 | ✅ 前端 maxlength 截断 + 后端 400 双层 |
+| 8 | 打开别人的私单（越权） | ✅ 403「私单只能由发布者发起会话」，友好错误卡 |
+| 9 | 快速连点接单 3 次 | ✅ `submitting` 守卫，只发 1 次请求 |
+| 10 | 聊天页快速进出 10 次 | ✅ 定时器集合为空，无泄漏 |
+| 11 | 长昵称 / 长标题 | ✅ 省略号截断，不撑破布局 |
+| 12 | 无数据新账号 | ✅ 空态组件 + 引导按钮 |
+
+**口径备注（写进报告避免歧义）**：① 报酬上限是两层口径——后端按 `DECIMAL(10,2)` 上限放行，**前端收紧到 200 元**，填 9999 时到不了后端；② 401 有双语义（登录密码错 vs 登录过期），由 `skipAuthRedirect` 区分；③ 500 文案由 A 的错误中间件统一，400/403/409 才透出后端 message。
+
+## 8.5 并发测试
+
+按计划设计了两类并发场景，执行状态如实区分：
+
+1. **商品状态机并发**：已覆盖。已售出终态再上架返回 409（A 的 Postman API-17 PASS）；`STATUS_TRANSITIONS` 白名单（7.4.2）保证任意非法流转 409。
+2. **双账号并发接单（409 竞态）**：**用例已立（API-24）、双账号真机端到端待执行**（A 测试记录 M2 待办，与 M2 真机验收同批）。代码层已有三重保障：接单按钮 `submitting` 守卫防连点（负向场景 9）；后端接单为条件 UPDATE、影响行数判定，失败 409「该单已被别人接走」；会话创建走存储过程 + 唯一键，两端并发建会话只留一条。
+
+## 8.6 缺陷统计与修复
+
+开发全程缺陷登记于 `docs/bug清单.md`。累计缺陷 10 个（P0×2、P1×3、P2×5），**已全部修复关闭，当前 Open 为 0**，另有 3 条「口径备注」（非缺陷）单独留痕。
+
+**表 8-4 缺陷清单（Fixed 留痕，节选自 bug 清单）**
+
+| 编号 | 位置 | 现象 | 修复 | 级别 |
+| --- | --- | --- | --- | --- |
+| F-1 | `chat.js`（A 文件，B 修复） | `router.use(auth)` 缺失 → 会话列表/未读数 500 | `edf392d` 补挂 auth，15/0 回归 | P0 |
+| F-7 | 全局对比度 | 亮橙底白字 ≈2:1（4 处） | 统一压深棕 `#79513D` | P0 |
+| F-2 | mock 用户表 | 代取单发布人缺失 → 联系发布者 404 | `bf70a17` 补 3 用户 | P0 |
+| F-3 | `mine/profile` | 头像链路两处断（取错路径字段 + 相对路径直绑） | `efec4cc` 双修 | P1 |
+| F-6 | `mine/runner` | 加载中渲染空表单、失败只 toast | `bec9651` 骨架屏 + 错误卡 + 重试 | P1 |
+| F-8 | `mine/items` / `mine/favorites` | 两页占位；取消收藏列表不即时移除 | `48a90a8` / `e9fc5b4` | P1 |
+| F-4 | 全局样式 | `--color-surface-2` 未定义，hover 失效 | `efec4cc` 正式定义 | P2 |
+| F-5 | 冒烟脚本 | 硬编码绝对路径不可移植 | `efec4cc` 改 `__dirname` | P2 |
+| F-9 | 全局 `.page` | 非 tab 页底部多 150rpx 空白 | `.page`/`.page--tab` 拆分 | P2 |
+| F-10 | `utils/mock.js` | 未同步 A 的 v0.10 契约（5 组校验） | 逐字对齐 + 契约 `[12]` 节 16 条 | P2 |
+
+**复验记录**：11-19 负向测试 12/12 通过；11-20 A 复核 4 项全部闭环（契约 161/0、冒烟 480/0、wxml_check 全 PASS）。
+
