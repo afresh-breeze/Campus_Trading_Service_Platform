@@ -81,6 +81,7 @@
   margin-bottom: 20rpx;
 }
 .me-order--hover {
+  transform: scale(0.985);
   opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
 }

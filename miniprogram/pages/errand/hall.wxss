@@ -208,10 +208,12 @@
   box-shadow: var(--shadow-card);
   transition:
     transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 120ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease-out;
 }
 .order--hover {
-  /* 对齐 A 口径：opacity 压暗 + 阴影加深（不缩放，避免文字重栅格化抖动） */
+  /* item-card 口径：整卡微缩 + 压暗 + 阴影加深（u-enter 已摘，无 transform 冲突） */
+  transform: scale(0.985);
   opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
 }

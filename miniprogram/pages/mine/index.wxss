@@ -15,7 +15,7 @@
   box-shadow: var(--shadow-card);
   overflow: hidden;
   position: relative;
-  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .mine-hero::before {
   content: '';
@@ -30,6 +30,7 @@
 }
 
 .mine-hero--hover {
+  transform: scale(0.985);
   opacity: 0.94;
 }
 
