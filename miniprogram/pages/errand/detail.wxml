@@ -67,28 +67,32 @@
       </view>
     </view>
 
-    <!-- ③ 物品与订单信息 -->
+    <!-- ③ 物品与订单信息（11-25 层级优化：主 = 规格+描述，辅 = 编号/时间）
+         接单人进来要回答「带不带得动」（规格）和「搬什么」（描述）——这两条是主；
+         编号与时间只是存档信息，压灰 + 分割线隔开 -->
     <view class="card detail-info">
-      <view class="detail-info__row">
-        <text class="detail-info__k">物品规格</text>
-        <text class="detail-info__v">{{sizeText}}</text>
+      <view class="detail-info__spec">
+        <text class="detail-info__label">物品规格</text>
+        <text class="detail-info__size-chip">{{sizeText}}</text>
       </view>
-      <view class="detail-info__row">
-        <text class="detail-info__k">物品描述</text>
-        <text class="detail-info__v">{{order.itemDesc || '未填写'}}</text>
+      <view class="detail-info__desc-block">
+        <text class="detail-info__label">物品描述</text>
+        <text class="detail-info__desc {{order.itemDesc ? '' : 'detail-info__desc--empty'}}">{{order.itemDesc || '未填写'}}</text>
       </view>
-      <view class="detail-info__row" bindtap="onCopyOrderId" hover-class="detail-info__row--hover">
-        <text class="detail-info__k">订单编号</text>
-        <text class="detail-info__v">#{{order.orderId}}<text class="detail-info__copy">复制</text></text>
-      </view>
-      <view class="detail-info__row">
-        <text class="detail-info__k">发布时间</text>
-        <text class="detail-info__v">{{createdText}}</text>
-      </view>
-      <!-- 已完成订单要能看到完成时间（P1-6） -->
-      <view wx:if="{{completedText}}" class="detail-info__row">
-        <text class="detail-info__k">完成时间</text>
-        <text class="detail-info__v">{{completedText}}</text>
+      <view class="detail-info__meta">
+        <view class="detail-info__row detail-info__row--meta" bindtap="onCopyOrderId" hover-class="detail-info__row--hover">
+          <text class="detail-info__k">订单编号</text>
+          <text class="detail-info__v">#{{order.orderId}}<text class="detail-info__copy">复制</text></text>
+        </view>
+        <view class="detail-info__row detail-info__row--meta">
+          <text class="detail-info__k">发布时间</text>
+          <text class="detail-info__v">{{createdText}}</text>
+        </view>
+        <!-- 已完成订单要能看到完成时间（P1-6） -->
+        <view wx:if="{{completedText}}" class="detail-info__row detail-info__row--meta">
+          <text class="detail-info__k">完成时间</text>
+          <text class="detail-info__v">{{completedText}}</text>
+        </view>
       </view>
     </view>
 

@@ -123,6 +123,20 @@ function check(name, cond, extra) {
     navs
   );
 
+  console.log('\n[12] 物品信息卡视觉层级（11-25：主 = 规格+描述，辅 = 编号/时间）');
+  const fsD = require('fs');
+  const wxmlD = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.wxml'), 'utf8');
+  const wxssD = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.wxss'), 'utf8');
+  check('规格独立成主级行 + 胶囊节点', /detail-info__spec/.test(wxmlD) && /detail-info__size-chip/.test(wxmlD), 'wxml 未见规格胶囊');
+  check('描述独立成块（左对齐整块排版）', /detail-info__desc-block/.test(wxmlD) && /detail-info__desc /.test(wxmlD), 'wxml 未见描述块');
+  check('未填写走弱化变体', /detail-info__desc--empty/.test(wxmlD), 'wxml 未见空描述变体');
+  check('编号/时间收进辅组 meta', /detail-info__meta/.test(wxmlD) && (wxmlD.match(/detail-info__row--meta/g) || []).length >= 2, '辅组结构不符');
+  check('主级字号 32rpx（--font-lg）', /\.detail-info__desc\s*\{[\s\S]*?font-size: var\(--font-lg\)/.test(wxssD) && /\.detail-info__size-chip\s*\{[\s\S]*?font-size: var\(--font-lg\)/.test(wxssD), '主级字号不符');
+  check('主级加粗 700（描述按用户反馈加粗）', /\.detail-info__desc\s*\{[\s\S]*?font-weight: 700/.test(wxssD), '描述未加粗');
+  check('辅级 24rpx 灰阶（--font-sm + text-2/3）', /\.detail-info__v\s*\{[\s\S]*?font-size: var\(--font-sm\)[\s\S]*?color: var\(--color-text-2\)/.test(wxssD), '辅级样式不符');
+  check('辅组有分割线隔开主辅', /border-top: 1rpx solid var\(--color-divider\)/.test(wxssD), '未见分割线');
+  check('复制交互保留在编号行', /bindtap="onCopyOrderId"/.test(wxmlD), '复制交互丢失');
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })();
