@@ -45,6 +45,7 @@
             wx:for="{{categories}}"
             wx:key="*this"
             class="pp-cat {{cat === item ? 'pp-cat--active' : ''}}"
+            hover-class="pp-cat--hover"
             data-cat="{{item}}"
             bindtap="onCatTap"
           >{{item}}</view>
@@ -56,8 +57,9 @@
             wx:for="{{zoneList}}"
             wx:key="*this"
             class="pp-zone {{zone === item ? 'pp-zone--active' : ''}} pp-anim-{{zTick % 2}}"
-            style="animation-delay: {{index * 30}}ms"
+            style="animation-delay: {{index * 40}}ms"
             data-zone="{{item}}"
+            hover-class="pp-chip--hover"
             bindtap="onZoneTap"
           >{{item}}</view>
         </view>
@@ -70,8 +72,9 @@
               wx:for="{{places}}"
               wx:key="*this"
               class="pp-place {{place === item ? 'pp-place--active' : ''}} pp-anim-{{pTick % 2}}"
-              style="animation-delay: {{index * 30}}ms"
+              style="animation-delay: {{index * 40}}ms"
               data-place="{{item}}"
+              hover-class="pp-chip--hover"
               bindtap="onPlaceTap"
             >{{item}}</view>
           </view>
