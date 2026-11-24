@@ -371,6 +371,14 @@ function order(id, extra) {
     return campusUtil.LANDMARKS.length === 52 && !dup;
   })());
 
+  console.log('\n[14] 筛选切换列表平滑出场（11-25 用户反馈，对齐二手首页）');
+  check('卡片外包动画壳且前 6 张挂 u-enter', /class="order-anim \{\{index < 6 \? 'u-enter' : ''\}\}"/.test(wxml), 'wxml 未见动画壳');
+  check('动画壳带 40ms 递增延迟', /animation-delay: \{\{index < 6 \? index \* 40 : 0\}\}ms/.test(wxml), 'wxml 未见延迟');
+  check('wx:for 只在外壳上（内卡不得重复迭代）', (wxml.match(/wx:for="\{\{list\}\}"/g) || []).length === 1, 'wx:for 数量异常');
+  check('按压 hover 仍在卡片本体节点', /class="order"\s*\n\s*data-id="\{\{item.orderId\}\}"/.test(wxml), 'hover 位置不对');
+  const appWxss = fs.readFileSync(path.join(MP, 'app.wxss'), 'utf8');
+  check('全局 .u-enter 存在（fill-mode both，外壳依赖）', /\.u-enter\s*\{[\s\S]*?animation: u-fade-up/.test(appWxss), 'app.wxss 缺 .u-enter');
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => {

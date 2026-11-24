@@ -97,54 +97,63 @@
 
   <block wx:else>
     <!-- 列表 -->
+    <!-- 11-25：切筛选/排序时列表卡片平滑出场（对齐二手首页：u-enter + 40ms 递增延迟）。
+         动画挂在外壳不挂卡片本体：u-enter 的 fill-mode both 长期占用 transform，与整卡
+         scale 按压同节点会冲突（F-11 字抖动根因），分两层互不干扰。切筛选走 resetAndFetch
+         清空重建，节点新建动画自动重放；load-more 追加项 index>=6 不播，不打断滚动。 -->
     <view
-      class="order"
       wx:for="{{list}}"
       wx:key="orderId"
-      data-id="{{item.orderId}}"
-      bindtap="onTapOrder"
-      hover-class="order--hover"
-      hover-stay-time="80"
+      class="order-anim {{index < 6 ? 'u-enter' : ''}}"
+      style="animation-delay: {{index < 6 ? index * 40 : 0}}ms"
     >
-      <view class="order__main">
-        <!-- 品类缩略图：表里没图片字段，按描述猜品类配插画（真图片待后端加字段） -->
-        <image class="order__thumb" src="{{item.categoryIcon}}" mode="aspectFill" />
-        <view class="order__body">
-          <view class="order__top">
-            <view class="order__route">
-              <view class="order__line">
-                <view class="order__dot order__dot--from"></view>
-                <text class="order__place order__place--from ellipsis">{{item.fromText}}</text>
+      <view
+        class="order"
+        data-id="{{item.orderId}}"
+        bindtap="onTapOrder"
+        hover-class="order--hover"
+        hover-stay-time="80"
+      >
+        <view class="order__main">
+          <!-- 品类缩略图：表里没图片字段，按描述猜品类配插画（真图片待后端加字段） -->
+          <image class="order__thumb" src="{{item.categoryIcon}}" mode="aspectFill" />
+          <view class="order__body">
+            <view class="order__top">
+              <view class="order__route">
+                <view class="order__line">
+                  <view class="order__dot order__dot--from"></view>
+                  <text class="order__place order__place--from ellipsis">{{item.fromText}}</text>
+                </view>
+                <view class="order__connector"></view>
+                <view class="order__line">
+                  <view class="order__dot order__dot--to"></view>
+                  <text class="order__place order__place--to ellipsis">{{item.toText}}</text>
+                </view>
               </view>
-              <view class="order__connector"></view>
-              <view class="order__line">
-                <view class="order__dot order__dot--to"></view>
-                <text class="order__place order__place--to ellipsis">{{item.toText}}</text>
+              <!-- 11-25 层级优化：去掉「报酬」二字，¥ 本身已是语义；省下的高度让数字独占视觉锚点 -->
+              <view class="order__reward">
+                <text class="order__price">¥{{item.rewardText}}</text>
               </view>
             </view>
-            <!-- 11-25 层级优化：去掉「报酬」二字，¥ 本身已是语义；省下的高度让数字独占视觉锚点 -->
-            <view class="order__reward">
-              <text class="order__price">¥{{item.rewardText}}</text>
+
+            <!-- 规格/时间保留胶囊但统一压成中性灰：原来时间用 tag-warning 抢了主信息的注意力 -->
+            <view class="order__meta">
+              <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
+              <text class="tag tag-gray order__tag">{{item.timeText}}</text>
             </view>
-          </view>
 
-          <!-- 规格/时间保留胶囊但统一压成中性灰：原来时间用 tag-warning 抢了主信息的注意力 -->
-          <view class="order__meta">
-            <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
-            <text class="tag tag-gray order__tag">{{item.timeText}}</text>
+            <!-- 物品描述：跑腿在列表里就能判断「取什么」，不用点进详情（P1-3） -->
+            <text wx:if="{{item.itemDesc}}" class="order__desc ellipsis-2">{{item.itemDesc}}</text>
           </view>
-
-          <!-- 物品描述：跑腿在列表里就能判断「取什么」，不用点进详情（P1-3） -->
-          <text wx:if="{{item.itemDesc}}" class="order__desc ellipsis-2">{{item.itemDesc}}</text>
         </view>
-      </view>
 
-      <view class="order__foot">
-        <!-- 头像缺省用昵称首字，不依赖图片资源 -->
-        <image wx:if="{{item.publisherAvatarUrl}}" class="order__avatar" src="{{item.publisherAvatarUrl}}" mode="aspectFill" />
-        <view wx:else class="order__avatar order__avatar--text">{{item.publisherInitial}}</view>
-        <text class="order__who ellipsis">{{item.publisherNickname}} · {{item.createdText}}</text>
-        <text class="order__go">查看详情 ›</text>
+        <view class="order__foot">
+          <!-- 头像缺省用昵称首字，不依赖图片资源 -->
+          <image wx:if="{{item.publisherAvatarUrl}}" class="order__avatar" src="{{item.publisherAvatarUrl}}" mode="aspectFill" />
+          <view wx:else class="order__avatar order__avatar--text">{{item.publisherInitial}}</view>
+          <text class="order__who ellipsis">{{item.publisherNickname}} · {{item.createdText}}</text>
+          <text class="order__go">查看详情 ›</text>
+        </view>
       </view>
     </view>
 
