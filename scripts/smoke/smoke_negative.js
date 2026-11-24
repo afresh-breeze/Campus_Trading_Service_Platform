@@ -258,6 +258,12 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
   );
   check('描述用两行省略', hallWxml2.indexOf('ellipsis-2') > -1, null);
   check('全局 .ellipsis 定义了 overflow hidden', /\.ellipsis\s*\{[^}]*overflow:\s*hidden/.test(appWxss), null);
+  // 11-25 全站宋体（page 级 font-family 一处生效；旧黑体栈不得残留）
+  check(
+    '全局字体栈为宋体（Songti SC 优先）',
+    /font-family:\s*'Songti SC'[\s\S]*?serif;/.test(appWxss) && appWxss.indexOf('PingFang SC') === -1,
+    null
+  );
 
   // ============ [12] 无数据新账号 → 空态不是报错 ============
   console.log('\n[12] 新账号空态');

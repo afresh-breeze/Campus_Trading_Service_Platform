@@ -85,8 +85,12 @@ page {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-size: var(--font-base);
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  /* 11-25 用户定稿：全站宋体（衬线）。
+     iOS 用系统 Songti SC；macOS STSong；部分 Android 有 Noto Serif CJK；
+     Windows 微软雅黑栈里没有宋体，兜底 FangSong/SimSun。
+     Android 无宋体的机型会静默回退黑体——如需全端一致，
+     后续可用开源思源宋体（OFL 协议）wx.loadFontFace 内嵌子集（宋体 SC/SimSun 有版权不可内嵌） */
+  font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'FangSong', 'SimSun', serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
