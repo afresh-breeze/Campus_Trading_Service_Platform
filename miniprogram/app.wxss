@@ -104,6 +104,15 @@ scroll-view {
   box-sizing: border-box;
 }
 
+/* 11-25 全站宋体后：44rpx 页面大标题 700 视觉偏细，统一提 900 + 0.6rpx 细描边。
+   此规则覆盖 A 页面（二手市场 .home-bar__title）与 B 页面（代取大厅，B 页内已同步）——
+   公共层统一改标题字重，需在群里同步告知 A */
+.home-bar__title,
+.hall-bar__title {
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
+}
+
 /* ---------------- 布局 ---------------- */
 .row {
   display: flex;

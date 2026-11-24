@@ -264,6 +264,12 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
     /font-family:\s*'Songti SC'[\s\S]*?serif;/.test(appWxss) && appWxss.indexOf('PingFang SC') === -1,
     null
   );
+  // 11-25 宋体下 44rpx 标题 700 偏细：公共层统一提 900 + 细描边（覆盖 A/B 两页大标题）
+  check(
+    '页面大标题统一 900 + 细描边',
+    /\.home-bar__title,\s*\n\.hall-bar__title\s*\{[\s\S]*?font-weight: 900[\s\S]*?-webkit-text-stroke: 0\.6rpx currentColor/.test(appWxss),
+    null
+  );
 
   // ============ [12] 无数据新账号 → 空态不是报错 ============
   console.log('\n[12] 新账号空态');

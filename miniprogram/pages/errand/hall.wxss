@@ -25,7 +25,9 @@
 }
 .hall-bar__title {
   font-size: var(--font-2xl);
-  font-weight: 700;
+  /* 宋体的 700 视觉偏细（衬线细横画），标题级提到 900 + 细描边补粗（11-25 用户反馈） */
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
   color: var(--color-text);
   letter-spacing: 2rpx;
   line-height: 1;
