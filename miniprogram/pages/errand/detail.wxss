@@ -128,26 +128,27 @@
   background-color: var(--color-accent);
 }
 /* 中段：整圈粒子环 + 跑步小人（runner.png 为本地生成的 #79513D 圆头笔画剪影）。
-   11-25 用户反馈：弧端点与虚线对不齐 → 改为小人整圈环绕，顶部色最重、向两侧渐浅 */
+   11-25 用户反馈：整体缩小并垂直居中——顶部不超过「取件」行、底部不低于片区小字行，
+   用 flex 拉伸 + 居中自适应左右列高度，不再写死偏移 */
 .detail-route__mid {
-  position: relative;
   flex: none;
   width: 176rpx;
-  height: 112rpx;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-/* 粒子环容器：100×100rpx 正方形，中心与小人中心（top 54rpx）对齐 */
+/* 粒子环：84×84rpx，dots 位置由 js 按 % 预生成 */
 .detail-route__ring {
-  position: absolute;
-  left: 50%;
-  top: 4rpx;
-  width: 100rpx;
-  height: 100rpx;
-  margin-left: -50rpx;
+  position: relative;
+  flex: none;
+  width: 84rpx;
+  height: 84rpx;
 }
 .detail-route__ring-dot {
   position: absolute;
-  width: 9rpx;
-  height: 9rpx;
+  width: 7rpx;
+  height: 7rpx;
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
@@ -167,10 +168,11 @@
 .detail-route__runner {
   position: absolute;
   left: 50%;
-  top: 24rpx;
-  width: 60rpx;
-  height: 60rpx;
-  margin-left: -30rpx;
+  top: 50%;
+  width: 44rpx;
+  height: 44rpx;
+  margin-left: -22rpx;
+  margin-top: -22rpx;
 }
 /* 虚线下的备注行：小灰标签 + 内容，长备注换行不占地点区 */
 .detail-route__foot {
