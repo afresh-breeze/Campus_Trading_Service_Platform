@@ -5,15 +5,15 @@
   <!-- 首屏骨架 -->
   <block wx:if="{{loading}}">
     <view class="card detail-sk">
-      <view class="detail-sk__gallery"></view>
-      <view class="detail-sk__line detail-sk__line--lg"></view>
-      <view class="detail-sk__line detail-sk__line--md"></view>
-      <view class="detail-sk__line detail-sk__line--sm"></view>
+      <view class="detail-sk__gallery sk-block"></view>
+      <view class="detail-sk__line detail-sk__line--lg sk-block"></view>
+      <view class="detail-sk__line detail-sk__line--md sk-block"></view>
+      <view class="detail-sk__line detail-sk__line--sm sk-block"></view>
     </view>
     <view class="card detail-sk">
-      <view class="detail-sk__line detail-sk__line--md"></view>
-      <view class="detail-sk__line"></view>
-      <view class="detail-sk__line"></view>
+      <view class="detail-sk__line detail-sk__line--md sk-block"></view>
+      <view class="detail-sk__line sk-block"></view>
+      <view class="detail-sk__line sk-block"></view>
     </view>
   </block>
 
@@ -22,8 +22,8 @@
     <view class="card detail-state__card">
       <text class="t-title">{{error}}</text>
       <text class="t-sub detail-state__desc">{{errorDesc}}</text>
-      <button wx:if="{{canRetry}}" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
-      <button class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn" bindtap="onBackHome">回二手市场</button>
+      <button wx:if="{{canRetry}}" class="btn btn-primary btn-block detail-state__btn" hover-class="btn--press" bindtap="onRetry">重试</button>
+      <button class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn" hover-class="btn--press" bindtap="onBackHome">回二手市场</button>
     </view>
   </view>
 
@@ -85,7 +85,7 @@
 
     <!-- ③ 商品信息 -->
     <view class="card detail-info">
-      <text class="detail-info__title">商品信息</text>
+      <view class="detail-info__title t-section">商品信息</view>
       <view class="detail-info__row">
         <text class="detail-info__k">交易地点</text>
         <text class="detail-info__v">{{locationText}}</text>
@@ -110,20 +110,23 @@
 
     <!-- ④ 商品描述 -->
     <view class="card detail-desc">
-      <text class="detail-desc__title">商品描述</text>
+      <view class="detail-desc__title t-section">商品描述</view>
       <text class="detail-desc__text {{descLong && !descExpanded ? 'detail-desc__text--clamp' : ''}}">{{descriptionText}}</text>
       <text wx:if="{{descLong}}" class="detail-desc__toggle" bindtap="onToggleDesc">{{descExpanded ? '收起' : '展开全文'}}</text>
     </view>
 
     <!-- ⑤ 卖家 -->
     <view class="card detail-seller">
-      <image wx:if="{{seller.avatarUrl}}" class="detail-seller__avatar" src="{{seller.avatarUrl}}" mode="aspectFill" />
-      <view wx:else class="detail-seller__avatar detail-seller__avatar--text">{{seller.initial}}</view>
-      <view class="flex-1 detail-seller__info">
-        <text class="detail-seller__name ellipsis">{{seller.name}}</text>
-        <text class="detail-seller__sub">{{seller.creditText}}</text>
+      <view class="detail-seller__title t-section">卖家</view>
+      <view class="detail-seller__row">
+        <image wx:if="{{seller.avatarUrl}}" class="detail-seller__avatar" src="{{seller.avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="detail-seller__avatar detail-seller__avatar--text">{{seller.initial}}</view>
+        <view class="flex-1 detail-seller__info">
+          <text class="detail-seller__name ellipsis">{{seller.name}}</text>
+          <text class="detail-seller__sub">{{seller.creditText}}</text>
+        </view>
+        <text class="detail-seller__role">卖家</text>
       </view>
-      <text class="detail-seller__role">卖家</text>
     </view>
 
     <!-- ⑥ 卖家无可用状态操作时的说明 -->
@@ -133,7 +136,7 @@
     </view>
 
     <!-- ⑦ 直接进入时的固定出路 -->
-    <view class="detail-home" bindtap="onBackHome" hover-class="detail-home--hover">
+    <view class="detail-home u-press" bindtap="onBackHome" hover-class="detail-home--hover">
       <text class="detail-home__text">回二手市场</text>
     </view>
   </block>
@@ -149,6 +152,7 @@
       data-key="{{item.key}}"
       disabled="{{submitting}}"
       loading="{{submitting && actionKey === item.key}}"
+      hover-class="btn--press"
       bindtap="onAction"
     >{{item.text}}</button>
   </view>
@@ -158,13 +162,14 @@
         class="btn detail-bar__fav {{isFavorited ? 'btn-ghost detail-bar__fav--on' : 'btn-ghost'}}"
         disabled="{{favoriting}}"
         loading="{{favoriting}}"
+        hover-class="btn--press"
         bindtap="onFavorite"
       >
         <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
       </button>
     </view>
     <view class="detail-bar__cell detail-bar__cell--contact">
-      <button class="btn btn-primary detail-bar__contact" bindtap="onContact">联系卖家</button>
+      <button class="btn btn-primary detail-bar__contact" hover-class="btn--press" bindtap="onContact">联系卖家</button>
     </view>
   </view>
 </view>

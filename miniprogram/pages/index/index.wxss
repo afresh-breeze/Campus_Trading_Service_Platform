@@ -6,7 +6,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 0 var(--space) 10rpx;
+  padding: 0 var(--space-page) 10rpx;
   background-color: var(--color-bg);
 }
 .home-bar__safe {
@@ -17,7 +17,7 @@
   align-items: center;
 }
 .home-bar__title {
-  font-size: var(--font-2xl);
+  font-size: 44rpx;
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: 2rpx;
@@ -30,7 +30,7 @@
   display: block;
   margin: 6rpx 0;
   font-size: var(--font-sm);
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--color-text-3);
 }
 
@@ -44,9 +44,6 @@
   border-radius: var(--radius-full);
   background-color: var(--color-bg-white);
   box-shadow: var(--shadow-card);
-}
-.home-search--hover {
-  opacity: 0.88;
 }
 .home-search__icon {
   position: relative;
@@ -83,7 +80,7 @@
 .home-cats {
   width: 100%;
   height: 60rpx;
-  margin-top: 10rpx;
+  margin-top: 16rpx;
   white-space: nowrap;
 }
 .home-cats::-webkit-scrollbar {
@@ -117,7 +114,7 @@
   align-items: center;
   justify-content: space-between;
   height: 56rpx;
-  margin-top: 8rpx;
+  margin-top: 12rpx;
 }
 .home-sort__count {
   flex: 1;
@@ -164,7 +161,7 @@
 
 /* ---------------- 状态区（登录 / 错误） ---------------- */
 .home-state {
-  padding: var(--space);
+  padding: var(--space-page);
 }
 .home-state__card {
   text-align: center;
@@ -182,19 +179,17 @@
 /* ---------------- 首屏骨架 ---------------- */
 .home-sk {
   display: flex;
-  margin: var(--space-sm) var(--space) 0;
+  margin: 20rpx var(--space-page) 0;
   padding: 20rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
 }
 .home-sk__cover {
   flex: none;
   width: 200rpx;
   height: 200rpx;
-  border-radius: 12rpx;
-  background-color: var(--color-divider);
-  animation: home-pulse 1.2s ease-in-out infinite;
+  border-radius: var(--radius-inner);
 }
 .home-sk__body {
   flex: 1;
@@ -205,8 +200,6 @@
 .home-sk__line {
   height: 24rpx;
   border-radius: var(--radius-sm);
-  background-color: var(--color-divider);
-  animation: home-pulse 1.2s ease-in-out infinite;
 }
 .home-sk__line + .home-sk__line {
   margin-top: 18rpx;
@@ -221,22 +214,15 @@
 .home-sk__line--sm {
   width: 30%;
 }
-@keyframes home-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 /* ---------------- 商品列表 ---------------- */
 .home-list {
-  padding: 0 var(--space);
+  padding: 0 var(--space-page);
 }
 .home-list__item {
-  margin-top: var(--space-sm);
+  margin-top: 20rpx;
+}
+.home-list__item:first-child {
+  margin-top: 24rpx;
 }
 
 /* ---------------- 底部加载提示 ---------------- */
@@ -247,8 +233,4 @@
 .home-more__text {
   font-size: var(--font-xs);
   color: var(--color-text-4);
-}
-
-.fab--hover {
-  opacity: 0.88;
 }

@@ -11,7 +11,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 0 var(--space) 12rpx;
+  padding: 0 var(--space-page) 12rpx;
   background-color: var(--color-bg);
 }
 .search-bar__safe {
@@ -51,7 +51,7 @@
 .search-input {
   flex: 1;
   min-width: 0;
-  height: 76rpx;
+  height: 80rpx;
   display: flex;
   align-items: center;
   padding: 0 24rpx;
@@ -83,7 +83,7 @@
 .search-input__field {
   flex: 1;
   min-width: 0;
-  height: 76rpx;
+  height: 80rpx;
   font-size: 26rpx;
   color: var(--color-text);
 }
@@ -94,7 +94,7 @@
 .search-input__clear {
   flex: none;
   width: 44rpx;
-  height: 76rpx;
+  height: 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,7 +104,7 @@
 }
 .search-submit {
   flex: none;
-  height: 76rpx;
+  height: 80rpx;
   margin-left: 16rpx;
   padding: 0 28rpx;
   display: flex;
@@ -116,23 +116,19 @@
   font-size: 26rpx;
   font-weight: 600;
 }
-.search-submit--hover {
-  opacity: 0.88;
-}
-
 /* ---------------- 输入联想 ---------------- */
 .search-suggest {
   position: absolute;
-  left: var(--space);
-  right: var(--space);
+  left: var(--space-page);
+  right: var(--space-page);
   top: 100%;
   z-index: 20;
   margin-top: 4rpx;
   padding: 8rpx 0;
   border: 1rpx solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: 20rpx;
   background-color: var(--color-bg-white);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-card-hover);
   overflow: hidden;
 }
 .search-suggest__row {
@@ -229,7 +225,7 @@
 
 /* ---------------- 初始态：历史 / 提示 ---------------- */
 .search-history {
-  padding: var(--space) var(--space) 0;
+  padding: var(--space-page) var(--space-page) 0;
 }
 .search-history__head {
   display: flex;
@@ -269,10 +265,11 @@
 }
 .search-history__chip--hover {
   background-color: var(--color-primary-light);
+  transform: scale(0.97);
 }
 
 .search-tips {
-  padding: 80rpx var(--space) 0;
+  padding: 80rpx var(--space-page) 0;
 }
 .search-tips__title {
   display: block;
@@ -303,11 +300,12 @@
 }
 .search-tips__chip--hover {
   background-color: var(--color-primary-light);
+  transform: scale(0.97);
 }
 
 /* ---------------- 相关图书 ---------------- */
 .search-books {
-  padding: var(--space) var(--space) 0;
+  padding: var(--space-page) var(--space-page) 0;
 }
 .search-books__head {
   display: flex;
@@ -356,9 +354,13 @@
   display: flex;
   padding: 20rpx;
   border: 2rpx solid transparent;
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   background-color: var(--color-bg-white);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 120ms var(--ease-out),
+    opacity 120ms var(--ease-out),
+    box-shadow 200ms ease-out;
 }
 .book-card + .book-card {
   margin-top: var(--space-sm);
@@ -367,7 +369,8 @@
   border-color: var(--color-primary-dark);
 }
 .book-card--hover {
-  opacity: 0.9;
+  transform: scale(0.985);
+  box-shadow: var(--shadow-card-hover);
 }
 .book-card__cover {
   flex: none;
@@ -452,7 +455,7 @@
   align-items: center;
   justify-content: space-between;
   height: 56rpx;
-  margin: 8rpx var(--space) 0;
+  margin: 12rpx var(--space-page) 0;
 }
 .search-sort__count {
   flex: 1;
@@ -499,7 +502,7 @@
 
 /* ---------------- 状态区（错误） ---------------- */
 .search-state {
-  padding: var(--space);
+  padding: var(--space-page);
 }
 .search-state__card {
   text-align: center;
@@ -517,9 +520,9 @@
 /* ---------------- 首屏骨架 ---------------- */
 .search-sk {
   display: flex;
-  margin: var(--space-sm) var(--space) 0;
+  margin: 20rpx var(--space-page) 0;
   padding: 20rpx;
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   background-color: var(--color-bg-white);
   box-shadow: var(--shadow-card);
 }
@@ -527,9 +530,7 @@
   flex: none;
   width: 200rpx;
   height: 200rpx;
-  border-radius: 12rpx;
-  background-color: var(--color-divider);
-  animation: search-pulse 1.2s ease-in-out infinite;
+  border-radius: var(--radius-inner);
 }
 .search-sk__body {
   flex: 1;
@@ -540,8 +541,6 @@
 .search-sk__line {
   height: 24rpx;
   border-radius: var(--radius-sm);
-  background-color: var(--color-divider);
-  animation: search-pulse 1.2s ease-in-out infinite;
 }
 .search-sk__line + .search-sk__line {
   margin-top: 18rpx;
@@ -556,22 +555,15 @@
 .search-sk__line--sm {
   width: 30%;
 }
-@keyframes search-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 /* ---------------- 商品列表 ---------------- */
 .search-items {
-  padding: 0 var(--space);
+  padding: 0 var(--space-page);
 }
 .search-items__item {
-  margin-top: var(--space-sm);
+  margin-top: 20rpx;
+}
+.search-items__item:first-child {
+  margin-top: 24rpx;
 }
 
 /* ---------------- 底部加载提示 ---------------- */
