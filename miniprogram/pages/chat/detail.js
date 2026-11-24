@@ -16,6 +16,7 @@
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 const adapter = require('../../utils/adapter');
+const campus = require('../../utils/campus');
 
 const POLL_INTERVAL = 3000;
 const FIRST_LIMIT = 20; // 首屏条数（后端默认 20，最大 50）
@@ -244,10 +245,8 @@ Page({
             subText: ''
           };
         } else if (ctx.bizType === 'errand' && s) {
-          const place =
-            s.pickupPlace && s.pickupPlace !== s.pickupArea
-              ? s.pickupArea + ' · ' + s.pickupPlace
-              : s.pickupArea || '';
+          // 11-25 口径同大厅卡片：卡片摘要空间最紧，优先出具体地标
+          const place = campus.shortPlace(s.pickupArea, s.pickupPlace);
           card = {
             jumpUrl: '/pages/errand/detail?id=' + s.orderId,
             title: '代取订单 #' + s.orderId,

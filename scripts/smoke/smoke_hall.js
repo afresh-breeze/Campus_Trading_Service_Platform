@@ -341,6 +341,36 @@ function order(id, extra) {
   check('物品描述 26rpx + 左引线', /\.order__desc\s*\{[\s\S]*?border-left: 2rpx solid var\(--color-border\)[\s\S]*?font-size: 26rpx/.test(wxss), '描述样式不符');
   check('按压反馈仍是整卡 scale 0.985（未被层级改动破坏）', /\.order--hover\s*\{[\s\S]*?scale\(0\.985\)/.test(wxss), '按压口径丢失');
 
+  console.log('\n[13] 取件地点短文案：优先地标（11-25 用户反馈）');
+  const campusUtil = require(path.join(MP, 'utils/campus.js'));
+  const p11 = makePage();
+  calls.length = 0;
+  p11.fetch(1);
+  flushNext(true, {
+    list: [
+      order(1, { pickupArea: '南区教学区', pickupPlace: '第30教学楼' }),
+      order(2, { pickupArea: '桃园', pickupPlace: '桃园' }),
+      order(3, { pickupArea: '北区教学区', pickupPlace: '不在白名单的旧地标' })
+    ],
+    total: 3
+  });
+  await tick();
+  check('选了地标 → 只出地标不带片区前缀', p11.data.list[0].fromText === '第30教学楼', p11.data.list[0].fromText);
+  check('无地标片区 → 退回片区名', p11.data.list[1].fromText === '桃园', p11.data.list[1].fromText);
+  check('历史脏数据（地标不在白名单）也能显示', p11.data.list[2].fromText === '不在白名单的旧地标', p11.data.list[2].fromText);
+  check('shortPlace：地标优先', campusUtil.shortPlace('北区教学区', '第30教学楼') === '第30教学楼');
+  check('shortPlace：place=片区名 → 片区名', campusUtil.shortPlace('桃园', '桃园') === '桃园');
+  check('shortPlace：空值兜底', campusUtil.shortPlace('', '') === '');
+  check('52 个地标全校无重名（单独展示不歧义的前提）', (() => {
+    const seen = {};
+    let dup = false;
+    campusUtil.LANDMARKS.forEach((l) => {
+      if (seen[l.name] && seen[l.name] !== l.zone) dup = true;
+      seen[l.name] = l.zone;
+    });
+    return campusUtil.LANDMARKS.length === 52 && !dup;
+  })());
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => {

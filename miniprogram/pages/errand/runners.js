@@ -176,10 +176,8 @@ Page({
       .get('/api/errands/' + orderId, {}, { silent: true })
       .then((order) => {
         if (!order) return;
-        const place =
-          order.pickupPlace && order.pickupPlace !== order.pickupArea
-            ? order.pickupArea + ' · ' + order.pickupPlace
-            : order.pickupArea || '';
+        // 11-25 口径同大厅卡片：摘要里优先出具体地标，片区前缀留给详情页
+        const place = campus.shortPlace(order.pickupArea, order.pickupPlace);
         let timeText = '';
         if (order.timeType === 'asap') timeText = '尽快送达';
         else if (order.timeType === 'deadline') timeText = (util.formatTime(order.deadline) || '') + ' 前';

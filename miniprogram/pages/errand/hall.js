@@ -14,6 +14,7 @@
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 const adapter = require('../../utils/adapter');
+const campus = require('../../utils/campus');
 
 const TAB_INDEX = 1;
 const PAGE_SIZE = 10;
@@ -82,10 +83,9 @@ function shortTime(order) {
 
 /** 列表项 → 纯展示结构：wxml 不做计算，也不做字段映射 */
 function toCard(order) {
-  const place =
-    order.pickupPlace && order.pickupPlace !== order.pickupArea
-      ? order.pickupArea + ' · ' + order.pickupPlace
-      : order.pickupArea || '';
+  // 11-25 用户反馈：主标题优先展示具体地标（30教）而非片区（南区教学楼）——
+  // 片区名长，36rpx 主级下被截成「南区教学…」；地标全校唯一，单独展示不歧义。
+  const place = campus.shortPlace(order.pickupArea, order.pickupPlace);
   const nickname = order.publisherNickname || '同学';
   return {
     orderId: order.orderId,

@@ -254,6 +254,19 @@ const msg = (id, senderId, content, extra) =>
   check('卡片价格', p4.data.bizCard.mainText === '¥4.00', p4.data.bizCard.mainText);
   p4.onUnload();
 
+  console.log('[11b] 代取卡片取件地优先地标（11-25 用户反馈）');
+  resetCalls();
+  const p4b = makePage();
+  p4b.onLoad({ conversationId: '3003', peerId: '5', bizType: 'errand', bizId: '2003' });
+  flushNext(true, { conversationId: 3003, peerId: 5, peerNickname: '赵同学', peerAvatar: '' });
+  await tick();
+  flushNext(true, { bizType: 'errand', bizId: 2003, bizSummary: { orderId: 2003, itemSize: 'large', pickupArea: '南区教学区', pickupPlace: '第30教学楼', reward: 12, status: 'pending' } });
+  flushNext(true, { list: [msg(20, 5, '好的')] });
+  await tick();
+  await tick();
+  check('副标题只出地标不带片区', p4b.data.bizCard && p4b.data.bizCard.subText.indexOf('第30教学楼') > -1 && p4b.data.bizCard.subText.indexOf('南区教学区') === -1, p4b.data.bizCard && p4b.data.bizCard.subText);
+  p4b.onUnload();
+
   console.log('[12] 业务卡片跳转');
   navs.length = 0;
   p.onBizTap();
