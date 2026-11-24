@@ -248,7 +248,14 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
   console.log('\n[11] 长文本省略');
   const hallWxml2 = fs.readFileSync(path.join(REPO, 'pages', 'errand', 'hall.wxml'), 'utf8');
   const appWxss = fs.readFileSync(path.join(REPO, 'app.wxss'), 'utf8');
-  check('昵称/地点用 ellipsis', hallWxml2.indexOf('order__who ellipsis') > -1 && hallWxml2.indexOf('order__place ellipsis') > -1, null);
+  // 11-25 层级优化后起终点各有独立 class，两者都必须保留 ellipsis（长地名不许撑破卡片）
+  check(
+    '昵称/地点用 ellipsis',
+    hallWxml2.indexOf('order__who ellipsis') > -1 &&
+      /order__place order__place--from ellipsis/.test(hallWxml2) &&
+      /order__place order__place--to ellipsis/.test(hallWxml2),
+    null
+  );
   check('描述用两行省略', hallWxml2.indexOf('ellipsis-2') > -1, null);
   check('全局 .ellipsis 定义了 overflow hidden', /\.ellipsis\s*\{[^}]*overflow:\s*hidden/.test(appWxss), null);
 

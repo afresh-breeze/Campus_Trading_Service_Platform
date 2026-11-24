@@ -114,23 +114,24 @@
             <view class="order__route">
               <view class="order__line">
                 <view class="order__dot order__dot--from"></view>
-                <text class="order__place ellipsis">{{item.fromText}}</text>
+                <text class="order__place order__place--from ellipsis">{{item.fromText}}</text>
               </view>
               <view class="order__connector"></view>
               <view class="order__line">
                 <view class="order__dot order__dot--to"></view>
-                <text class="order__place ellipsis">{{item.toText}}</text>
+                <text class="order__place order__place--to ellipsis">{{item.toText}}</text>
               </view>
             </view>
+            <!-- 11-25 层级优化：去掉「报酬」二字，¥ 本身已是语义；省下的高度让数字独占视觉锚点 -->
             <view class="order__reward">
               <text class="order__price">¥{{item.rewardText}}</text>
-              <text class="order__reward-label">报酬</text>
             </view>
           </view>
 
+          <!-- 规格/时间保留胶囊但统一压成中性灰：原来时间用 tag-warning 抢了主信息的注意力 -->
           <view class="order__meta">
             <text class="tag tag-gray order__tag">{{item.sizeText}}</text>
-            <text class="tag tag-warning order__tag">{{item.timeText}}</text>
+            <text class="tag tag-gray order__tag">{{item.timeText}}</text>
           </view>
 
           <!-- 物品描述：跑腿在列表里就能判断「取什么」，不用点进详情（P1-3） -->

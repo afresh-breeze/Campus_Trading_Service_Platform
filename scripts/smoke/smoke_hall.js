@@ -327,6 +327,20 @@ function order(id, extra) {
     barHead: p10b.data.barHead
   });
 
+  console.log('\n[12] 卡片视觉层级（11-25：主/次/辅三档）');
+  const fs = require('fs');
+  const wxml = fs.readFileSync(path.join(MP, 'pages/errand/hall.wxml'), 'utf8');
+  const wxss = fs.readFileSync(path.join(MP, 'pages/errand/hall.wxss'), 'utf8');
+  check('起终点用不同的层级 class', /order__place--from/.test(wxml) && /order__place--to/.test(wxml), 'wxml 未分层');
+  check('主级（取件地点）36rpx/700', /\.order__place--from\s*\{[\s\S]*?font-size: 36rpx[\s\S]*?font-weight: 700/.test(wxss), '主级样式不符');
+  check('次级（送达地点）26rpx/400 且用 text-2', /\.order__place--to\s*\{[\s\S]*?font-size: 26rpx[\s\S]*?color: var\(--color-text-2\)/.test(wxss), '次级样式不符');
+  check('报酬去掉「报酬」二字', !/order__reward-label/.test(wxml), 'wxml 仍渲染报酬标签');
+  check('报酬样式不再残留 label 规则', !/\.order__reward-label/.test(wxss), 'wxss 仍有死规则');
+  check('报酬 40rpx/700', /\.order__price\s*\{[\s\S]*?font-size: 40rpx[\s\S]*?font-weight: 700/.test(wxss), '报酬字号不符');
+  check('规格与时间都压成中性灰胶囊', /tag tag-gray order__tag/.test(wxml) && !/tag-warning order__tag/.test(wxml), '时间胶囊仍用 warning 色');
+  check('物品描述 26rpx + 左引线', /\.order__desc\s*\{[\s\S]*?border-left: 2rpx solid var\(--color-border\)[\s\S]*?font-size: 26rpx/.test(wxss), '描述样式不符');
+  check('按压反馈仍是整卡 scale 0.985（未被层级改动破坏）', /\.order--hover\s*\{[\s\S]*?scale\(0\.985\)/.test(wxss), '按压口径丢失');
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => {

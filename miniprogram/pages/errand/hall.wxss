@@ -248,9 +248,9 @@
   align-items: center;
 }
 .order__line + .order__line {
-  margin-top: 12rpx;
+  margin-top: 10rpx;
 }
-/* 起终点用形状 + 位置区分，不只靠颜色 */
+/* 起终点用形状 + 位置区分，不只靠颜色；起点（主信息）圆点略大，与 36rpx 标题配重 */
 .order__dot {
   flex: none;
   width: 14rpx;
@@ -259,6 +259,8 @@
   border-radius: 50%;
 }
 .order__dot--from {
+  width: 16rpx;
+  height: 16rpx;
   background-color: var(--color-primary-dark);
 }
 .order__dot--to {
@@ -269,37 +271,43 @@
 .order__place {
   flex: 1;
   min-width: 0;
-  font-size: var(--font-base);
+}
+/* 主：取件地点 —— 18px/700 近黑墨。比送达地点大 10rpx、重 300 档，眼睛先落在「去哪取」（11-25 层级优化） */
+.order__place--from {
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.5rpx;
   color: var(--color-text);
+}
+/* 次：送达地点 —— 13px/400 中棕，只作路线补充 */
+.order__place--to {
+  font-size: 26rpx;
+  line-height: 1.3;
+  color: var(--color-text-2);
 }
 .order__reward {
   flex: none;
   text-align: right;
-  /* UI 优化 6.7：浅主色底胶囊 */
+  /* UI 优化 6.7：浅主色底胶囊；11-25 去掉「报酬」标签，胶囊收紧 */
   margin-left: var(--space-sm);
-  padding: 10rpx 16rpx;
+  padding: 10rpx 14rpx;
   border-radius: 12rpx;
   background: rgba(230, 168, 116, 0.18);
 }
 .order__price {
   display: block;
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: var(--color-price);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
-.order__reward-label {
-  display: block;
-  margin-top: 2rpx;
-  font-size: var(--font-xs);
-  color: var(--color-text-3);
-}
 
 /* 路线连接虚线（方案 6.7） */
 .order__connector {
-  height: 20rpx;
-  margin-left: 6rpx;
+  height: 12rpx;
+  margin-left: 7rpx;
   border-left: 2rpx dashed var(--color-border);
 }
 
@@ -311,13 +319,16 @@
 }
 .order__tag {
   flex: none;
-  margin-right: var(--space-xs);
+  margin-right: 12rpx;
 }
+/* 次：物品描述 —— 左侧引线把「送什么」与上方路线分开，2 行截断 */
 .order__desc {
   display: -webkit-box;
   margin-top: 12rpx;
-  font-size: var(--font-sm);
-  line-height: 1.45;
+  padding-left: 12rpx;
+  border-left: 2rpx solid var(--color-border);
+  font-size: 26rpx;
+  line-height: 1.5;
   color: var(--color-text-2);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -334,8 +345,8 @@
 }
 .order__avatar {
   flex: none;
-  width: 40rpx;
-  height: 40rpx;
+  width: 36rpx;
+  height: 36rpx;
   margin-right: 12rpx;
   border-radius: 50%;
   background-color: var(--color-divider);
