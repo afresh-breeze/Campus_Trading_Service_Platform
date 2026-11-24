@@ -50,12 +50,13 @@
           >{{item}}</view>
         </scroll-view>
 
-        <!-- 片区网格 -->
+        <!-- 片区网格：级联入场，zTick 交替触发重放（点分类只有本行入场） -->
         <view class="pp-grid">
           <view
             wx:for="{{zoneList}}"
             wx:key="*this"
-            class="pp-zone {{zone === item ? 'pp-zone--active' : ''}}"
+            class="pp-zone {{zone === item ? 'pp-zone--active' : ''}} pp-anim-{{zTick % 2}}"
+            style="animation-delay: {{index * 30}}ms"
             data-zone="{{item}}"
             bindtap="onZoneTap"
           >{{item}}</view>
@@ -68,7 +69,8 @@
             <view
               wx:for="{{places}}"
               wx:key="*this"
-              class="pp-place {{place === item ? 'pp-place--active' : ''}}"
+              class="pp-place {{place === item ? 'pp-place--active' : ''}} pp-anim-{{pTick % 2}}"
+              style="animation-delay: {{index * 30}}ms"
               data-place="{{item}}"
               bindtap="onPlaceTap"
             >{{item}}</view>

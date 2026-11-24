@@ -37,7 +37,11 @@ Component({
     keyword: '',
     results: [],
     previewText: '',
-    canConfirm: false
+    canConfirm: false,
+    /** 级联入场计数器：奇偶交替切换动画名（pp-anim-0/1）触发重放；
+        只驱动被点层级的下一级——点分类 zTick++（片区入场），点片区 pTick++（地标入场） */
+    zTick: 0,
+    pTick: 0
   },
 
   observers: {
@@ -49,6 +53,8 @@ Component({
       patch.keyword = '';
       patch.results = [];
       patch.cat = ZONE_CAT[zone] || campus.CATEGORIES[0];
+      patch.zTick = this.data.zTick + 1;
+      patch.pTick = this.data.pTick + 1;
       this.setData(patch);
     }
   },
@@ -80,12 +86,20 @@ Component({
 
     onCatTap(e) {
       const cat = e.currentTarget.dataset.cat;
-      this.setData({ cat, zoneList: campus.zonesByCategory()[cat] || [] });
+      // 点一级：只有二级（片区）重新入场，一级菜单与三级不重放
+      this.setData({
+        cat,
+        zoneList: campus.zonesByCategory()[cat] || [],
+        zTick: this.data.zTick + 1
+      });
     },
 
     onZoneTap(e) {
       const zone = e.currentTarget.dataset.zone;
-      this.setData(this.applyZone(zone, ''));
+      const patch = this.applyZone(zone, '');
+      // 点二级：只有三级（地标）重新入场，一级/二级不重放
+      patch.pTick = this.data.pTick + 1;
+      this.setData(patch);
     },
 
     onPlaceTap(e) {
@@ -98,13 +112,15 @@ Component({
       });
     },
 
-    /** 搜索结果直选 */
+    /** 搜索结果直选：跨分类跳转，片区与地标一并刷新（各自入场一次） */
     onPickHit(e) {
       const zone = e.currentTarget.dataset.zone;
       const place = e.currentTarget.dataset.place;
       const patch = this.applyZone(zone, place);
       patch.keyword = '';
       patch.results = [];
+      patch.zTick = this.data.zTick + 1;
+      patch.pTick = this.data.pTick + 1;
       this.setData(patch);
     },
 
