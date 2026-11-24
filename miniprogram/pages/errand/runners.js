@@ -226,8 +226,10 @@ Page({
   },
 
   onTimeChange(e) {
-    const idx = Number(e.detail.value) || 0;
-    this.setData({ timeIndex: idx });
+    // radio-group 的 e.detail.value 是 value 字符串（'asap'/'deadline'/'range'），不是索引
+    // ——同 F-13，Number('deadline') 为 NaN 恒落 0，时间筛选永远停在「尽快」（11-24 修）
+    const idx = this.data.timeOptions.map((o) => o.value).indexOf(e.detail.value);
+    this.setData({ timeIndex: Math.max(0, idx) });
   },
 
   onSizeChange(e) {

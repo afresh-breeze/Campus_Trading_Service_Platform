@@ -164,14 +164,14 @@ function runner(id, extra) {
   console.log('[4] buildQuery 本地预检（文案与后端一致）');
   const p2 = makePage();
   p2.onLoad({});
-  p2.onTimeChange(ev('1')); // deadline
+  p2.onTimeChange(ev('deadline')); // deadline
   let built = p2.buildQuery(1);
   check('deadline 缺截止 → 时间参数不完整', built.error === '时间参数不完整', built);
   p2.onDeadlineDateChange(ev('2026-11-20'));
   p2.onDeadlineTimeChange(ev('18:00'));
   built = p2.buildQuery(1);
   check('deadline 补齐后带 deadline', !!built.query && built.query.deadline === '2026-11-20 18:00:00', built);
-  p2.onTimeChange(ev('2')); // range
+  p2.onTimeChange(ev('range')); // range
   built = p2.buildQuery(1);
   check('range 缺开始 → 时间参数不完整', built.error === '时间参数不完整', built);
   p2.onStartDateChange(ev('2026-11-20'));

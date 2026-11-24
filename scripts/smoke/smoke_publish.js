@@ -133,8 +133,8 @@ const ev = (value) => ({ detail: { value: value } });
   console.log('\n[3] buildPayload：timeType 三态');
   p.onLoad({});
   p.onPlaceConfirm({ detail: { zone: '北区教学区', place: '第1教学楼' } });
-  p.onSizeChange(ev('1'));
-  p.onTimeTypeChange(ev('0')); // asap
+  p.onSizeChange(ev('medium'));
+  p.onTimeTypeChange(ev('asap')); // asap
   p.setData({ form: { deliveryLocation: '李园 3 栋', itemDesc: '', remark: '', reward: '5' } });
   let payload = p.buildPayload();
   check('asap 不携带任何时间字段', payload.timeStart === undefined && payload.deadline === undefined, payload);
@@ -144,7 +144,7 @@ const ev = (value) => ({ detail: { value: value } });
     payload
   );
 
-  p.onTimeTypeChange(ev('1')); // deadline
+  p.onTimeTypeChange(ev('deadline')); // deadline
   p.onDeadlineDateChange(ev(p.data.minDate));
   p.onDeadlineTimeChange(ev('23:30'));
   payload = p.buildPayload();
@@ -154,7 +154,7 @@ const ev = (value) => ({ detail: { value: value } });
     payload
   );
 
-  p.onTimeTypeChange(ev('2')); // range
+  p.onTimeTypeChange(ev('range')); // range
   p.onStartDateChange(ev(p.data.minDate));
   p.onStartTimeChange(ev('10:00'));
   p.onDeadlineDateChange(ev(p.data.minDate));
@@ -167,7 +167,7 @@ const ev = (value) => ({ detail: { value: value } });
   );
 
   console.log('\n[4] validate');
-  p.onTimeTypeChange(ev('1'));
+  p.onTimeTypeChange(ev('deadline'));
   p.setData({ deadlineDate: '', deadlineTime: '' });
   p.setData({ form: { deliveryLocation: '', itemDesc: '', remark: '', reward: '' } });
   let errors = p.validate(p.buildPayload());
@@ -202,8 +202,8 @@ const ev = (value) => ({ detail: { value: value } });
   const p2 = makePage();
   p2.onLoad({});
   p2.onPlaceConfirm({ detail: { zone: '桃园', place: '' } }); // 默认桃园（无下级地标，pickupPlace=桃园）
-  p2.onSizeChange(ev('0'));
-  p2.onTimeTypeChange(ev('0'));
+  p2.onSizeChange(ev('small'));
+  p2.onTimeTypeChange(ev('asap'));
   p2.setData({ form: { deliveryLocation: '李园 3 栋 101', itemDesc: '', remark: '', reward: '3.5' } });
   responses = { 'POST /api/errands': { orderId: 3002, visibility: 'private' } };
   p2.onTapPrivate();
@@ -272,14 +272,39 @@ const ev = (value) => ({ detail: { value: value } });
   const p5 = makePage();
   p5.onLoad({});
   p5.onPlaceConfirm({ detail: { zone: '桃园', place: '' } });
-  p5.onSizeChange(ev('0'));
-  p5.onTimeTypeChange(ev('0'));
+  p5.onSizeChange(ev('small'));
+  p5.onTimeTypeChange(ev('asap'));
   p5.setData({ form: { deliveryLocation: '李园 3 栋', itemDesc: '', remark: '', reward: '5' } });
   responses = { 'POST /api/errands': { __fail: true, code: 400, message: '取件片区不在可选范围内' } };
   p5.onTapSubmit();
   await wait(50);
   check('后端片区文案落到 pickupArea', p5.data.errors.pickupArea === '取件片区不在可选范围内', p5.data.errors);
   check('失败后按钮解锁', p5.data.submitting === false);
+
+  console.log('\n[10] 规格与时间类型 radio（F-13：e.detail.value 是字符串，按 value 反查索引）');
+  const p6 = makePage();
+  p6.onLoad({});
+  p6.onSizeChange(ev('large'));
+  check('选大件 sizeIndex=2（不再弹回小件）', p6.data.sizeIndex === 2, p6.data.sizeIndex);
+  p6.onSizeChange(ev('medium'));
+  check('选中件 sizeIndex=1', p6.data.sizeIndex === 1, p6.data.sizeIndex);
+  p6.onTimeTypeChange(ev('range'));
+  check('选时间段 timeIndex=2', p6.data.timeIndex === 2, p6.data.timeIndex);
+  p6.setData({
+    pickupArea: '桃园',
+    pickupPlace: '桃园',
+    startDate: '2026-12-01',
+    startTime: '08:00',
+    deadlineDate: '2026-12-02',
+    deadlineTime: '18:00',
+    form: { deliveryLocation: '李园 3 栋', itemDesc: '', remark: '', reward: '5' }
+  });
+  const plRange = p6.buildPayload();
+  check('payload itemSize=medium（此前恒为 small）', plRange.itemSize === 'medium', plRange.itemSize);
+  check('range 带起止时间字段', plRange.timeType === 'range' && !!plRange.timeStart && !!plRange.deadline, plRange);
+  p6.onTimeTypeChange(ev('asap'));
+  const plAsap = p6.buildPayload();
+  check('asap 不携带任何时间字段（后端硬约束）', plAsap.timeType === 'asap' && plAsap.timeStart === undefined && plAsap.deadline === undefined, plAsap);
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);

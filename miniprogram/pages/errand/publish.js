@@ -185,15 +185,22 @@ Page({
   },
 
   onSizeChange(e) {
+    // radio 的 e.detail.value 是 value 字符串（'small'/'medium'/'large'），不是索引——
+    // 此前 Number('medium') 为 NaN 恒落 0，选中闪烁后弹回小件且提交值也错（F-13，11-24 用户录屏反馈）
+    const value = e.detail.value;
+    const idx = this.data.sizeOptions.map((o) => o.value).indexOf(value);
     this.setData({
-      sizeIndex: Number(e.detail.value) || 0,
+      sizeIndex: Math.max(0, idx),
       'errors.itemSize': ''
     });
   },
 
   onTimeTypeChange(e) {
+    // 同 F-13：value 是 'asap'/'deadline'/'range' 字符串，按 value 反查索引
+    const value = e.detail.value;
+    const idx = this.data.timeOptions.map((o) => o.value).indexOf(value);
     this.setData({
-      timeIndex: Number(e.detail.value) || 0,
+      timeIndex: Math.max(0, idx),
       'errors.timeType': '',
       'errors.time': ''
     });
