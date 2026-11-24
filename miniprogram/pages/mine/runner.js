@@ -208,10 +208,12 @@ Page({
     // 非时段时下一次自动上线的时刻文案，如「11/16 09:00」
     nextOnlineText: '',
 
-    zoneGroups: [], // [{category, zones:[{name,checked}]}]
-    placeGroups: [], // [{zone, places:[{name,checked}]}]
+    zoneGroups: [], // [{category, zones:[{name,checked,chips,more}]}]
+    placeGroups: [], // [{zone, places:[{name,checked}]}]（数据保留供搜索联动，列表 UI 已改卡片摘要）
     serviceAreas: [],
     servicePlaces: [],
+    /** 具体地标悬浮卡片（11-24 改版）：勾选有下级地标的片区时弹出，多选 + 确定 */
+    placeCard: { visible: false, zone: '', list: [], count: 0, all: false },
 
     sizeOptions: SIZE_OPTIONS.map((o) => ({ value: o.value, label: o.label, checked: false })),
     itemSizes: [],
@@ -314,7 +316,7 @@ Page({
       remark: p.remark || '',
       statusText: statusTextOf(Object.assign({}, p, { timeSlots: slots }))
     };
-    state.zoneGroups = this.buildZoneGroups(state.serviceAreas);
+    state.zoneGroups = this.buildZoneGroups(state.serviceAreas, state.servicePlaces);
     state.placeGroups = this.buildPlaceGroups(state.serviceAreas, state.servicePlaces);
     state.sizeOptions = SIZE_OPTIONS.map((o) => ({
       value: o.value,
@@ -324,14 +326,24 @@ Page({
     this.setData(state);
   },
 
-  /** 25 片区按分类分组，带勾选态（WXML 不能调 indexOf，勾选态在 js 算好） */
-  buildZoneGroups(selected) {
+  /** 25 片区按分类分组，带勾选态（WXML 不能调 indexOf，勾选态在 js 算好）；
+      已选且有下级地标的片区带 chips 摘要（最多 4 个 + 溢出计数，11-24 悬浮卡片改版） */
+  buildZoneGroups(selected, places) {
+    const pl = places || [];
     const groups = [];
     campus.CATEGORIES.forEach((cat) => {
       const zones = campus.zonesByCategory()[cat] || [];
       groups.push({
         category: cat,
-        zones: zones.map((z) => ({ name: z, checked: selected.indexOf(z) > -1 }))
+        zones: zones.map((z) => {
+          const item = { name: z, checked: selected.indexOf(z) > -1, chips: [], more: 0 };
+          if (item.checked && campus.placesOfZone(z).length) {
+            const sel = pl.filter((p) => campus.zoneOfPlace(p) === z);
+            item.chips = sel.slice(0, 4);
+            item.more = Math.max(0, sel.length - 4);
+          }
+          return item;
+        })
       });
     });
     return groups;
@@ -352,6 +364,8 @@ Page({
   },
 
   onAreasChange(e) {
+    const prevAreas = this.data.serviceAreas.slice();
+    this._placeCardPrevAreas = prevAreas; // 卡片「放弃」回退判定用
     const areas = (e.detail.value || []).slice();
     // 换片区后，已选地标里不属于新片区集合的要去掉（联动规则）
     const places = this.data.servicePlaces.filter((pl) => {
@@ -362,13 +376,109 @@ Page({
       serviceAreas: areas,
       servicePlaces: places,
       placeGroups: this.buildPlaceGroups(areas, places),
+      zoneGroups: this.buildZoneGroups(areas, places),
       'errors.serviceAreas': ''
     });
+    // 新勾选「有下级地标的片区」→ 弹悬浮卡片选具体地标（11-24 改版，用户预览确认）
+    const added = areas.filter(
+      (z) => prevAreas.indexOf(z) < 0 && campus.placesOfZone(z).length > 0
+    );
+    if (added.length) this.openPlaceCard(added[0]);
   },
 
   onPlacesChange(e) {
     this.setData({ servicePlaces: (e.detail.value || []).slice() });
   },
+
+  // ---------------- 具体地标悬浮卡片（11-24 改版，用户预览确认） ----------------
+
+  openPlaceCard(zone) {
+    const all = campus.placesOfZone(zone);
+    const sel = this.data.servicePlaces.filter((p) => campus.zoneOfPlace(p) === zone);
+    this.setData({
+      placeCard: {
+        visible: true,
+        zone: zone,
+        list: all.map((n) => ({ name: n, checked: sel.indexOf(n) > -1 })),
+        count: sel.length,
+        all: all.length > 0 && sel.length === all.length
+      }
+    });
+  },
+
+  /** 卡片内勾选变化：checkbox-group 回的是当前勾选的 name 数组 */
+  onPlaceCardChange(e) {
+    const values = (e.detail.value || []).slice();
+    const card = this.data.placeCard;
+    const list = card.list.map((it) =>
+      Object.assign({}, it, { checked: values.indexOf(it.name) > -1 })
+    );
+    const count = list.filter((it) => it.checked).length;
+    this.setData({
+      placeCard: Object.assign({}, card, {
+        list: list,
+        count: count,
+        all: list.length > 0 && count === list.length
+      })
+    });
+  },
+
+  onPlaceCardAll() {
+    const card = this.data.placeCard;
+    const to = !card.all;
+    const list = card.list.map((it) => Object.assign({}, it, { checked: to }));
+    this.setData({
+      placeCard: Object.assign({}, card, {
+        list: list,
+        count: to ? list.length : 0,
+        all: to && list.length > 0
+      })
+    });
+  },
+
+  /** 确定：本片区以卡片勾选为准，其他片区已选地标保留（0 个 = 整个片区都接） */
+  onPlaceCardConfirm() {
+    const card = this.data.placeCard;
+    const picked = card.list.filter((it) => it.checked).map((it) => it.name);
+    const places = this.data.servicePlaces
+      .filter((p) => campus.zoneOfPlace(p) !== card.zone)
+      .concat(picked);
+    this.setData({
+      servicePlaces: places,
+      zoneGroups: this.buildZoneGroups(this.data.serviceAreas, places),
+      placeGroups: this.buildPlaceGroups(this.data.serviceAreas, places),
+      placeCard: { visible: false, zone: '', list: [], count: 0, all: false }
+    });
+  },
+
+  /** 点遮罩放弃：若该片区是本次新勾选的，回退为未勾选；已保存过的片区不动 */
+  onPlaceCardCancel() {
+    const card = this.data.placeCard;
+    const wasSelected =
+      this._placeCardPrevAreas && this._placeCardPrevAreas.indexOf(card.zone) > -1;
+    let areas = this.data.serviceAreas;
+    let places = this.data.servicePlaces;
+    if (!wasSelected) {
+      areas = areas.filter((z) => z !== card.zone);
+      places = places.filter((p) => campus.zoneOfPlace(p) !== card.zone);
+    }
+    this.setData({
+      serviceAreas: areas,
+      servicePlaces: places,
+      zoneGroups: this.buildZoneGroups(areas, places),
+      placeGroups: this.buildPlaceGroups(areas, places),
+      placeCard: { visible: false, zone: '', list: [], count: 0, all: false }
+    });
+  },
+
+  /** 点 chip 摘要行 → 重开该片区的地标卡片改选（已选回显；放弃不动已保存值） */
+  onZoneChipsTap(e) {
+    const zone = e.currentTarget.dataset.zone;
+    if (zone && this.data.serviceAreas.indexOf(zone) > -1) this.openPlaceCard(zone);
+  },
+
+  /** 挡住卡片内部点击冒泡到遮罩 */
+  noop() {},
 
   // ---------------- 可接范围搜索（11-16 反馈：长列表找地标太累） ----------------
   onAreaSearch(e) {
@@ -411,7 +521,7 @@ Page({
     this.setData({
       serviceAreas: areas,
       servicePlaces: places,
-      zoneGroups: this.buildZoneGroups(areas),
+      zoneGroups: this.buildZoneGroups(areas, places),
       placeGroups: this.buildPlaceGroups(areas, places),
       areaResults: this.buildSearchResults(d.areaKw),
       'errors.serviceAreas': ''

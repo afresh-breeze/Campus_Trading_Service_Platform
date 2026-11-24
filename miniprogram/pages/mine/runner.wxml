@@ -28,7 +28,7 @@
   <!-- 可接范围 -->
   <view class="card">
     <view class="t-title">可接范围</view>
-    <view class="t-sub form-tip">勾选可接片区；某片区不勾任何地标 = 整个片区都接</view>
+    <view class="t-sub form-tip">勾选可接片区；有细分地标的片区（如教学区）勾选后弹卡选具体楼栋，一个不选 = 整个片区都接</view>
 
     <!-- 地点搜索：输入关键字直达地标，点一下就切换勾选（11-16 反馈） -->
     <view class="area-search">
@@ -66,25 +66,24 @@
             <text>{{z.name}}</text>
           </label>
         </view>
+        <!-- 已选地标 chip 摘要：替代原底部「具体地标」长列表；点行重开卡片改选 -->
+        <block wx:for="{{group.zones}}" wx:for-item="z" wx:key="index">
+          <view
+            wx:if="{{z.chips.length}}"
+            class="zone-chips"
+            data-zone="{{z.name}}"
+            bindtap="onZoneChipsTap"
+            hover-class="zone-chips--hover"
+          >
+            <text class="zone-chips__zone">{{z.name}}</text>
+            <text wx:for="{{z.chips}}" wx:for-item="c" wx:key="*this" class="zone-chips__chip">{{c}}</text>
+            <text wx:if="{{z.more}}" class="zone-chips__more">+{{z.more}}</text>
+            <text class="zone-chips__edit">改选 ›</text>
+          </view>
+        </block>
       </view>
     </checkbox-group>
     <text wx:if="{{errors.serviceAreas}}" class="field-error">{{errors.serviceAreas}}</text>
-
-    <block wx:if="{{placeGroups.length}}">
-      <view class="divider"></view>
-      <view class="t-sub form-tip">具体地标（可空）：只接指定楼栋/建筑时再勾</view>
-      <checkbox-group bindchange="onPlacesChange">
-        <view wx:for="{{placeGroups}}" wx:key="zone" wx:for-item="pg" class="zone-group">
-          <view class="zone-group__title">{{pg.zone}}</view>
-          <view class="check-grid">
-            <label wx:for="{{pg.places}}" wx:key="name" wx:for-item="pl" class="check-item">
-              <checkbox value="{{pl.name}}" checked="{{pl.checked}}" color="#79513D" />
-              <text>{{pl.name}}</text>
-            </label>
-          </view>
-        </view>
-      </checkbox-group>
-    </block>
   </view>
 
   <!-- 可接规格 -->
@@ -263,4 +262,29 @@
   </view>
   <view class="safe-bottom"></view>
   </block>
+
+  <!-- 具体地标悬浮卡片（11-24 改版）：勾选有下级地标的片区弹出，背景模糊压暗，多选 + 右下角确定 -->
+  <view wx:if="{{placeCard.visible}}" class="rpc-mask" bindtap="onPlaceCardCancel">
+    <view class="rpc-card" catchtap="noop">
+      <view class="rpc-head">
+        <text class="rpc-title">{{placeCard.zone}} · 具体地标</text>
+        <text class="rpc-sub">可多选，一个不选 = 整个片区都接；点空白处放弃</text>
+      </view>
+      <scroll-view scroll-y class="rpc-list">
+        <checkbox-group class="rpc-grid" bindchange="onPlaceCardChange">
+          <label wx:for="{{placeCard.list}}" wx:key="name" class="rpc-item">
+            <checkbox value="{{item.name}}" checked="{{item.checked}}" color="#79513D" />
+            <text class="rpc-item__text">{{item.name}}</text>
+          </label>
+        </checkbox-group>
+      </scroll-view>
+      <view class="rpc-foot">
+        <text class="rpc-count">已选 {{placeCard.count}} / {{placeCard.list.length}}</text>
+        <view class="rpc-ops">
+          <text class="rpc-all" bindtap="onPlaceCardAll" hover-class="slot-op--hover">{{placeCard.all ? '全不选' : '全选'}}</text>
+          <button class="btn btn-sm btn-primary rpc-ok" hover-class="btn--press" bindtap="onPlaceCardConfirm">确定</button>
+        </view>
+      </view>
+    </view>
+  </view>
 </view>
