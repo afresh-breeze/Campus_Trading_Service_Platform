@@ -137,6 +137,18 @@ function check(name, cond, extra) {
   check('辅组有分割线隔开主辅', /border-top: 1rpx solid var\(--color-divider\)/.test(wxssD), '未见分割线');
   check('复制交互保留在编号行', /bindtap="onCopyOrderId"/.test(wxmlD), '复制交互丢失');
 
+  console.log('\n[13] 路线卡登机牌式布局（11-25 用户预览确认：横向 + 跑步小人 + 粒子弧 + 备注下移）');
+  check('横向三段结构（top / col / mid）', /detail-route__top/.test(wxmlD) && /detail-route__col/.test(wxmlD) && /detail-route__mid/.test(wxmlD), 'wxml 未见三段结构');
+  check('送达列右对齐 class', /detail-route__col--to/.test(wxmlD), 'wxml 未见右对齐列');
+  check('跑步图标引用本地资源', /src="\/assets\/icons\/runner\.png"/.test(wxmlD), 'wxml 未见 runner 图标');
+  check('runner.png 已入库', fsD.existsSync(path.join(REPO, 'assets', 'icons', 'runner.png')), '图标文件缺失');
+  check('粒子弧 + 两端实心端点', /detail-route__arc"/.test(wxmlD) && /detail-route__arc-end--from/.test(wxmlD) && /detail-route__arc-end--to/.test(wxmlD), '弧结构不符');
+  check('备注移到虚线下（label+内容，wx:if 保留）', /detail-route__foot/.test(wxmlD) && /detail-route__remark-label/.test(wxmlD) && /wx:if="\{\{order\.remark\}\}"/.test(wxmlD), '备注行结构不符');
+  check('弧为 dotted 半圆（text-4 色，无新配色）', /\.detail-route__arc\s*\{[\s\S]*?border: 5rpx dotted var\(--color-text-4\)[\s\S]*?border-bottom: none/.test(wxssD), '弧样式不符');
+  check('虚线用既有 border 色', /border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '分割虚线色不符');
+  check('起终点圆点配色未变', /\.detail-route__dot--from\s*\{[\s\S]*?background-color: var\(--color-primary-dark\)/.test(wxssD) && /\.detail-route__dot--to\s*\{[\s\S]*?background-color: var\(--color-accent\)/.test(wxssD), '圆点配色被改');
+  check('地点值仍是主级 32rpx 加粗', /\.detail-route__value\s*\{[\s\S]*?font-size: var\(--font-lg\)[\s\S]*?font-weight: 700/.test(wxssD), '地点字号被改');
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })();

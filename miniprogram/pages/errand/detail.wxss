@@ -67,51 +67,120 @@
   color: var(--color-text-2);
 }
 
-/* ---------------- 路线 ---------------- */
+/* ---------------- 路线：登机牌式横向布局（11-25 用户预览确认） ----------------
+   取件左 / 送达右，中段跑步小人 + dotted 半圆粒子弧；备注在虚线下。
+   配色不新增：弧用 text-4（border 族），端点用 accent / primary-dark 与两侧圆点呼应 */
 .detail-route {
   padding-bottom: 8rpx;
 }
-.detail-route__line {
+.detail-route__top {
   display: flex;
+  align-items: flex-start;
 }
-.detail-route__body {
-  display: flex;
-  flex-direction: column;
+.detail-route__col {
+  flex: 1;
   min-width: 0;
 }
+.detail-route__col--to {
+  text-align: right;
+}
+.detail-route__line {
+  display: flex;
+  align-items: center;
+}
+.detail-route__col--to .detail-route__line {
+  justify-content: flex-end;
+}
 .detail-route__label {
-  font-size: var(--font-xs);
+  font-size: var(--font-sm);
   color: var(--color-text-3);
 }
 .detail-route__value {
-  margin-top: 4rpx;
+  display: block;
+  margin-top: 8rpx;
   font-size: var(--font-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
-}
-.detail-route__remark {
-  margin-top: 6rpx;
-  font-size: var(--font-sm);
-  color: var(--color-text-2);
+  line-height: 1.3;
 }
 /* 起终点圆点：起=深棕（稳），终=辅色（暖），不靠颜色传达信息，标注文字同时存在 */
 .detail-route__dot {
   flex: none;
   width: 16rpx;
   height: 16rpx;
-  margin: 12rpx 20rpx 0 4rpx;
   border-radius: 50%;
 }
 .detail-route__dot--from {
+  margin-right: 16rpx;
   background-color: var(--color-primary-dark);
 }
 .detail-route__dot--to {
+  margin-left: 16rpx;
   background-color: var(--color-accent);
 }
-.detail-route__dash {
-  height: 40rpx;
-  margin: 8rpx 0 8rpx 11rpx;
-  border-left: 2rpx dashed var(--color-border);
+/* 中段：粒子弧 + 跑步小人（runner.png 为本地生成的 #79513D 圆头笔画剪影） */
+.detail-route__mid {
+  position: relative;
+  flex: none;
+  width: 176rpx;
+  height: 112rpx;
+}
+/* dotted 半圆 = 半圈粒子；只留上边框呈弧形 */
+.detail-route__arc {
+  position: absolute;
+  left: 12rpx;
+  right: 12rpx;
+  top: 16rpx;
+  height: 84rpx;
+  border: 5rpx dotted var(--color-text-4);
+  border-bottom: none;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  box-sizing: border-box;
+}
+/* 弧两端实心端点：左=accent（取件）、右=primary-dark（送达），与两侧圆点呼应 */
+.detail-route__arc-end {
+  position: absolute;
+  bottom: 8rpx;
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+}
+.detail-route__arc-end--from {
+  left: 0;
+  background-color: var(--color-accent);
+}
+.detail-route__arc-end--to {
+  right: 0;
+  background-color: var(--color-primary-dark);
+}
+.detail-route__runner {
+  position: absolute;
+  left: 50%;
+  top: 24rpx;
+  width: 60rpx;
+  height: 60rpx;
+  margin-left: -30rpx;
+}
+/* 虚线下的备注行：小灰标签 + 内容，长备注换行不占地点区 */
+.detail-route__foot {
+  display: flex;
+  align-items: baseline;
+  margin-top: 16rpx;
+  padding: 20rpx 0 8rpx;
+  border-top: 3rpx dashed var(--color-border);
+}
+.detail-route__remark-label {
+  flex: none;
+  margin-right: 20rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.detail-route__remark {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--color-text-2);
 }
 
 /* ---------------- 信息列表（11-25 层级优化） ----------------
