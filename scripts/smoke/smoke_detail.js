@@ -157,6 +157,8 @@ function check(name, cond, extra) {
   check('送达地点不再截断（无 ellipsis）', !/detail-route__value ellipsis/.test(wxmlD), '地点仍被截断');
   check('备注移到虚线下（label+内容，wx:if 保留）', /detail-route__foot/.test(wxmlD) && /detail-route__remark-label/.test(wxmlD) && /wx:if="\{\{order\.remark\}\}"/.test(wxmlD), '备注行结构不符');
   check('粒子环色全用令牌、旧弧样式已删', !/detail-route__arc\s*\{/.test(wxssD) && /detail-route__ring\s*\{/.test(wxssD), '旧弧样式残留');
+  check('中段是定位父级（小人 absolute 的锚点，v0.31 错位回归闸）', /\.detail-route__mid\s*\{[\s\S]*?position: relative/.test(wxssD), 'mid 丢失 relative');
+  check('环与小人共用同一居中方案', /\.detail-route__ring\s*\{[\s\S]*?width: 84rpx/.test(wxssD) && /\.detail-route__runner\s*\{[\s\S]*?top: 50%/.test(wxssD), '居中方案不符');
   check('虚线用既有 border 色', /border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '分割虚线色不符');
   check('起终点圆点配色未变', /\.detail-route__dot--from\s*\{[\s\S]*?background-color: var\(--color-primary-dark\)/.test(wxssD) && /\.detail-route__dot--to\s*\{[\s\S]*?background-color: var\(--color-accent\)/.test(wxssD), '圆点配色被改');
   check('地点值仍是主级 32rpx 加粗', /\.detail-route__value\s*\{[\s\S]*?font-size: var\(--font-lg\)[\s\S]*?font-weight: 700/.test(wxssD), '地点字号被改');
