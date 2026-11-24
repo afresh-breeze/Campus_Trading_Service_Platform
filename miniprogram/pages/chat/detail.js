@@ -422,7 +422,7 @@ Page({
     return Date.now() - (last._ts || 0) > TIME_GAP;
   },
 
-  requestSend(tempId, content) {
+  requestSend(tempId, content, msgType) {
     const id = this.data.conversationId;
     if (!id || this.data.sending) {
       this.markPending(tempId, false, '发送失败');
@@ -430,7 +430,7 @@ Page({
     }
     this.setData({ sending: true });
     http
-      .post('/api/conversations/' + id + '/messages', { content }, { silent: true })
+      .post('/api/conversations/' + id + '/messages', { content, msgType: msgType || 'text' }, { silent: true })
       .then((res) => {
         this.setData({ sending: false });
         this.resolvePending(tempId, res || {});
@@ -441,7 +441,7 @@ Page({
       });
   },
 
-  /** 乐观气泡替换为真实消息 */
+  /** 乐观气泡替换为真实消息（msgType 跟随气泡：文本/图片） */
   resolvePending(tempId, res) {
     const list = this.data.messages.map((m) => {
       if (m.tempId !== tempId) return m;
@@ -449,7 +449,7 @@ Page({
         {
           messageId: res.messageId,
           senderId: wxMe(),
-          msgType: 'text',
+          msgType: m.isImage ? 'image' : 'text',
           content: m.content,
           createdAt: res.createdAt,
           isMine: true
@@ -482,7 +482,94 @@ Page({
         m.tempId === tempId ? Object.assign({}, m, { pending: true, failed: false }) : m
       )
     });
+    if (target.isImage) {
+      // 图片消息重发：已上传成功的直接重发 URL，没传完的从本地临时文件重新上传
+      if (target._uploadedUrl) this.requestSend(tempId, target._uploadedUrl, 'image');
+      else this.uploadImage(tempId, target._tempPath);
+      return;
+    }
     this.requestSend(tempId, target.content);
+  },
+
+  /** 图片气泡点击 → 全屏预览（用例 27；失败态不预览，走重发） */
+  onPreviewImage(e) {
+    const url = e.currentTarget.dataset.url;
+    if (!url) return;
+    wx.previewImage({ current: url, urls: [url] });
+  },
+
+  // ---- 图片消息（11-24 补齐用例 27：选图 → 上传 → 发送） ----
+
+  onPickImage() {
+    if (this.data.sending) return;
+    if (!this.data.conversationId) return;
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
+      success: (res) => {
+        const filePath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath;
+        if (filePath) this.sendImage(filePath);
+      }
+    });
+  },
+
+  /** 图片消息乐观气泡：先显示本地临时图，上传成功后换服务端 URL */
+  sendImage(filePath) {
+    const tempId = 'tmp' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    const bubble = {
+      key: tempId,
+      tempId: tempId,
+      messageId: 0,
+      isMine: true,
+      content: '',
+      isImage: true,
+      imageUrl: filePath,
+      timeText: dividerTime(new Date()),
+      showTime: this.needDivider(),
+      pending: true,
+      failed: false,
+      _ts: Date.now(),
+      _tempPath: filePath,
+      _uploadedUrl: ''
+    };
+    this.setData({
+      messages: this.data.messages.concat([bubble]),
+      scrollAnchor: bubble.key,
+      isAtBottom: true
+    });
+    this.uploadImage(tempId, filePath);
+  },
+
+  /** 上传图片 → /uploads/ 相对路径 → 发送 msgType=image */
+  uploadImage(tempId, filePath) {
+    const id = this.data.conversationId;
+    if (!id || this.data.sending) {
+      this.markPending(tempId, false, '发送失败');
+      return;
+    }
+    this.setData({ sending: true });
+    http
+      .upload(filePath)
+      .then((res) => {
+        const url = res && res.url;
+        if (!url) throw { message: '上传失败' };
+        // 记录已上传 URL：发送阶段失败重发时不用重新上传
+        this.setData({
+          sending: false,
+          messages: this.data.messages.map((m) =>
+            m.tempId === tempId
+              ? Object.assign({}, m, { content: url, imageUrl: adapter.fullUrl(url), _uploadedUrl: url })
+              : m
+          )
+        });
+        this.requestSend(tempId, url, 'image');
+      })
+      .catch((err) => {
+        this.setData({ sending: false });
+        this.markPending(tempId, false, (err && err.message) || '上传失败');
+      });
   },
 
   onLongPressMsg(e) {

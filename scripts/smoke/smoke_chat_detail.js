@@ -33,6 +33,10 @@ const fakeRequest = {
   put(url, data) {
     calls.push({ method: 'PUT', url, data });
     return new Promise((resolve, reject) => pending.push({ resolve, reject }));
+  },
+  upload(filePath) {
+    calls.push({ method: 'UPLOAD', url: '/api/upload', filePath });
+    return new Promise((resolve, reject) => pending.push({ resolve, reject }));
   }
 };
 const origLoad = Module._load;
@@ -256,6 +260,61 @@ const msg = (id, senderId, content, extra) =>
   check('点击卡片跳商品详情', navs.indexOf('/pages/item/detail?id=1001') > -1, navs);
 
   p.onUnload();
+
+  console.log('[13] 图片消息：选图入口 / 上传发送 / 预览 / 失败重发（11-24 用例 27）');
+  resetCalls();
+  const fs = require('fs');
+  const wxmlText = fs.readFileSync(path.join(MP, 'pages/chat/detail.wxml'), 'utf8');
+  check('WXML 有选图入口（onPickImage）', wxmlText.indexOf('onPickImage') > -1);
+  check('WXML 图片气泡绑定预览（onPreviewImage）', wxmlText.indexOf('onPreviewImage') > -1);
+
+  const mediaOpts = [];
+  const previews = [];
+  global.wx.chooseMedia = (o) => {
+    mediaOpts.push(o);
+    o.success({ tempFiles: [{ tempFilePath: 'wxfile://tmp/img1.jpg' }] });
+  };
+  global.wx.previewImage = (o) => previews.push(o);
+
+  const q = makePage();
+  q.data.conversationId = 7;
+  q.data.sending = false;
+  q.data.messages = [];
+
+  q.onPickImage();
+  check('chooseMedia 参数：count=1 + mediaType=image', mediaOpts.length === 1 && mediaOpts[0].count === 1 && mediaOpts[0].mediaType[0] === 'image', mediaOpts[0]);
+  check('乐观图片气泡（本地临时图）', q.data.messages.length === 1 && q.data.messages[0].isImage === true && q.data.messages[0].imageUrl === 'wxfile://tmp/img1.jpg', q.data.messages[0]);
+
+  flushNext(true, { url: '/uploads/abc.png' });
+  await tick();
+  const upPost = calls.filter((c) => c.method === 'POST' && c.url === '/api/conversations/7/messages')[0];
+  check('上传后 POST 消息带 msgType=image + /uploads/ 路径', upPost && upPost.data.msgType === 'image' && upPost.data.content === '/uploads/abc.png', upPost && upPost.data);
+  check('气泡换服务端 URL（fullUrl）', q.data.messages[0]._uploadedUrl === '/uploads/abc.png' && q.data.messages[0].imageUrl.indexOf('/uploads/abc.png') > -1, q.data.messages[0]);
+
+  flushNext(true, { messageId: 9, createdAt: now() });
+  await tick();
+  check('发送完成后气泡就绪', q.data.messages[0].pending === false && q.data.messages[0].failed === false && q.data.messages[0].content === '/uploads/abc.png', q.data.messages[0]);
+
+  q.onPreviewImage({ currentTarget: { dataset: { url: 'full:/uploads/abc.png' } } });
+  check('点击图片气泡全屏预览', previews.length === 1 && previews[0].urls[0] === 'full:/uploads/abc.png', previews[0]);
+
+  // 失败重发：发送阶段失败 → 已上传过 URL 的重发不重新上传
+  resetCalls();
+  q.onPickImage();
+  flushNext(true, { url: '/uploads/def.png' });
+  await tick();
+  flushNext(false, { message: '网络开小差' });
+  await tick();
+  check('发送失败标红', q.data.messages[1].failed === true, q.data.messages[1]);
+  resetCalls();
+  q.onTapFailed({ currentTarget: { dataset: { temp: q.data.messages[1].tempId } } });
+  await tick();
+  const retryPost = calls.filter((c) => c.method === 'POST' && c.url === '/api/conversations/7/messages')[0];
+  const retryUpload = calls.filter((c) => c.method === 'UPLOAD')[0];
+  check('重发只走 POST 不重新上传', retryPost && !retryUpload, { posts: calls.length });
+  check('重发带 msgType=image + 已上传 URL', retryPost && retryPost.data.msgType === 'image' && retryPost.data.content === '/uploads/def.png', retryPost && retryPost.data);
+
+  q.onUnload();
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);
 })().catch((e) => {

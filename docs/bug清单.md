@@ -25,6 +25,7 @@
 | F-9 | 全局 `.page`（原 B-2） | 非 tab 页套 `.page` 底部多约 150rpx 空白（避让悬浮 tabBar 的 padding 对非 tab 页多余） | 11-20 A 同意后拆分：`app.wxss` 拆 `.page`/`.page--tab`，B 侧 3 个 tab 页加 `page--tab`，`index/index` 由 A 自加；`wxml_check` 全 PASS | P2 | 11-20 |
 | F-10 | `utils/mock.js`（原 B-4） | 未同步 A 的 v0.10 契约：favorites 忽略 `status`；items/:id 忽略 `view=0` 仍计数；POST items 未拦两位小数；大厅 `status` 仍允许已完成 | 11-20 五组校验对齐 + 文案逐字对齐 `3e19a51`（含 status/visibility 非字符串边界）；契约测试 `[12]` 节 16 条，契约 **161/0**、冒烟 480/0 | P2 | 11-20 |
 | F-11 | B 侧全站按压反馈（11-22 对齐引入） | 按压时「字快速抖动」：① 大厅/聊天列表卡 `u-enter` 入场动画（fill both 占用 transform）与 scale 按压叠加冲突（主因）；② scale 按压使文字逐帧重栅格化（小元素上感知明显） | 11-23 两步修复：第一步摘掉两处列表卡 u-enter；第二步分级——**卡片级按压恢复 item-card 口径（scale 0.985 + opacity 0.94 + 阴影加深）**：hall 订单卡/chat 会话卡/cd-biz/me-order/mine-hero；**行/小控件保持 opacity 或底色**（chips/sort/tabs/行格/btn--press/entry/fab 等）；scale 仅限整卡与纯图标。wxml_check PASS、契约 161/0、冒烟全过 | P1 | 11-23 |
+| F-12 | 发布代取 `place-picker` | 有下级地标的片区（教学区等）选片区后点「确定」无反应：发布页漏传 `place-required`（11-15 建档即漏），组件按「找跑腿」口径放行片区直选，页面 `onPlaceConfirm` 又静默 return——弹层不动、无任何提示，表现为「无法选择取件地点」（11-24 用户实测反馈） | `publish.wxml` 补 `place-required="{{true}}"`（组件恢复「发布必须选到楼」拦截 + 提示文案切换）；兜底分支由静默 return 改为 toast「该片区需选择具体教学楼」；`smoke_publish` 38/0、`smoke_place_picker` 29/0 回归 | P1 | 11-24 |
 
 ## 三、复验记录
 

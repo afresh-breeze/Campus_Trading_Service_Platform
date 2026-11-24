@@ -169,8 +169,11 @@ Page({
     const zone = (e.detail && e.detail.zone) || '';
     const place = (e.detail && e.detail.place) || '';
     if (!zone) return;
-    // 有下级地标的片区必须选到楼（组件已拦，这里兜底防直接调）
-    if (!place && campus.placesOfZone(zone).length) return;
+    // 有下级地标的片区必须选到楼（组件 place-required 已拦，这里兜底给提示，不静默吞）
+    if (!place && campus.placesOfZone(zone).length) {
+      wx.showToast({ title: '该片区需选择具体教学楼', icon: 'none' });
+      return;
+    }
     this.setData({
       placePickerVisible: false,
       pickupArea: zone,

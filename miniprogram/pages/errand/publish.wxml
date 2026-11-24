@@ -41,6 +41,7 @@
     title="选择取件地点"
     zone="{{pickupArea}}"
     place="{{pickupPlace}}"
+    place-required="{{true}}"
     bind:confirm="onPlaceConfirm"
     bind:close="onPlaceClose"
   />

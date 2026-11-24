@@ -581,6 +581,50 @@ const OK_ERRAND = {
     '可见性不合法'
   );
 
+  console.log('\n[13] 图片消息：msgType=image 上传 URL 校验 / 非法类型 / 文本长度（11-24 用例 27）');
+
+  // 1) 图片消息合法：/uploads/ 开头 → 成功（响应只回 { messageId, createdAt }，对齐 chat.js）
+  const v013Img = await mock.run('/api/conversations/3001/messages', 'POST', {
+    content: '/uploads/1795256941029-test.png',
+    msgType: 'image'
+  });
+  check('图片消息发送成功（messageId + createdAt）', v013Img && v013Img.messageId > 0 && !!v013Img.createdAt, v013Img);
+
+  // 2) 落库侧 msgType=image / content 为 /uploads/ 相对路径
+  const v013Msgs = (await mock.run('/api/conversations/3001/messages', 'GET', { afterId: 0 })).list;
+  const v013Last = v013Msgs[v013Msgs.length - 1];
+  check('落库 msgType=image', v013Last && v013Last.msgType === 'image', v013Last);
+  check('content 为 /uploads/ 相对路径', v013Last && v013Last.content.indexOf('/uploads/') === 0, v013Last);
+
+  // 3) 触发器口径：图片消息后会话预览变 [图片]
+  const v013Conv = (await mock.run('/api/conversations', 'GET', { page: 1, pageSize: 50 })).list.filter(
+    (c) => c.conversationId === 3001
+  )[0];
+  check('会话预览变 [图片]', v013Conv && v013Conv.lastMessage === '[图片]', v013Conv && v013Conv.lastMessage);
+
+  // 4) 图片地址不以 /uploads/ 开头 → 400
+  await expectFailMsg(
+    '图片消息非 /uploads/ → 400',
+    '/api/conversations/3001/messages',
+    'POST',
+    { content: 'https://cdn.example.com/a.png', msgType: 'image' },
+    '图片地址不合法'
+  );
+
+  // 5) msgType 非法 → 400
+  await expectFailMsg(
+    'msgType=banner → 400',
+    '/api/conversations/3001/messages',
+    'POST',
+    { content: 'hello', msgType: 'banner' },
+    '消息类型不合法'
+  );
+
+  // 6) 省略 msgType 默认 text（与 A 路由口径一致）
+  const v013Text = await mock.run('/api/conversations/3001/messages', 'POST', { content: '省略类型默认文本' });
+  const v013TextMsg = (await mock.run('/api/conversations/3001/messages', 'GET', { afterId: 0 })).list.pop();
+  check('省略 msgType 默认 text', v013Text && v013Text.messageId > 0 && v013TextMsg.msgType === 'text', v013TextMsg);
+
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);
 })();

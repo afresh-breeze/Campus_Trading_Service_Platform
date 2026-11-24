@@ -68,7 +68,14 @@
             data-temp="{{item.tempId}}"
             bindtap="{{item.failed ? 'onTapFailed' : ''}}"
           >
-            <image wx:if="{{item.isImage}}" class="cd-bubble__img" src="{{item.imageUrl}}" mode="aspectFill" />
+            <image
+              wx:if="{{item.isImage}}"
+              class="cd-bubble__img"
+              src="{{item.imageUrl}}"
+              mode="aspectFill"
+              data-url="{{item.imageUrl}}"
+              catchtap="{{item.failed ? '' : 'onPreviewImage'}}"
+            />
             <text wx:else class="cd-bubble__text">{{item.content}}</text>
             <view wx:if="{{item.pending}}" class="cd-bubble__status">发送中…</view>
             <view wx:elif="{{item.failed}}" class="cd-bubble__status cd-bubble__status--fail">发送失败，点击重发</view>
@@ -81,6 +88,13 @@
 
     <!-- 发送框 -->
     <view class="cd-inputbar">
+      <!-- 选图入口：相册/拍照 → 上传 → msgType=image（用例 27，11-24 补齐） -->
+      <view
+        class="cd-inputbar__pick"
+        hover-class="cd-inputbar__pick--hover"
+        bindtap="onPickImage"
+        aria-label="发送图片"
+      >＋</view>
       <input
         class="cd-inputbar__input"
         value="{{input}}"
