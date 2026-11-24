@@ -163,11 +163,11 @@
 /* 分类横滑 */
 .pp-cats {
   width: 100%;
-  height: 64rpx;
+  display: flex;
+  flex-wrap: wrap;
   padding-bottom: 20rpx;
   /* 一级/二级分割线：比分隔色深半档，略有存在感但不抢层级（11-24 用户反馈） */
   border-bottom: 1rpx solid #E3D5BF;
-  white-space: nowrap;
 }
 .pp-cats::-webkit-scrollbar {
   width: 0;
@@ -180,7 +180,7 @@
   align-items: center;
   height: 64rpx;
   padding: 0 28rpx;
-  margin-right: var(--space-sm);
+  margin: 0 var(--space-sm) 12rpx 0;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-full);
   background-color: var(--color-bg-white);
@@ -250,6 +250,19 @@
   background-color: var(--color-primary-dark);
   color: #ffffff;
   font-weight: 600;
+}
+/* 地标区/提示条：max-height 过渡展开收起，面板长度变化不生硬（11-24 反馈） */
+.pp-sec {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 320ms var(--ease-out),
+    opacity 240ms ease-out;
+}
+.pp-sec--open {
+  max-height: 1000rpx;
+  opacity: 1;
 }
 .pp-places-title {
   margin-top: var(--space);

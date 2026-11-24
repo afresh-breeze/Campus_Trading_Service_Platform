@@ -86,12 +86,15 @@ Component({
 
     onCatTap(e) {
       const cat = e.currentTarget.dataset.cat;
-      // 点一级：只有二级（片区）重新入场，一级菜单与三级不重放
-      this.setData({
-        cat,
-        zoneList: campus.zonesByCategory()[cat] || [],
-        zTick: this.data.zTick + 1
-      });
+      const zoneList = campus.zonesByCategory()[cat] || [];
+      // 切分类必须重置下级选中：自动落到该分类首个片区（不残留上一分类的 zone/places，
+      // 否则会出现「图书馆页挂着南区教学区·全区」式的层级串味，11-24 反馈）
+      const patch = this.applyZone(zoneList.length ? zoneList[0] : '', '');
+      patch.cat = cat;
+      patch.zoneList = zoneList;
+      patch.zTick = this.data.zTick + 1;
+      patch.pTick = this.data.pTick + 1;
+      this.setData(patch);
     },
 
     onZoneTap(e) {
