@@ -21,8 +21,25 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const campus = require('../../utils/campus');
 
 const SIZE_TEXT = { small: '小件', medium: '中件', large: '大件' };
+
+// 粒子环（11-25 用户反馈）：跑步小人整圈环绕，顶部色最重、向两侧渐浅。
+// 四档色全部取自既有令牌（wxss 里定义 --0..--3 变体），js 只算位置与档位。
+const RING_STEPS = 16;
+const routeDots = [];
+for (let i = 0; i < RING_STEPS; i++) {
+  const deg = (i * 360) / RING_STEPS;
+  const rad = (deg * Math.PI) / 180;
+  const eff = Math.min(deg, 360 - deg); // 距顶部的角度 0..180
+  routeDots.push({
+    k: i,
+    x: +(50 + 50 * Math.sin(rad)).toFixed(2),
+    y: +(50 - 50 * Math.cos(rad)).toFixed(2),
+    c: eff <= 22.5 ? 0 : eff <= 67.5 ? 1 : eff <= 112.5 ? 2 : 3
+  });
+}
 
 /** 时间口径：asap 无时间字段；deadline 只有截止；range 有起止 */
 function timeText(order) {
@@ -80,7 +97,9 @@ Page({
     order: null,
     // 展示层派生字段（wxml 不做计算，全部在 js 里算好）
     sizeText: '',
-    areaText: '',
+    routeFromMain: '',
+    routeFromSub: '',
+    routeDots: [],
     rewardText: '0.00',
     timeText: '',
     createdText: '',
@@ -197,11 +216,15 @@ Page({
       errorDesc: '',
       order,
       sizeText: SIZE_TEXT[order.itemSize] || order.itemSize || '未填写',
-      // 地标与片区同名时只显示一次，避免「桃园 · 桃园」
-      areaText:
-        order.pickupPlace && order.pickupPlace !== order.pickupArea
-          ? order.pickupArea + ' · ' + order.pickupPlace
-          : order.pickupArea || '未填写',
+      // 11-25 用户反馈：详情页取件地点「地标在上、片区在下」两行，不许截断——
+      // 列表卡可以 ellipsis，详情页出现「南区教学区 · …」显示不全是大忌
+      routeFromMain: campus.shortPlace(order.pickupArea, order.pickupPlace) || '未填写',
+      routeFromSub:
+        campus.shortPlace(order.pickupArea, order.pickupPlace) &&
+        campus.shortPlace(order.pickupArea, order.pickupPlace) !== order.pickupArea
+          ? order.pickupArea
+          : '',
+      routeDots,
       rewardText: util.formatPrice(order.reward),
       timeText: timeText(order),
       createdText: util.fromNow(order.createdAt),

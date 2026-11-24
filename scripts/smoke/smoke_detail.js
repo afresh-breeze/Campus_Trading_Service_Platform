@@ -59,12 +59,20 @@ function check(name, cond, extra) {
   const p2003 = makePage();
   p2003.apply(await mock.run('/api/errands/2003', 'GET', {}));
   check('range 时间文案含起止', /2026-11-12 16:00 至 2026-11-12 18:00/.test(p2003.data.timeText), p2003.data.timeText);
-  check('地标=片区时只显示一次', p2003.data.areaText === '李园', p2003.data.areaText);
+  check('无地标片区：主级=片区名且无片区小字', p2003.data.routeFromMain === '李园' && p2003.data.routeFromSub === '', {
+    main: p2003.data.routeFromMain,
+    sub: p2003.data.routeFromSub
+  });
 
   const p2006 = makePage();
   p2006.apply(await mock.run('/api/errands/2006', 'GET', {}));
   check('asap/deadline 时间文案', p2006.data.timeText.indexOf('前送达') > 0, p2006.data.timeText);
   check('报酬两位小数', p2006.data.rewardText === '5.00', p2006.data.rewardText);
+  check('有地标片区：主级=地标、小字=片区（11-25 用户反馈）', p2006.data.routeFromMain === '第16教学楼' && p2006.data.routeFromSub === '北区教学区', {
+    main: p2006.data.routeFromMain,
+    sub: p2006.data.routeFromSub
+  });
+  check('粒子环 16 点已生成', p2006.data.routeDots.length === 16 && p2006.data.routeDots[0].c === 0, p2006.data.routeDots.length);
   check('我是发布者 isPublisher=true', p2006.data.isPublisher === true);
   check('联系对象=接单人 8', p2006.data.chatPeerId === 8, p2006.data.chatPeerId);
 
@@ -142,9 +150,13 @@ function check(name, cond, extra) {
   check('送达列右对齐 class', /detail-route__col--to/.test(wxmlD), 'wxml 未见右对齐列');
   check('跑步图标引用本地资源', /src="\/assets\/icons\/runner\.png"/.test(wxmlD), 'wxml 未见 runner 图标');
   check('runner.png 已入库', fsD.existsSync(path.join(REPO, 'assets', 'icons', 'runner.png')), '图标文件缺失');
-  check('粒子弧 + 两端实心端点', /detail-route__arc"/.test(wxmlD) && /detail-route__arc-end--from/.test(wxmlD) && /detail-route__arc-end--to/.test(wxmlD), '弧结构不符');
+  check('粒子环结构（ring + wx:for routeDots）', /detail-route__ring"/.test(wxmlD) && /wx:for="\{\{routeDots\}\}"/.test(wxmlD), '环结构不符');
+  check('粒子环四档色全用令牌（无新配色）', ['0', '1', '2', '3'].every((n) => new RegExp('detail-route__ring-dot--' + n + '\\s*\\{[\\s\\S]*?background-color: var\\(--color-[a-z-]+\\)').test(wxssD)), '环色变体不符');
+  check('js 预生成 16 个粒子且只算位置档位', (function () { const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8'); return /const RING_STEPS = 16/.test(src) && /routeDots\.push/.test(src); })(), 'js 粒子数据缺失');
+  check('取件地点两行：地标主级 + 片区小字', /routeFromMain/.test(wxmlD) && /detail-route__value-sub/.test(wxmlD) && /routeFromSub/.test(wxmlD), '两行结构不符');
+  check('送达地点不再截断（无 ellipsis）', !/detail-route__value ellipsis/.test(wxmlD), '地点仍被截断');
   check('备注移到虚线下（label+内容，wx:if 保留）', /detail-route__foot/.test(wxmlD) && /detail-route__remark-label/.test(wxmlD) && /wx:if="\{\{order\.remark\}\}"/.test(wxmlD), '备注行结构不符');
-  check('弧为 dotted 半圆（text-4 色，无新配色）', /\.detail-route__arc\s*\{[\s\S]*?border: 5rpx dotted var\(--color-text-4\)[\s\S]*?border-bottom: none/.test(wxssD), '弧样式不符');
+  check('粒子环色全用令牌、旧弧样式已删', !/detail-route__arc\s*\{/.test(wxssD) && /detail-route__ring\s*\{/.test(wxssD), '旧弧样式残留');
   check('虚线用既有 border 色', /border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '分割虚线色不符');
   check('起终点圆点配色未变', /\.detail-route__dot--from\s*\{[\s\S]*?background-color: var\(--color-primary-dark\)/.test(wxssD) && /\.detail-route__dot--to\s*\{[\s\S]*?background-color: var\(--color-accent\)/.test(wxssD), '圆点配色被改');
   check('地点值仍是主级 32rpx 加粗', /\.detail-route__value\s*\{[\s\S]*?font-size: var\(--font-lg\)[\s\S]*?font-weight: 700/.test(wxssD), '地点字号被改');

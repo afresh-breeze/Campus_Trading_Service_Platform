@@ -45,9 +45,9 @@
       <text class="detail-head__time">{{timeText}}</text>
     </view>
 
-    <!-- ② 路线：登机牌式横向布局（11-25 用户预览确认）
-         取件在左、送达在右，中间跑步小人 + dotted 粒子弧（弧两端实心点与两侧圆点呼应）；
-         备注移到虚线下（长备注换行不挤占地点区），配色全部沿用现有令牌 -->
+    <!-- ② 路线：登机牌式横向布局（11-25 用户预览确认 + 同日两处修正）
+         取件左（地标在上、片区小字在下）/ 送达右（不截断），中间跑步小人 + 整圈粒子环
+         （顶部色最重、向两侧渐浅，四档全取自既有令牌）；备注移到虚线下 -->
     <view class="card detail-route">
       <view class="detail-route__top">
         <view class="detail-route__col">
@@ -55,13 +55,19 @@
             <view class="detail-route__dot detail-route__dot--from"></view>
             <text class="detail-route__label">取件</text>
           </view>
-          <text class="detail-route__value ellipsis">{{areaText}}</text>
+          <text class="detail-route__value">{{routeFromMain}}</text>
+          <text wx:if="{{routeFromSub}}" class="detail-route__value-sub">{{routeFromSub}}</text>
         </view>
 
         <view class="detail-route__mid">
-          <view class="detail-route__arc"></view>
-          <view class="detail-route__arc-end detail-route__arc-end--from"></view>
-          <view class="detail-route__arc-end detail-route__arc-end--to"></view>
+          <view class="detail-route__ring">
+            <view
+              wx:for="{{routeDots}}"
+              wx:key="k"
+              class="detail-route__ring-dot detail-route__ring-dot--{{item.c}}"
+              style="left: {{item.x}}%; top: {{item.y}}%"
+            ></view>
+          </view>
           <image class="detail-route__runner" src="/assets/icons/runner.png" mode="aspectFit" />
         </view>
 
@@ -70,7 +76,7 @@
             <text class="detail-route__label">送达</text>
             <view class="detail-route__dot detail-route__dot--to"></view>
           </view>
-          <text class="detail-route__value ellipsis">{{order.deliveryLocation}}</text>
+          <text class="detail-route__value">{{order.deliveryLocation}}</text>
         </view>
       </view>
 

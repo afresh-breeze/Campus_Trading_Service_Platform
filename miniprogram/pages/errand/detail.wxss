@@ -95,6 +95,7 @@
   font-size: var(--font-sm);
   color: var(--color-text-3);
 }
+/* 地点值不截断：详情页出现「南区教学区 · …」显示不全是大忌（11-25 用户反馈） */
 .detail-route__value {
   display: block;
   margin-top: 8rpx;
@@ -102,6 +103,14 @@
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.3;
+  word-break: break-all;
+}
+/* 地标下方的片区小字（取件列专用，同名/无地标时不渲染） */
+.detail-route__value-sub {
+  display: block;
+  margin-top: 4rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-3);
 }
 /* 起终点圆点：起=深棕（稳），终=辅色（暖），不靠颜色传达信息，标注文字同时存在 */
 .detail-route__dot {
@@ -118,40 +127,42 @@
   margin-left: 16rpx;
   background-color: var(--color-accent);
 }
-/* 中段：粒子弧 + 跑步小人（runner.png 为本地生成的 #79513D 圆头笔画剪影） */
+/* 中段：整圈粒子环 + 跑步小人（runner.png 为本地生成的 #79513D 圆头笔画剪影）。
+   11-25 用户反馈：弧端点与虚线对不齐 → 改为小人整圈环绕，顶部色最重、向两侧渐浅 */
 .detail-route__mid {
   position: relative;
   flex: none;
   width: 176rpx;
   height: 112rpx;
 }
-/* dotted 半圆 = 半圈粒子；只留上边框呈弧形 */
-.detail-route__arc {
+/* 粒子环容器：100×100rpx 正方形，中心与小人中心（top 54rpx）对齐 */
+.detail-route__ring {
   position: absolute;
-  left: 12rpx;
-  right: 12rpx;
-  top: 16rpx;
-  height: 84rpx;
-  border: 5rpx dotted var(--color-text-4);
-  border-bottom: none;
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  box-sizing: border-box;
+  left: 50%;
+  top: 4rpx;
+  width: 100rpx;
+  height: 100rpx;
+  margin-left: -50rpx;
 }
-/* 弧两端实心端点：左=accent（取件）、右=primary-dark（送达），与两侧圆点呼应 */
-.detail-route__arc-end {
+.detail-route__ring-dot {
   position: absolute;
-  bottom: 8rpx;
-  width: 10rpx;
-  height: 10rpx;
+  width: 9rpx;
+  height: 9rpx;
   border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
-.detail-route__arc-end--from {
-  left: 0;
+/* 四档色全部取自既有令牌：0 顶部最深 → 3 底部最浅 */
+.detail-route__ring-dot--0 {
+  background-color: var(--color-primary-dark);
+}
+.detail-route__ring-dot--1 {
   background-color: var(--color-accent);
 }
-.detail-route__arc-end--to {
-  right: 0;
-  background-color: var(--color-primary-dark);
+.detail-route__ring-dot--2 {
+  background-color: var(--color-text-4);
+}
+.detail-route__ring-dot--3 {
+  background-color: var(--color-border);
 }
 .detail-route__runner {
   position: absolute;
