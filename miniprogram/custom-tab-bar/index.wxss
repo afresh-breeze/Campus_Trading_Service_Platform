@@ -6,6 +6,9 @@
   display: flex;
   align-items: stretch;
   height: 108rpx;
+  /* 11-25 全站宋体：custom-tab-bar 是独立样式作用域，app.wxss 的 page 声明够不到这里，
+     必须在本组件根上重复声明（栈与 app.wxss 保持一致） */
+  font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'FangSong', 'SimSun', serif;
   /* UI 优化 5.2：半透明暖白 + 实色兜底（低端安卓 backdrop-filter 可能不生效） */
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: saturate(160%) blur(20rpx);

@@ -270,6 +270,13 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
     /\.home-bar__title,\s*\n\.hall-bar__title\s*\{[\s\S]*?font-weight: 900[\s\S]*?-webkit-text-stroke: 0\.6rpx currentColor/.test(appWxss),
     null
   );
+  // custom-tab-bar 是独立样式作用域，page 的宋体够不到——tab 根上必须自带同款字体栈
+  const tabWxss = fs.readFileSync(path.join(REPO, 'custom-tab-bar', 'index.wxss'), 'utf8');
+  check(
+    '自定义 tabBar 也用宋体栈',
+    /font-family:\s*'Songti SC'[\s\S]*?serif;/.test(tabWxss),
+    null
+  );
 
   // ============ [12] 无数据新账号 → 空态不是报错 ============
   console.log('\n[12] 新账号空态');
