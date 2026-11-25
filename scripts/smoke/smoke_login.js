@@ -118,9 +118,10 @@ const seg = (from, to) => {
   check('登录按钮不在表单卡内', seg('class="form-card"', '</view>\n\n  <button').indexOf('<button') < 0);
   check('按钮保留 loading/disabled 绑定', /loading="\{\{submitting\}\}"/.test(wxml) && /disabled="\{\{submitting\}\}"/.test(wxml));
   check('按压反馈用 btn--press（不缩放口径）', wxml.indexOf('hover-class="btn--press"') >= 0);
-  check('底部链接已加深（#4A3A2C）', wxss.indexOf('#4A3A2C') >= 0);
-  check('协议行已加深（#5C4A38）', wxss.indexOf('#5C4A38') >= 0);
-  check('MOCK 提示黄底加深（#8A4A00）', wxss.indexOf('#8A4A00') >= 0);
+  check('底部链接用 text-2 令牌（主页面底色直接可读）', /\.extra-link\s*\{[^}]*var\(--color-text-2\)/.test(wxss));
+  check('协议行用 text-3 令牌', /\.agreement\s*\{[^}]*var\(--color-text-3\)/.test(wxss));
+  check('MOCK 提示用 text-3 令牌', /\.tip\s*\{[^}]*var\(--color-text-3\)/.test(wxss));
+  check('无黄屏色残留（#FDE03F 已移除）', wxss.indexOf('#FDE03F') < 0 && wxml.indexOf('#FDE03F') < 0);
   check('协议两个链接都可点', /data-type="user"/.test(wxml) && /data-type="privacy"/.test(wxml));
   check('MOCK 提示按 isMock 条件渲染', wxml.indexOf('wx:if="{{isMock}}"') >= 0);
   check('去注册仍走 onGoRegister', wxml.indexOf('bindtap="onGoRegister"') >= 0);
@@ -133,7 +134,7 @@ const seg = (from, to) => {
     'eyes-move',
     'eyes-blink'
   ].forEach((k) => check('存在 @keyframes ' + k, wxss.indexOf('@keyframes ' + k) >= 0));
-  check('黄屏底色 #FDE03F', /#FDE03F/i.test(wxss));
+  check('底色与主页面同源（var(--color-bg)）', /page\s*\{[^}]*background-color:\s*var\(--color-bg\)/.test(wxss));
   check('弥散渐变已移除（无 linear-gradient / blur）',
     wxss.indexOf('linear-gradient') < 0 && wxss.indexOf('blur(') < 0);
   check('眼睛几何与 loading-eyes 同源（eye 64 / pupil 40 / travel 20）',
@@ -150,6 +151,30 @@ const seg = (from, to) => {
   check('js 有摘类逻辑', /setData\(\{\s*intro:\s*false\s*\}\)/.test(js));
   check('密码聚焦切眯眼', /onPwFocus[\s\S]*?eyesClosed:\s*true/.test(js) && wxml.indexOf('bindfocus="onPwFocus"') >= 0);
   check('失焦恢复待机', /onPwBlur[\s\S]*?eyesClosed:\s*false/.test(js) && wxml.indexOf('bindblur="onPwBlur"') >= 0);
+
+  console.log('\n[3.5] 登录转场契约：果冻回弹 + 深棕铺满水波纹');
+  check('按钮绑定果冻类', wxml.indexOf("{{btnJelly ? 'submit--jelly' : ''}}") >= 0);
+  check('存在 @keyframes btn-jelly', wxss.indexOf('@keyframes btn-jelly') >= 0);
+  check('果冻时长 js/wxss 对齐（460ms）', /JELLY_MS\s*=\s*460/.test(js) && /btn-jelly 460ms/.test(wxss));
+  check('果冻播完摘类', /_jellyTimer = setTimeout\(\(\) => \{\s*this\._jellyTimer = null;\s*this\.setData\(\{ btnJelly: false \}\)/.test(js));
+  check('转场覆盖层存在且几何走 CSS 变量',
+    /class="transit \{\{transit\}\}"/.test(wxml) &&
+    wxml.indexOf('--tx: {{tapX}}px') >= 0 && wxml.indexOf('--ty: {{tapY}}px') >= 0 && wxml.indexOf('--tr: {{tapR}}px') >= 0);
+  check('转场三段 keyframes 齐全',
+    wxss.indexOf('@keyframes transit-grow') >= 0 &&
+    wxss.indexOf('@keyframes transit-fade') >= 0 &&
+    wxss.indexOf('@keyframes transit-ring') >= 0);
+  check('深棕用 --color-primary-dark（铺满与涟漪同色）',
+    /\.transit__fill\s*\{[^}]*var\(--color-primary-dark\)/.test(wxss) &&
+    /\.transit__ring\s*\{[^}]*var\(--color-primary-dark\)/.test(wxss));
+  check('ripple 段 transform 锁 scale(1)（防基态 scale(0) 瞬消）',
+    /@keyframes transit-fade\s*\{[\s\S]*?transform:\s*scale\(1\)[\s\S]*?transform:\s*scale\(1\)/.test(wxss));
+  check('转场时序 js/wxss 对齐（480/420/260）',
+    /TRANSIT_GROW_MS\s*=\s*480/.test(js) && /TRANSIT_RIPPLE_MS\s*=\s*420/.test(js) && /GOTO_AT_MS\s*=\s*260/.test(js) &&
+    /transit-grow 480ms/.test(wxss) && /transit-fade 420ms/.test(wxss));
+  check('转场半径按按钮 rect + 四角最远距离计算', /boundingClientRect/.test(js) && /Math\.hypot/.test(js));
+  check('转场降级：reduced-motion 下深棕直接铺满', /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.transit\.expand \.transit__fill\s*\{[\s\S]*?transform:\s*scale\(1\)/.test(wxss));
+  check('onUnload 清转场定时器', /_transitGrowTimer/.test(js) && /_transitGotoTimer/.test(js) && /_jellyTimer/.test(js));
 
   console.log('\n[4] 光晕编排生命周期');
   const p0 = makePage();

@@ -37,7 +37,7 @@
       </view>
     </view>
 
-    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
+    <button class="btn btn-primary btn-block submit {{btnJelly ? 'submit--jelly' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
       登录
     </button>
 
@@ -74,5 +74,13 @@
         <view class="seg seg--dn"></view>
       </view>
     </view>
+  </view>
+
+  <!-- 登录成功转场覆盖层：expand 阶段深棕圆从按钮位置放大铺满，
+       ripple 阶段水波纹式淡出进主界面。圆心/半径由 js 按按钮 rect 计算 -->
+  <view class="transit {{transit}}" style="--tx: {{tapX}}px; --ty: {{tapY}}px; --tr: {{tapR}}px;">
+    <view class="transit__ring"></view>
+    <view class="transit__ring transit__ring--2"></view>
+    <view class="transit__fill"></view>
   </view>
 </view>

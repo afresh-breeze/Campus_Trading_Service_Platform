@@ -1,7 +1,7 @@
 /* ==================================================================
-   登录页（B 成员）—— 黄屏扁平底 + 眼睛条开场
+   登录页（B 成员）—— 主页面底色 + 眼睛条开场 + 深棕水波纹登录转场
    ------------------------------------------------------------------
-   1) 整页底色 #FDE03F 扁平（原弥散层已按用户定稿移除）；
+   1) 整页底色与主页面同源 var(--color-bg)（原黄屏底色按用户定稿移除）；
    2) 开场编排 2600ms：裸眼放大悬在屏幕正中（左→右→中→下扫视）→
       内容层从下方平滑入场，眼睛条带轻微果冻上升到导航下方插槽；
       落定后眼睛条用 loading-eyes 同款 eyes-move/eyes-blink 待机；
@@ -9,12 +9,14 @@
       瞳孔同色的圆头粗线（左 > 右 <，基础画法尖角朝左即 <，> 取镜像）；
    4) 编排动画全部挂 .intro，播完由 js 摘类回最终态
       （同 detail-page-enter 口径）；内容层 66% 才起步，避免标题
-      在眼睛经过标题区时追上来造成重合。
+      在眼睛经过标题区时追上来造成重合；
+   5) 登录成功转场：按钮果冻回弹 → 按钮位置深棕圆放大铺满 →
+      水波纹式淡出 → 进主界面（js 分 expand/ripple 两段驱动）。
    ================================================================== */
 
-/* 黄屏层：整页底色（含状态栏与导航区后面） */
+/* 底色层：与主页面 .page / app.wxss page 同源，进主界面时背景无缝 */
 page {
-  background-color: #FDE03F;
+  background-color: var(--color-bg);
 }
 
 .login-page {
@@ -82,20 +84,43 @@ page {
   letter-spacing: 8rpx;
   text-indent: 8rpx;
 }
+/* 果冻回弹（用户 11-25 定稿）：压扁 → 拉长 → 回弹。
+   注意这是用户点名的主动效，不等同于全站「按压只压暗不缩放」的 hover 口径——
+   列表/卡片的 hover 依旧禁 scale（宋体逐帧重栅格化字抖），只此按钮例外 */
+.submit--jelly {
+  animation: btn-jelly 460ms var(--ease-spring, cubic-bezier(0.34, 1.3, 0.64, 1));
+}
+@keyframes btn-jelly {
+  0% {
+    transform: scale(1, 1);
+  }
+  28% {
+    transform: scale(1.05, 0.9);
+  }
+  52% {
+    transform: scale(0.94, 1.08);
+  }
+  74% {
+    transform: scale(1.03, 0.96);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
 
-/* ---------------- 底部链接与协议：黄底上加深保证对比度 ---------------- */
+/* ---------------- 底部链接与协议：底色与主页面一致，直接用令牌 ---------------- */
 .extra {
   padding: 44rpx 8rpx 0;
 }
 .extra-link {
-  color: #4A3A2C;
+  color: var(--color-text-2);
   font-weight: 600;
 }
 .agreement {
   margin-top: 84rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: #5C4A38;
+  color: var(--color-text-3);
 }
 /* 协议可点：下划线 + 强调色，不依赖颜色单独传达 */
 .agreement__link {
@@ -107,13 +132,12 @@ page {
   margin-top: 16rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: #8A4A00;
-  font-weight: 600;
+  color: var(--color-text-3);
 }
 
 /* ==================================================================
    眼睛条：几何沿用 loading-eyes 组件（eye 64 / pupil 40 / travel ±20 /
-   gap 12，单位 rpx），黄底裸眼不加白色胶囊底
+   gap 12，单位 rpx），底色上裸眼不加白色胶囊底
    ================================================================== */
 .eyes-bar {
   position: absolute;
@@ -300,6 +324,92 @@ page {
   opacity: 0;
 }
 
+/* ==================================================================
+   登录成功转场：按钮位置深棕圆放大铺满 → 水波纹式消失 → 进主界面
+   js 分两段驱动：expand（grow 480ms）→ ripple（fade 420ms + 双圈涟漪，
+   涟漪开始 260ms 后发起跳转）。--tx/--ty/--tr 由 js 按按钮 rect 与
+   四角最远距离计算后内联传入。
+   ================================================================== */
+.transit {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
+  visibility: hidden;
+}
+.transit.expand,
+.transit.ripple {
+  visibility: visible;
+  /* 盖住整页，防转场期间再点击 */
+  pointer-events: all;
+}
+.transit__fill {
+  position: absolute;
+  left: calc(var(--tx, 50vw) - var(--tr, 100vw));
+  top: calc(var(--ty, 50vh) - var(--tr, 100vw));
+  width: calc(var(--tr, 100vw) * 2);
+  height: calc(var(--tr, 100vw) * 2);
+  border-radius: 50%;
+  background-color: var(--color-primary-dark);
+  transform: scale(0);
+}
+.transit.expand .transit__fill {
+  animation: transit-grow 480ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+@keyframes transit-grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+/* 水波纹式消失：棕色圆整体淡出，露出与主页面同源的底色；
+   transform 必须锁 scale(1)——基态是 scale(0)，不锁会瞬间消失 */
+.transit.ripple .transit__fill {
+  animation: transit-fade 420ms ease both;
+}
+@keyframes transit-fade {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+/* 双圈涟漪：从小圈扩到大圈外淡出，第二圈延迟 90ms 错拍 */
+.transit__ring {
+  position: absolute;
+  left: calc(var(--tx, 50vw) - var(--tr, 100vw));
+  top: calc(var(--ty, 50vh) - var(--tr, 100vw));
+  width: calc(var(--tr, 100vw) * 2);
+  height: calc(var(--tr, 100vw) * 2);
+  border-radius: 50%;
+  border: 4rpx solid var(--color-primary-dark);
+  opacity: 0;
+}
+.transit.ripple .transit__ring {
+  animation: transit-ring 480ms ease-out both;
+}
+.transit.ripple .transit__ring--2 {
+  animation-delay: 90ms;
+}
+@keyframes transit-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
 /* 系统开启「减弱动态效果」时跳过编排，直接给最终态 */
 @media (prefers-reduced-motion: reduce) {
   .intro .eyes-bar,
@@ -313,5 +423,20 @@ page {
   }
   .eye {
     animation: none;
+  }
+  /* 转场降级：深棕直接铺满（无放大无涟漪），淡出保留 */
+  .submit--jelly,
+  .transit.ripple .transit__ring {
+    animation: none;
+  }
+  .transit.expand .transit__fill {
+    animation: none;
+    transform: scale(1);
+  }
+  .transit.ripple .transit__fill {
+    animation: none;
+    transform: scale(1);
+    transition: opacity 420ms ease;
+    opacity: 0;
   }
 }
