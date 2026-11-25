@@ -5,16 +5,16 @@
   <!-- 模式切换：切换只换书籍区，已填内容全部保留 -->
   <view class="mode-switch">
     <view
-      class="mode-switch__item u-press {{mode === 'normal' ? 'mode-switch__item--on' : ''}}"
+      class="mode-switch__item {{mode === 'normal' ? 'mode-switch__item--on' : ''}}"
       data-mode="normal"
       bindtap="onModeChange"
-      hover-class="u-press--hover"
+      hover-class="mode-switch__item--hover"
     >普通商品</view>
     <view
-      class="mode-switch__item u-press {{mode === 'book' ? 'mode-switch__item--on' : ''}}"
+      class="mode-switch__item {{mode === 'book' ? 'mode-switch__item--on' : ''}}"
       data-mode="book"
       bindtap="onModeChange"
-      hover-class="u-press--hover"
+      hover-class="mode-switch__item--hover"
     >书籍</view>
   </view>
 
@@ -31,8 +31,8 @@
           <view wx:if="{{bookSelected.isbnText}}" class="book-selected__isbn">{{bookSelected.isbnText}}</view>
         </view>
         <view class="book-selected__actions">
-          <view class="book-selected__action u-press" bindtap="onChangeBook" hover-class="u-press--hover">更换</view>
-          <view class="book-selected__action book-selected__action--muted u-press" bindtap="onClearBookSelection" hover-class="u-press--hover">取消</view>
+          <view class="book-selected__action" bindtap="onChangeBook" hover-class="book-selected__action--hover">更换</view>
+          <view class="book-selected__action book-selected__action--muted" bindtap="onClearBookSelection" hover-class="book-selected__action--hover">取消</view>
         </view>
       </view>
     </block>
@@ -65,7 +65,7 @@
           <view
             wx:for="{{bookSuggestions}}"
             wx:key="bookId"
-            class="book-suggest__row u-press"
+            class="book-suggest__row"
             data-id="{{item.bookId}}"
             bindtap="onBookSelect"
             hover-class="book-suggest__row--hover"
@@ -82,7 +82,7 @@
         </view>
       </view>
 
-      <view wx:if="{{!bookManualOpen}}" class="book-manual-link u-press" bindtap="onOpenManualBook" hover-class="u-press--hover">
+      <view wx:if="{{!bookManualOpen}}" class="book-manual-link" bindtap="onOpenManualBook" hover-class="book-link--hover">
         找不到？手动新建书目 ›
       </view>
 
@@ -153,7 +153,7 @@
           <text wx:if="{{errors.manualPublisher}}" class="field-error">{{errors.manualPublisher}}</text>
         </view>
 
-        <view class="book-manual-cancel u-press" bindtap="onCloseManualBook" hover-class="u-press--hover">取消手动新建</view>
+        <view class="book-manual-cancel" bindtap="onCloseManualBook" hover-class="book-link--hover">取消手动新建</view>
       </view>
     </block>
   </view>
@@ -176,13 +176,13 @@
           <view>上传失败</view>
           <view>点击重试</view>
         </view>
-        <view class="img-item__del u-press" data-id="{{item.id}}" catchtap="onDeleteImage" hover-class="u-press--hover">×</view>
+        <view class="img-item__del" data-id="{{item.id}}" catchtap="onDeleteImage" hover-class="img-item__del--hover">×</view>
       </view>
       <view
         wx:if="{{images.length < maxImages}}"
-        class="img-item img-item--add u-press"
+        class="img-item img-item--add"
         bindtap="onChooseImages"
-        hover-class="u-press--hover"
+        hover-class="img-item--hover"
       >
         <view class="img-item__plus">+</view>
         <view class="img-item__add-text">添加图片</view>
@@ -335,10 +335,10 @@
       <view
         wx:for="{{placeChips}}"
         wx:key="*this"
-        class="place-chip u-press {{placeSelected[item] ? 'place-chip--on' : ''}}"
+        class="place-chip {{placeSelected[item] ? 'place-chip--on' : ''}}"
         data-place="{{item}}"
         bindtap="onPlaceChip"
-        hover-class="u-press--hover"
+        hover-class="place-chip--hover"
       >{{item}}</view>
     </view>
     <view class="place-tip">可多选，选中项自动用「，」连接</view>

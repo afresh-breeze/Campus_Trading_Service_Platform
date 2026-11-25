@@ -116,6 +116,10 @@
   font-size: 26rpx;
   font-weight: 600;
 }
+.search-submit--hover {
+  opacity: 0.88;
+}
+
 /* ---------------- 输入联想 ---------------- */
 .search-suggest {
   position: absolute;
@@ -202,7 +206,7 @@
 }
 .search-suggest__title {
   font-size: 26rpx;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--color-text);
   overflow: hidden;
   white-space: nowrap;
@@ -233,8 +237,8 @@
   justify-content: space-between;
 }
 .search-history__title {
-  font-size: var(--font-lg);
-  font-weight: 600;
+  font-size: 32rpx;
+  font-weight: 700;
   color: var(--color-text);
 }
 .search-history__clear {
@@ -265,7 +269,6 @@
 }
 .search-history__chip--hover {
   background-color: var(--color-primary-light);
-  transform: scale(0.97);
 }
 
 .search-tips {
@@ -273,8 +276,8 @@
 }
 .search-tips__title {
   display: block;
-  font-size: var(--font-xl);
-  font-weight: 600;
+  font-size: 32rpx;
+  font-weight: 700;
   color: var(--color-text);
 }
 .search-tips__desc {
@@ -300,7 +303,6 @@
 }
 .search-tips__chip--hover {
   background-color: var(--color-primary-light);
-  transform: scale(0.97);
 }
 
 /* ---------------- 相关图书 ---------------- */
@@ -313,8 +315,8 @@
   justify-content: space-between;
 }
 .search-books__title {
-  font-size: var(--font-lg);
-  font-weight: 600;
+  font-size: 32rpx;
+  font-weight: 700;
   color: var(--color-text);
 }
 .search-books__count {
@@ -370,6 +372,7 @@
 }
 .book-card--hover {
   transform: scale(0.985);
+  opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
 }
 .book-card__cover {
@@ -405,8 +408,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: var(--font-base);
-  font-weight: 600;
+  font-size: 32rpx;
+  font-weight: 700;
   line-height: 1.4;
   color: var(--color-text);
 }
@@ -479,9 +482,12 @@
   font-size: 26rpx;
   color: var(--color-text-2);
 }
+.search-sort__item--hover {
+  opacity: 0.7;
+}
 .search-sort__item--active {
   color: var(--color-primary-dark);
-  font-weight: 600;
+  font-weight: 700;
 }
 .search-sort__divider {
   width: 1rpx;
