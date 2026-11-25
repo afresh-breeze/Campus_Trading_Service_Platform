@@ -38,28 +38,26 @@
     <text class="mine-hero__arrow">›</text>
   </view>
 
-  <!-- 四项统计拆两组：二手（发布/收藏）+ 代取（我发布的/我完成的），组名消歧义 -->
-  <view class="mine-stats">
-    <view
-      class="mine-stats__group"
-      wx:for="{{statGroups}}"
-      wx:key="key"
-      wx:for-item="grp"
-    >
-      <view class="mine-stats__group-title">{{grp.title}}</view>
-      <view class="mine-stats__group-row">
-        <view
-          class="mine-stats__item"
-          wx:for="{{grp.items}}"
-          wx:key="key"
-          data-url="{{item.url}}"
-          bindtap="onTapStat"
-          hover-class="mine-stats__item--hover"
-        >
-          <text class="mine-stats__num">{{item.value}}</text>
-          <text class="mine-stats__label">{{item.label}}</text>
-        </view>
+  <!-- 二手市场 / 代取 两块插画卡：行级入口 + 数量（上卡在右、下卡在左，接单设置留白） -->
+  <view class="mkt-card mkt-card--{{card.key}}" wx:for="{{marketCards}}" wx:key="key" wx:for-item="card">
+    <view class="mkt-card__inner">
+      <view class="mkt-card__title">{{card.title}}</view>
+      <view
+        class="mkt-card__row"
+        wx:for="{{card.rows}}"
+        wx:key="key"
+        wx:for-item="row"
+        data-url="{{row.url}}"
+        data-auth="{{row.auth}}"
+        bindtap="onTapCell"
+        hover-class="mkt-card__row--hover"
+      >
+        <text class="mkt-card__num">{{row.value}}</text>
+        <text class="mkt-card__name">{{row.text}}</text>
       </view>
+    </view>
+    <view class="mkt-card__art">
+      <image class="mkt-card__img mkt-card__img--{{card.key}}" src="{{card.art}}" mode="heightFix" />
     </view>
   </view>
 

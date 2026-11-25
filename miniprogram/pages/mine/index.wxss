@@ -99,77 +99,86 @@
 }
 
 /* ---------- 四项统计 ---------- */
-.mine-stats {
+/* ---------- 二手市场 / 代取 插画卡（11-25，取代统计条） ---------- */
+.mkt-card {
   margin-top: 20rpx;
   display: flex;
   align-items: stretch;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-
-/* 11-25 拆两组：组间分隔线比项间粗一档，组名做消歧义标签 */
-.mine-stats__group {
+.mkt-card__inner {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
+  padding: 24rpx 28rpx 20rpx;
 }
-.mine-stats__group + .mine-stats__group {
-  border-left: 2rpx solid var(--color-divider);
-}
-.mine-stats__group-title {
-  text-align: center;
-  font-size: 20rpx;
-  color: var(--color-text-3);
-  padding-top: 12rpx;
-}
-.mine-stats__group-row {
-  display: flex;
-  align-items: stretch;
-}
-
-.mine-stats__item {
-  flex: 1;
-  padding: 10rpx 0 22rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-  position: relative;
-  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* 分隔线用伪元素，避免每格都加 border 造成首尾多一条 */
-.mine-stats__item::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 30rpx;
-  bottom: 30rpx;
-  width: 1px;
-  background-color: var(--color-divider);
-}
-
-.mine-stats__item:last-child::after {
-  display: none;
-}
-
-.mine-stats__item--hover {
-  background-color: var(--color-surface-2);
-}
-
-.mine-stats__num {
-  font-size: 38rpx;
+.mkt-card__title {
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--color-text);
-  line-height: 1.1;
+}
+.mkt-card__row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0 22rpx;
+  border-bottom: 1rpx dashed var(--color-divider);
+}
+.mkt-card__row:last-child {
+  border-bottom: none;
+  padding-bottom: 6rpx;
+}
+.mkt-card__row--hover {
+  background-color: var(--color-surface-2);
+}
+.mkt-card__name {
+  flex: 1;
+  font-size: var(--font-md);
+  color: var(--color-text);
+}
+.mkt-card__num {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--color-primary-dark);
   font-variant-numeric: tabular-nums;
 }
-
-.mine-stats__label {
-  font-size: 22rpx;
-  color: var(--color-text-3);
+/* 上卡（二手市场）：名称左、数量右 */
+.mkt-card--shop .mkt-card__num {
+  margin-left: auto;
+}
+/* 下卡（代取）：镜像——插画最左、标题右上、数量左（固定宽占位，接单设置留白）、名称右 */
+.mkt-card--errand .mkt-card__inner {
+  order: 2;
+}
+.mkt-card--errand .mkt-card__art {
+  order: 1;
+  padding: 20rpx 0 20rpx 16rpx;
+}
+.mkt-card--errand .mkt-card__title {
+  text-align: right;
+}
+.mkt-card--errand .mkt-card__name {
+  text-align: right;
+}
+.mkt-card--errand .mkt-card__num {
+  width: 88rpx;
+  text-align: center;
+}
+.mkt-card__art {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 16rpx 20rpx 0;
+}
+.mkt-card__img--shop {
+  height: 236rpx;
+  width: 236rpx;
+}
+.mkt-card__img--errand {
+  height: 316rpx;
+  width: 316rpx;
 }
 
 /* ---------- 入口分组 ---------- */
