@@ -12,6 +12,8 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+// 小票落款随机短句（11-25 B 加：替换「打印时间」行，与代取详情页同一份清单 utils/motto.js）
+const mottoUtil = require('../../utils/motto');
 
 const CONDITION_TEXT = {
   new: '全新',
@@ -177,15 +179,16 @@ Page({
     sawTeeth: SAW_TEETH,
     receiptImage: DOODLE_IMAGES[0],
     receiptDate: '',
-    receiptPrintTime: ''
+    receiptMotto: ''
   },
 
   onLoad(options) {
     this._reqSeq = 0;
     this._viewCounted = false;
-    // 图案只在打开页面时抽一次；之后的刷新/回跳不重抽，避免闪变
+    // 图案与短句只在打开页面时抽一次；之后的刷新/回跳不重抽，避免闪变
     this.setData({
-      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)]
+      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)],
+      receiptMotto: mottoUtil.randomMotto()
     });
     const id = Number(options && options.id || 0);
     if (!Number.isInteger(id) || id <= 0) {
@@ -278,8 +281,7 @@ Page({
       descExpanded: nextDescExpanded,
       actions: view.actions,
       showBar: view.showBar,
-      receiptDate: util.formatTime(printAt, false),
-      receiptPrintTime: util.formatTime(printAt)
+      receiptDate: util.formatTime(printAt, false)
     });
   },
 

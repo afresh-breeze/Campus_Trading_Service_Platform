@@ -135,11 +135,11 @@
           </view>
         </view>
 
-        <!-- ⑥ 小票落款：随机图案 + 日期 + 打印时间 -->
+        <!-- ⑥ 小票落款：随机图案 + 日期 + 随机短句（utils/motto.js，与代取详情页共用） -->
         <view class="receipt__sec receipt-doodle">
           <image class="receipt-doodle__img" src="{{receiptImage}}" mode="aspectFit" />
           <text class="receipt-doodle__date">{{receiptDate}}</text>
-          <text class="receipt-doodle__print">打印时间：{{receiptPrintTime}}</text>
+          <text class="receipt-doodle__motto">{{receiptMotto}}</text>
         </view>
       </view>
 

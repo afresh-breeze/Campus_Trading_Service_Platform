@@ -160,13 +160,13 @@
           <!-- 联系入口已并入底部操作栏（11-16 反馈）：卡片里只留发布人/接单人信息 -->
         </view>
 
-        <!-- ⑤ 小票落款（11-25）：发布者下方的装饰图案 + 当日日期 + 打印时间。
-             原为卡通条形码，用户反馈像真的码会引起误会 → 改为随机线条图案
-             （图源入库 assets/receipt/doodle-*.png，打开页面时随机抽一张） -->
+        <!-- ⑤ 小票落款（11-25）：发布者下方的装饰图案 + 当日日期 + 随机短句。
+             短句 10 条随机一条（utils/motto.js，onLoad 抽取开页定死防闪变），
+             替换掉原来的时间行；图案为随机线条图（assets/receipt/） -->
         <view class="receipt__sec receipt-doodle">
           <image class="receipt-doodle__img" src="{{receiptImage}}" mode="aspectFit" />
           <text class="receipt-doodle__date">{{receiptDate}}</text>
-          <text class="receipt-doodle__print">打印时间：{{receiptPrintTime}}</text>
+          <text class="receipt-doodle__motto">{{receiptMotto}}</text>
         </view>
       </view>
 

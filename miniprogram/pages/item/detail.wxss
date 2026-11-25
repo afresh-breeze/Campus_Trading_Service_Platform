@@ -407,7 +407,8 @@
   letter-spacing: 6rpx;
   color: var(--color-text);
 }
-.receipt-doodle__print {
+/* 落款短句（11-25 B 换掉「打印时间」行）：10 条里开页随机一条，工具在 utils/motto.js */
+.receipt-doodle__motto {
   margin-top: 10rpx;
   font-size: var(--font-xs);
   color: var(--color-text-3);

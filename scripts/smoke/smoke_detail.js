@@ -172,8 +172,9 @@ function check(name, cond, extra) {
   check('小票外壳结构（receipt + 上下齿条 + 纸面 body）', wxmlReceipt, '结构不符');
   check('五段（预览图 + 四卡）都挂 receipt__sec', (wxmlD.match(/card detail-\w+ receipt__sec/g) || []).length === 5, '分段挂载不符');
   check('齿条上下各一条 wx:for（sawTeeth × 2）', (wxmlD.match(/wx:for="\{\{sawTeeth\}\}"/g) || []).length === 2, '齿条数量不符');
-  check('落款图案结构（image + 随机 receiptImage + 日期/打印时间）', /receipt-doodle__img/.test(wxmlD) && /src="\{\{receiptImage\}\}"/.test(wxmlD)
-    && /receipt-doodle__date/.test(wxmlD) && /打印时间：\{\{receiptPrintTime\}\}/.test(wxmlD), '落款区结构不符');
+  check('落款图案结构（image + 随机 receiptImage + 日期 + 随机短句）', /receipt-doodle__img/.test(wxmlD) && /src="\{\{receiptImage\}\}"/.test(wxmlD)
+    && /receipt-doodle__date/.test(wxmlD) && /\{\{receiptMotto\}\}/.test(wxmlD)
+    && !/receipt-doodle__print/.test(wxmlD) && !/打印时间/.test(wxmlD), '落款区结构不符');
   check('条码拼条已移除（防误会：不残留 bars/bar 节点与样式）', !/receipt-code/.test(wxmlD) && !/receipt-code/.test(wxssD) && !/barBars/.test(wxmlD), '条码残留');
   check('纸面走 --color-paper 令牌（wxss 不写死 #FFFDF7）', /background-color: var\(--color-paper\)/.test(wxssD) && !/#FFFDF7/i.test(wxssD), '纸面色不符');
   check('app.wxss 已定义 --color-paper', /--color-paper:\s*#FFFDF7/i.test(fsApp.readFileSync(path.join(REPO, 'app.wxss'), 'utf8')), '令牌缺失');
@@ -186,7 +187,7 @@ function check(name, cond, extra) {
       return fsD.existsSync(path.join(REPO, 'assets', 'receipt', n + '.png'));
     }) && !fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'dog.png'))
       && !fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'doodle-1.png')), '图案文件不符');
-  check('js：27 齿 + 图案清单 + 随机抽取 + 日期/打印时间字段', (function () {
+  check('js：27 齿 + 图案清单 + 随机抽取 + 日期/随机短句（打印时间已移除）', (function () {
     const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
     const onLoadBody = (src.match(/onLoad\(options\) \{[\s\S]*?\n  \},/) || [''])[0];
     return /i < 27/.test(src)
@@ -194,8 +195,21 @@ function check(name, cond, extra) {
       && /cat\.png/.test(src) && /trees\.png/.test(src) && !/dog\.png/.test(src)
       && /Math\.random\(\) \* DOODLE_IMAGES\.length/.test(onLoadBody)
       && /receiptDate: util\.formatTime\(printAt, false\)/.test(src)
-      && /receiptPrintTime: util\.formatTime\(printAt\)/.test(src);
+      && !/receiptPrintTime/.test(src)
+      && /receiptMotto: mottoUtil\.randomMotto\(\)/.test(onLoadBody);
   })(), 'js 数据缺失');
+  check('短句清单公用（utils/motto.js 10 条 + 两详情页都接入）', (function () {
+    const m = fsD.readFileSync(path.join(REPO, 'utils', 'motto.js'), 'utf8');
+    const itemJs = fsD.readFileSync(path.join(REPO, 'pages', 'item', 'detail.js'), 'utf8');
+    const itemWxml = fsD.readFileSync(path.join(REPO, 'pages', 'item', 'detail.wxml'), 'utf8');
+    const itemOnLoad = (itemJs.match(/onLoad\(options\) \{[\s\S]*?\n  \},/) || [''])[0];
+    const ten = (m.match(/'/g) || []).length >= 20; // 10 条引号短语 = 20 个单引号
+    return /function randomMotto/.test(m) && ten
+      && /Good things loading…/.test(m) && /˶ • × • ˶/.test(m)
+      && /receiptMotto: mottoUtil\.randomMotto\(\)/.test(itemOnLoad)
+      && /\{\{receiptMotto\}\}/.test(itemWxml)
+      && !/receiptPrintTime/.test(itemJs);
+  })(), '短句公用接入不符');
 
   console.log('\n[15] 顶部预览图（11-25 对齐二手详情页：预览在上、详情在下）');
   check('预览图在小票内第一段（hero 结构，无角标——用户要求删「示意图」）', /detail-hero receipt__sec/.test(wxmlD)

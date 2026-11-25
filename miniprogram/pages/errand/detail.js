@@ -24,6 +24,8 @@ const util = require('../../utils/util');
 const campus = require('../../utils/campus');
 // 品类插画派生（11-25 抽到公共层，与大厅列表缩略图同一张图、同一套规则）
 const errandUtil = require('../../utils/errand');
+// 小票落款随机短句（11-25：替换「打印时间」行，与随机图案同一批在 onLoad 抽取）
+const mottoUtil = require('../../utils/motto');
 
 const SIZE_TEXT = { small: '小件', medium: '中件', large: '大件' };
 
@@ -128,7 +130,7 @@ Page({
     sawTeeth: SAW_TEETH,
     receiptImage: DOODLE_IMAGES[0],
     receiptDate: '',
-    receiptPrintTime: '',
+    receiptMotto: '',
     rewardText: '0.00',
     timeText: '',
     createdText: '',
@@ -160,7 +162,9 @@ Page({
     this.setData({ id });
     // 落款图案随机抽一张：只在打开页面时定，之后的 fetch/回跳不重抽（避免图案闪变）
     this.setData({
-      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)]
+      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)],
+      // 短句与图案同批抽取：开页定死，fetch/回跳/刷新不重抽（防闪变）
+      receiptMotto: mottoUtil.randomMotto()
     });
   },
 
@@ -263,9 +267,8 @@ Page({
           ? order.pickupArea
           : '',
       routeDots,
-      // 小票落款（11-25）：日期与「打印时间」都取此刻，每次进入页面重算，不缓存
+      // 小票落款（11-25）：日期取此刻；「打印时间」行已换成随机短句（开页时已定）
       receiptDate: util.formatTime(printAt, false),
-      receiptPrintTime: util.formatTime(printAt),
       rewardText: util.formatPrice(order.reward),
       timeText: timeText(order),
       createdText: util.fromNow(order.createdAt),
