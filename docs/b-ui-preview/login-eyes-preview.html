@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录页 v4 · 黄屏扁平 + 眼睛条开场 预览</title>
+<style>
+  :root {
+    --primary-dark: #79513D;
+    --ink: #79513D;
+    --text: #2E2119;
+    --splash: #FDE03F;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-idle: 10s;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #26221E;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 22px 0;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+  }
+  .hint { color: #8A8072; font-size: 13px; text-align: center; }
+  .hint b { color: #C9BFB2; font-weight: 600; }
+  .replay {
+    background: #3A332C; color: #E8DFD2; border: 1px solid #4A4238;
+    border-radius: 999px; padding: 6px 18px; font-size: 13px; cursor: pointer;
+  }
+
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 44px; border: 6px solid #17130F;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+    /* 黄屏层：整页底色，不再有弥散层 */
+    background: var(--splash);
+  }
+
+  .status { position: absolute; top: 14px; left: 0; right: 0; display: flex;
+    justify-content: space-between; padding: 0 28px; font-size: 14px; font-weight: 600;
+    color: #4A3A2C; z-index: 4; }
+  .capsule { position: absolute; top: 48px; right: 12px; width: 86px; height: 30px;
+    background: rgba(255,255,255,.6); border: 1px solid rgba(0,0,0,.06); border-radius: 999px;
+    display: flex; align-items: center; justify-content: space-evenly; font-size: 13px;
+    color: #3D2E24; z-index: 4; }
+
+  /* ============ 登录内容层（从下方平滑入场） ============ */
+  .content-layer { position: absolute; inset: 0; }
+  .intro .content-layer { animation: login-rise 2.6s var(--ease-out) 1 both; }
+  @keyframes login-rise {
+    /* 66% 才起步：眼睛先穿过标题区并落定（88% 前），标题 92% 才到位，杜绝上升途中重合 */
+    0%, 66% { transform: translateY(100%); }
+    92%     { transform: translateY(0); }
+    100%    { transform: translateY(0); }
+  }
+  .pose-splash .content-layer { transform: translateY(100%); }
+  .pose-down  .content-layer { transform: translateY(38%); }
+  .pose-rise  .content-layer { transform: translateY(14%); }
+  .pose-rise  .eyes-bar { transform: translateY(-6px) scale(.98); }
+
+  /* 标题：扁平、无光晕 */
+  .hero { position: relative; padding: 196px 0 0; display: flex;
+    flex-direction: column; align-items: center; }
+  .title { font-size: 37px; font-weight: 900; letter-spacing: 4px;
+    -webkit-text-stroke: 0.8px currentColor; color: var(--text); }
+
+  /* 表单卡 */
+  .card { position: absolute; left: 24px; right: 24px; top: 316px;
+    background: #FFF; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 8px 28px rgba(121,81,61,.18); }
+  .field { display: flex; align-items: center; height: 56px; padding: 0 18px; }
+  .field + .field { border-top: 1px solid #F0EAE0; }
+  .label { width: 42px; font-size: 15px; font-weight: 600; color: #594A3B; flex: none; }
+  .card input {
+    flex: 1; border: none; outline: none; font-size: 14px; color: var(--text);
+    background: transparent; letter-spacing: 2px;
+  }
+  .card input::placeholder { color: #C9BFB2; letter-spacing: 0; }
+
+  .btn-login { position: absolute; left: 24px; right: 24px; top: 490px;
+    height: 48px; border: none; border-radius: 24px;
+    background: var(--primary-dark);
+    color: #FFF; font-size: 17px; font-weight: 600; letter-spacing: 6px;
+    box-shadow: 0 8px 20px rgba(121,81,61,.3); cursor: pointer; }
+
+  /* 底部文字：黄底上统一加深，保证对比度 */
+  .links { position: absolute; left: 24px; right: 24px; top: 560px;
+    display: flex; justify-content: space-between; font-size: 13px;
+    color: #4A3A2C; font-weight: 600; }
+  .agreement { position: absolute; left: 0; right: 0; top: 622px;
+    text-align: center; font-size: 11px; color: #5C4A38; }
+  .agreement b { color: var(--primary-dark); font-weight: 700; text-decoration: underline; }
+  .tip { position: absolute; left: 0; right: 0; top: 648px;
+    text-align: center; font-size: 11px; color: #8A4A00; font-weight: 600; }
+
+  /* ================================================================
+     眼睛条：黄底裸眼（无白底），开场主角 → 顶部待机
+     几何沿用 loading-eyes：eye 32 / pupil 20 / travel ±10 / gap 6（px）
+     ================================================================ */
+  .eyes-bar {
+    position: absolute; left: 50%; top: 118px;
+    width: 200px; height: 46px; margin-left: -100px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    z-index: 3;
+  }
+  .intro .eyes-bar { animation: bar-journey 2.6s cubic-bezier(.45,.05,.55,.95) 1 both; }
+  @keyframes bar-journey {
+    0%   { transform: translateY(266px) scale(2.2); }
+    6%   { transform: translateY(266px) scale(2.2); }
+    46%  { transform: translateY(266px) scale(2.2); }
+    62%  { transform: translateY(120px) scale(1.18); }
+    72%  { transform: translateY(-12px) scale(.97); }
+    80%  { transform: translateY(4px)   scale(1.02); }
+    88%, 100% { transform: translateY(0) scale(1); }
+  }
+  .pose-splash .eyes-bar { transform: translateY(266px) scale(2.2); }
+  .pose-down  .eyes-bar { transform: translateY(150px) scale(1.5); }
+  .pose-splash .content-layer, .pose-down .content-layer,
+  .pose-splash .eyes-bar, .pose-down .eyes-bar,
+  .pose-splash .pupil, .pose-down .pupil { animation: none !important; }
+
+  .eye { position: relative; width: 32px; height: 32px; border-radius: 50%;
+    background: #FFF; box-shadow: 0 1px 3px rgba(121,81,61,.18);
+    overflow: hidden;
+    animation: eyes-blink var(--dur-idle) infinite; }
+  .eye + .eye { margin-left: 6px; }
+  .pupil { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px;
+    margin: -10px 0 0 -10px; border-radius: 50%; background: var(--ink);
+    transition: opacity 120ms ease; }
+  .intro .pupil {
+    animation: splash-look 2.6s cubic-bezier(.45,.05,.55,.95) 1 both,
+               eyes-move var(--dur-idle) linear 2.6s infinite;
+  }
+  .pose-splash .pupil { transform: translate(-10px, 0); }
+  .pose-down  .pupil { transform: translate(0, 10px); }
+
+  @keyframes eyes-move {
+    0%       { transform: translate(0, 0); }
+    4%, 40%  { transform: translate(-10px, 0); }
+    43%, 70% { transform: translate(10px, 0); }
+    73%, 90% { transform: translate(0, 10px); }
+    93%,100% { transform: translate(0, 0); }
+  }
+  @keyframes splash-look {
+    0%, 6%    { transform: translate(0, 0); }
+    14%, 24%  { transform: translate(-10px, 0); }
+    32%, 42%  { transform: translate(10px, 0); }
+    48%, 54%  { transform: translate(0, 0); }
+    60%, 72%  { transform: translate(0, 10px); }
+    80%, 100% { transform: translate(0, 0); }
+  }
+  @keyframes eyes-blink {
+    0%, 2%, 10%, 12%, 20%, 22%, 40%, 42%, 60%, 62%, 70%, 72%, 90%, 92%, 98%, 100% { height: 32px; }
+    1%, 11%, 21%, 41%, 61%, 71%, 91%, 99% { height: 12px; }
+  }
+
+  /* 眯眼：两条瞳孔同色的圆头粗线（无眼白），左 > 右 <；
+     两段圆头短棒以不对称角度拼出 > <，尾部略长，模仿手笔的柔和收尾 */
+  .sq { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px;
+    margin: -9px 0 0 -9px; opacity: 0; transition: opacity 140ms ease; }
+  .sq .seg { position: absolute; left: 0; top: 6.5px; width: 17px; height: 5px;
+    border-radius: 5px; background: var(--ink); transform-origin: left center; }
+  .sq .seg--up { transform: rotate(-33deg); }
+  .sq .seg--dn { transform: rotate(41deg); }
+  /* 基础画法：尖角在左、开口朝右，即 <；
+     左眼要 >，整组水平镜像成尖角朝右 */
+  .sq--gt { transform: scaleX(-1); }   /* 左眼：> */
+  .sq--lt { }                          /* 右眼：< */
+  .eyes-bar.closed .eye { background: transparent; box-shadow: none; }
+  .eyes-bar.closed .sq { opacity: 1; }
+  .eyes-bar.closed .pupil { opacity: 0; }
+</style>
+</head>
+<body>
+  <div class="hint"><b>可交互预览 v4</b> · 黄屏扁平底 + 顶部裸眼待机 · 点密码框看 &gt; &lt; 眯眼</div>
+  <button class="replay" onclick="replay()">↺ 重播开场</button>
+
+  <div class="phone" id="phone">
+    <div class="status"><span>20:04</span><span>▮▮ 🔋</span></div>
+    <div class="capsule"><span>•••</span><span>◉</span></div>
+
+    <div class="content-layer">
+      <div class="hero"><div class="title">校园易站</div></div>
+
+      <div class="card">
+        <div class="field"><span class="label">学号</span><input placeholder="请输入学号（6-20 位数字）"></div>
+        <div class="field field--pw"><span class="label">密码</span>
+          <input id="pw" type="password" maxlength="20" placeholder="请输入密码（6-20 位）"></div>
+      </div>
+
+      <button class="btn-login">登录</button>
+      <div class="links"><span>还没有账号？去注册</span><span>忘记密码</span></div>
+      <div class="agreement">登录即表示同意 <b>《用户协议》</b> 与 <b>《隐私政策》</b></div>
+      <div class="tip">当前为本地模拟数据模式（config.js 中 MOCK = true）</div>
+    </div>
+
+    <div class="eyes-bar" id="bar">
+      <div class="eye"><div class="pupil"></div><div class="sq sq--gt"><div class="seg seg--up"></div><div class="seg seg--dn"></div></div></div>
+      <div class="eye"><div class="pupil"></div><div class="sq sq--lt"><div class="seg seg--up"></div><div class="seg seg--dn"></div></div></div>
+    </div>
+  </div>
+
+<script>
+  var bar = document.getElementById('bar');
+  var pw = document.getElementById('pw');
+  var phone = document.getElementById('phone');
+
+  pw.addEventListener('focus', function () { bar.classList.add('closed'); });
+  pw.addEventListener('blur',  function () { bar.classList.remove('closed'); });
+
+  function replay() {
+    phone.classList.remove('intro');
+    void phone.offsetWidth;
+    phone.classList.add('intro');
+  }
+  replay();
+
+  var h = location.hash;
+  if (h.indexOf('final') >= 0) phone.classList.remove('intro');
+  if (h.indexOf('pose-splash') >= 0) phone.classList.add('pose-splash');
+  if (h.indexOf('pose-down') >= 0) phone.classList.add('pose-down');
+  if (h.indexOf('pose-rise') >= 0) phone.classList.add('pose-rise');
+  if (h.indexOf('closed') >= 0) bar.classList.add('closed');
+</script>
+</body>
+</html>

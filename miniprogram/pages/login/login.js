@@ -17,8 +17,8 @@ const TAB_PAGES = [
   '/pages/mine/index'
 ];
 const MAX_FAIL = 5;
-// 开场编排时长（与 login.wxss 里 2200ms 对齐）+ 200ms 余量
-const INTRO_HOLD_MS = 2400;
+// 开场眼睛条编排时长（与 login.wxss 里 2600ms 对齐）+ 200ms 余量
+const INTRO_HOLD_MS = 2800;
 
 const AGREEMENT = {
   user:
@@ -63,12 +63,17 @@ Page({
     failCount: 0,
     redirect: '',
     isMock: config.MOCK,
-    // 开场光晕编排：只在本次进页播一次，播完摘类回到最终态
-    intro: true
+    // 开场眼睛条编排：只在本次进页播一次，播完摘类回到最终态
+    intro: true,
+    // 输密码时 > < 眯眼（bindfocus/bindblur 切换）
+    eyesClosed: false,
+    // 眼睛条几何：top = 导航下方插槽；--bar-from = 开场起点（全屏正中）
+    eyesTop: 20,
+    barFrom: 300
   },
 
   onReady() {
-    // 2200ms 编排 + 200ms 余量；摘类后基础样式即最终态（同 detail-page-enter 口径）
+    // 2600ms 编排 + 200ms 余量；摘类后基础样式即最终态（同 detail-page-enter 口径）
     this._introTimer = setTimeout(() => {
       this._introTimer = null;
       this.setData({ intro: false });
@@ -82,8 +87,40 @@ Page({
     }
   },
 
+  onPwFocus() {
+    this.setData({ eyesClosed: true });
+  },
+
+  onPwBlur() {
+    this.setData({ eyesClosed: false });
+  },
+
+  // 眼睛条几何：插槽在胶囊下方 10px；开场起点 = 屏高正中 − 插槽中心，
+  // 保证放大裸眼落在全屏正中央（keyframes 里经 --bar-from 引用）
+  _calcEyesGeometry() {
+    let eyesTop = 20;
+    let barFrom = 300;
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+      const navH = win.statusBarHeight + 44; // nav-top 非 fixed 占位高度（状态栏 + bar）
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+      if (menu && menu.bottom) {
+        eyesTop = Math.max(8, Math.round(menu.bottom + 10 - navH));
+      }
+      const barHalf = 23; // eyes-bar 高 46px 的一半
+      barFrom = Math.max(0, Math.round(win.windowHeight / 2 - (navH + eyesTop + barHalf)));
+    } catch (e) {
+      // 取不到系统信息时用兜底值，不影响登录主流程
+    }
+    return { eyesTop, barFrom };
+  },
+
   onLoad(options) {
-    this.setData({ redirect: (options && options.redirect) || '' });
+    this.setData({
+      redirect: (options && options.redirect) || '',
+      // 眼睛条几何要在首帧渲染前定好，开场才不会跳位
+      ...this._calcEyesGeometry()
+    });
     // 已登录直接回目标页（可能是 tabBar 页）
     const app = getApp();
     if (app && typeof app.isLogin === 'function' && app.isLogin()) {

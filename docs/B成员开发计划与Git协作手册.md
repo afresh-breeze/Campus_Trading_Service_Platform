@@ -642,6 +642,17 @@
 - **验证**：node --check 过、wxml_check PASS、冒烟 **647/0**、契约 **168/0**；
   预览 login-glow-preview.html / login-glow-final.png 入库 docs/b-ui-preview。
 
+#### 49）11-25 当日任务：登录页 v4 黄屏扁平 + 眼睛条开场（用户预览三轮定稿）
+
+- 中途尝试过货车/腊肠犬「密码越长身体越长」交互（用户取消，仅预览未落地）。
+- 定稿：整页 #FDE03F 扁平底（弥散层移除）；裸眼开场——js 按胶囊 bottom + windowHeight/2
+  算起点（--bar-from 内联变量），左→右→中→下扫视；内容层 66% 起步防重合；
+  待机与 loading-eyes 同拍；输密码 > < 眯眼（圆头双短棒，左 > 右 <）。
+- **坑**：两段圆头短棒「尖角在左」画出来其实是 <——> 要 scaleX(-1) 镜像（smoke 有断言锁向）。
+- 层级：标题 74rpx/900；黄底文字全部加深（#4A3A2C/#5C4A38/#8A4A00）。
+- **验证**：smoke_login 59/0、冒烟 **655/0**、契约 **168/0**、wxml_check PASS。
+- 预览：login-eyes-preview.html + pose-splash/pose-down/pose-rise/final/final-closed 入库。
+
 
 
 

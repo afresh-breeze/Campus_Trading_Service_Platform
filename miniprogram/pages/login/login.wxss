@@ -1,17 +1,20 @@
 /* ==================================================================
-   登录页（B 成员）—— 弥散背景 + 光晕开场
+   登录页（B 成员）—— 黄屏扁平底 + 眼睛条开场
    ------------------------------------------------------------------
-   1) 背景改 fixed 全屏层，从状态栏后面铺到底（app.json 已全局 custom 导航，
-      nav-top 非 fixed 时是透明占位，不会被盖住）；
-   2) 原 logo 块与副标题已去掉，品牌位交给放大标题 + 常驻呼吸光晕；
-   3) 开场：小光晕弹跳入位 → 压扁回弹 → 散开成弥散背景，内容错峰进场。
-      动画全部挂在 .intro 下，播完由 js 摘类，摘掉后基础样式即最终态
-      （与 detail-page-enter 同一套「入场类播完移除」口径）。
+   1) 整页底色 #FDE03F 扁平（原弥散层已按用户定稿移除）；
+   2) 开场编排 2600ms：裸眼放大悬在屏幕正中（左→右→中→下扫视）→
+      内容层从下方平滑入场，眼睛条带轻微果冻上升到导航下方插槽；
+      落定后眼睛条用 loading-eyes 同款 eyes-move/eyes-blink 待机；
+   3) 输密码：bindfocus/bindblur 切 .closed —— 眼白淡出，只剩两条
+      瞳孔同色的圆头粗线（左 > 右 <，基础画法尖角朝左即 <，> 取镜像）；
+   4) 编排动画全部挂 .intro，播完由 js 摘类回最终态
+      （同 detail-page-enter 口径）；内容层 66% 才起步，避免标题
+      在眼睛经过标题区时追上来造成重合。
    ================================================================== */
 
-/* 兜底：page 底色，避免弥散层首帧到来前闪白 */
+/* 黄屏层：整页底色（含状态栏与导航区后面） */
 page {
-  background-color: var(--color-bg);
+  background-color: #FDE03F;
 }
 
 .login-page {
@@ -22,96 +25,36 @@ page {
   background: transparent;
 }
 
-/* ---------------- 弥散背景 ---------------- */
-.mesh {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  background-color: var(--color-bg);
-  background-image: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 46%);
-}
-.mesh__blob {
-  position: absolute;
-  border-radius: 50%;
-  /* filter 不吃 rpx，这里用 px（真机 64px 模糊足够，再大容易掉帧） */
-  filter: blur(56px);
-}
-.mesh__blob--1 {
-  width: 640rpx;
-  height: 640rpx;
-  left: -180rpx;
-  top: -220rpx;
-  background-color: #FCDBA9;
-}
-.mesh__blob--2 {
-  width: 560rpx;
-  height: 560rpx;
-  right: -220rpx;
-  top: 300rpx;
-  background-color: #E6A874;
-  opacity: 0.75;
-}
-.mesh__blob--3 {
-  width: 600rpx;
-  height: 600rpx;
-  left: -120rpx;
-  top: 940rpx;
-  background-color: #F3CFA0;
-  opacity: 0.85;
-}
-.mesh__blob--4 {
-  width: 480rpx;
-  height: 480rpx;
-  right: -80rpx;
-  bottom: -160rpx;
-  background-color: rgba(121, 81, 61, 0.14);
+/* ---------------- 内容层（入场动画载体） ---------------- */
+.login-body {
+  /* 无额外布局，只作 login-rise 的动画挂点 */
 }
 
-/* ---------------- 标题区（原 logo 块 + 副标题已移除） ---------------- */
+/* ---------------- 标题 ---------------- */
 .hero {
-  position: relative;
-  padding: 150rpx 0 0;
+  padding: 200rpx 0 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .hero-title {
-  position: relative;
-  z-index: 1;
-  font-size: 60rpx;
-  /* 全站宋体（衬线）下大标题 700 视觉偏细，按公共层 .home-bar__title 口径提到 900 + 细描边 */
+  font-size: 74rpx;
+  /* 全站宋体（衬线）下大标题统一 900 + 细描边（.home-bar__title 口径） */
   font-weight: 900;
-  -webkit-text-stroke: 0.6rpx currentColor;
-  letter-spacing: 4rpx;
+  -webkit-text-stroke: 0.8rpx currentColor;
+  letter-spacing: 8rpx;
+  /* 字距会在尾部多出一份，等量缩进抵消保持视觉居中 */
+  text-indent: 8rpx;
   line-height: 1.25;
   color: var(--color-text);
 }
-/* 常驻呼吸光晕：承担原 logo 的视觉重量 */
-.hero-halo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 440rpx;
-  height: 440rpx;
-  margin: -220rpx 0 0 -220rpx;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 168, 116, 0.45) 0%, rgba(230, 168, 116, 0) 68%);
-  pointer-events: none;
-  opacity: 0.9;
-  animation: login-halo-breathe 3200ms ease-in-out infinite alternate;
-}
 
-/* ---------------- 表单卡（按钮已抽出，卡片只装字段） ---------------- */
+/* ---------------- 表单卡 ---------------- */
 .form-card {
-  margin-top: 110rpx;
+  margin-top: 140rpx;
   border-radius: 32rpx;
   background-color: var(--color-bg-white);
-  box-shadow: 0 12rpx 48rpx rgba(122, 93, 64, 0.10);
+  box-shadow: 0 16rpx 56rpx rgba(121, 81, 61, 0.18);
   overflow: hidden;
 }
 .form-card .field {
@@ -121,7 +64,7 @@ page {
   border-bottom: none;
 }
 .form-card .field-label {
-  /* 全局 150rpx 为「学院」这类长标签留的，登录页只有两个字，收窄让输入区更靠左 */
+  /* 全局 150rpx 为长标签留的，登录页只有两个字，收窄让输入区更靠左 */
   width: 96rpx;
   font-weight: 500;
   color: var(--color-text-2);
@@ -129,234 +72,240 @@ page {
 
 /* ---------------- 登录按钮：独立成行，主行动层级 ---------------- */
 .submit {
-  margin-top: 40rpx;
+  margin-top: 120rpx;
   height: 96rpx;
   font-size: 34rpx;
   font-weight: 600;
   letter-spacing: 8rpx;
-  /* 字距会在右侧多出一格，用等量缩进抵消，保持文字视觉居中 */
   text-indent: 8rpx;
 }
-.extra {
-  padding: 32rpx 8rpx 0;
-}
 
-/* ---------------- 协议与提示：弱化置底 ---------------- */
+/* ---------------- 底部链接与协议：黄底上加深保证对比度 ---------------- */
+.extra {
+  padding: 44rpx 8rpx 0;
+}
+.extra-link {
+  color: #4A3A2C;
+  font-weight: 600;
+}
 .agreement {
-  margin-top: 120rpx;
+  margin-top: 84rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: var(--color-text-4);
+  color: #5C4A38;
 }
-/* 协议可点：用下划线 + 强调色提示可交互，不依赖颜色单独传达 */
+/* 协议可点：下划线 + 强调色，不依赖颜色单独传达 */
 .agreement__link {
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
+  font-weight: 700;
   text-decoration: underline;
 }
 .tip {
   margin-top: 16rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: var(--color-warning);
+  color: #8A4A00;
+  font-weight: 600;
 }
 
 /* ==================================================================
-   开场编排：光晕弹跳入位（约 0.9s）→ 散开（0.7s）→ 内容错峰进场
-   总时长 2200ms，js 在 2400ms 摘 .intro
+   眼睛条：几何沿用 loading-eyes 组件（eye 64 / pupil 40 / travel ±20 /
+   gap 12，单位 rpx），黄底裸眼不加白色胶囊底
    ================================================================== */
-.glow,
-.glow-ring {
+.eyes-bar {
+  position: absolute;
+  left: 50%;
+  width: 400rpx;
+  height: 92rpx;
+  margin-left: -200rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.eye {
+  position: relative;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background-color: var(--color-bg-white);
+  box-shadow: 0 2rpx 6rpx rgba(121, 81, 61, 0.16);
+  overflow: hidden;
+  animation: eyes-blink var(--dur, 10000ms) infinite;
+}
+.eye + .eye {
+  margin-left: 12rpx;
+}
+.pupil {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 52rpx;
-  height: 52rpx;
-  margin: -26rpx 0 0 -26rpx;
+  width: 40rpx;
+  height: 40rpx;
+  margin: -20rpx 0 0 -20rpx;
   border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-}
-.glow {
-  z-index: 2;
-  background: radial-gradient(circle, #FFF3DC 0%, rgba(230, 168, 116, 0.95) 42%, rgba(230, 168, 116, 0) 72%);
-  box-shadow: 0 0 48rpx 12rpx rgba(230, 168, 116, 0.55);
-}
-.glow-ring {
-  z-index: 2;
-  border: 4rpx solid rgba(230, 168, 116, 0.65);
-  box-shadow: 0 0 36rpx 4rpx rgba(230, 168, 116, 0.35);
+  background-color: var(--color-primary-dark);
+  transition: opacity 120ms ease;
 }
 
-/* —— 光晕：左上方向弧线落下，落地压扁回弹，再补一次小弹 —— */
-.intro .glow {
-  animation: login-glow-journey 2200ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
-}
-@keyframes login-glow-journey {
+/* 待机扫视：与 loading-eyes 完全同拍（中→左→右→下→回中，循环无缝） */
+@keyframes eyes-move {
   0% {
-    opacity: 0;
-    transform: translate(-300rpx, -430rpx) scale(0.55);
+    transform: translate(0, 0);
   }
-  5% {
-    opacity: 1;
+  4%, 40% {
+    transform: translate(-20rpx, 0);
   }
-  15% {
-    transform: translate(-128rpx, -220rpx) scale(0.85, 1.1);
+  43%, 70% {
+    transform: translate(20rpx, 0);
   }
-  21% {
-    transform: translate(0, -12rpx) scale(1.14, 0.84);
+  73%, 90% {
+    transform: translate(0, 20rpx);
   }
-  26% {
-    transform: translate(0, -60rpx) scale(0.94, 1.08);
+  93%, 100% {
+    transform: translate(0, 0);
   }
-  31% {
-    transform: translate(0, 0) scale(1.06, 0.94);
+}
+/* 眨眼：与 loading-eyes 同拍（每次转向前眯一下） */
+@keyframes eyes-blink {
+  0%, 2%, 10%, 12%, 20%, 22%, 40%, 42%, 60%, 62%, 70%, 72%, 90%, 92%, 98%, 100% {
+    height: 64rpx;
   }
-  35% {
-    transform: translate(0, -18rpx) scale(0.98, 1.02);
-  }
-  39% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(0, 0) scale(16);
-  }
-  62% {
-    opacity: 0;
-    transform: translate(0, 0) scale(22);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(0, 0) scale(22);
+  1%, 11%, 21%, 41%, 61%, 71%, 91%, 99% {
+    height: 24rpx;
   }
 }
 
-/* —— 光环：与散开同拍，向外扩一圈 —— */
-.intro .glow-ring {
-  animation: login-ring-spread 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+/* ==================================================================
+   开场编排（2600ms，js 在 2800ms 摘 .intro）
+   ================================================================== */
+
+/* —— 眼睛条：屏中放大 → 上升（轻微果冻）→ 插槽落定 —— */
+.intro .eyes-bar {
+  animation: bar-journey 2600ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
 }
-@keyframes login-ring-spread {
-  0%,
-  38% {
-    opacity: 0;
-    transform: scale(1);
+/* --bar-from 由 js 计算：屏高正中 − 插槽位，保证开场落在全屏正中央 */
+@keyframes bar-journey {
+  0% {
+    transform: translateY(var(--bar-from, 300px)) scale(2.2);
   }
-  44% {
-    opacity: 0.9;
+  6%, 46% {
+    transform: translateY(var(--bar-from, 300px)) scale(2.2);
   }
   62% {
-    opacity: 0;
-    transform: scale(13);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(13);
-  }
-}
-
-/* —— 呼吸光晕：散开到位后才淡入，接管品牌位 —— */
-.intro .hero-halo {
-  opacity: 0;
-  animation: login-halo-in 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes login-halo-in {
-  0%,
-  52% {
-    opacity: 0;
-    transform: scale(0.7);
+    transform: translateY(240rpx) scale(1.18);
   }
   72% {
-    opacity: 0.9;
-    transform: scale(1);
+    transform: translateY(-24rpx) scale(0.97);
   }
-  100% {
-    opacity: 0.9;
-    transform: scale(1);
+  80% {
+    transform: translateY(8rpx) scale(1.02);
   }
-}
-@keyframes login-halo-breathe {
-  from {
-    opacity: 0.75;
-  }
-  to {
-    opacity: 0.95;
-  }
-}
-
-/* —— 内容错峰进场：标题 → 卡片 → 按钮 → 链接 → 协议（每级 80ms） —— */
-.intro .hero-title {
-  opacity: 0;
-  animation: login-rise-in 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes login-rise-in {
-  0%,
-  46% {
-    opacity: 0;
-    transform: translateY(28rpx) scale(0.92);
-  }
-  62% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  100% {
-    opacity: 1;
+  88%, 100% {
     transform: translateY(0) scale(1);
   }
 }
 
-.intro .form-card {
-  opacity: 0;
-  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+/* —— 开场扫视：左 → 右 → 中 → 下（下望的同时条上升）→ 回中交接给待机 —— */
+.intro .pupil {
+  animation: splash-look 2600ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both,
+    eyes-move var(--dur, 10000ms) linear 2600ms infinite;
 }
-.intro .submit {
-  opacity: 0;
-  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
-}
-.intro .extra {
-  opacity: 0;
-  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
-}
-.intro .agreement,
-.intro .tip {
-  opacity: 0;
-  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both;
-}
-@keyframes login-fade-up {
-  0%,
-  54% {
-    opacity: 0;
-    transform: translateY(44rpx);
+@keyframes splash-look {
+  0%, 6% {
+    transform: translate(0, 0);
   }
-  74% {
-    opacity: 1;
+  14%, 24% {
+    transform: translate(-20rpx, 0);
+  }
+  32%, 42% {
+    transform: translate(20rpx, 0);
+  }
+  48%, 54% {
+    transform: translate(0, 0);
+  }
+  60%, 72% {
+    transform: translate(0, 20rpx);
+  }
+  80%, 100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* —— 内容层：66% 才起步，眼睛先落定（88% 前），标题 92% 才到位 —— */
+.intro .login-body {
+  animation: login-rise 2600ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+@keyframes login-rise {
+  0%, 66% {
+    transform: translateY(100%);
+  }
+  92% {
     transform: translateY(0);
   }
   100% {
-    opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ---------------- 输密码：> < 眯眼 ---------------- */
+/* 圆头短棒两段、不对称角度拼出 > <，尾部略长，模仿手笔柔和收尾 */
+.sq {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36rpx;
+  height: 36rpx;
+  margin: -18rpx 0 0 -18rpx;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.sq .seg {
+  position: absolute;
+  left: 0;
+  top: 13rpx;
+  width: 34rpx;
+  height: 10rpx;
+  border-radius: 10rpx;
+  background-color: var(--color-primary-dark);
+  transform-origin: left center;
+}
+.sq .seg--up {
+  transform: rotate(-33deg);
+}
+.sq .seg--dn {
+  transform: rotate(41deg);
+}
+/* 基础画法：尖角在左、开口朝右，即 <；左眼要 >，整组水平镜像成尖角朝右 */
+.sq--gt {
+  transform: scaleX(-1);
+}
+.eyes-bar.closed .eye {
+  background-color: transparent;
+  box-shadow: none;
+}
+.eyes-bar.closed .sq {
+  opacity: 1;
+}
+.eyes-bar.closed .pupil {
+  opacity: 0;
 }
 
 /* 系统开启「减弱动态效果」时跳过编排，直接给最终态 */
 @media (prefers-reduced-motion: reduce) {
-  .intro .glow,
-  .intro .glow-ring {
+  .intro .eyes-bar,
+  .intro .pupil,
+  .intro .login-body {
     animation: none;
-    opacity: 0;
-  }
-  .intro .hero-halo,
-  .intro .hero-title,
-  .intro .form-card,
-  .intro .submit,
-  .intro .extra,
-  .intro .agreement,
-  .intro .tip {
-    animation: none;
-    opacity: 1;
     transform: none;
   }
-  .hero-halo {
+  .intro .pupil {
+    opacity: 1;
+  }
+  .eye {
     animation: none;
-    opacity: 0.9;
   }
 }

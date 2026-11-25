@@ -1,67 +1,78 @@
 <!-- 登录页（B 成员） -->
 <nav-top back />
 <view class="page login-page {{intro ? 'intro' : ''}}">
-  <!-- 弥散背景：fixed 铺满全屏（含状态栏与导航区），z-index:-1 保证不挡返回按钮 -->
-  <view class="mesh">
-    <view class="mesh__blob mesh__blob--1"></view>
-    <view class="mesh__blob mesh__blob--2"></view>
-    <view class="mesh__blob mesh__blob--3"></view>
-    <view class="mesh__blob mesh__blob--4"></view>
-  </view>
-
-  <view class="hero">
-    <!-- 开场主角：小光晕弹跳入位后散开（纯装饰，不接事件） -->
-    <view class="glow-ring"></view>
-    <view class="glow"></view>
-    <!-- 落定后常驻的呼吸光晕，承担品牌位（替代原 logo 块） -->
-    <view class="hero-halo"></view>
-    <view class="hero-title">校园易站</view>
-  </view>
-
-  <view class="form-card">
-    <view class="field">
-      <text class="field-label">学号</text>
-      <input
-        class="field-input"
-        type="number"
-        maxlength="20"
-        placeholder="请输入学号（6-20 位数字）"
-        placeholder-class="field-placeholder"
-        value="{{studentNo}}"
-        bindinput="onStudentNoInput"
-      />
+  <!-- 内容层：开场时从下方平滑入场（黄屏底上滑动） -->
+  <view class="login-body">
+    <view class="hero">
+      <view class="hero-title">校园易站</view>
     </view>
-    <view class="field">
-      <text class="field-label">密码</text>
-      <input
-        class="field-input"
-        password="{{true}}"
-        maxlength="20"
-        placeholder="请输入密码（6-20 位）"
-        placeholder-class="field-placeholder"
-        value="{{password}}"
-        bindinput="onPasswordInput"
-        bindconfirm="onSubmit"
-      />
+
+    <view class="form-card">
+      <view class="field">
+        <text class="field-label">学号</text>
+        <input
+          class="field-input"
+          type="number"
+          maxlength="20"
+          placeholder="请输入学号（6-20 位数字）"
+          placeholder-class="field-placeholder"
+          value="{{studentNo}}"
+          bindinput="onStudentNoInput"
+        />
+      </view>
+      <view class="field">
+        <text class="field-label">密码</text>
+        <input
+          class="field-input"
+          password="{{true}}"
+          maxlength="20"
+          placeholder="请输入密码（6-20 位）"
+          placeholder-class="field-placeholder"
+          value="{{password}}"
+          bindinput="onPasswordInput"
+          bindfocus="onPwFocus"
+          bindblur="onPwBlur"
+          bindconfirm="onSubmit"
+        />
+      </view>
+    </view>
+
+    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
+      登录
+    </button>
+
+    <view class="row-between extra">
+      <text class="t-sub extra-link" bindtap="onGoRegister">还没有账号？去注册</text>
+      <text class="t-sub extra-link" bindtap="onForget">忘记密码</text>
+    </view>
+
+    <!-- 协议可点：弹摘要，不假装有独立页面（P2-2） -->
+    <view class="agreement">
+      <text>登录即表示同意</text>
+      <text class="agreement__link" data-type="user" bindtap="onOpenAgreement">《用户协议》</text>
+      <text>与</text>
+      <text class="agreement__link" data-type="privacy" bindtap="onOpenAgreement">《隐私政策》</text>
+    </view>
+
+    <view class="tip" wx:if="{{isMock}}">当前为本地模拟数据模式（config.js 中 MOCK = true）</view>
+  </view>
+
+  <!-- 眼睛条：开场主角（左→右→中→下）→ 顶部待机（与 loading-eyes 同拍）→ 输密码 > < 眯眼。
+       top / 起始位移由 js 按胶囊位置与屏高计算，保证落在全屏正中央 -->
+  <view class="eyes-bar {{eyesClosed ? 'closed' : ''}}" style="top: {{eyesTop}}px; --bar-from: {{barFrom}}px;">
+    <view class="eye">
+      <view class="pupil"></view>
+      <view class="sq sq--gt">
+        <view class="seg seg--up"></view>
+        <view class="seg seg--dn"></view>
+      </view>
+    </view>
+    <view class="eye">
+      <view class="pupil"></view>
+      <view class="sq sq--lt">
+        <view class="seg seg--up"></view>
+        <view class="seg seg--dn"></view>
+      </view>
     </view>
   </view>
-
-  <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
-    登录
-  </button>
-
-  <view class="row-between extra">
-    <text class="t-sub" bindtap="onGoRegister">还没有账号？去注册</text>
-    <text class="t-sub" bindtap="onForget">忘记密码</text>
-  </view>
-
-  <!-- 协议可点：弹摘要，不假装有独立页面（P2-2） -->
-  <view class="agreement t-sub">
-    <text>登录即表示同意</text>
-    <text class="agreement__link" data-type="user" bindtap="onOpenAgreement">《用户协议》</text>
-    <text>与</text>
-    <text class="agreement__link" data-type="privacy" bindtap="onOpenAgreement">《隐私政策》</text>
-  </view>
-
-  <view class="tip t-sub" wx:if="{{isMock}}">当前为本地模拟数据模式（config.js 中 MOCK = true）</view>
 </view>

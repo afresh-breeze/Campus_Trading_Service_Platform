@@ -98,42 +98,54 @@ const seg = (from, to) => {
 };
 
 (async () => {
-  console.log('[1] 结构：绿框两处已删，弥散层与光晕就位');
+  console.log('[1] 结构：弥散层已移除，黄屏底 + 眼睛条就位');
   check('intro 入场类挂在页根上', wxml.indexOf("{{intro ? 'intro' : ''}}") >= 0);
-  check('弥散层 mesh 存在', wxml.indexOf('class="mesh"') >= 0);
-  check('弥散色块 4 个', count(wxml, 'mesh__blob mesh__blob--') === 4, count(wxml, 'mesh__blob mesh__blob--'));
-  check('开场光晕 glow 存在', /class="glow"/.test(wxml));
-  check('散开光环 glow-ring 存在', /class="glow-ring"/.test(wxml));
-  check('常驻呼吸光晕 hero-halo 存在', /class="hero-halo"/.test(wxml));
+  check('弥散层 mesh 已移除', wxml.indexOf('mesh') < 0);
+  check('旧光晕 glow/glow-ring/hero-halo 已移除',
+    wxml.indexOf('glow') < 0 && wxml.indexOf('hero-halo') < 0);
+  check('眼睛条存在', /class="eyes-bar/.test(wxml));
+  check('两只眼睛', count(wxml, 'class="eye"') === 2, count(wxml, 'class="eye"'));
+  check('瞳孔与眯眼符号齐全',
+    count(wxml, 'class="pupil"') === 2 && wxml.indexOf('sq--gt') >= 0 && wxml.indexOf('sq--lt') >= 0);
+  check('眯眼为两段圆头短棒', count(wxml, 'class="seg seg--up"') === 2 && count(wxml, 'class="seg seg--dn"') === 2);
+  check('眯眼状态类绑定 eyesClosed', wxml.indexOf('{{eyesClosed') >= 0);
   check('旧 logo 块已移除', wxml.indexOf('class="logo"') < 0);
   check('旧副标题 hero-sub 已移除', wxml.indexOf('hero-sub') < 0);
   check('标题文案保留', wxml.indexOf('校园易站') >= 0);
   check('表单卡内只有 2 个字段', count(seg('class="form-card"', 'class="btn btn-primary'), 'class="field"') === 2);
 
-  console.log('\n[2] 层级：按钮抽出卡片、协议仍在');
+  console.log('\n[2] 层级：按钮抽出卡片、黄底对比度、协议仍在');
   check('登录按钮不在表单卡内', seg('class="form-card"', '</view>\n\n  <button').indexOf('<button') < 0);
   check('按钮保留 loading/disabled 绑定', /loading="\{\{submitting\}\}"/.test(wxml) && /disabled="\{\{submitting\}\}"/.test(wxml));
   check('按压反馈用 btn--press（不缩放口径）', wxml.indexOf('hover-class="btn--press"') >= 0);
+  check('底部链接已加深（#4A3A2C）', wxss.indexOf('#4A3A2C') >= 0);
+  check('协议行已加深（#5C4A38）', wxss.indexOf('#5C4A38') >= 0);
+  check('MOCK 提示黄底加深（#8A4A00）', wxss.indexOf('#8A4A00') >= 0);
   check('协议两个链接都可点', /data-type="user"/.test(wxml) && /data-type="privacy"/.test(wxml));
   check('MOCK 提示按 isMock 条件渲染', wxml.indexOf('wx:if="{{isMock}}"') >= 0);
   check('去注册仍走 onGoRegister', wxml.indexOf('bindtap="onGoRegister"') >= 0);
 
-  console.log('\n[3] 动画契约：wxss 与 js 时长对齐');
+  console.log('\n[3] 动画契约：眼睛条编排与 js 时长对齐');
   [
-    'login-glow-journey',
-    'login-ring-spread',
-    'login-halo-in',
-    'login-halo-breathe',
-    'login-rise-in',
-    'login-fade-up'
+    'login-rise',
+    'bar-journey',
+    'splash-look',
+    'eyes-move',
+    'eyes-blink'
   ].forEach((k) => check('存在 @keyframes ' + k, wxss.indexOf('@keyframes ' + k) >= 0));
-  check('.mesh 用 fixed 铺满全屏', /\.mesh\s*\{[^}]*position:\s*fixed/.test(wxss));
-  check('弥散层不吃点击', /\.mesh\s*\{[^}]*pointer-events:\s*none/.test(wxss));
-  check('模糊用 px（filter 不吃 rpx）', /filter:\s*blur\(\d+px\)/.test(wxss) && !/filter:\s*blur\(\d+rpx\)/.test(wxss));
+  check('黄屏底色 #FDE03F', /#FDE03F/i.test(wxss));
+  check('弥散渐变已移除（无 linear-gradient / blur）',
+    wxss.indexOf('linear-gradient') < 0 && wxss.indexOf('blur(') < 0);
+  check('眼睛几何与 loading-eyes 同源（eye 64 / pupil 40 / travel 20）',
+    /width:\s*64rpx/.test(wxss) && /width:\s*40rpx/.test(wxss) && /translate\(-20rpx,\s*0\)/.test(wxss));
+  check('眯眼方向：左眼 >（sq--gt 镜像）', /\.sq--gt\s*\{[^}]*scaleX\(-1\)/.test(wxss));
+  check('开场起点由 js 计算（胶囊 + 屏高）', js.indexOf('getMenuButtonBoundingClientRect') >= 0);
   check('有减弱动态效果降级', wxss.indexOf('prefers-reduced-motion') >= 0);
-  check('编排 2200ms 与 INTRO_HOLD_MS=2400 对齐', /2200ms/.test(wxss) && /INTRO_HOLD_MS\s*=\s*2400/.test(js));
+  check('编排 2600ms 与 INTRO_HOLD_MS=2800 对齐', /2600ms/.test(wxss) && /INTRO_HOLD_MS\s*=\s*2800/.test(js));
   check('data.intro 初始为 true', pageCfg.data.intro === true);
   check('js 有摘类逻辑', /setData\(\{\s*intro:\s*false\s*\}\)/.test(js));
+  check('密码聚焦切眯眼', /onPwFocus[\s\S]*?eyesClosed:\s*true/.test(js) && wxml.indexOf('bindfocus="onPwFocus"') >= 0);
+  check('失焦恢复待机', /onPwBlur[\s\S]*?eyesClosed:\s*false/.test(js) && wxml.indexOf('bindblur="onPwBlur"') >= 0);
 
   console.log('\n[4] 光晕编排生命周期');
   const p0 = makePage();
