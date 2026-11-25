@@ -112,6 +112,22 @@
   margin-top: 32rpx;
 }
 
+/* ---------------- 顶部预览图（11-25 对齐二手详情页：预览在上、详情在下） ----------------
+   errand_orders 没有图片字段：用与大厅卡片同一套品类插画（utils/errand.js）。
+   尺寸对齐二手页的预览块：小票内容宽恒为 614rpx（686 − 两侧 36），块做等宽正方形，
+   插画源图已放大到 512²（LANCZOS），2x 屏下约 1.3 倍采样不糊 */
+.detail-hero {
+  height: 614rpx;
+  border-radius: var(--radius-inner);
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+.detail-hero__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* ---------------- 头部：状态 + 报酬 ---------------- */
 .detail-head {
   display: flex;

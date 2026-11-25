@@ -15,6 +15,8 @@ const http = require('../../utils/request');
 const util = require('../../utils/util');
 const adapter = require('../../utils/adapter');
 const campus = require('../../utils/campus');
+// 品类插画派生（11-25 抽到公共层：详情页顶部预览图与列表缩略图必须同一张）
+const errandUtil = require('../../utils/errand');
 
 const TAB_INDEX = 1;
 const PAGE_SIZE = 10;
@@ -34,22 +36,7 @@ const TIME_CHIPS = [
   { value: 'range', label: '时段' }
 ];
 
-// 品类缩略图：表里没有图片字段，用 itemDesc/remark 关键词猜品类配本地插画。
-// 真图片要 A 给 errand_orders 加字段（已列需求清单），这里先解决「看不出是什么」。
-const CATEGORY_RULES = [
-  { key: 'food', words: ['外卖', '奶茶', '咖啡', '饭', '餐', '早餐', '午餐', '晚餐', '宵夜', '水果', '零食', '饮'] },
-  { key: 'doc', words: ['文件', '打印', '资料', '书', '论文', '证件', '作业'] },
-  { key: 'daily', words: ['药', '超市', '日用品', '纸巾', '水', '生活'] },
-  { key: 'express', words: ['快递', '包裹', '菜鸟', '驿站', '取件'] }
-];
-function guessCategory(order) {
-  const text = ((order.itemDesc || '') + ' ' + (order.remark || '')).toLowerCase();
-  for (let i = 0; i < CATEGORY_RULES.length; i += 1) {
-    const rule = CATEGORY_RULES[i];
-    if (rule.words.some((w) => text.indexOf(w) > -1)) return rule.key;
-  }
-  return 'other';
-}
+// 品类缩略图规则已抽到 utils/errand.js（详情页预览图共用），这里只调用
 
 /** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
 function getNavMetrics() {
@@ -95,7 +82,7 @@ function toCard(order) {
     timeText: shortTime(order),
     rewardText: util.formatPrice(order.reward),
     itemDesc: order.itemDesc || '',
-    categoryIcon: '/assets/errand/' + guessCategory(order) + '.png',
+    categoryIcon: errandUtil.categoryIcon(order),
     publisherNickname: nickname,
     publisherInitial: nickname.slice(0, 1),
     publisherAvatarUrl: adapter.fullUrl(order.publisherAvatar),

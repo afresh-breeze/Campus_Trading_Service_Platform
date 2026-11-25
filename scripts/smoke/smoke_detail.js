@@ -170,7 +170,7 @@ function check(name, cond, extra) {
     && /receipt__saw receipt__saw--bottom/.test(wxmlD)
     && /class="receipt__body"/.test(wxmlD);
   check('小票外壳结构（receipt + 上下齿条 + 纸面 body）', wxmlReceipt, '结构不符');
-  check('四张卡片都挂 receipt__sec', (wxmlD.match(/card detail-\w+ receipt__sec/g) || []).length === 4, '分段挂载不符');
+  check('五段（预览图 + 四卡）都挂 receipt__sec', (wxmlD.match(/card detail-\w+ receipt__sec/g) || []).length === 5, '分段挂载不符');
   check('齿条上下各一条 wx:for（sawTeeth × 2）', (wxmlD.match(/wx:for="\{\{sawTeeth\}\}"/g) || []).length === 2, '齿条数量不符');
   check('落款图案结构（image + 随机 receiptImage + 日期/打印时间）', /receipt-doodle__img/.test(wxmlD) && /src="\{\{receiptImage\}\}"/.test(wxmlD)
     && /receipt-doodle__date/.test(wxmlD) && /打印时间：\{\{receiptPrintTime\}\}/.test(wxmlD), '落款区结构不符');
@@ -196,6 +196,35 @@ function check(name, cond, extra) {
       && /receiptDate: util\.formatTime\(printAt, false\)/.test(src)
       && /receiptPrintTime: util\.formatTime\(printAt\)/.test(src);
   })(), 'js 数据缺失');
+
+  console.log('\n[15] 顶部预览图（11-25 对齐二手详情页：预览在上、详情在下）');
+  check('预览图在小票内第一段（hero 结构，无角标——用户要求删「示意图」）', /detail-hero receipt__sec/.test(wxmlD)
+    && /detail-hero__img/.test(wxmlD) && /src="\{\{heroImage\}\}"/.test(wxmlD)
+    && !/detail-hero__badge/.test(wxmlD) && !/示意图/.test(wxmlD), 'hero 结构不符');
+  check('预览图位于头部卡之前（wxml 中 hero 在 detail-head 前面）', wxmlD.indexOf('detail-hero') < wxmlD.indexOf('detail-head'), '顺序不符');
+  check('预览块等宽正方形（614rpx）+ 满铺 aspectFill + 防溢出裁切', /\.detail-hero\s*\{[\s\S]*?height: 614rpx[\s\S]*?overflow: hidden/.test(wxssD)
+    && /detail-hero__img\s*\{[\s\S]*?width: 100%[\s\S]*?height: 100%/.test(wxssD) && /mode="aspectFill"/.test(wxmlD), 'hero 样式不符');
+  check('js 预览图与列表缩略图同一派生（utils/errand.categoryIcon）', (function () {
+    const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
+    return /require\('\.\.\/\.\.\/utils\/errand'\)/.test(src)
+      && /heroImage: errandUtil\.categoryIcon\(order\)/.test(src)
+      && /heroImage: ''/.test(src);
+  })(), 'js 派生不符');
+  check('公共层 errand.js 存在且插画已放大到 512²', (function () {
+    const u = fsD.readFileSync(path.join(REPO, 'utils', 'errand.js'), 'utf8');
+    return /food/.test(u) && /guessCategory/.test(u) && /categoryIcon/.test(u)
+      && ['food', 'doc', 'daily', 'express', 'other'].every(function (n) {
+        const p2 = path.join(REPO, 'assets', 'errand', n + '.png');
+        if (!fsD.existsSync(p2)) return false;
+        const buf = fsD.readFileSync(p2);
+        // PNG IHDR：宽高在字节 16..24（大端）
+        return buf.readUInt32BE(16) === 512 && buf.readUInt32BE(20) === 512;
+      });
+  })(), '公共层或插画缺失');
+  check('hall.js 已切换到公共层（本地 guessCategory 无残留）', (function () {
+    const h = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'hall.js'), 'utf8');
+    return /errandUtil\.categoryIcon\(order\)/.test(h) && !/function guessCategory/.test(h);
+  })(), 'hall 切换不符');
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);

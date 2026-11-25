@@ -30,6 +30,13 @@
       </view>
 
       <view class="receipt__body">
+        <!-- ⓪ 顶部预览图（11-25 对齐二手详情页：预览图在上、详情在下）。
+             errand_orders 没有图片字段，先用与大厅卡片同一套品类插画
+             （utils/errand.js 关键词匹配，源图已放大到 512² 保证大图清晰度） -->
+        <view class="card detail-hero receipt__sec">
+          <image class="detail-hero__img" src="{{heroImage}}" mode="aspectFill" />
+        </view>
+
         <!-- ① 头部：状态 / 报酬 / 时间 -->
         <view class="card detail-head receipt__sec">
           <view class="detail-head__tags">

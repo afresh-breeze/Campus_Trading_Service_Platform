@@ -126,8 +126,17 @@
   </view>
 
   <view class="receipt__body">
+    <!-- （可选）顶部预览图段：对齐二手详情页「预览图在上、详情在下」。
+         样式 .detail-hero（614rpx 等宽正方形、防溢出、aspectFill 满铺），
+         图源 js 里 heroImage: errandUtil.categoryIcon(order)——
+         这是 B 侧代取专用的品类插画派生（utils/errand.js，因为代取表没有图片字段）；
+         你的页面有真图，直接 src 真图即可 -->
+    <view class="card detail-hero receipt__sec">
+      <image class="detail-hero__img" src="{{heroImage}}" mode="aspectFill" />
+    </view>
+
     <!-- 每张要进小票的卡片：保留原 class，追加 receipt__sec；
-         第一张不用特殊处理，其余卡片之间自动出现虚线撕线 -->
+         第一段不用特殊处理，其余段之间自动出现虚线撕线 -->
     <view class="card 你的卡片一 receipt__sec">…原有内容不动…</view>
     <view class="card 你的卡片二 receipt__sec">…</view>
 

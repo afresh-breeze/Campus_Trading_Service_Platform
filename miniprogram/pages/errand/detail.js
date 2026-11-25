@@ -22,6 +22,8 @@ const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
 const campus = require('../../utils/campus');
+// 品类插画派生（11-25 抽到公共层，与大厅列表缩略图同一张图、同一套规则）
+const errandUtil = require('../../utils/errand');
 
 const SIZE_TEXT = { small: '小件', medium: '中件', large: '大件' };
 
@@ -118,6 +120,7 @@ Page({
     order: null,
     // 展示层派生字段（wxml 不做计算，全部在 js 里算好）
     sizeText: '',
+    heroImage: '',
     routeFromMain: '',
     routeFromSub: '',
     routeDots: [],
@@ -248,6 +251,9 @@ Page({
       errorDesc: '',
       order,
       sizeText: SIZE_TEXT[order.itemSize] || order.itemSize || '未填写',
+      // 11-25 对齐二手详情页：顶部大预览图在上、详情在下。表里没有图片字段，
+      // 用与大厅卡片同一套品类插画（utils/errand.js，源图已放大到 512²）
+      heroImage: errandUtil.categoryIcon(order),
       // 11-25 用户反馈：详情页取件地点「地标在上、片区在下」两行，不许截断——
       // 列表卡可以 ellipsis，详情页出现「南区教学区 · …」显示不全是大忌
       routeFromMain: campus.shortPlace(order.pickupArea, order.pickupPlace) || '未填写',
