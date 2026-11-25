@@ -27,7 +27,8 @@
   background-color: #E6A874;
   border-radius: var(--radius-full, 999rpx);
   box-shadow: 0 4rpx 12rpx rgba(230, 168, 116, 0.35);
-  transition: left 0.24s cubic-bezier(0.3, 1.15, 0.6, 1);
+  /* 先快后慢（无过冲，用户反馈撤掉弹跳感） */
+  transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .tab-bar__item {
