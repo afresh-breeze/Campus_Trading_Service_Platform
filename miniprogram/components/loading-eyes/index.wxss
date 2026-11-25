@@ -28,14 +28,16 @@
   margin-left: 12rpx;
 }
 
-/* 瞳孔：品牌深棕，居中锚点用负 margin，动画只动 transform（位移便宜且顺滑） */
+/* 瞳孔：品牌深棕，居中锚点用负 margin，动画只动 transform（位移便宜且顺滑）。
+   直径 40rpx = 眼白 × 0.64（原版 pupilScale 0.32 是半径比例，11-25 用户反馈按原版占比放大）；
+   扫视 20rpx 时瞳孔边缘会探出眼白被裁掉——原版就是这个「探头」效果 */
 .eye__pupil {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 20rpx;
-  height: 20rpx;
-  margin: -10rpx 0 0 -10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  margin: -20rpx 0 0 -20rpx;
   border-radius: 50%;
   background-color: var(--color-primary-dark);
   animation: eyes-move var(--dur, 10000ms) infinite;

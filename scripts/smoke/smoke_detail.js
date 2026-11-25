@@ -242,8 +242,8 @@ function check(name, cond, extra) {
   check('配色走令牌（眼白 bg-white + 瞳孔 primary-dark，不照抄黑/白）', /background-color: var\(--color-bg-white\)/.test(compWxss)
     && /background-color: var\(--color-primary-dark\)/.test(compWxss)
     && !/#000/.test(compWxss) && !/#fff[^d]/i.test(compWxss), '配色不符');
-  check('瞳孔动画只动 transform（负 margin 居中锚点）', /margin: -10rpx 0 0 -10rpx/.test(compWxss)
-    && /left: 50%/.test(compWxss), '瞳孔定位不符');
+  check('瞳孔占比对齐原版（直径 40rpx = 眼白 × 0.64，负 margin 居中锚点）', /margin: -20rpx 0 0 -20rpx/.test(compWxss)
+    && /width: 40rpx/.test(compWxss) && /left: 50%/.test(compWxss), '瞳孔定位不符');
   check('周期可配（duration 属性 → --dur）', /duration: \{ type: Number/.test(compJs) && /--dur: \{\{duration\}\}ms/.test(compWxml), '周期配置不符');
   check('详情页已注册并接入（loading 态：眼睛 + 加载中文案）', (function () {
     const pj = JSON.parse(fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.json'), 'utf8'));
