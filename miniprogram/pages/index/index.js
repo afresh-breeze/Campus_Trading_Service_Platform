@@ -31,6 +31,7 @@ function getNavMetrics() {
 
 Page({
   data: {
+    parallax: false,
     stickyTop: 24, // 状态栏占位 = 胶囊顶部 y，让标题与胶囊齐平
     barHead: 32, // 标题行高 = 胶囊高度，与胶囊完全同排
     isLogin: true,
@@ -57,6 +58,7 @@ Page({
   },
 
   onShow() {
+    if (this.data.parallax) this.setData({ parallax: false });
     const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (bar && typeof bar.syncSelected === 'function') {
       bar.syncSelected(TAB_INDEX);
@@ -259,6 +261,8 @@ Page({
   onTapItem(e) {
     const id = e.detail && e.detail.itemId;
     if (!id) return;
+    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    this.setData({ parallax: true });
     wx.navigateTo({
       url: '/pages/item/detail?id=' + id,
       fail: () => util.toast('详情页打开失败')

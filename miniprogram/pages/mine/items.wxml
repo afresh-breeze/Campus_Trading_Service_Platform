@@ -15,7 +15,7 @@
 >
   <view slot="refresher" class="pull-eyes"
     style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
-<view class="page page-body mi-page">
+<view class="page page-body mi-page parallax-wrap {{parallax ? 'parallax-left' : ''}}">
   <!-- 吸顶状态条：复用首页分类的横滑椭圆条，滚动时返回键与状态条都常驻 -->
   <!-- 吸顶条 top 归零：滚动容器已是 scroll-view（11-25 refresher 改造），
        不再需要 nav 高度偏移，否则会悬在内容中间 -->

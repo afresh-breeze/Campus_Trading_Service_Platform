@@ -12,7 +12,7 @@
 >
   <view slot="refresher" class="pull-eyes"
     style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
-<view class="page page--tab home">
+<view class="page page--tab home parallax-wrap {{parallax ? 'parallax-left' : ''}}">
   <!-- 整块吸附：块从屏幕最顶(top:0)开始覆盖且背景不透明，列表从它下方滚过。
        标题行与右上角胶囊齐平（安全区占位到胶囊顶、行高=胶囊高），滚动全程冻结不动。 -->
   <view class="home-bar">

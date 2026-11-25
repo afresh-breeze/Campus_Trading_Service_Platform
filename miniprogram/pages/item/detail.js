@@ -146,6 +146,7 @@ function mapDetail(raw) {
 
 Page({
   data: {
+    anim: 'enter',
     id: 0,
     loading: true,
     refreshing: false,
@@ -202,6 +203,26 @@ Page({
       return;
     }
     this.setData({ id });
+  },
+
+  onReady() {
+    // 入场动画播完移除动画类：transform 常驻会改变后代 fixed 的包含块（detail-bar 错位的老坑）
+    this._enterTimer = setTimeout(() => {
+      if (this.data.anim === 'enter') this.setData({ anim: '' });
+    }, 340);
+  },
+
+  onNavBack() {
+    // 退场：先播右移离场动画（先慢后快）再返回；系统手势返回走原生转场（拦截不到）
+    if (this.data.anim === 'exit') return;
+    clearTimeout(this._enterTimer);
+    this.setData({ anim: 'exit' });
+    this._exitTimer = setTimeout(() => wx.navigateBack(), 250);
+  },
+
+  onUnload() {
+    clearTimeout(this._enterTimer);
+    clearTimeout(this._exitTimer);
   },
 
   onShow() {

@@ -98,6 +98,7 @@ function toCard(order, role) {
 
 Page({
   data: {
+    parallax: false,
     pageTitle: '我的代取',
     tabs: TABS,
     chips: CHIPS,
@@ -121,6 +122,7 @@ Page({
   },
 
   onShow() {
+    if (this.data.parallax) this.setData({ parallax: false });
     const app = getApp();
     if (app && typeof app.isLogin === 'function' && !app.isLogin()) {
       app.requireLogin('/pages/mine/errands?role=' + this.data.role);
@@ -239,6 +241,8 @@ Page({
   onTapOrder(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return;
+    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    this.setData({ parallax: true });
     wx.navigateTo({
       url: '/pages/errand/detail?id=' + id,
       fail: () => util.toast('详情页打开失败')

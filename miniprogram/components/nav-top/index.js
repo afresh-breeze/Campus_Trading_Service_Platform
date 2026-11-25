@@ -11,7 +11,10 @@ Component({
     back: { type: Boolean, value: false },
     title: { type: String, value: '' },
     // true 时返回按钮/标题 fixed 在屏幕顶，页面滚多远都不消失（长页面用，如接单设置）
-    fixed: { type: Boolean, value: false }
+    fixed: { type: Boolean, value: false },
+    // true 时点击返回不直接 navigateBack，改为 triggerEvent('back') 交给页面
+    // （详情页播退场动画后再返回，11-25 转场增强）
+    customBack: { type: Boolean, value: false }
   },
 
   data: {
@@ -40,6 +43,10 @@ Component({
 
   methods: {
     onBack() {
+      if (this.data.customBack) {
+        this.triggerEvent('back');
+        return;
+      }
       wx.navigateBack({
         fail: () => wx.switchTab({ url: '/pages/index/index' })
       });

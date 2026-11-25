@@ -472,3 +472,29 @@ scroll-view {
   border-radius: 3rpx;
   background: var(--color-primary);
 }
+
+/* ---------- 页面转场增强（11-25）：webview 下原生转场不可定制，详情页做补充动画 ---------- */
+/* 详情页入场：从右侧缓动滑入（先快后慢）。动画类只加在内容节点上——transform 会改变
+   后代 fixed 的包含块（detail-bar 错位的老坑），不可套在含 fixed 子元素的整页容器外 */
+.detail-page-enter {
+  animation: detail-page-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes detail-page-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+/* 详情页退场：向右离场（先慢后快，ease-in）；点页面内返回按钮时触发，手势返回走原生转场 */
+.detail-page-exit {
+  animation: detail-page-out 240ms cubic-bezier(0.42, 0, 1, 1) both;
+}
+@keyframes detail-page-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+/* 原页面视差：跳详情前内容左移 20px，返回 onShow 回弹归位 */
+.parallax-wrap {
+  transition: transform 200ms ease-out;
+}
+.parallax-left {
+  transform: translateX(-20px);
+}

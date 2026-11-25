@@ -38,6 +38,7 @@ const DEFAULT_EMPTY = emptyOf('on_sale');
 
 Page({
   data: {
+    parallax: false,
     tabs: TABS,
     status: 'on_sale',
     stickyTop: 64,
@@ -64,6 +65,7 @@ Page({
   },
 
   onShow() {
+    if (this.data.parallax) this.setData({ parallax: false });
     if (!listCommon.hasLogin()) {
       if (!this._loginRedirected) listCommon.redirectToLogin(PAGE_PATH);
       this.setData({ loading: false, error: '请先登录' });
@@ -179,6 +181,8 @@ Page({
   onTapItem(e) {
     const id = Number((e.detail && e.detail.itemId) || 0);
     if (!id) return;
+    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    this.setData({ parallax: true });
     wx.navigateTo({
       url: '/pages/item/detail?id=' + id,
       fail: () => util.toast('详情页打开失败')

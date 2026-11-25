@@ -49,6 +49,7 @@ function mapBook(raw) {
 
 Page({
   data: {
+    parallax: false,
     stickyTop: 24,
     barHead: 32,
     isLogin: true,
@@ -108,6 +109,7 @@ Page({
   },
 
   onShow() {
+    if (this.data.parallax) this.setData({ parallax: false });
     const app = getApp();
     const isLogin = !!(app && typeof app.isLogin === 'function' && app.isLogin());
     if (isLogin !== this.data.isLogin) {
@@ -573,6 +575,8 @@ Page({
   onTapItem(e) {
     const id = e.detail && e.detail.itemId;
     if (!id) return;
+    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    this.setData({ parallax: true });
     wx.navigateTo({
       url: '/pages/item/detail?id=' + id,
       fail: () => util.toast('详情页打开失败')

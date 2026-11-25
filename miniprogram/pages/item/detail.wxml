@@ -1,7 +1,7 @@
 <!-- 商品详情（A 成员，11-16）：轮播、信息、卖家、收藏/联系/状态管理 -->
-<nav-top back fixed />
+<nav-top back fixed custom-back bind:back="onNavBack" />
 
-<view class="detail {{showBar ? 'detail--bar' : ''}}">
+<view class="detail {{showBar ? 'detail--bar' : ''}} {{anim === 'enter' ? 'detail-page-enter' : (anim === 'exit' ? 'detail-page-exit' : '')}}">
   <!-- 首屏骨架 -->
   <block wx:if="{{loading}}">
     <view class="detail-sk">
@@ -154,7 +154,7 @@
 </view>
 
 <!-- 底部操作栏：买家收藏/联系，卖家状态管理 -->
-<view wx:if="{{showBar}}" class="detail-bar">
+<view wx:if="{{showBar}}" class="detail-bar {{anim === 'enter' ? 'detail-page-enter' : (anim === 'exit' ? 'detail-page-exit' : '')}}">
   <view wx:if="{{isOwner}}" class="detail-bar__row">
     <button
       wx:for="{{actions}}"

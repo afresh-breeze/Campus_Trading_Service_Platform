@@ -1,8 +1,8 @@
 <!-- 代取详情（B 成员，11-12）：展示 + 状态机操作，按钮全部由后端 can* 决定 -->
 <!-- 11-16 反馈：返回按钮 fixed 固定在顶部，不随内容滚动消失（nav-top 组件 11-15 已支持 fixed） -->
-<nav-top back fixed />
+<nav-top back fixed custom-back bind:back="onNavBack" />
 
-<view class="sv-flex" style="height: calc(100vh - {{stickyTop}}px)">
+<view class="sv-flex {{anim === 'enter' ? 'detail-page-enter' : (anim === 'exit' ? 'detail-page-exit' : '')}}" style="height: calc(100vh - {{stickyTop}}px)">
 <scroll-view
   class="page-scroll page-scroll--fill"
   scroll-y
@@ -207,7 +207,7 @@
 
 <!-- 底部操作栏：聊天入口与订单动作并排（11-16 反馈），按钮全部来自 js 的 actions。
      必须放在 scroll-view 外：fixed 在 scroll-view 内会被内部 transform 破坏、跟随内容滚动（11-25 错位根因） -->
-<view wx:if="{{actions.length}}" class="detail-bar">
+<view wx:if="{{actions.length}}" class="detail-bar {{anim === 'enter' ? 'detail-page-enter' : (anim === 'exit' ? 'detail-page-exit' : '')}}">
   <text wx:if="{{chatTip}}" class="detail-bar__tip">{{chatTip}}</text>
   <view class="detail-bar__row">
     <button
