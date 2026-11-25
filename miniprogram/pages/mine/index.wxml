@@ -38,36 +38,51 @@
     <text class="mine-hero__arrow">›</text>
   </view>
 
-  <!-- 二手市场 / 代取 两块插画卡：行级入口 + 数量（上卡在右、下卡在左，接单设置留白） -->
-  <view class="mkt-card mkt-card--{{card.key}}" wx:for="{{marketCards}}" wx:key="key" wx:for-item="card">
-    <view class="mkt-card__inner">
-      <view class="mkt-card__title">{{card.title}}</view>
-      <view
-        class="mkt-card__row"
-        wx:for="{{card.rows}}"
-        wx:key="key"
-        wx:for-item="row"
-        data-url="{{row.url}}"
-        data-auth="{{row.auth}}"
-        bindtap="onTapCell"
-        hover-class="mkt-card__row--hover"
-      >
-        <!-- 两套 DOM：shop 名称左/数量右；errand 数字左 + 虚线引导 + 名称右
-             （不依赖 margin-left:auto——真机 flex text 上不生效，11-29 教训） -->
-        <block wx:if="{{card.key === 'shop'}}">
-          <text class="mkt-card__name">{{row.text}}</text>
-          <text class="mkt-card__num">{{row.value}}</text>
-        </block>
-        <block wx:else>
-          <text class="mkt-card__num">{{row.value}}</text>
-          <view class="mkt-card__leader"></view>
-          <text class="mkt-card__name">{{row.text}}</text>
-        </block>
+  <!-- 二手市场 / 代取 合并插画卡（11-25 v4 用户确认）：行统一 名称左/数量右/箭头，
+       按压背景平滑变化（压暗不缩放，A 侧口径） -->
+  <view class="mkt-card">
+    <block wx:for="{{marketCards}}" wx:key="key" wx:for-item="sec" wx:for-index="secIndex">
+      <view class="mkt-card__divider" wx:if="{{secIndex > 0}}"></view>
+      <view class="mkt-sec mkt-sec--{{sec.key}}">
+        <view class="mkt-sec__inner" wx:if="{{sec.key === 'shop'}}">
+          <view class="mkt-sec__title">{{sec.title}}</view>
+          <view
+            class="mkt-card__row"
+            wx:for="{{sec.rows}}"
+            wx:key="key"
+            wx:for-item="row"
+            data-url="{{row.url}}"
+            data-auth="{{row.auth}}"
+            bindtap="onTapCell"
+            hover-class="mkt-card__row--press"
+          >
+            <text class="mkt-card__name">{{row.text}}</text>
+            <text class="mkt-card__num">{{row.value}}</text>
+            <text class="mkt-card__arrow">›</text>
+          </view>
+        </view>
+        <view class="mkt-sec__art">
+          <image class="mkt-card__img mkt-card__img--{{sec.key}}" src="{{sec.art}}" mode="heightFix" />
+        </view>
+        <view class="mkt-sec__inner" wx:if="{{sec.key === 'errand'}}">
+          <view class="mkt-sec__title">{{sec.title}}</view>
+          <view
+            class="mkt-card__row"
+            wx:for="{{sec.rows}}"
+            wx:key="key"
+            wx:for-item="row"
+            data-url="{{row.url}}"
+            data-auth="{{row.auth}}"
+            bindtap="onTapCell"
+            hover-class="mkt-card__row--press"
+          >
+            <text class="mkt-card__name">{{row.text}}</text>
+            <text class="mkt-card__num">{{row.value}}</text>
+            <text class="mkt-card__arrow">›</text>
+          </view>
+        </view>
       </view>
-    </view>
-    <view class="mkt-card__art">
-      <image class="mkt-card__img mkt-card__img--{{card.key}}" src="{{card.art}}" mode="heightFix" />
-    </view>
+    </block>
   </view>
 
   <!-- 入口分组 -->

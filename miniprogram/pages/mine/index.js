@@ -63,15 +63,8 @@ function emptyMarket() {
   return buildMarket([null, null, null, null]);
 }
 
+// 「我的内容」组已并入上方合并插画卡（11-25 v4 用户确认），GROUPS 只剩「其他」
 const GROUPS = [
-  {
-    key: 'content',
-    title: '我的内容',
-    cells: [
-      // 我的发布 / 我的收藏 / 接单设置已移入上方插画卡（11-25），这里保留全量「我的代取」入口
-      { key: 'errands', text: '我的代取', url: '/pages/mine/errands', auth: true }
-    ]
-  },
   {
     key: 'other',
     title: '其他',

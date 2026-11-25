@@ -99,92 +99,88 @@
 }
 
 /* ---------- 四项统计 ---------- */
-/* ---------- 二手市场 / 代取 插画卡（11-25，取代统计条） ---------- */
+/* ---------- 二手市场 / 代取 合并插画卡（11-25 v4，先预览后落地） ---------- */
 .mkt-card {
   margin-top: 20rpx;
-  display: flex;
-  align-items: stretch;
   background-color: var(--color-bg-white);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-.mkt-card__inner {
+.mkt-card__divider {
+  border-top: 1rpx dashed var(--color-divider);
+  margin: 0 28rpx;
+}
+.mkt-sec {
+  display: flex;
+  align-items: stretch;
+}
+.mkt-sec__inner {
   flex: 1;
   min-width: 0;
-  padding: 24rpx 28rpx 20rpx;
+  padding: 28rpx 28rpx 16rpx;
 }
-.mkt-card__title {
-  font-size: var(--font-xl);
+.mkt-sec__title {
+  font-size: 54rpx;
+  line-height: 1.25;
   font-weight: 700;
   color: var(--color-text);
 }
+.mkt-sec--errand .mkt-sec__title {
+  text-align: right;
+}
+/* 行：名称左 / 数量右 / 箭头最右；按压背景平滑变化（压暗不缩放，A 侧口径防字抖） */
 .mkt-card__row {
   display: flex;
   align-items: center;
-  padding: 24rpx 0 22rpx;
+  margin: 0 -12rpx;
+  padding: 26rpx 20rpx 24rpx;
+  border-radius: 20rpx;
   border-bottom: 1rpx dashed var(--color-divider);
+  transition: background-color 150ms ease;
 }
 .mkt-card__row:last-child {
   border-bottom: none;
-  padding-bottom: 6rpx;
 }
-.mkt-card__row--hover {
+.mkt-card__row--press {
   background-color: var(--color-surface-2);
 }
 .mkt-card__name {
+  flex: 1;
   font-size: var(--font-md);
   color: var(--color-text);
   white-space: nowrap;
 }
-/* 名称是主级、数量是次级（深棕加粗但不抢行名）、虚线与插画是辅级（11-25 层级口径） */
+/* 数量是次级信息：深棕加粗、固定宽右对齐（接单设置留白占位） */
 .mkt-card__num {
+  flex: none;
+  width: 60rpx;
+  text-align: right;
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--color-primary-dark);
   font-variant-numeric: tabular-nums;
 }
-/* 上卡（二手市场）：名称左（撑满）、数量右——DOM 顺序即视觉顺序 */
-.mkt-card--shop .mkt-card__name {
-  flex: 1;
-}
-.mkt-card--shop .mkt-card__num {
+.mkt-card__arrow {
   flex: none;
   margin-left: 16rpx;
+  font-size: 34rpx;
+  line-height: 1;
+  color: var(--color-text-4);
 }
-/* 数量与名称之间的虚线引导线（仅下卡，目录页 leader 语言） */
-.mkt-card__leader {
-  flex: 1;
-  height: 0;
-  margin: 0 16rpx;
-  border-top: 1rpx dashed var(--color-divider);
-}
-/* 下卡（代取）：镜像——插画最左、标题右上、数量左（固定宽占位，接单设置留白）、名称右 */
-.mkt-card--errand .mkt-card__inner {
-  order: 2;
-}
-.mkt-card--errand .mkt-card__art {
-  order: 1;
-  padding: 20rpx 0 20rpx 16rpx;
-}
-.mkt-card--errand .mkt-card__title {
-  text-align: right;
-}
-.mkt-card--errand .mkt-card__name {
-  flex: none;
-  text-align: right;
-}
-.mkt-card--errand .mkt-card__num {
-  width: 88rpx;
-  flex: none;
-  text-align: center;
-}
-.mkt-card__art {
+.mkt-sec__art {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20rpx 16rpx 20rpx 0;
+}
+.mkt-sec--errand .mkt-sec__art {
+  order: 1;
+  padding: 20rpx 0 20rpx 16rpx;
+}
+.mkt-sec--errand .mkt-sec__inner {
+  order: 2;
 }
 .mkt-card__img--shop {
   height: 236rpx;
@@ -192,8 +188,8 @@
   opacity: 0.55;
 }
 .mkt-card__img--errand {
-  height: 316rpx;
-  width: 316rpx;
+  height: 300rpx;
+  width: 300rpx;
   opacity: 0.55;
 }
 
