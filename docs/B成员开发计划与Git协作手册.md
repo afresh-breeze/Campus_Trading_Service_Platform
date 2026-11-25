@@ -571,6 +571,16 @@
 - **经验沉淀：包 scroll-view 时页内 fixed 元素必须移出，sticky 不受影响。**
 - **验证**：wxml_check PASS、冒烟 **596/0**、契约 **168/0**。
 
+#### 41）11-25 当日任务：吸顶条归位 + 我的页统计拆两组
+
+- items/favorites 吸顶条 `top: stickyTop→0`（scroll-view 成为滚动容器后 sticky 参照系变了，
+  nav 高度偏移会把状态条顶到内容中间）；stickyTop 保留用于 sv-flex 高度计算。
+- 我的页统计拆两组：二手（发布/收藏）｜代取（我发布的/我完成的），组名标签消歧义；
+  js STAT_GROUPS + toGroups，data stats→statGroups（三处 setData）。
+- **验证**：wxml_check PASS、冒烟 **596/0**、契约 **168/0**。
+- **A 页面波及**：items/favorites 吸顶条一行改动——群里告知。
+
+
 
 
 
