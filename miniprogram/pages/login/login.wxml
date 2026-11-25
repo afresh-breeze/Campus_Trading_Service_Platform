@@ -1,13 +1,24 @@
 <!-- 登录页（B 成员） -->
 <nav-top back />
-<view class="page login-page">
-  <view class="hero">
-    <view class="logo">易</view>
-    <view class="hero-title">校园易站</view>
-    <view class="hero-sub">校园二手交易 · 代取跑腿</view>
+<view class="page login-page {{intro ? 'intro' : ''}}">
+  <!-- 弥散背景：fixed 铺满全屏（含状态栏与导航区），z-index:-1 保证不挡返回按钮 -->
+  <view class="mesh">
+    <view class="mesh__blob mesh__blob--1"></view>
+    <view class="mesh__blob mesh__blob--2"></view>
+    <view class="mesh__blob mesh__blob--3"></view>
+    <view class="mesh__blob mesh__blob--4"></view>
   </view>
 
-  <view class="form-wrap u-enter" style="animation-delay: 60ms">
+  <view class="hero">
+    <!-- 开场主角：小光晕弹跳入位后散开（纯装饰，不接事件） -->
+    <view class="glow-ring"></view>
+    <view class="glow"></view>
+    <!-- 落定后常驻的呼吸光晕，承担品牌位（替代原 logo 块） -->
+    <view class="hero-halo"></view>
+    <view class="hero-title">校园易站</view>
+  </view>
+
+  <view class="form-card">
     <view class="field">
       <text class="field-label">学号</text>
       <input
@@ -33,15 +44,15 @@
         bindconfirm="onSubmit"
       />
     </view>
+  </view>
 
-    <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
-      登录
-    </button>
+  <button class="btn btn-primary btn-block submit" loading="{{submitting}}" disabled="{{submitting}}" hover-class="btn--press" bindtap="onSubmit">
+    登录
+  </button>
 
-    <view class="row-between extra">
-      <text class="t-sub" bindtap="onGoRegister">还没有账号？去注册</text>
-      <text class="t-sub" bindtap="onForget">忘记密码</text>
-    </view>
+  <view class="row-between extra">
+    <text class="t-sub" bindtap="onGoRegister">还没有账号？去注册</text>
+    <text class="t-sub" bindtap="onForget">忘记密码</text>
   </view>
 
   <!-- 协议可点：弹摘要，不假装有独立页面（P2-2） -->

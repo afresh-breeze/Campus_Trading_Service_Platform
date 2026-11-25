@@ -17,6 +17,9 @@ const TAB_PAGES = [
   '/pages/mine/index'
 ];
 const MAX_FAIL = 5;
+// 开场编排时长（与 login.wxss 里 2200ms 对齐）+ 200ms 余量
+const INTRO_HOLD_MS = 2400;
+
 const AGREEMENT = {
   user:
     '《用户协议》摘要：\n1. 本平台仅限本校学生使用，账号与学号一一对应；\n' +
@@ -59,7 +62,24 @@ Page({
     submitting: false,
     failCount: 0,
     redirect: '',
-    isMock: config.MOCK
+    isMock: config.MOCK,
+    // 开场光晕编排：只在本次进页播一次，播完摘类回到最终态
+    intro: true
+  },
+
+  onReady() {
+    // 2200ms 编排 + 200ms 余量；摘类后基础样式即最终态（同 detail-page-enter 口径）
+    this._introTimer = setTimeout(() => {
+      this._introTimer = null;
+      this.setData({ intro: false });
+    }, INTRO_HOLD_MS);
+  },
+
+  onUnload() {
+    if (this._introTimer) {
+      clearTimeout(this._introTimer);
+      this._introTimer = null;
+    }
   },
 
   onLoad(options) {

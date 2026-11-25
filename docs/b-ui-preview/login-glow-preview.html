@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录页改版预览 · 光晕入场 + 弥散背景</title>
+<style>
+  :root {
+    --primary: #E6A874;
+    --primary-light: #FCDBA9;
+    --primary-dark: #79513D;
+    --accent: #A7724F;
+    --bg: #F4F1E7;
+    --text: #3D2E24;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #26221E;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 0;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+  }
+  .hint { color: #8A8072; font-size: 13px; }
+  .hint b { color: #C9BFB2; font-weight: 600; }
+  .replay {
+    background: #3A332C; color: #E8DFD2; border: 1px solid #4A4238;
+    border-radius: 999px; padding: 6px 18px; font-size: 13px; cursor: pointer;
+  }
+  .replay:hover { background: #4A4238; }
+
+  /* ============ 手机机身 ============ */
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 44px;
+    border: 6px solid #17130F;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  }
+
+  /* ============ 弥散背景（顶满全屏，含状态栏后面） ============ */
+  .mesh {
+    position: absolute; inset: 0;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .blob { position: absolute; border-radius: 50%; filter: blur(64px); }
+  .b1 { width: 320px; height: 320px; left: -90px;  top: -110px; background: #FCDBA9; }
+  .b2 { width: 280px; height: 280px; right: -110px; top: 150px; background: #E6A874; opacity: .75; }
+  .b3 { width: 300px; height: 300px; left: -60px;  top: 470px; background: #F3CFA0; opacity: .85; }
+  .b4 { width: 240px; height: 240px; right: -40px; bottom: -80px; background: rgba(121, 81, 61, .14); }
+
+  /* ============ 状态栏 + 胶囊（静态） ============ */
+  .status {
+    position: absolute; top: 14px; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 28px; font-size: 14px; font-weight: 600; color: #4A3A2C;
+  }
+  .capsule {
+    position: absolute; top: 48px; right: 12px;
+    width: 86px; height: 30px;
+    background: rgba(255,255,255,.55);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: space-evenly;
+    font-size: 13px; color: #3D2E24;
+  }
+
+  /* ============ 标题（logo 块与副标题已去掉） ============ */
+  .halo {
+    position: absolute; left: 50%; top: 232px;
+    width: 220px; height: 220px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(230,168,116,.38) 0%, rgba(230,168,116,0) 68%);
+    pointer-events: none;
+  }
+  .title {
+    position: absolute; left: 0; right: 0; top: 206px;
+    text-align: center;
+    font-size: 30px; font-weight: 800; letter-spacing: 3px;
+    color: var(--text);
+  }
+
+  /* ============ 表单卡 ============ */
+  .card {
+    position: absolute; left: 24px; right: 24px; top: 300px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 6px 24px rgba(122, 93, 64, .10);
+    overflow: hidden;
+  }
+  .field { display: flex; align-items: center; height: 56px; padding: 0 18px; }
+  .field + .field { border-top: 1px solid #F0EAE0; }
+  .label { width: 42px; font-size: 15px; font-weight: 600; color: #6E5B4B; flex: none; }
+  .ph { font-size: 14px; color: #C9BFB2; }
+
+  /* ============ 按钮（出卡，独立成行，层级更高） ============ */
+  .btn {
+    position: absolute; left: 24px; right: 24px; top: 436px;
+    height: 48px; border: none; border-radius: 24px;
+    background: linear-gradient(180deg, #8A5F47, var(--primary-dark));
+    color: #FFF; font-size: 17px; font-weight: 600; letter-spacing: 6px;
+    box-shadow: 0 8px 20px rgba(121, 81, 61, .28);
+    cursor: pointer;
+    transition: transform 160ms var(--ease-out);
+  }
+  .btn:active { transform: scale(.97); }
+
+  .links {
+    position: absolute; left: 24px; right: 24px; top: 500px;
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: #8C8275;
+  }
+  .links span { cursor: pointer; }
+  .links span:hover { color: var(--accent); }
+
+  .agreement {
+    position: absolute; left: 0; right: 0; top: 620px;
+    text-align: center; font-size: 11px; color: #B0A697;
+  }
+  .agreement b { color: var(--accent); font-weight: 500; text-decoration: underline; }
+  .tip {
+    position: absolute; left: 0; right: 0; top: 646px;
+    text-align: center; font-size: 11px; color: #B45309;
+  }
+
+  /* ============ 开场光晕（动画主角） ============ */
+  .glow, .ring {
+    position: absolute; left: calc(50% - 13px); top: 219px;
+    width: 26px; height: 26px; border-radius: 50%;
+    pointer-events: none;
+  }
+  .glow {
+    background: radial-gradient(circle, #FFF3DC 0%, rgba(230,168,116,.95) 42%, rgba(230,168,116,0) 72%);
+    box-shadow: 0 0 24px 6px rgba(230,168,116,.55);
+  }
+  .ring {
+    background: none;
+    border: 2px solid rgba(230,168,116,.65);
+    box-shadow: 0 0 18px 2px rgba(230,168,116,.35);
+  }
+
+  /* ==================================================
+     开场编排（循环演示用，总时长 4s）
+     基础样式即最终态，动画只负责「从哪来」
+     ================================================== */
+  body.anim .glow {
+    opacity: 0;
+    transform: translate(-150px, -215px) scale(.55);
+    animation: glow-journey 4s cubic-bezier(.45,.05,.55,.95) infinite both;
+  }
+  @keyframes glow-journey {
+     0%   { opacity: 0; transform: translate(-150px, -215px) scale(.55); }
+     5%   { opacity: 1; }
+     /* 弹跳弧线：落下 → 压扁回弹 → 二次小弹 */
+     15%  { transform: translate(-64px, -110px) scale(.85, 1.1); }
+     21%  { transform: translate(0, -6px)    scale(1.14, .84); }  /* 落地压扁 */
+     26%  { transform: translate(0, -30px)   scale(.94, 1.08); }  /* 弹起 */
+     31%  { transform: translate(0, 0)       scale(1.06, .94); }  /* 二落 */
+     35%  { transform: translate(0, -9px)    scale(.98, 1.02); }
+     39%  { transform: translate(0, 0)       scale(1); }
+     /* 散开：放大 + 淡出，交棒给弥散背景与页面 */
+     50%  { opacity: 1; transform: translate(0, 0) scale(16); }
+     62%  { opacity: 0; transform: translate(0, 0) scale(22); }
+     100% { opacity: 0; transform: translate(0, 0) scale(22); }
+  }
+  body.anim .ring {
+    opacity: 0; transform: scale(1);
+    animation: ring-spread 4s var(--ease-out) infinite both;
+  }
+  @keyframes ring-spread {
+    0%, 38% { opacity: 0; transform: scale(1); }
+    44%     { opacity: .9; }
+    62%     { opacity: 0; transform: scale(13); }
+    100%    { opacity: 0; transform: scale(13); }
+  }
+  body.anim .b1 { opacity: 0; animation: bloom 4s var(--ease-out) infinite both; }
+  body.anim .b2 { opacity: 0; animation: bloom 4s var(--ease-out) infinite both; animation-delay: .12s; }
+  body.anim .b3 { opacity: 0; animation: bloom 4s var(--ease-out) infinite both; animation-delay: .24s; }
+  body.anim .b4 { opacity: 0; animation: bloom 4s var(--ease-out) infinite both; animation-delay: .32s; }
+  /* 各 blob 的目标透明度不同，用 CSS 变量带进 keyframes */
+  .b1 { --o: 1;  } .b2 { --o: .75; } .b3 { --o: .85; } .b4 { --o: 1; }
+  @keyframes bloom {
+    0%, 38% { opacity: 0; transform: scale(.72); }
+    58%     { opacity: var(--o); transform: scale(1); }
+    100%    { opacity: var(--o); transform: scale(1); }
+  }
+  body.anim .title {
+    opacity: 0; transform: translateY(14px) scale(.92);
+    animation: rise-in 4s var(--ease-out) infinite both;
+  }
+  @keyframes rise-in {
+    0%, 46% { opacity: 0; transform: translateY(14px) scale(.92); }
+    62%     { opacity: 1; transform: translateY(0) scale(1); }
+    100%    { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  body.anim .halo {
+    opacity: 0;
+    animation: halo-in 4s var(--ease-out) infinite both, halo-breathe 3.2s ease-in-out 2.6s infinite alternate;
+  }
+  @keyframes halo-in {
+    0%, 52% { opacity: 0; transform: translate(-50%,-50%) scale(.7); }
+    72%     { opacity: .9; transform: translate(-50%,-50%) scale(1); }
+    100%    { opacity: .9; transform: translate(-50%,-50%) scale(1); }
+  }
+  @keyframes halo-breathe {
+    from { opacity: .75; } to { opacity: .95; }
+  }
+  body.anim .card   { animation: fade-up 4s var(--ease-out) infinite both; animation-delay: .1s; }
+  body.anim .btn    { animation: fade-up 4s var(--ease-out) infinite both; animation-delay: .18s; }
+  body.anim .links  { animation: fade-up 4s var(--ease-out) infinite both; animation-delay: .26s; }
+  body.anim .agreement, body.anim .tip { animation: fade-up 4s var(--ease-out) infinite both; animation-delay: .34s; }
+  @keyframes fade-up {
+    0%, 54% { opacity: 0; transform: translateY(22px); }
+    74%     { opacity: 1; transform: translateY(0); }
+    100%    { opacity: 1; transform: translateY(0); }
+  }
+  /* 状态栏、胶囊不参与动画 */
+  body.anim .status, body.anim .capsule, body.anim .mesh { animation: none !important; opacity: 1 !important; transform: none !important; }
+</style>
+</head>
+<body class="anim">
+  <div class="hint"><b>循环预览</b> · 开场：小光晕弹跳入位 → 散开成弥散背景与登录页（约 2.2s，落地后标题光晕保持呼吸）</div>
+  <button class="replay" onclick="replay()">↺ 重播动画</button>
+
+  <div class="phone">
+    <div class="mesh">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+      <div class="blob b4"></div>
+    </div>
+
+    <div class="status"><span>18:56</span><span>▮▮ 🔋</span></div>
+    <div class="capsule"><span>•••</span><span>◉</span></div>
+
+    <div class="halo"></div>
+    <div class="ring"></div>
+    <div class="glow"></div>
+    <div class="title">校园易站</div>
+
+    <div class="card">
+      <div class="field"><span class="label">学号</span><span class="ph">请输入学号（6-20 位数字）</span></div>
+      <div class="field"><span class="label">密码</span><span class="ph">请输入密码（6-20 位）</span></div>
+    </div>
+
+    <button class="btn">登录</button>
+
+    <div class="links"><span>还没有账号？去注册</span><span>忘记密码</span></div>
+
+    <div class="agreement">登录即表示同意 <b>《用户协议》</b> 与 <b>《隐私政策》</b></div>
+    <div class="tip">当前为本地模拟数据模式（config.js 中 MOCK = true）</div>
+  </div>
+
+<script>
+  // #final 直达最终态（供无头截图）；点按钮重播
+  if (location.hash === '#final') document.body.classList.remove('anim');
+  function replay() {
+    document.body.classList.remove('anim');
+    void document.body.offsetWidth; // 强制 reflow 重新触发动画
+    document.body.classList.add('anim');
+  }
+</script>
+</body>
+</html>

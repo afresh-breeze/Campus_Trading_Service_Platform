@@ -1,0 +1,219 @@
+/**
+ * 登录页冒烟测试（stub 掉 Page/wx/getApp/request）
+ * 运行：node scripts/smoke/smoke_login.js   （cwd 必须在仓库根）
+ *
+ * 覆盖两块：
+ *  A. 11-25 改版的「弥散背景 + 光晕开场」结构契约（wxml / wxss / js 三处口径对齐）
+ *  B. 登录页三条老红线不许回退：skipAuthRedirect、回跳 tabBar 分流、连续失败熔断
+ */
+const fs = require('fs');
+const path = require('path');
+const Module = require('module');
+const REPO = process.cwd();
+const MP = path.join(REPO, 'miniprogram');
+const PAGE = path.join(MP, 'pages/login');
+
+let pass = 0;
+let fail = 0;
+function check(name, cond, extra) {
+  if (cond) {
+    pass += 1;
+    console.log('  PASS  ' + name);
+  } else {
+    fail += 1;
+    console.log('  FAIL  ' + name + (extra === undefined ? '' : ' -> ' + JSON.stringify(extra)));
+  }
+}
+
+// ---- 拦截 utils/request ----
+const calls = [];
+let pending = [];
+const fakeRequest = {
+  get(url, query) {
+    calls.push({ method: 'GET', url, query });
+    return new Promise((resolve, reject) => pending.push({ resolve, reject }));
+  },
+  post(url, data, opts) {
+    calls.push({ method: 'POST', url, data, opts });
+    return new Promise((resolve, reject) => pending.push({ resolve, reject }));
+  }
+};
+const origLoad = Module._load;
+Module._load = function (request) {
+  if (/utils[\\/]request$/.test(request) || /utils[\\/]request\.js$/.test(request)) return fakeRequest;
+  return origLoad.apply(this, arguments);
+};
+
+// ---- stub 全局 ----
+let pageCfg = null;
+global.Page = (cfg) => {
+  pageCfg = cfg;
+};
+let session = null;
+global.getApp = () => ({
+  isLogin: () => false,
+  setSession: (token, userInfo) => {
+    session = { token, userInfo };
+  }
+});
+const toasts = [];
+const navs = [];
+const switches = [];
+const redirects = [];
+const modals = [];
+global.wx = {
+  showToast: (o) => toasts.push(o),
+  navigateTo: (o) => navs.push(o.url),
+  switchTab: (o) => switches.push(o.url),
+  redirectTo: (o) => redirects.push(o.url),
+  showModal: (o) => modals.push(o)
+};
+
+require(path.join(PAGE, 'login.js'));
+
+function makePage() {
+  const inst = Object.assign({}, pageCfg);
+  inst.data = JSON.parse(JSON.stringify(pageCfg.data));
+  inst.setData = function (patch) {
+    Object.assign(this.data, patch);
+  };
+  return inst;
+}
+function flush(ok, payload) {
+  const p = pending.shift();
+  if (!p) throw new Error('没有挂起请求');
+  if (ok) p.resolve(payload);
+  else p.reject(payload);
+}
+const tick = (ms) => new Promise((r) => setTimeout(r, ms || 0));
+
+const wxml = fs.readFileSync(path.join(PAGE, 'login.wxml'), 'utf8');
+const wxss = fs.readFileSync(path.join(PAGE, 'login.wxss'), 'utf8');
+const js = fs.readFileSync(path.join(PAGE, 'login.js'), 'utf8');
+const count = (s, sub) => s.split(sub).length - 1;
+const seg = (from, to) => {
+  const a = wxml.indexOf(from);
+  const b = wxml.indexOf(to, a + 1);
+  return a >= 0 && b > a ? wxml.slice(a, b) : '';
+};
+
+(async () => {
+  console.log('[1] 结构：绿框两处已删，弥散层与光晕就位');
+  check('intro 入场类挂在页根上', wxml.indexOf("{{intro ? 'intro' : ''}}") >= 0);
+  check('弥散层 mesh 存在', wxml.indexOf('class="mesh"') >= 0);
+  check('弥散色块 4 个', count(wxml, 'mesh__blob mesh__blob--') === 4, count(wxml, 'mesh__blob mesh__blob--'));
+  check('开场光晕 glow 存在', /class="glow"/.test(wxml));
+  check('散开光环 glow-ring 存在', /class="glow-ring"/.test(wxml));
+  check('常驻呼吸光晕 hero-halo 存在', /class="hero-halo"/.test(wxml));
+  check('旧 logo 块已移除', wxml.indexOf('class="logo"') < 0);
+  check('旧副标题 hero-sub 已移除', wxml.indexOf('hero-sub') < 0);
+  check('标题文案保留', wxml.indexOf('校园易站') >= 0);
+  check('表单卡内只有 2 个字段', count(seg('class="form-card"', 'class="btn btn-primary'), 'class="field"') === 2);
+
+  console.log('\n[2] 层级：按钮抽出卡片、协议仍在');
+  check('登录按钮不在表单卡内', seg('class="form-card"', '</view>\n\n  <button').indexOf('<button') < 0);
+  check('按钮保留 loading/disabled 绑定', /loading="\{\{submitting\}\}"/.test(wxml) && /disabled="\{\{submitting\}\}"/.test(wxml));
+  check('按压反馈用 btn--press（不缩放口径）', wxml.indexOf('hover-class="btn--press"') >= 0);
+  check('协议两个链接都可点', /data-type="user"/.test(wxml) && /data-type="privacy"/.test(wxml));
+  check('MOCK 提示按 isMock 条件渲染', wxml.indexOf('wx:if="{{isMock}}"') >= 0);
+  check('去注册仍走 onGoRegister', wxml.indexOf('bindtap="onGoRegister"') >= 0);
+
+  console.log('\n[3] 动画契约：wxss 与 js 时长对齐');
+  [
+    'login-glow-journey',
+    'login-ring-spread',
+    'login-halo-in',
+    'login-halo-breathe',
+    'login-rise-in',
+    'login-fade-up'
+  ].forEach((k) => check('存在 @keyframes ' + k, wxss.indexOf('@keyframes ' + k) >= 0));
+  check('.mesh 用 fixed 铺满全屏', /\.mesh\s*\{[^}]*position:\s*fixed/.test(wxss));
+  check('弥散层不吃点击', /\.mesh\s*\{[^}]*pointer-events:\s*none/.test(wxss));
+  check('模糊用 px（filter 不吃 rpx）', /filter:\s*blur\(\d+px\)/.test(wxss) && !/filter:\s*blur\(\d+rpx\)/.test(wxss));
+  check('有减弱动态效果降级', wxss.indexOf('prefers-reduced-motion') >= 0);
+  check('编排 2200ms 与 INTRO_HOLD_MS=2400 对齐', /2200ms/.test(wxss) && /INTRO_HOLD_MS\s*=\s*2400/.test(js));
+  check('data.intro 初始为 true', pageCfg.data.intro === true);
+  check('js 有摘类逻辑', /setData\(\{\s*intro:\s*false\s*\}\)/.test(js));
+
+  console.log('\n[4] 光晕编排生命周期');
+  const p0 = makePage();
+  p0.onReady();
+  check('onReady 挂上编排定时器', !!p0._introTimer);
+  p0.onUnload();
+  check('onUnload 清掉定时器', p0._introTimer === null);
+
+  console.log('\n[5] 输入校验（老红线回归）');
+  const p1 = makePage();
+  p1.onLoad({});
+  await p1.onSubmit();
+  check('空学号 → 请先输入学号', toasts[toasts.length - 1].title === '请输入学号', toasts[toasts.length - 1]);
+  p1.setData({ studentNo: 'abc' });
+  await p1.onSubmit();
+  check('学号非数字 → 校验提示', toasts[toasts.length - 1].title === '学号应为 6-20 位数字', toasts[toasts.length - 1]);
+  p1.setData({ studentNo: '2021001234', password: '123' });
+  await p1.onSubmit();
+  check('密码过短 → 校验提示', toasts[toasts.length - 1].title === '密码需 6-20 位', toasts[toasts.length - 1]);
+  check('校验失败不发请求', calls.length === 0);
+
+  console.log('\n[6] 提交：401 语义与回跳分流');
+  p1.setData({ password: 'abc123456' });
+  const submitting = p1.onSubmit();
+  await tick();
+  check('POST /api/auth/login', calls[0] && calls[0].url === '/api/auth/login', calls[0] && calls[0].url);
+  check('带 skipAuthRedirect（401 不等于登录过期）', !!(calls[0] && calls[0].opts && calls[0].opts.skipAuthRedirect === true));
+  check('带 silent（文案由本页 toast）', !!(calls[0] && calls[0].opts && calls[0].opts.silent === true));
+  flush(false, { code: 401, message: '学号或密码错误' });
+  await submitting;
+  check('401 → 透传后端文案', toasts[toasts.length - 1].title === '学号或密码错误', toasts[toasts.length - 1]);
+  check('失败计数 +1', p1.data.failCount === 1, p1.data.failCount);
+  check('失败后解除 submitting', p1.data.submitting === false);
+
+  // 成功路径：redirect 是 tabBar 页 → switchTab
+  const p2 = makePage();
+  p2.onLoad({ redirect: encodeURIComponent('/pages/errand/hall') });
+  p2.setData({ studentNo: '2021001234', password: 'abc123456' });
+  const ok = p2.onSubmit();
+  await tick();
+  flush(true, { token: 'tk', userInfo: { nickname: '小 B' } });
+  await ok;
+  await tick(450);
+  check('写会话', session && session.token === 'tk');
+  check('tabBar 目标走 switchTab', switches[switches.length - 1] === '/pages/errand/hall', switches);
+  check('tabBar 目标不走 redirectTo', redirects.length === 0, redirects);
+
+  // 非 tabBar 目标 → redirectTo
+  const p3 = makePage();
+  p3.onLoad({ redirect: encodeURIComponent('/pages/item/detail?id=1') });
+  p3.setData({ studentNo: '2021001234', password: 'abc123456' });
+  const ok3 = p3.onSubmit();
+  await tick();
+  flush(true, { token: 'tk2', userInfo: {} });
+  await ok3;
+  await tick(450);
+  check('非 tabBar 目标走 redirectTo', redirects[redirects.length - 1] === '/pages/item/detail?id=1', redirects);
+
+  console.log('\n[7] 连续失败熔断');
+  const p4 = makePage();
+  p4.onLoad({});
+  p4.setData({ studentNo: '2021001234', password: 'abc123456', failCount: 5 });
+  const before = calls.length;
+  await p4.onSubmit();
+  check('failCount>=5 直接拦下', calls.length === before);
+  check('给出稍后再试提示', /稍后再试/.test(toasts[toasts.length - 1].title), toasts[toasts.length - 1]);
+
+  console.log('\n[8] 协议弹窗与忘记密码');
+  const p5 = makePage();
+  p5.onOpenAgreement({ currentTarget: { dataset: { type: 'privacy' } } });
+  check('隐私政策弹窗标题', modals[0] && modals[0].title === '隐私政策', modals[0] && modals[0].title);
+  check('弹窗只有一个确认键', modals[0] && modals[0].showCancel === false);
+  p5.onForget();
+  check('忘记密码指向管理员', /管理员/.test(toasts[toasts.length - 1].title), toasts[toasts.length - 1]);
+  p5.onGoRegister();
+  check('去注册带 redirect', /\/pages\/register\/register/.test(navs[0] || ''), navs);
+
+  console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
+  process.exit(fail ? 1 : 0);
+})().catch((e) => {
+  console.error('SMOKE 崩溃:', e);
+  process.exit(1);
+});

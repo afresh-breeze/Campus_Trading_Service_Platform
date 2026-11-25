@@ -1,80 +1,149 @@
-.login-page {
-  min-height: 100vh;
-  padding: 0 48rpx;
-  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 42%);
+/* ==================================================================
+   登录页（B 成员）—— 弥散背景 + 光晕开场
+   ------------------------------------------------------------------
+   1) 背景改 fixed 全屏层，从状态栏后面铺到底（app.json 已全局 custom 导航，
+      nav-top 非 fixed 时是透明占位，不会被盖住）；
+   2) 原 logo 块与副标题已去掉，品牌位交给放大标题 + 常驻呼吸光晕；
+   3) 开场：小光晕弹跳入位 → 压扁回弹 → 散开成弥散背景，内容错峰进场。
+      动画全部挂在 .intro 下，播完由 js 摘类，摘掉后基础样式即最终态
+      （与 detail-page-enter 同一套「入场类播完移除」口径）。
+   ================================================================== */
+
+/* 兜底：page 底色，避免弥散层首帧到来前闪白 */
+page {
+  background-color: var(--color-bg);
 }
 
+.login-page {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  padding: 0 48rpx 60rpx;
+  background: transparent;
+}
+
+/* ---------------- 弥散背景 ---------------- */
+.mesh {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: var(--color-bg);
+  background-image: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 46%);
+}
+.mesh__blob {
+  position: absolute;
+  border-radius: 50%;
+  /* filter 不吃 rpx，这里用 px（真机 64px 模糊足够，再大容易掉帧） */
+  filter: blur(56px);
+}
+.mesh__blob--1 {
+  width: 640rpx;
+  height: 640rpx;
+  left: -180rpx;
+  top: -220rpx;
+  background-color: #FCDBA9;
+}
+.mesh__blob--2 {
+  width: 560rpx;
+  height: 560rpx;
+  right: -220rpx;
+  top: 300rpx;
+  background-color: #E6A874;
+  opacity: 0.75;
+}
+.mesh__blob--3 {
+  width: 600rpx;
+  height: 600rpx;
+  left: -120rpx;
+  top: 940rpx;
+  background-color: #F3CFA0;
+  opacity: 0.85;
+}
+.mesh__blob--4 {
+  width: 480rpx;
+  height: 480rpx;
+  right: -80rpx;
+  bottom: -160rpx;
+  background-color: rgba(121, 81, 61, 0.14);
+}
+
+/* ---------------- 标题区（原 logo 块 + 副标题已移除） ---------------- */
 .hero {
-  padding: 120rpx 0 72rpx;
+  position: relative;
+  padding: 150rpx 0 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.logo {
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: 32rpx;
-  background-color: var(--color-primary-dark);
-  color: #fff;
-  font-size: 64rpx;
-  font-weight: 700;
-  text-align: center;
-  line-height: 128rpx;
-  box-shadow: var(--shadow-float);
-  position: relative;
-}
-/* UI 优化 6.1：logo 后两个柔和光晕圆（纯 CSS，不用图片） */
-.logo::before,
-.logo::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 168, 116, 0.28), transparent 70%);
-  pointer-events: none;
-}
-.logo::before {
-  width: 200rpx;
-  height: 200rpx;
-  left: -90rpx;
-  top: -60rpx;
-}
-.logo::after {
-  width: 150rpx;
-  height: 150rpx;
-  right: -80rpx;
-  bottom: -50rpx;
-}
 .hero-title {
-  margin-top: 28rpx;
-  font-size: var(--font-2xl);
-  font-weight: 700;
-  letter-spacing: 2rpx;
+  position: relative;
+  z-index: 1;
+  font-size: 60rpx;
+  /* 全站宋体（衬线）下大标题 700 视觉偏细，按公共层 .home-bar__title 口径提到 900 + 细描边 */
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
+  letter-spacing: 4rpx;
+  line-height: 1.25;
+  color: var(--color-text);
 }
-.hero-sub {
-  margin-top: 10rpx;
-  font-size: var(--font-sm);
-  color: var(--color-text-3);
+/* 常驻呼吸光晕：承担原 logo 的视觉重量 */
+.hero-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 440rpx;
+  height: 440rpx;
+  margin: -220rpx 0 0 -220rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 168, 116, 0.45) 0%, rgba(230, 168, 116, 0) 68%);
+  pointer-events: none;
+  opacity: 0.9;
+  animation: login-halo-breathe 3200ms ease-in-out infinite alternate;
 }
 
-.form-wrap {
+/* ---------------- 表单卡（按钮已抽出，卡片只装字段） ---------------- */
+.form-card {
+  margin-top: 110rpx;
+  border-radius: 32rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 12rpx 48rpx rgba(122, 93, 64, 0.10);
   overflow: hidden;
 }
-.form-wrap .field:last-of-type {
+.form-card .field {
+  height: 112rpx;
+}
+.form-card .field:last-child {
   border-bottom: none;
 }
-.submit {
-  margin: 40rpx 24rpx 0;
-  width: calc(100% - 48rpx);
-}
-.extra {
-  padding: 24rpx 32rpx 36rpx;
+.form-card .field-label {
+  /* 全局 150rpx 为「学院」这类长标签留的，登录页只有两个字，收窄让输入区更靠左 */
+  width: 96rpx;
+  font-weight: 500;
+  color: var(--color-text-2);
 }
 
+/* ---------------- 登录按钮：独立成行，主行动层级 ---------------- */
+.submit {
+  margin-top: 40rpx;
+  height: 96rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  letter-spacing: 8rpx;
+  /* 字距会在右侧多出一格，用等量缩进抵消，保持文字视觉居中 */
+  text-indent: 8rpx;
+}
+.extra {
+  padding: 32rpx 8rpx 0;
+}
+
+/* ---------------- 协议与提示：弱化置底 ---------------- */
 .agreement {
-  margin-top: 48rpx;
+  margin-top: 120rpx;
   text-align: center;
   font-size: var(--font-xs);
   color: var(--color-text-4);
@@ -85,8 +154,209 @@
   text-decoration: underline;
 }
 .tip {
-  margin-top: 20rpx;
+  margin-top: 16rpx;
   text-align: center;
   font-size: var(--font-xs);
   color: var(--color-warning);
+}
+
+/* ==================================================================
+   开场编排：光晕弹跳入位（约 0.9s）→ 散开（0.7s）→ 内容错峰进场
+   总时长 2200ms，js 在 2400ms 摘 .intro
+   ================================================================== */
+.glow,
+.glow-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52rpx;
+  height: 52rpx;
+  margin: -26rpx 0 0 -26rpx;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+.glow {
+  z-index: 2;
+  background: radial-gradient(circle, #FFF3DC 0%, rgba(230, 168, 116, 0.95) 42%, rgba(230, 168, 116, 0) 72%);
+  box-shadow: 0 0 48rpx 12rpx rgba(230, 168, 116, 0.55);
+}
+.glow-ring {
+  z-index: 2;
+  border: 4rpx solid rgba(230, 168, 116, 0.65);
+  box-shadow: 0 0 36rpx 4rpx rgba(230, 168, 116, 0.35);
+}
+
+/* —— 光晕：左上方向弧线落下，落地压扁回弹，再补一次小弹 —— */
+.intro .glow {
+  animation: login-glow-journey 2200ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+}
+@keyframes login-glow-journey {
+  0% {
+    opacity: 0;
+    transform: translate(-300rpx, -430rpx) scale(0.55);
+  }
+  5% {
+    opacity: 1;
+  }
+  15% {
+    transform: translate(-128rpx, -220rpx) scale(0.85, 1.1);
+  }
+  21% {
+    transform: translate(0, -12rpx) scale(1.14, 0.84);
+  }
+  26% {
+    transform: translate(0, -60rpx) scale(0.94, 1.08);
+  }
+  31% {
+    transform: translate(0, 0) scale(1.06, 0.94);
+  }
+  35% {
+    transform: translate(0, -18rpx) scale(0.98, 1.02);
+  }
+  39% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(0, 0) scale(16);
+  }
+  62% {
+    opacity: 0;
+    transform: translate(0, 0) scale(22);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(22);
+  }
+}
+
+/* —— 光环：与散开同拍，向外扩一圈 —— */
+.intro .glow-ring {
+  animation: login-ring-spread 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes login-ring-spread {
+  0%,
+  38% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  44% {
+    opacity: 0.9;
+  }
+  62% {
+    opacity: 0;
+    transform: scale(13);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(13);
+  }
+}
+
+/* —— 呼吸光晕：散开到位后才淡入，接管品牌位 —— */
+.intro .hero-halo {
+  opacity: 0;
+  animation: login-halo-in 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes login-halo-in {
+  0%,
+  52% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  72% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+@keyframes login-halo-breathe {
+  from {
+    opacity: 0.75;
+  }
+  to {
+    opacity: 0.95;
+  }
+}
+
+/* —— 内容错峰进场：标题 → 卡片 → 按钮 → 链接 → 协议（每级 80ms） —— */
+.intro .hero-title {
+  opacity: 0;
+  animation: login-rise-in 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes login-rise-in {
+  0%,
+  46% {
+    opacity: 0;
+    transform: translateY(28rpx) scale(0.92);
+  }
+  62% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.intro .form-card {
+  opacity: 0;
+  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+.intro .submit {
+  opacity: 0;
+  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
+}
+.intro .extra {
+  opacity: 0;
+  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+.intro .agreement,
+.intro .tip {
+  opacity: 0;
+  animation: login-fade-up 2200ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both;
+}
+@keyframes login-fade-up {
+  0%,
+  54% {
+    opacity: 0;
+    transform: translateY(44rpx);
+  }
+  74% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 系统开启「减弱动态效果」时跳过编排，直接给最终态 */
+@media (prefers-reduced-motion: reduce) {
+  .intro .glow,
+  .intro .glow-ring {
+    animation: none;
+    opacity: 0;
+  }
+  .intro .hero-halo,
+  .intro .hero-title,
+  .intro .form-card,
+  .intro .submit,
+  .intro .extra,
+  .intro .agreement,
+  .intro .tip {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .hero-halo {
+    animation: none;
+    opacity: 0.9;
+  }
 }

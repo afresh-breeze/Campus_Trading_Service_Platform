@@ -618,6 +618,31 @@
 - **验证**：冒烟 **596/0**、契约 **168/0**、wxml_check 8 PASS。
 - **A 波及**：nav-top 组件 + item/detail + index/search/items/favorites——群里必须告知。
 
+#### 47）11-25 当日任务：转场节奏两轮真机调参
+
+- 一轮：入场起点 100% 会与原生转场叠加成 200% 双重位移 → 起点 30% + 240ms，视差 220ms 对齐。
+- 二轮：内容首帧出现时原生转场已过大半 → 改 20% 快速收拢 + 淡入 180ms，清类时机 220ms。
+- 经验：叠加原生转场的补充动画只能补相对位移，起点 20~30%，不能用 100% 起跳。
+
+#### 48）11-25 当日任务：登录页弥散背景 + 光晕开场改版（先预览后落地）
+
+- 用户圈掉 logo 块与副标题两处（绿框标注）→ 删除，品牌位交给 60rpx 标题（宋体 900 +
+  0.6rpx 描边，跟 .home-bar__title 口径）+ 常驻呼吸光晕。
+- 背景 fixed 全屏层（`z-index:-1` + pointer-events:none，从状态栏后面铺到底，含导航区），
+  4 团 blur(56px) 色块弥散，全部走现有色板令牌。
+- 开场编排 2200ms：小光晕弧线落位（落地压扁回弹 + 二次小弹）→ 放大 16 倍散开 + 光环扩散 →
+  标题/卡片/按钮/链接/协议 80ms 错峰进场；js INTRO_HOLD_MS=2400 摘 .intro 类回最终态
+  （同 detail-page-enter 口径）；带 prefers-reduced-motion 降级。
+- 层级优化：登录按钮抽出白卡独立成行；字段 label 收窄 150→96rpx；协议/提示弱化置底。
+- **新增 scripts/smoke/smoke_login.js 51 条**（登录页此前零覆盖）：动画契约（keyframes/
+  时长对齐/mesh fixed/blur 用 px）+ 三条老红线回归（skipAuthRedirect、tabBar 回跳分流、
+  连续失败熔断）。冒烟合计 **647/0**。
+- **真机坑备用**：filter blur 不吃 rpx 必须写 px；入场类播完必须摘；编排时长改动要同步
+  INTRO_HOLD_MS（smoke_login 有断言锁住）。
+- **验证**：node --check 过、wxml_check PASS、冒烟 **647/0**、契约 **168/0**；
+  预览 login-glow-preview.html / login-glow-final.png 入库 docs/b-ui-preview。
+
+
 
 
 
