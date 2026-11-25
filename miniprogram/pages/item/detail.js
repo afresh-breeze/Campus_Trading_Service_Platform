@@ -21,6 +21,19 @@ const CONDITION_TEXT = {
 };
 const DESC_COLLAPSE_LEN = 120;
 
+/* 小票锯齿：纸面 686rpx / 齿距 26rpx → 取 27 齿（702rpx），末齿由 overflow 裁掉 */
+const SAW_TEETH = [];
+for (let i = 0; i < 27; i++) SAW_TEETH.push(i);
+
+/* 小票落款图案：512×512 黑线条透明底 PNG，按内容语义命名 */
+const DOODLE_IMAGES = [
+  '/assets/receipt/cat.png',
+  '/assets/receipt/mouse.png',
+  '/assets/receipt/cake.png',
+  '/assets/receipt/umbrella.png',
+  '/assets/receipt/trees.png'
+];
+
 function formatPrice(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return '0';
@@ -160,12 +173,20 @@ Page({
     showBar: false,
     favoriting: false,
     submitting: false,
-    actionKey: ''
+    actionKey: '',
+    sawTeeth: SAW_TEETH,
+    receiptImage: DOODLE_IMAGES[0],
+    receiptDate: '',
+    receiptPrintTime: ''
   },
 
   onLoad(options) {
     this._reqSeq = 0;
     this._viewCounted = false;
+    // 图案只在打开页面时抽一次；之后的刷新/回跳不重抽，避免闪变
+    this.setData({
+      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)]
+    });
     const id = Number(options && options.id || 0);
     if (!Number.isInteger(id) || id <= 0) {
       this.setData({
@@ -223,6 +244,7 @@ Page({
 
   applyDetail(raw) {
     const view = mapDetail(raw);
+    const printAt = new Date();
     const hasItem = !!this.data.item;
     const nextIndex = view.images.length
       ? (hasItem ? Math.min(this.data.imageIndex, view.images.length - 1) : 0)
@@ -255,7 +277,9 @@ Page({
       descLong: view.descLong,
       descExpanded: nextDescExpanded,
       actions: view.actions,
-      showBar: view.showBar
+      showBar: view.showBar,
+      receiptDate: util.formatTime(printAt, false),
+      receiptPrintTime: util.formatTime(printAt)
     });
   },
 

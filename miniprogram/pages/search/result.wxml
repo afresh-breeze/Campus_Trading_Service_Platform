@@ -26,7 +26,7 @@
         />
         <view wx:if="{{keyword}}" class="search-input__clear" bindtap="onClearInput" aria-label="清空">×</view>
       </view>
-      <view class="search-submit u-press" bindtap="onSubmitTap" hover-class="u-press--hover">搜索</view>
+      <view class="search-submit" bindtap="onSubmitTap" hover-class="search-submit--hover">搜索</view>
     </view>
 
     <!-- 输入时的书目联想：首行固定「搜索 xxx」，下面最多 5 本匹配书目 -->
@@ -85,7 +85,7 @@
         <view
           wx:for="{{history}}"
           wx:key="*this"
-          class="search-history__chip u-press"
+          class="search-history__chip"
           data-keyword="{{item}}"
           bindtap="onKeywordTap"
           hover-class="search-history__chip--hover"
@@ -97,9 +97,9 @@
       <text class="search-tips__title">搜索二手好物</text>
       <text class="search-tips__desc">支持商品名、书名、作者、取件地点</text>
       <view class="search-tips__chips">
-        <view class="search-tips__chip u-press" data-keyword="耳机" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">耳机</view>
-        <view class="search-tips__chip u-press" data-keyword="高等数学" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">高等数学</view>
-        <view class="search-tips__chip u-press" data-keyword="桃园" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">桃园</view>
+        <view class="search-tips__chip" data-keyword="耳机" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">耳机</view>
+        <view class="search-tips__chip" data-keyword="高等数学" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">高等数学</view>
+        <view class="search-tips__chip" data-keyword="桃园" bindtap="onKeywordTap" hover-class="search-tips__chip--hover">桃园</view>
       </view>
     </view>
   </block>
@@ -160,14 +160,14 @@
     <view class="search-sort">
       <text class="search-sort__count">{{countReady ? '共 ' + total + ' 件在售' : '搜索中…'}}</text>
       <view class="search-sort__ops">
-        <view class="search-sort__item u-press {{sort === 'latest' ? 'search-sort__item--active' : ''}}" bindtap="onSortLatest" hover-class="u-press--hover">
+        <view class="search-sort__item {{sort === 'latest' ? 'search-sort__item--active' : ''}}" bindtap="onSortLatest" hover-class="search-sort__item--hover">
           <text>最新</text>
         </view>
         <view class="search-sort__divider"></view>
         <view
-          class="search-sort__item search-sort__item--price u-press {{(sort === 'price_asc' || sort === 'price_desc') ? 'search-sort__item--active' : ''}}"
+          class="search-sort__item search-sort__item--price {{(sort === 'price_asc' || sort === 'price_desc') ? 'search-sort__item--active' : ''}}"
           bindtap="onSortPrice"
-          hover-class="u-press--hover"
+          hover-class="search-sort__item--hover"
         >
           <text>价格</text>
           <text class="search-sort__arrow">{{sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}}</text>

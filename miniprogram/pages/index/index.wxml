@@ -12,7 +12,7 @@
     </view>
 
     <!-- 搜索只做入口：点击跳到搜索结果页，不在首页弹键盘 -->
-    <view class="home-search u-press" bindtap="onSearchTap" hover-class="u-press--hover" aria-label="搜索商品">
+    <view class="home-search" bindtap="onSearchTap" hover-class="home-search--hover" aria-label="搜索商品">
       <view class="home-search__icon"></view>
       <text class="home-search__ph">搜索商品 / 书名 / 作者</text>
     </view>
@@ -22,10 +22,10 @@
         <view
           wx:for="{{categories}}"
           wx:key="categoryId"
-          class="home-cat u-press {{categoryId === item.categoryId ? 'home-cat--active' : ''}}"
+          class="home-cat {{categoryId === item.categoryId ? 'home-cat--active' : ''}}"
           data-id="{{item.categoryId}}"
           bindtap="onCategoryTap"
-          hover-class="u-press--hover"
+          hover-class="home-cat--hover"
         >{{item.name}}</view>
       </scroll-view>
 
@@ -33,17 +33,17 @@
         <text class="home-sort__count">{{countReady ? '共 ' + total + ' 件在售' : ''}}</text>
         <view class="home-sort__ops">
           <view
-            class="home-sort__item u-press {{sort === 'latest' ? 'home-sort__item--active' : ''}}"
+            class="home-sort__item {{sort === 'latest' ? 'home-sort__item--active' : ''}}"
             bindtap="onSortLatest"
-            hover-class="u-press--hover"
+            hover-class="home-sort__item--hover"
           >
             <text>最新</text>
           </view>
           <view class="home-sort__divider"></view>
           <view
-            class="home-sort__item home-sort__item--price u-press {{(sort === 'price_asc' || sort === 'price_desc') ? 'home-sort__item--active' : ''}}"
+            class="home-sort__item home-sort__item--price {{(sort === 'price_asc' || sort === 'price_desc') ? 'home-sort__item--active' : ''}}"
             bindtap="onSortPrice"
-            hover-class="u-press--hover"
+            hover-class="home-sort__item--hover"
           >
             <text>价格</text>
             <text class="home-sort__arrow">{{sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}}</text>
@@ -123,5 +123,5 @@
   </block>
 
   <!-- 我要卖：登录后才显示 FAB -->
-  <view wx:if="{{isLogin}}" class="fab u-press" bindtap="onPublish" hover-class="u-press--hover" aria-label="我要卖">＋</view>
+  <view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover" aria-label="我要卖">＋</view>
 </view>
