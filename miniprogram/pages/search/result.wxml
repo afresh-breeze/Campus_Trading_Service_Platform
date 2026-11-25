@@ -11,7 +11,8 @@
   bindscrolltolower="onReachBottom"
   bindscroll="onPageScroll"
 >
-  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page search-page">
   <!-- 顶部整块吸附：安全区到胶囊顶，返回键与胶囊同排，搜索框常驻 -->
   <view class="search-bar">

@@ -14,7 +14,8 @@
   bindrefresherrefresh="onRefresh"
   bindscrolltolower="onReachBottom"
 >
-  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="detail {{actions.length ? 'detail--bar' : ''}}">
   <!-- 等待 / 加载失败互斥；404 说明无权可见，单独给「回大厅」出路 -->
   <view wx:if="{{loading}}" class="detail-state">

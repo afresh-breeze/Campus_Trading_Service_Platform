@@ -162,9 +162,16 @@ scroll-view {
   flex: 1;
   min-height: 0;
 }
-/* refresher 区：眼睛居中——text-align 方案（与页面加载态同款，flex 在 refresher
-   容器内不可靠，11-25 用户反馈下拉条未居中后改写） */
+/* refresher 区：眼睛居中。
+   width:100% 是关键：refresher 容器疑似 flex 布局，不撑满会被收缩成内容宽、整体靠左，
+   内部任何居中都看不出来（11-25 三次反馈根因）；flex + text-align 双保险，
+   宿主无论 inline 还是块化都能居中 */
 .pull-eyes {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 20rpx 0;
 }

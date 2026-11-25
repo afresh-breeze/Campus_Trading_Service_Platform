@@ -557,6 +557,14 @@
 - **验证**：11 js 语法过、wxml_check PASS、冒烟 **596/0**、契约 **168/0**。
 - **A 页面结构级波及**：index、search、mine/items、mine/favorites——群里必须告知。
 
+#### 39）11-25 当日任务：开场「居中→左」过渡帧 + refresher 居中改 text-align
+
+- 用户二次反馈：0% 就在左仍是静态，要有移动过程 → eyes-move 改 0% 居中→4% 扫到左，
+  眨眼加开场 1% 同拍；无头四帧采样验证过渡成立（0s/0.15s/0.30s/0.50s）。
+- .pull-eyes 弃 flex 改 text-align 居中（refresher 容器内 flex 不可靠）。
+- **验证**：smoke_detail 92/0、契约 168/0。
+
+
 
 
 ### 0.5 每天建议节奏

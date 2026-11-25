@@ -13,7 +13,8 @@
   bindrefresherrefresh="onRefresh"
   bindscrolltolower="onReachBottom"
 >
-  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page-body mi-page">
   <!-- 吸顶状态条：复用首页分类的横滑椭圆条，滚动时返回键与状态条都常驻 -->
   <view class="mi-cats-wrap" style="top: {{stickyTop}}px">

@@ -10,7 +10,8 @@
   bindrefresherrefresh="onRefresh"
   bindscrolltolower="onReachBottom"
 >
-  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page--tab hall">
   <!-- 顶部整块吸附：块从屏幕最顶(top:0)就开始覆盖且背景不透明，列表从它底下滚过。
        标题行与右上角胶囊齐平（占位到胶囊顶、行高=胶囊高），滚动全程冻结不动，
