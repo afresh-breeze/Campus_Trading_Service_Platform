@@ -52,8 +52,17 @@
         bindtap="onTapCell"
         hover-class="mkt-card__row--hover"
       >
-        <text class="mkt-card__num">{{row.value}}</text>
-        <text class="mkt-card__name">{{row.text}}</text>
+        <!-- 两套 DOM：shop 名称左/数量右；errand 数字左 + 虚线引导 + 名称右
+             （不依赖 margin-left:auto——真机 flex text 上不生效，11-29 教训） -->
+        <block wx:if="{{card.key === 'shop'}}">
+          <text class="mkt-card__name">{{row.text}}</text>
+          <text class="mkt-card__num">{{row.value}}</text>
+        </block>
+        <block wx:else>
+          <text class="mkt-card__num">{{row.value}}</text>
+          <view class="mkt-card__leader"></view>
+          <text class="mkt-card__name">{{row.text}}</text>
+        </block>
       </view>
     </view>
     <view class="mkt-card__art">

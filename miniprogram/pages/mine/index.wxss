@@ -115,7 +115,7 @@
   padding: 24rpx 28rpx 20rpx;
 }
 .mkt-card__title {
-  font-size: var(--font-lg);
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--color-text);
 }
@@ -133,19 +133,31 @@
   background-color: var(--color-surface-2);
 }
 .mkt-card__name {
-  flex: 1;
   font-size: var(--font-md);
   color: var(--color-text);
+  white-space: nowrap;
 }
+/* 名称是主级、数量是次级（深棕加粗但不抢行名）、虚线与插画是辅级（11-25 层级口径） */
 .mkt-card__num {
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--color-primary-dark);
   font-variant-numeric: tabular-nums;
 }
-/* 上卡（二手市场）：名称左、数量右 */
+/* 上卡（二手市场）：名称左（撑满）、数量右——DOM 顺序即视觉顺序 */
+.mkt-card--shop .mkt-card__name {
+  flex: 1;
+}
 .mkt-card--shop .mkt-card__num {
-  margin-left: auto;
+  flex: none;
+  margin-left: 16rpx;
+}
+/* 数量与名称之间的虚线引导线（仅下卡，目录页 leader 语言） */
+.mkt-card__leader {
+  flex: 1;
+  height: 0;
+  margin: 0 16rpx;
+  border-top: 1rpx dashed var(--color-divider);
 }
 /* 下卡（代取）：镜像——插画最左、标题右上、数量左（固定宽占位，接单设置留白）、名称右 */
 .mkt-card--errand .mkt-card__inner {
@@ -159,10 +171,12 @@
   text-align: right;
 }
 .mkt-card--errand .mkt-card__name {
+  flex: none;
   text-align: right;
 }
 .mkt-card--errand .mkt-card__num {
   width: 88rpx;
+  flex: none;
   text-align: center;
 }
 .mkt-card__art {
@@ -175,10 +189,12 @@
 .mkt-card__img--shop {
   height: 236rpx;
   width: 236rpx;
+  opacity: 0.55;
 }
 .mkt-card__img--errand {
   height: 316rpx;
   width: 316rpx;
+  opacity: 0.55;
 }
 
 /* ---------- 入口分组 ---------- */
