@@ -507,6 +507,16 @@
 - **验证**：smoke_detail 新增 [15] 节 6 条（含读 PNG IHDR 校验 512²）→ **80/0**，
   合计 **584/0**，契约 168/0；交接文档骨架同步补 hero 段 + `receipt-hero.png`。
 
+#### 34）11-25 当日任务：眼睛 loading 组件（移植 loading-ui「游走的眼睛」）
+
+- loading-ui 库克隆在仓库外 `E:/Qin/Computer/数据库·/loading-ui-ref`（MIT，45 种 loader；
+  React/shadcn 生态，`npx shadcn add` 不可用于本项目，用法是抄 keyframes 移植 WXSS）。
+- 用户选定 WanderingEyes：纯 WXSS 重写（瞳孔 transform 位移 + eye 高度收缩眨眼，
+  节奏逐帧对齐原版），配色改令牌（眼白 bg-white / 瞳孔 primary-dark），
+  组件 `components/loading-eyes/`，`duration` 属性可调，已接入详情页 loading 态。
+- **验证**：smoke_detail 新增 [16] 节 7 条（配色禁 #000/#fff 闸）→ **87/0**，
+  合计 **591/0**，契约 168/0；负 delay 冻帧渲染验证 5 个动画时刻。
+
 ### 0.5 每天建议节奏
 
 计划按每天 6 小时有效工作安排；有课的日子至少保证 4 小时，周末补到 6~8 小时。**里程碑不能挪，任务可以挪。**

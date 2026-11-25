@@ -226,6 +226,32 @@ function check(name, cond, extra) {
     return /errandUtil\.categoryIcon\(order\)/.test(h) && !/function guessCategory/.test(h);
   })(), 'hall 切换不符');
 
+  console.log('\n[16] 眼睛 loading 组件（11-25 移植 loading-ui WanderingEyes，MIT）');
+  const compDir = path.join(REPO, 'components', 'loading-eyes');
+  check('组件四件套齐备', ['index.js', 'index.json', 'index.wxml', 'index.wxss'].every(function (f) {
+    return fsD.existsSync(path.join(compDir, f));
+  }), '组件文件缺失');
+  const compWxss = fsD.readFileSync(path.join(compDir, 'index.wxss'), 'utf8');
+  const compWxml = fsD.readFileSync(path.join(compDir, 'index.wxml'), 'utf8');
+  const compJs = fsD.readFileSync(path.join(compDir, 'index.js'), 'utf8');
+  check('扫视 + 眨眼两组 keyframes（节奏与原版一致）', /@keyframes eyes-move/.test(compWxss)
+    && /@keyframes eyes-blink/.test(compWxss)
+    && /translate\(-20rpx, 0\)/.test(compWxss) && /translate\(20rpx, 0\)/.test(compWxss)
+    && /translate\(0, 20rpx\)/.test(compWxss), 'keyframes 不符');
+  check('眨眼收缩到 24rpx（64 × 0.375，与原版 blinkScale 一致）', /height: 24rpx/.test(compWxss), '眨眼参数不符');
+  check('配色走令牌（眼白 bg-white + 瞳孔 primary-dark，不照抄黑/白）', /background-color: var\(--color-bg-white\)/.test(compWxss)
+    && /background-color: var\(--color-primary-dark\)/.test(compWxss)
+    && !/#000/.test(compWxss) && !/#fff[^d]/i.test(compWxss), '配色不符');
+  check('瞳孔动画只动 transform（负 margin 居中锚点）', /margin: -10rpx 0 0 -10rpx/.test(compWxss)
+    && /left: 50%/.test(compWxss), '瞳孔定位不符');
+  check('周期可配（duration 属性 → --dur）', /duration: \{ type: Number/.test(compJs) && /--dur: \{\{duration\}\}ms/.test(compWxml), '周期配置不符');
+  check('详情页已注册并接入（loading 态：眼睛 + 加载中文案）', (function () {
+    const pj = JSON.parse(fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.json'), 'utf8'));
+    return pj.usingComponents['loading-eyes'] === '/components/loading-eyes/index'
+      && /<loading-eyes /.test(wxmlD)
+      && wxmlD.indexOf('loading-eyes') < wxmlD.indexOf('加载中…');
+    })(), '页面接入不符');
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })();

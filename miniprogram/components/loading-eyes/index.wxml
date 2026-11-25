@@ -1,0 +1,5 @@
+<!-- 游走的眼睛 loading（移植自 loading-ui WanderingEyes，MIT）：扫视 + 眨眼 -->
+<view class="eyes" style="--dur: {{duration}}ms">
+  <view class="eye"><view class="eye__pupil"></view></view>
+  <view class="eye"><view class="eye__pupil"></view></view>
+</view>

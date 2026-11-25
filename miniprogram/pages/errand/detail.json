@@ -4,6 +4,7 @@
   "backgroundTextStyle": "dark",
   "usingComponents": {
     "status-tag": "/components/status-tag/index",
-    "nav-top": "/components/nav-top/index"
+    "nav-top": "/components/nav-top/index",
+    "loading-eyes": "/components/loading-eyes/index"
   }
 }
