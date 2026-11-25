@@ -663,6 +663,28 @@
 - **通用坑**：百分比 translateY 只相对自身高度——入场「移出整屏」的载体必须自己撑满
   一屏（min-height: 100vh）；链式动画播完摘类后，基础态必须自己挂上后续循环动画。
 
+#### 51）11-25 当日任务：登录页底色对齐 + 果冻回弹 + 深棕水波纹转场（v0.60）
+
+- 底色 `#FDE03F` → `var(--color-bg)`（与主页面同源，进主界面背景无缝）；
+  黄底专调色退回令牌（text-2/text-3）。
+- 按钮 `submit--jelly` 460ms 果冻——**用户点名的主动效，是全站 hover「不缩放」口径
+  的唯一例外**，列表/卡片 hover 依旧禁 scale。
+- 转场：按钮 rect → 圆心/四角最远半径 → `--tx/--ty/--tr` CSS 变量 →
+  expand 480ms 铺满 → ripple 420ms 淡出 + 双圈涟漪 → 涟漪开始 260ms 后跳转
+  （遮住 switchTab 加载延迟）。
+- **坑**：淡出段 keyframes 必须锁 `transform: scale(1)`——基态 scale(0) 不锁会瞬消。
+- smoke_login **74 条**；无头渲染四帧 pose 验证。
+
+#### 52）11-25 当日任务：视差方案第一批（v0.61，方案文档一.1+一.2+二）
+
+- 六页 onTapXxx：先置 parallax → 100ms 后 navigateTo + 连点防抖（_navTimer）；
+  五页 onShow 记 wasParallax 分流——只有详情返回路径 refresh 延 260ms，
+  首进与其他路径立即刷新（不给首屏加延迟）。
+- 7 处 `scale(0.985)` 按压违规全部改 `opacity: 0.94`；4 个重试按钮 + .me-act 补按压态；
+  item/detail 摘类 220→180ms。
+- **涉及 A 侧文件（item-card 组件、chat list/detail wxss）——群里同步**。
+- 冒烟 **682/0**、契约 **168/0**；真机待验：列表→详情往返视差连贯性。
+
 
 
 

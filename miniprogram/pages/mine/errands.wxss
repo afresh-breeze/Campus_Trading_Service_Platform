@@ -96,7 +96,7 @@
   margin-bottom: 20rpx;
 }
 .me-order--hover {
-  transform: scale(0.985);
+  /* 全站口径：只压暗不缩放（11-25 方案二） */
   opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
 }
@@ -198,6 +198,10 @@
   line-height: 2.2;
   background: var(--color-surface-2, #f4f1e7);
   color: var(--color-text-2, #6b5b4d);
+}
+.me-act--hover {
+  /* 全站口径：按压只压暗（11-25 方案二补齐） */
+  opacity: 0.9;
 }
 .me-act--primary {
   background: var(--color-primary-dark);

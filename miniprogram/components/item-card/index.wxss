@@ -175,9 +175,9 @@
   align-self: center;
 }
 
-/* 按压反馈（方案 5.1）：缩放 + 变浅 + 阴影加深 */
+/* 按压反馈（方案 5.1）：只压暗 + 阴影加深——scale 会让宋体逐帧重栅格化抖动，
+   且点卡片进详情与视差同帧（11-25 方案二） */
 .card--hover {
-  transform: scale(0.985);
   opacity: 0.94;
   box-shadow:
     0 4rpx 12rpx rgba(121, 81, 61, 0.06),

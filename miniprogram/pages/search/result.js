@@ -121,6 +121,10 @@ Page({
   onUnload() {
     this.cancelSuggestTimers();
     this._suggestSeq = (this._suggestSeq || 0) + 1;
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
   },
 
   onPageScroll() {
@@ -575,12 +579,17 @@ Page({
   onTapItem(e) {
     const id = e.detail && e.detail.itemId;
     if (!id) return;
-    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    // 连点防抖：导航中再点不重复入栈
+    if (this._navTimer) return;
+    // 视差：先让左移起步 100ms 再导航（11-25 方案主因 1）
     this.setData({ parallax: true });
-    wx.navigateTo({
-      url: '/pages/item/detail?id=' + id,
-      fail: () => util.toast('详情页打开失败')
-    });
+    this._navTimer = setTimeout(() => {
+      this._navTimer = null;
+      wx.navigateTo({
+        url: '/pages/item/detail?id=' + id,
+        fail: () => util.toast('详情页打开失败')
+      });
+    }, 100);
   },
 
   // ---------------- 登录与返回 ----------------

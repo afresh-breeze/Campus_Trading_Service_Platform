@@ -61,7 +61,7 @@
       <view class="card me-state__card">
         <text class="t-title">加载失败</text>
         <text class="t-sub me-state__desc">{{error}}</text>
-        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+        <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">重新加载</button>
       </view>
     </view>
 
@@ -134,6 +134,7 @@
                 wx:for-item="act"
                 class="me-act {{act.key === 'cancel' ? 'me-act--danger' : (act.key === 'complete' ? 'me-act--primary' : '')}}"
                 size="mini"
+                hover-class="me-act--hover"
                 data-key="{{act.key}}"
                 data-id="{{card.orderId}}"
                 catchtap="onAction"

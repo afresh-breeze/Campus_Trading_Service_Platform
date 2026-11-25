@@ -30,7 +30,7 @@
 }
 
 .mine-hero--hover {
-  transform: scale(0.985);
+  /* 全站口径：只压暗不缩放（11-25 方案二） */
   opacity: 0.94;
 }
 

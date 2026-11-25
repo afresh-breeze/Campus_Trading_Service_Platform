@@ -207,9 +207,10 @@ Page({
 
   onReady() {
     // 入场动画播完移除动画类：transform 常驻会改变后代 fixed 的包含块（detail-bar 错位的老坑）
+    // 摘类对齐 180ms：动画 180ms、此前 220ms 多占 40ms 合成层（11-25 方案次级表）
     this._enterTimer = setTimeout(() => {
       if (this.data.anim === 'enter') this.setData({ anim: '' });
-    }, 220);
+    }, 180);
   },
 
   onNavBack() {

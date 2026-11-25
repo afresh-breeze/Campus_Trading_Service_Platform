@@ -121,13 +121,36 @@ Page({
   // 整块吸顶后标题区完全冻结，不做任何滚动响应动画（用户 11-15 定稿口径）
 
   onShow() {
-    if (this.data.parallax) this.setData({ parallax: false });
+    // 先记下是否带着视差态回页（从详情返回），复位后按路径分流刷新时机
+    const wasParallax = this.data.parallax;
+    if (wasParallax) this.setData({ parallax: false });
     const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (bar && typeof bar.syncSelected === 'function') {
       bar.syncSelected(TAB_INDEX);
     }
-    // 从详情页回来必须刷新：刚接走的单要从列表消失
-    this.refresh();
+    if (wasParallax) {
+      // 视差回弹（220ms）结束后再刷新：刚接走的单也要从列表消失，但晚 260ms 不影响正确性
+      // （复位、diff、图片重排不同帧，11-25 方案主因 2）
+      if (this._showRefreshTimer) clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = setTimeout(() => {
+        this._showRefreshTimer = null;
+        this.refresh();
+      }, 260);
+    } else {
+      // 从详情页回来必须刷新：刚接走的单要从列表消失
+      this.refresh();
+    }
+  },
+
+  onUnload() {
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
+    if (this._showRefreshTimer) {
+      clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = null;
+    }
   },
 
   onRefresh() {
@@ -274,12 +297,17 @@ Page({
   onTapOrder(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return;
-    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    // 连点防抖：导航中再点不重复入栈
+    if (this._navTimer) return;
+    // 视差：先让左移起步 100ms 再导航（11-25 方案主因 1）
     this.setData({ parallax: true });
-    wx.navigateTo({
-      url: '/pages/errand/detail?id=' + id,
-      fail: () => util.toast('详情页打开失败')
-    });
+    this._navTimer = setTimeout(() => {
+      this._navTimer = null;
+      wx.navigateTo({
+        url: '/pages/errand/detail?id=' + id,
+        fail: () => util.toast('详情页打开失败')
+      });
+    }, 100);
   },
 
   onPublish() {

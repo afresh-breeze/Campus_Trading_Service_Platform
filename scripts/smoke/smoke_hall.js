@@ -90,6 +90,8 @@ function flushNext(ok, payload) {
 
 /** 等两轮微任务，让 then/catch 跑完 */
 const tick = () => new Promise((r) => setTimeout(r, 0));
+/** 等指定毫秒（视差 100ms 延迟导航的时序断言用） */
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function order(id, extra) {
   return Object.assign(
@@ -244,7 +246,13 @@ function order(id, extra) {
   navs.length = 0;
   const p7 = makePage();
   p7.onTapOrder({ currentTarget: { dataset: { id: 2001 } } });
-  check('点卡片进详情', navs[0] === '/pages/errand/detail?id=2001', navs);
+  check('点击立即置视差', p7.data.parallax === true);
+  check('视差先起步，100ms 内不导航（11-25 方案主因 1）', navs.length === 0, navs);
+  p7.onTapOrder({ currentTarget: { dataset: { id: 2001 } } });
+  check('导航中连点防抖不重复入栈', navs.length === 0 && p7._navTimer !== null);
+  await wait(120);
+  check('100ms 后进详情', navs[0] === '/pages/errand/detail?id=2001', navs);
+  check('导航后防抖释放（可再次点击）', p7._navTimer === null);
   p7.onTapOrder({ currentTarget: { dataset: {} } });
   check('无 id 不跳转', navs.length === 1);
   appState.login = false;
@@ -339,7 +347,8 @@ function order(id, extra) {
   check('报酬 40rpx/700', /\.order__price\s*\{[\s\S]*?font-size: 40rpx[\s\S]*?font-weight: 700/.test(wxss), '报酬字号不符');
   check('规格与时间都压成中性灰胶囊', /tag tag-gray order__tag/.test(wxml) && !/tag-warning order__tag/.test(wxml), '时间胶囊仍用 warning 色');
   check('物品描述 26rpx + 左引线', /\.order__desc\s*\{[\s\S]*?border-left: 2rpx solid var\(--color-border\)[\s\S]*?font-size: 26rpx/.test(wxss), '描述样式不符');
-  check('按压反馈仍是整卡 scale 0.985（未被层级改动破坏）', /\.order--hover\s*\{[\s\S]*?scale\(0\.985\)/.test(wxss), '按压口径丢失');
+  check('按压反馈只压暗不缩放（11-25 方案二：scale 违规已移除）',
+    /\.order--hover\s*\{[^}]*opacity:\s*0\.94/.test(wxss) && !/\.order--hover\s*\{[^}]*scale\(/.test(wxss), '按压口径不符');
 
   console.log('\n[13] 取件地点短文案：优先地标（11-25 用户反馈）');
   const campusUtil = require(path.join(MP, 'utils/campus.js'));

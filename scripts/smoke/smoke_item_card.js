@@ -128,6 +128,8 @@ check('时间节点带 list 模式判断', /wx:if="\{\{mode === 'list' && timeTe
 check('meta--empty 兼容仅有时间的情况', /conditionText \|\| placeText \|\| \(mode === 'list' && timeText\)/.test(wxml), 'meta--empty 条件未含 timeText');
 const wxss = fs.readFileSync(path.join(MP, 'components/item-card/index.wxss'), 'utf8');
 check('时间样式 22rpx + text-3', /\.card__time[\s\S]*?font-size: 22rpx[\s\S]*?color: var\(--color-text-3/.test(wxss), '样式不符');
+check('卡片按压只压暗不缩放（11-25 方案二：scale 与视差同帧最伤）',
+  /\.card--hover\s*\{[^}]*opacity:\s*0\.94/.test(wxss) && !/\.card--hover\s*\{[^}]*scale\(/.test(wxss), '按压口径不符');
 
 console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
 process.exit(fail ? 1 : 0);

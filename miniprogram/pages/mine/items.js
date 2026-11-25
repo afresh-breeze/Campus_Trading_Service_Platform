@@ -65,7 +65,9 @@ Page({
   },
 
   onShow() {
-    if (this.data.parallax) this.setData({ parallax: false });
+    // 先记下是否带着视差态回页（从详情返回），复位后按路径分流刷新时机
+    const wasParallax = this.data.parallax;
+    if (wasParallax) this.setData({ parallax: false });
     if (!listCommon.hasLogin()) {
       if (!this._loginRedirected) listCommon.redirectToLogin(PAGE_PATH);
       this.setData({ loading: false, error: '请先登录' });
@@ -87,12 +89,29 @@ Page({
     ) {
       return;
     }
-    this.refreshLoaded();
+    if (wasParallax) {
+      // 视差回弹（220ms）结束后再拉数据（11-25 方案主因 2）
+      if (this._showRefreshTimer) clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = setTimeout(() => {
+        this._showRefreshTimer = null;
+        this.refreshLoaded();
+      }, 260);
+    } else {
+      this.refreshLoaded();
+    }
   },
 
   onUnload() {
     this._reqSeq += 1;
     listCommon.clearLoadingWatchdog(this);
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
+    if (this._showRefreshTimer) {
+      clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = null;
+    }
   },
 
   onRefresh() {
@@ -181,12 +200,17 @@ Page({
   onTapItem(e) {
     const id = Number((e.detail && e.detail.itemId) || 0);
     if (!id) return;
-    // 视差：原页内容左移 20px，返回 onShow 回弹（11-25 转场增强）
+    // 连点防抖：导航中再点不重复入栈
+    if (this._navTimer) return;
+    // 视差：先让左移起步 100ms 再导航（11-25 方案主因 1）
     this.setData({ parallax: true });
-    wx.navigateTo({
-      url: '/pages/item/detail?id=' + id,
-      fail: () => util.toast('详情页打开失败')
-    });
+    this._navTimer = setTimeout(() => {
+      this._navTimer = null;
+      wx.navigateTo({
+        url: '/pages/item/detail?id=' + id,
+        fail: () => util.toast('详情页打开失败')
+      });
+    }, 100);
   },
 
   onRetry() {

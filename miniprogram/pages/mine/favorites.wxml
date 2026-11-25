@@ -43,7 +43,7 @@
   <view wx:elif="{{error}}" class="card fav-state">
     <text class="t-title">{{error === '请先登录' ? '请先登录' : '加载失败'}}</text>
     <text class="t-sub fav-state__desc">{{error === '请先登录' ? '登录后查看你收藏的商品' : error}}</text>
-    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重新加载'}}</button>
+    <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重新加载'}}</button>
   </view>
 
   <!-- 空态 -->

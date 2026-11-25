@@ -33,7 +33,7 @@
       <view class="card cl-state__card">
         <text class="t-title">加载失败</text>
         <text class="t-sub cl-state__desc">{{error}}</text>
-        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+        <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">重新加载</button>
       </view>
     </view>
 
