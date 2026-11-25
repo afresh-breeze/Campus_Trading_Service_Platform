@@ -564,6 +564,14 @@
 - .pull-eyes 弃 flex 改 text-align 居中（refresher 容器内 flex 不可靠）。
 - **验证**：smoke_detail 92/0、契约 168/0。
 
+#### 40）11-25 当日任务：fixed 元素移出 scroll-view（detail-bar/FAB 错位修复）
+
+- 用户截图报代取详情底栏错位 → 根因 v0.46 包 scroll-view 后 fixed 被内部 transform 破坏。
+- detail-bar、index/hall fab 移到滚动容器外；favorites 心形 absolute 无波及。
+- **经验沉淀：包 scroll-view 时页内 fixed 元素必须移出，sticky 不受影响。**
+- **验证**：wxml_check PASS、冒烟 **596/0**、契约 **168/0**。
+
+
 
 
 
