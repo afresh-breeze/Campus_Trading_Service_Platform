@@ -44,7 +44,9 @@
     <block wx:for="{{marketCards}}" wx:key="key" wx:for-item="sec" wx:for-index="secIndex">
       <view class="mkt-card__divider" wx:if="{{secIndex > 0}}"></view>
       <view class="mkt-sec mkt-sec--{{sec.key}}">
-        <view class="mkt-sec__inner" wx:if="{{sec.key === 'shop'}}">
+        <!-- 两区 DOM 统一：文字区在前（左）、插画在后（右）——11-25 用户要求代取区与
+             二手市场左缘对齐、插画与上方插画同列 -->
+        <view class="mkt-sec__inner">
           <view class="mkt-sec__title">{{sec.title}}</view>
           <view
             class="mkt-card__row"
@@ -63,23 +65,6 @@
         </view>
         <view class="mkt-sec__art">
           <image class="mkt-card__img mkt-card__img--{{sec.key}}" src="{{sec.art}}" mode="heightFix" />
-        </view>
-        <view class="mkt-sec__inner" wx:if="{{sec.key === 'errand'}}">
-          <view class="mkt-sec__title">{{sec.title}}</view>
-          <view
-            class="mkt-card__row"
-            wx:for="{{sec.rows}}"
-            wx:key="key"
-            wx:for-item="row"
-            data-url="{{row.url}}"
-            data-auth="{{row.auth}}"
-            bindtap="onTapCell"
-            hover-class="mkt-card__row--press"
-          >
-            <text class="mkt-card__name">{{row.text}}</text>
-            <text class="mkt-card__num">{{row.value}}</text>
-            <text class="mkt-card__arrow">›</text>
-          </view>
         </view>
       </view>
     </block>
