@@ -653,6 +653,16 @@
 - **验证**：smoke_login 59/0、冒烟 **655/0**、契约 **168/0**、wxml_check PASS。
 - 预览：login-eyes-preview.html + pose-splash/pose-down/pose-rise/final/final-closed 入库。
 
+#### 50）11-25 当日任务：登录页真机修复（穿帮 + 待机断档）
+
+- 真机反馈①开场「校园易站」从屏幕底部穿帮：根因是 `translateY(100%)` 相对**元素自身
+  高度**，`.login-body` 流式高度不足一屏 → 加 `min-height: 100vh`（+ box-sizing）。
+- 真机反馈②待机扫视消失：`eyes-move` 只挂在 `.intro .pupil` 链式动画，摘类后基础态
+  无动画 → 基础 `.pupil` 直接挂 `eyes-move infinite`，开场由 `.intro` 覆盖接管，无缝。
+- smoke_login 增两条回闸：**61/0**；冒烟合计 **657/0**、契约 **168/0**。
+- **通用坑**：百分比 translateY 只相对自身高度——入场「移出整屏」的载体必须自己撑满
+  一屏（min-height: 100vh）；链式动画播完摘类后，基础态必须自己挂上后续循环动画。
+
 
 
 

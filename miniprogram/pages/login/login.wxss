@@ -27,7 +27,10 @@ page {
 
 /* ---------------- 内容层（入场动画载体） ---------------- */
 .login-body {
-  /* 无额外布局，只作 login-rise 的动画挂点 */
+  /* 满屏高：login-rise 的 translateY(100%) 才能移出整屏，
+     否则流式内容高度不足、开场时标题从屏幕底边穿帮（真机 11-25 反馈） */
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 /* ---------------- 标题 ---------------- */
@@ -149,6 +152,9 @@ page {
   border-radius: 50%;
   background-color: var(--color-primary-dark);
   transition: opacity 120ms ease;
+  /* 待机扫视挂在基础态：js 摘掉 .intro 后依然运行（真机 11-25 反馈「一直只看向前方」）。
+     开场由 .intro .pupil 的链式动画接管，2600ms 后 eyes-move 重新起步，衔接无缝 */
+  animation: eyes-move var(--dur, 10000ms) linear infinite;
 }
 
 /* 待机扫视：与 loading-eyes 完全同拍（中→左→右→下→回中，循环无缝） */

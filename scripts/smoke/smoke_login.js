@@ -139,6 +139,10 @@ const seg = (from, to) => {
   check('眼睛几何与 loading-eyes 同源（eye 64 / pupil 40 / travel 20）',
     /width:\s*64rpx/.test(wxss) && /width:\s*40rpx/.test(wxss) && /translate\(-20rpx,\s*0\)/.test(wxss));
   check('眯眼方向：左眼 >（sq--gt 镜像）', /\.sq--gt\s*\{[^}]*scaleX\(-1\)/.test(wxss));
+  check('内容层满屏高（translateY(100%) 才能移出整屏，防开场标题穿帮）',
+    /\.login-body\s*\{[^}]*min-height:\s*100vh/.test(wxss));
+  check('待机扫视挂基础态 .pupil（摘 .intro 后动画不中断）',
+    /\.pupil\s*\{[^}]*animation:\s*eyes-move/.test(wxss));
   check('开场起点由 js 计算（胶囊 + 屏高）', js.indexOf('getMenuButtonBoundingClientRect') >= 0);
   check('有减弱动态效果降级', wxss.indexOf('prefers-reduced-motion') >= 0);
   check('编排 2600ms 与 INTRO_HOLD_MS=2800 对齐', /2600ms/.test(wxss) && /INTRO_HOLD_MS\s*=\s*2800/.test(js));
