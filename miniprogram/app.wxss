@@ -162,12 +162,11 @@ scroll-view {
   flex: 1;
   min-height: 0;
 }
-/* refresher 区：眼睛居中 */
+/* refresher 区：眼睛居中——text-align 方案（与页面加载态同款，flex 在 refresher
+   容器内不可靠，11-25 用户反馈下拉条未居中后改写） */
 .pull-eyes {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16rpx 0;
+  text-align: center;
+  padding: 20rpx 0;
 }
 /* B-2：底部避让只属于 tab 页（悬浮胶囊 tabBar 会遮挡内容），
    非 tab 页（详情/发布等）不再多出一条底部留白 */

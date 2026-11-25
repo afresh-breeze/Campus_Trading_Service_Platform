@@ -57,35 +57,36 @@
   animation: eyes-move var(--dur, 10000ms) infinite;
 }
 
-/* 扫视节奏（节拍与原版一致，相位前移）：0% 就看向左——加载太快时用户第一眼
-   也是「偏着头」的动态帧，不会看到静止的正中（11-25 用户反馈）：
-   左（开场） → 右 → 下 → 回中 → 回左（无缝循环） */
+/* 扫视节奏（节拍与原版一致，开场重排）：0% 居中 → 4% 内快速扫向左——
+   开场有「从中间过渡到看向一边」的移动过程才算动态（11-25 用户反馈二次修正）：
+   中（开场）→ 左 → 右 → 下 → 回中（与 0% 衔接，循环无缝） */
 @keyframes eyes-move {
-  0%,
-  10% {
-    transform: translate(-20rpx, 0);
+  0% {
+    transform: translate(0, 0);
   }
-  13%,
+  4%,
   40% {
-    transform: translate(20rpx, 0);
+    transform: translate(-20rpx, 0);
   }
   43%,
   70% {
-    transform: translate(0, 20rpx);
+    transform: translate(20rpx, 0);
   }
   73%,
   90% {
-    transform: translate(0, 0);
+    transform: translate(0, 20rpx);
   }
   93%,
   100% {
-    transform: translate(-20rpx, 0);
+    transform: translate(0, 0);
   }
 }
 
-/* 眨眼节奏（与原版一致）：每次转向前眯一下——eye 高度收缩，overflow 裁掉瞳孔 */
+/* 眨眼节奏（与原版一致，开场加一次）：每次转向前眯一下——eye 高度收缩，overflow 裁掉瞳孔。
+   开场 1% 眨眼与 0→4% 的「中→左」扫视同拍，加载第一眼就是「眨眼+转头」的动态帧 */
 @keyframes eyes-blink {
   0%,
+  2%,
   10%,
   12%,
   20%,
@@ -102,6 +103,7 @@
   100% {
     height: 64rpx;
   }
+  1%,
   11%,
   21%,
   41%,
