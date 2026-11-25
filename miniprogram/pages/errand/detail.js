@@ -41,6 +41,23 @@ for (let i = 0; i < RING_STEPS; i++) {
   });
 }
 
+/* ---------------- 小票装饰（11-25 用户预览确认「细锯齿」版） ----------------
+   两者都是固定数据、只算一次，页面里用 wx:for 铺出来，不占运行时开销：
+   · SAW_TEETH：锯齿边的齿数。纸面在 rpx 下恒为 686rpx（750 - 两侧 32rpx），
+     齿距 26rpx → 26.4 齿，取 27 齿（702rpx）由 .receipt__saw 的 overflow 裁掉末齿；
+   · BAR_WIDTHS：卡通条形码每根条的宽度（rpx），厚薄交替 + 4rpx 间距，
+     合计约 438rpx，与预览图里 220px 宽的条码一致。 */
+const SAW_TEETH = [];
+for (let i = 0; i < 27; i++) SAW_TEETH.push(i);
+
+const BAR_WIDTHS = [
+  9, 5, 12, 5, 7, 5, 10, 5, 6, 5,
+  12, 5, 8, 5, 6, 5, 11, 5, 9, 5,
+  7, 5, 12, 5, 6, 5, 10, 5, 8, 5,
+  11, 5, 7, 5, 9, 5, 12, 5, 6, 5
+];
+const BAR_BARS = BAR_WIDTHS.map((w, i) => ({ k: i, w: w }));
+
 /** 时间口径：asap 无时间字段；deadline 只有截止；range 有起止 */
 function timeText(order) {
   if (!order) return '';
@@ -100,6 +117,11 @@ Page({
     routeFromMain: '',
     routeFromSub: '',
     routeDots: [],
+    // 小票装饰：齿数 / 条码条宽都是固定数据，放 data 里让 wxml 直接 wx:for
+    sawTeeth: SAW_TEETH,
+    barBars: BAR_BARS,
+    receiptDate: '',
+    receiptPrintTime: '',
     rewardText: '0.00',
     timeText: '',
     createdText: '',
@@ -192,6 +214,8 @@ Page({
     const isPublisher = !!myId && Number(order.publisherId) === myId;
     const isRunner = !!order.runnerId && Number(order.runnerId) === myId;
     const publisherNick = order.publisherNickname || '发布者';
+    // 小票落款只取一次「此刻」，避免两次 new Date() 跨分钟导致日期与时间不一致
+    const printAt = new Date();
 
     // 联系谁：我是发布者找接单人；其他人（接单者 / 聊过私单的跑腿 / 大厅单的潜在跑腿）找发布者
     let chatPeerId = 0;
@@ -225,6 +249,9 @@ Page({
           ? order.pickupArea
           : '',
       routeDots,
+      // 小票落款（11-25）：日期与「打印时间」都取此刻，每次进入页面重算，不缓存
+      receiptDate: util.formatTime(printAt, false),
+      receiptPrintTime: util.formatTime(printAt),
       rewardText: util.formatPrice(order.reward),
       timeText: timeText(order),
       createdText: util.fromNow(order.createdAt),

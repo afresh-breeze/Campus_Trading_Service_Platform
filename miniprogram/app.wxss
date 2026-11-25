@@ -31,6 +31,8 @@ page {
   --color-divider: #F1EAE0;
   --color-bg: #F4F1E7;
   --color-bg-white: #FFFFFF;
+  /* 小票纸面（11-25）：比纯白偏暖一点点，压在 --color-bg 上才有「一张纸」的层次 */
+  --color-paper: #FFFDF7;
   /* 按压反馈面（hover-class）：与 divider 同色。
      11-18 A 复查：此前 hall/profile/settings/help 用了它但这里没定义，hover 反馈实际不生效 */
   --color-surface-2: #F1EAE0;

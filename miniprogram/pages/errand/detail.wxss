@@ -16,6 +16,92 @@
   padding-bottom: calc(230rpx + env(safe-area-inset-bottom));
 }
 
+/* ---------------- 小票外壳（11-25 用户预览确认「细锯齿」版） ----------------
+   纸面 --color-paper 压在 --color-bg 上，上下各一条锯齿边：
+   齿距 26rpx（左右各 13rpx 透明 border）、齿高 16rpx，纯 CSS 三角、不用图片。
+   rpx 下纸面宽度恒为 686rpx（750 - 两侧 32rpx），27 齿共 702rpx，末齿被 overflow 裁掉。
+   四张卡片进小票后变成透明分段，卡片间距换成一条虚线撕线（用户：把几个组件连起来） */
+.receipt {
+  position: relative;
+}
+.receipt__body {
+  padding: 26rpx 36rpx 34rpx;
+  background-color: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+.receipt__saw {
+  display: flex;
+  height: 16rpx;
+  overflow: hidden;
+}
+/* 齿：26×16rpx 的盒子里只留一个 13rpx+13rpx 宽的三角（border-box 下内容区为 0）。
+   box-sizing 必须在这里显式声明——不能赌 app.wxss 的全局 border-box 规则一直在；
+   否则 content-box 下盒子会变成 26×32，超出 .receipt__saw 的 16rpx 高被整条裁没 */
+.receipt__tooth {
+  flex: none;
+  box-sizing: border-box;
+  width: 26rpx;
+  height: 16rpx;
+  border-left: 13rpx solid transparent;
+  border-right: 13rpx solid transparent;
+}
+/* 上齿：底边贴着纸面、齿尖朝上；下齿反过来（齿尖朝下） */
+.receipt__tooth--top {
+  border-bottom: 16rpx solid var(--color-paper);
+}
+.receipt__tooth--bottom {
+  border-top: 16rpx solid var(--color-paper);
+}
+/* 小票内卡片不再是独立浮层：去底色 / 圆角 / 阴影 / 内边距（内边距交给 .receipt__body 与小票分段） */
+.receipt__body .card {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+.receipt__body .card + .card {
+  margin-top: 0;
+}
+/* 分段之间：虚线与上下留白（3rpx dashed 沿用路线卡备注的口径） */
+.receipt__body .receipt__sec + .receipt__sec {
+  margin-top: 26rpx;
+  padding-top: 26rpx;
+  border-top: 3rpx dashed var(--color-border);
+}
+
+/* ---------------- 小票落款：条形码 + 日期 + 打印时间（11-25） ----------------
+   卡通条形码用纯 view 拼条：宽度由 js 给固定值（3~12rpx）、统一 84rpx 高、2rpx 外侧间距 */
+.receipt-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.receipt-code__bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+}
+.receipt-code__bar {
+  flex: none;
+  height: 84rpx;
+  margin: 0 2rpx;
+  background-color: var(--color-text);
+}
+.receipt-code__date {
+  /* 字距会让末字多出一格，用等量左外边距把视觉重新居中 */
+  margin: 12rpx 0 0 6rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  letter-spacing: 6rpx;
+  color: var(--color-text);
+}
+.receipt-code__print {
+  margin-top: 10rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+
 /* ---------------- 加载 / 错误 ---------------- */
 .detail-state {
   padding: 100rpx 0;
