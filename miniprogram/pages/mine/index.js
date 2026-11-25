@@ -53,6 +53,22 @@ const GROUPS = [
   }
 ];
 
+// 11-25 用户反馈：「发布」和「我发布的」并列太易混淆 → 按域拆两组，组名写明二手/代取
+const STAT_GROUPS = [
+  { key: 'shop', title: '二手', keys: ['items', 'favorites'] },
+  { key: 'errand', title: '代取', keys: ['errands', 'completed'] }
+];
+
+function toGroups(stats) {
+  const byKey = {};
+  stats.forEach((st) => { byKey[st.key] = st; });
+  return STAT_GROUPS.map((g) => ({
+    key: g.key,
+    title: g.title,
+    items: g.keys.map((k) => byKey[k])
+  }));
+}
+
 /** 统计占位：value 用字符串，避免 setData 时被当成 0 */
 function emptyStats() {
   return STAT_ITEMS.map((s) => ({ key: s.key, label: s.label, url: s.url, value: '—' }));
@@ -79,7 +95,7 @@ Page({
     initial: '校',
     nickname: '点击登录',
     subText: '登录后可发布、收藏与接单',
-    stats: emptyStats(),
+    statGroups: toGroups(emptyStats()),
     groups: GROUPS,
     version: APP_VERSION
   },
@@ -140,7 +156,7 @@ Page({
       initial: '校',
       nickname: '点击登录',
       subText: '登录后可发布、收藏与接单',
-      stats: emptyStats()
+      statGroups: toGroups(emptyStats())
     });
   },
 
@@ -180,7 +196,7 @@ Page({
         p.then((d) => (d && d.total !== undefined ? adapter.num(d.total, null) : null)).catch(() => null)
       )
     ).then((nums) => {
-      this.setData({ stats: buildStats(nums) });
+      this.setData({ statGroups: toGroups(buildStats(nums)) });
       return nums;
     });
   },

@@ -38,18 +38,28 @@
     <text class="mine-hero__arrow">›</text>
   </view>
 
-  <!-- 四项统计：点数字直接进对应列表 -->
+  <!-- 四项统计拆两组：二手（发布/收藏）+ 代取（我发布的/我完成的），组名消歧义 -->
   <view class="mine-stats">
     <view
-      class="mine-stats__item"
-      wx:for="{{stats}}"
+      class="mine-stats__group"
+      wx:for="{{statGroups}}"
       wx:key="key"
-      data-url="{{item.url}}"
-      bindtap="onTapStat"
-      hover-class="mine-stats__item--hover"
+      wx:for-item="grp"
     >
-      <text class="mine-stats__num">{{item.value}}</text>
-      <text class="mine-stats__label">{{item.label}}</text>
+      <view class="mine-stats__group-title">{{grp.title}}</view>
+      <view class="mine-stats__group-row">
+        <view
+          class="mine-stats__item"
+          wx:for="{{grp.items}}"
+          wx:key="key"
+          data-url="{{item.url}}"
+          bindtap="onTapStat"
+          hover-class="mine-stats__item--hover"
+        >
+          <text class="mine-stats__num">{{item.value}}</text>
+          <text class="mine-stats__label">{{item.label}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
