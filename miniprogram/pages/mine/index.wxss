@@ -126,9 +126,6 @@
   font-weight: 700;
   color: var(--color-text);
 }
-.mkt-sec--errand .mkt-sec__title {
-  text-align: right;
-}
 /* 行：名称左 / 数量右 / 箭头最右；按压背景平滑变化（压暗不缩放，A 侧口径防字抖） */
 .mkt-card__row {
   display: flex;
@@ -175,21 +172,15 @@
   justify-content: center;
   padding: 20rpx 16rpx 20rpx 0;
 }
-.mkt-sec--errand .mkt-sec__art {
-  order: 1;
-  padding: 20rpx 0 20rpx 16rpx;
-}
-.mkt-sec--errand .mkt-sec__inner {
-  order: 2;
-}
+/* 代取区不再镜像（11-25 用户反馈）：文字区左与二手市场对齐、插画在右，标题左上 */
 .mkt-card__img--shop {
   height: 236rpx;
   width: 236rpx;
   opacity: 0.55;
 }
 .mkt-card__img--errand {
-  height: 300rpx;
-  width: 300rpx;
+  height: 236rpx;
+  width: 236rpx;
   opacity: 0.55;
 }
 
