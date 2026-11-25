@@ -177,7 +177,7 @@
 
     <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
     <block wx:if="{{firstLoading}}">
-      <view class="sk-card">
+      <view class="search-state search-state--loading">
         <loading-eyes />
       </view>
     </block>

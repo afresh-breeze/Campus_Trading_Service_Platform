@@ -13,6 +13,11 @@
 }
 
 /* ---------------- 骨架屏 ---------------- */
+/* 首屏加载：眼睛无白卡直接居中（11-25，去掉 sk-card 底框） */
+.detail-sk {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
+}
 .detail-sk__gallery {
   height: 520rpx;
   border-radius: var(--radius-inner);

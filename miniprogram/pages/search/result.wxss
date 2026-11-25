@@ -513,6 +513,12 @@
 .search-state__card {
   text-align: center;
 }
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，去掉 sk-card 底框） */
+.search-state--loading {
+  text-align: center;
+  padding: 160rpx var(--space-page) 40rpx;
+}
 .search-state__desc {
   display: block;
   margin: var(--space-sm) 0 var(--space);

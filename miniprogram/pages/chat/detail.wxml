@@ -14,7 +14,7 @@
 
 <view wx:elif="{{loading}}" class="page page-body">
   <nav-top back />
-  <view class="sk-card">
+  <view class="cd-loading">
     <loading-eyes />
   </view>
 </view>

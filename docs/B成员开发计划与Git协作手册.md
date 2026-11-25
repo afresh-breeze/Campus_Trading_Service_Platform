@@ -534,6 +534,17 @@
 - **验证**：smoke_detail [16] 扩到 11 条（含全站 13 处表驱动断言 + 旧「加载中」全站禁残留）
   → **92/0**，合计 **595/0**，契约 168/0；常规/mini 两档无头渲染确认（`loading-eyes-mini.png`）。
 
+#### 37）11-25 当日任务：加载态去白卡底框（用户反馈「不要后面的白色背景框」）
+
+- 四个页面 loading 包装从 `sk-card`（白底卡：margin/padding/白底/圆角/阴影）换成无背景 state 类：
+  search/result → `search-state--loading`、chat/detail → 新增 `cd-loading`、
+  chat/list → `cl-state--loading`、errand/runners → `rp-state--loading`；
+  另给 item/detail 裸 `detail-sk` 补居中样式（此前无定义）。
+- 统一形态：`text-align: center` + 上 160rpx 下 40rpx 留白，眼睛+短句直接坐在页面底色上，无白框。
+- 页面 wxml 内 `sk-card` 引用清零（hall 本就用 `hall-state`，未波及）。
+- **验证**：wxml_check PASS（5 个 wxml）；冒烟 12 脚本合计 **596/0**，契约 **168/0**。
+
+
 ### 0.5 每天建议节奏
 
 计划按每天 6 小时有效工作安排；有课的日子至少保证 4 小时，周末补到 6~8 小时。**里程碑不能挪，任务可以挪。**

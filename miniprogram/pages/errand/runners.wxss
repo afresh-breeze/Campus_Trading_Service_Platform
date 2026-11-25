@@ -173,6 +173,12 @@
 .rp-state__card {
   text-align: center;
 }
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，去掉 sk-card 底框） */
+.rp-state--loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
+}
 .rp-state__desc {
   display: block;
   margin: 12rpx 0 24rpx;
