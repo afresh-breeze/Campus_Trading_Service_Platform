@@ -181,7 +181,7 @@ Page({
     // 入场动画播完移除动画类：transform 常驻会改变后代 fixed 的包含块（detail-bar 错位的老坑）
     this._enterTimer = setTimeout(() => {
       if (this.data.anim === 'enter') this.setData({ anim: '' });
-    }, 340);
+    }, 280);
   },
 
   onNavBack() {
