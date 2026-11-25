@@ -589,6 +589,15 @@
 - js MARKET_CARDS/buildMarket 取代 STAT_* 家族；data statGroups→marketCards；GROUPS 收窄。
 - **验证**：冒烟 **596/0**、契约 **168/0**、旧引用 grep 清零；预览图入库 docs/b-ui-preview。
 
+#### 43）11-25 当日任务：插画卡二次反馈（标题加大/插画降透明/数量靠右修复/引导虚线）
+
+- **真机教训：flex 里 text 的 margin-left:auto 不生效**——shop 卡数量挤左。
+  行 DOM 按卡型分两套，DOM 顺序即视觉顺序。
+- 标题 font-xl；插画 opacity 0.55；errand 行加虚线 leader（目录页语言），name nowrap。
+- 层级口径：名称主 → 数量次 → 虚线/插画辅。
+- **验证**：冒烟 **596/0**、契约 **168/0**；预览 mine-market-cards-v2.png 入库。
+
+
 
 
 
