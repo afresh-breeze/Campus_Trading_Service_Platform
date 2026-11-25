@@ -580,6 +580,16 @@
 - **验证**：wxml_check PASS、冒烟 **596/0**、契约 **168/0**。
 - **A 页面波及**：items/favorites 吸顶条一行改动——群里告知。
 
+#### 42）11-25 当日任务：我的页统计条 → 二手/代取插画卡（先预览后落地）
+
+- 用户指定布局：上框「二手市场」（行数右）+ 下框「代取」镜像（插画左、标题右上、行数左、
+  接单设置留白）；两卡高度与插画齐平。
+- 流程：HTML mock 无头渲染两版定稿（v3 固定 img 高度）→ 落地。**经验：img 百分比高度在
+  无头渲染会回退 intrinsic 尺寸，mock 一律用固定高度。**
+- js MARKET_CARDS/buildMarket 取代 STAT_* 家族；data statGroups→marketCards；GROUPS 收窄。
+- **验证**：冒烟 **596/0**、契约 **168/0**、旧引用 grep 清零；预览图入库 docs/b-ui-preview。
+
+
 
 
 
