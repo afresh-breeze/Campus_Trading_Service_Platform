@@ -277,6 +277,12 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
     /font-family:\s*'Songti SC'[\s\S]*?serif;/.test(tabWxss),
     null
   );
+  // 宋体笔画细，次/辅级令牌需保持加深后的对比度（回退旧值即失守）
+  check(
+    '次/辅级令牌为宋体加深版（text-2 #594A3B / text-3 #7E6C5A）',
+    /--color-text-2:\s*#594A3B/.test(appWxss) && /--color-text-3:\s*#7E6C5A/.test(appWxss),
+    null
+  );
 
   // ============ [12] 无数据新账号 → 空态不是报错 ============
   console.log('\n[12] 新账号空态');

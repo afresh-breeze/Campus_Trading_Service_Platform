@@ -21,8 +21,11 @@ page {
 
   /* 中性色（暖奶茶调） */
   --color-text: #2E2119;
-  --color-text-2: #6B5B4D;
-  --color-text-3: #9A8875;
+  /* 11-25 全站宋体后次/辅级视觉对比度变浅（衬线笔画细），两档中性色同步加深：
+     text-2 #6B5B4D→#594A3B、text-3 #9A8875→#7E6C5A，仍为暖棕调；
+     白底对比度分别约 5.5:1→7.4:1、3.5:1→4.9:1 */
+  --color-text-2: #594A3B;
+  --color-text-3: #7E6C5A;
   --color-text-4: #C7B9A8;
   --color-border: #E9DFD0;
   --color-divider: #F1EAE0;
