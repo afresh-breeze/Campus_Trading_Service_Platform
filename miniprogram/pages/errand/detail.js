@@ -42,21 +42,22 @@ for (let i = 0; i < RING_STEPS; i++) {
 }
 
 /* ---------------- 小票装饰（11-25 用户预览确认「细锯齿」版） ----------------
-   两者都是固定数据、只算一次，页面里用 wx:for 铺出来，不占运行时开销：
-   · SAW_TEETH：锯齿边的齿数。纸面在 rpx 下恒为 686rpx（750 - 两侧 32rpx），
-     齿距 26rpx → 26.4 齿，取 27 齿（702rpx）由 .receipt__saw 的 overflow 裁掉末齿；
-   · BAR_WIDTHS：卡通条形码每根条的宽度（rpx），厚薄交替 + 4rpx 间距，
-     合计约 438rpx，与预览图里 220px 宽的条码一致。 */
+   SAW_TEETH 是固定数据、只算一次，页面里用 wx:for 铺出来，不占运行时开销：
+   纸面在 rpx 下恒为 686rpx（750 - 两侧 32rpx），齿距 26rpx → 26.4 齿，
+   取 27 齿（702rpx）由 .receipt__saw 的 overflow 裁掉末齿。 */
 const SAW_TEETH = [];
 for (let i = 0; i < 27; i++) SAW_TEETH.push(i);
 
-const BAR_WIDTHS = [
-  9, 5, 12, 5, 7, 5, 10, 5, 6, 5,
-  12, 5, 8, 5, 6, 5, 11, 5, 9, 5,
-  7, 5, 12, 5, 6, 5, 10, 5, 8, 5,
-  11, 5, 7, 5, 9, 5, 12, 5, 6, 5
+/* 小票落款图案（11-25 用户定稿）：原为 view 拼条形码，用户反馈像真的码
+   会引起误会（扫码/支付联想）→ 换成卡通线条图案随机展示。
+   图源 E:\Qin\photo\ui线条图案（512×512 黑线条透明底），入库 assets/receipt/，
+   每次打开详情页随机抽一张；刷新/回跳保持同一张，不闪变。 */
+const DOODLE_IMAGES = [
+  '/assets/receipt/doodle-1.png',
+  '/assets/receipt/doodle-2.png',
+  '/assets/receipt/doodle-3.png',
+  '/assets/receipt/doodle-4.png'
 ];
-const BAR_BARS = BAR_WIDTHS.map((w, i) => ({ k: i, w: w }));
 
 /** 时间口径：asap 无时间字段；deadline 只有截止；range 有起止 */
 function timeText(order) {
@@ -117,9 +118,9 @@ Page({
     routeFromMain: '',
     routeFromSub: '',
     routeDots: [],
-    // 小票装饰：齿数 / 条码条宽都是固定数据，放 data 里让 wxml 直接 wx:for
+    // 小票装饰：齿数固定；落款图案在 onLoad 里随机抽，进页面时定死
     sawTeeth: SAW_TEETH,
-    barBars: BAR_BARS,
+    receiptImage: DOODLE_IMAGES[0],
     receiptDate: '',
     receiptPrintTime: '',
     rewardText: '0.00',
@@ -151,6 +152,10 @@ Page({
       return;
     }
     this.setData({ id });
+    // 落款图案随机抽一张：只在打开页面时定，之后的 fetch/回跳不重抽（避免图案闪变）
+    this.setData({
+      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)]
+    });
   },
 
   // 从聊天页返回时必须看到最新状态（可能刚被接单/完成），所以每次 onShow 都重拉

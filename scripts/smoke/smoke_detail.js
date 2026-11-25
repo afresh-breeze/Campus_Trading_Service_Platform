@@ -172,8 +172,9 @@ function check(name, cond, extra) {
   check('小票外壳结构（receipt + 上下齿条 + 纸面 body）', wxmlReceipt, '结构不符');
   check('四张卡片都挂 receipt__sec', (wxmlD.match(/card detail-\w+ receipt__sec/g) || []).length === 4, '分段挂载不符');
   check('齿条上下各一条 wx:for（sawTeeth × 2）', (wxmlD.match(/wx:for="\{\{sawTeeth\}\}"/g) || []).length === 2, '齿条数量不符');
-  check('条形码结构（bars/bar/date/print + wx:for barBars）', /receipt-code__bars/.test(wxmlD) && /wx:for="\{\{barBars\}\}"/.test(wxmlD)
-    && /receipt-code__date/.test(wxmlD) && /打印时间：\{\{receiptPrintTime\}\}/.test(wxmlD), '条码区结构不符');
+  check('落款图案结构（image + 随机 receiptImage + 日期/打印时间）', /receipt-doodle__img/.test(wxmlD) && /src="\{\{receiptImage\}\}"/.test(wxmlD)
+    && /receipt-doodle__date/.test(wxmlD) && /打印时间：\{\{receiptPrintTime\}\}/.test(wxmlD), '落款区结构不符');
+  check('条码拼条已移除（防误会：不残留 bars/bar 节点与样式）', !/receipt-code/.test(wxmlD) && !/receipt-code/.test(wxssD) && !/barBars/.test(wxmlD), '条码残留');
   check('纸面走 --color-paper 令牌（wxss 不写死 #FFFDF7）', /background-color: var\(--color-paper\)/.test(wxssD) && !/#FFFDF7/i.test(wxssD), '纸面色不符');
   check('app.wxss 已定义 --color-paper', /--color-paper:\s*#FFFDF7/i.test(fsApp.readFileSync(path.join(REPO, 'app.wxss'), 'utf8')), '令牌缺失');
   check('齿：26rpx 齿距 + 16rpx 齿高', /width: 26rpx/.test(wxssD) && /height: 16rpx/.test(wxssD) && /border-left: 13rpx solid transparent/.test(wxssD), '齿几何不符');
@@ -181,10 +182,16 @@ function check(name, cond, extra) {
   check('齿条 overflow hidden（裁掉第 27 齿）', /\.receipt__saw\s*\{[\s\S]*?overflow: hidden/.test(wxssD), '齿条未裁边');
   check('小票内卡片去浮层（透明 + 无阴影 + 无内边距）', /\.receipt__body \.card\s*\{[\s\S]*?padding: 0[\s\S]*?background-color: transparent[\s\S]*?box-shadow: none/.test(wxssD), '卡片覆盖不符');
   check('分段之间是虚线撕线', /\.receipt__body \.receipt__sec \+ \.receipt__sec\s*\{[\s\S]*?border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '撕线不符');
-  check('条码条颜色用令牌（无新配色）', /background-color: var\(--color-text\)/.test(wxssD), '条码色不符');
-  check('js：27 齿 + 条码宽度表 + 日期/打印时间字段', (function () {
+  check('4 张落款图案已入库（doodle-1~4）', ['1', '2', '3', '4'].every(function (n) {
+    return fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'doodle-' + n + '.png'));
+  }), '图案文件缺失');
+  check('js：27 齿 + 图案清单 + 随机抽取 + 日期/打印时间字段', (function () {
     const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
-    return /i < 27/.test(src) && /const BAR_WIDTHS = \[/.test(src)
+    const onLoadBody = (src.match(/onLoad\(options\) \{[\s\S]*?\n  \},/) || [''])[0];
+    return /i < 27/.test(src)
+      && /const DOODLE_IMAGES = \[/.test(src)
+      && /doodle-1\.png/.test(src) && /doodle-4\.png/.test(src)
+      && /Math\.random\(\) \* DOODLE_IMAGES\.length/.test(onLoadBody)
       && /receiptDate: util\.formatTime\(printAt, false\)/.test(src)
       && /receiptPrintTime: util\.formatTime\(printAt\)/.test(src);
   })(), 'js 数据缺失');

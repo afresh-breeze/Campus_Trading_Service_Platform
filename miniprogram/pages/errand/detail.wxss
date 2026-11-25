@@ -69,34 +69,27 @@
   border-top: 3rpx dashed var(--color-border);
 }
 
-/* ---------------- 小票落款：条形码 + 日期 + 打印时间（11-25） ----------------
-   卡通条形码用纯 view 拼条：宽度由 js 给固定值（3~12rpx）、统一 84rpx 高、2rpx 外侧间距 */
-.receipt-code {
+/* ---------------- 小票落款：装饰图案 + 日期 + 打印时间（11-25） ----------------
+   原为 view 拼条形码，用户反馈像真的码会引起误会 → 换成随机线条图案
+   （assets/receipt/doodle-*.png，512×512 黑线条透明底，打开页面随机抽一张） */
+.receipt-doodle {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.receipt-code__bars {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 84rpx;
+.receipt-doodle__img {
+  width: 176rpx;
+  height: 176rpx;
 }
-.receipt-code__bar {
-  flex: none;
-  height: 84rpx;
-  margin: 0 2rpx;
-  background-color: var(--color-text);
-}
-.receipt-code__date {
+.receipt-doodle__date {
   /* 字距会让末字多出一格，用等量左外边距把视觉重新居中 */
-  margin: 12rpx 0 0 6rpx;
+  margin: 4rpx 0 0 6rpx;
   font-size: 26rpx;
   font-weight: 600;
   letter-spacing: 6rpx;
   color: var(--color-text);
 }
-.receipt-code__print {
+.receipt-doodle__print {
   margin-top: 10rpx;
   font-size: var(--font-xs);
   color: var(--color-text-3);
