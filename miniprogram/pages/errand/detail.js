@@ -51,11 +51,10 @@ for (let i = 0; i < 27; i++) SAW_TEETH.push(i);
 /* 小票落款图案（11-25 用户定稿）：原为 view 拼条形码，用户反馈像真的码
    会引起误会（扫码/支付联想）→ 换成卡通线条图案随机展示。
    图源 E:\Qin\photo\ui线条图案（512×512 黑线条透明底），按内容语义命名入库
-   assets/receipt/（dog 狗 / cat 睡猫 / mouse 老鼠 / cake 蛋糕 / umbrella 雨中撑伞 / trees 树丛），
-   每次打开详情页随机抽一张；刷新/回跳保持同一张，不闪变。
+   assets/receipt/（cat 睡猫 / mouse 老鼠 / cake 蛋糕 / umbrella 雨中撑伞 / trees 树丛；
+   狗图按用户要求已删），每次打开详情页随机抽一张；刷新/回跳保持同一张，不闪变。
    用户加新图：拷进 assets/receipt/ 按语义命名，再往清单追加一行即可。 */
 const DOODLE_IMAGES = [
-  '/assets/receipt/dog.png',
   '/assets/receipt/cat.png',
   '/assets/receipt/mouse.png',
   '/assets/receipt/cake.png',
