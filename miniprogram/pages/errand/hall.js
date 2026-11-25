@@ -128,8 +128,10 @@ Page({
     this.refresh();
   },
 
-  onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh().then(done, done);
   },
 
   onReachBottom() {
@@ -152,8 +154,8 @@ Page({
         patch
       )
     );
-    // 老基础库可能没有 pageScrollTo，缺函数时跳过回顶
-    if (wx.pageScrollTo) wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    // 回顶改走 scroll-view 的 scroll-top（11-25 下拉刷新改 refresher 后页级滚动失效）
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetch(1);
   },
 

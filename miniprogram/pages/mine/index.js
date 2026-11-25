@@ -93,8 +93,10 @@ Page({
     this.refresh();
   },
 
-  onPullDownRefresh() {
-    this.refresh(true).then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh(true).then(done, done);
   },
 
   /**

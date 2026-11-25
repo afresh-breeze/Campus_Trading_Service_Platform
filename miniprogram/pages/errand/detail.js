@@ -153,6 +153,13 @@ Page({
   },
 
   onLoad(options) {
+    // 11-25 下拉刷新改 scroll-view refresher（Mode A）：容器高度 = 视口 − 导航高度
+    try {
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+      this.setData({ stickyTop: menu && menu.bottom ? menu.bottom + 6 : 64 });
+    } catch (e) {
+      this.setData({ stickyTop: 64 });
+    }
     const id = Number((options && options.id) || 0);
     if (!id) {
       util.toast('缺少订单号');
@@ -179,8 +186,10 @@ Page({
     this.fetch();
   },
 
-  onPullDownRefresh() {
-    this.fetch().then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.fetch().then(done, done);
   },
 
   fetch() {

@@ -68,8 +68,10 @@ Page({
     if (app && typeof app.refreshUnread === 'function') app.refreshUnread();
   },
 
-  onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh().then(done, done);
   },
 
   onReachBottom() {

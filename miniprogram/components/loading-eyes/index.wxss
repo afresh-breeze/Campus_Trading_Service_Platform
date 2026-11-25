@@ -57,27 +57,29 @@
   animation: eyes-move var(--dur, 10000ms) infinite;
 }
 
-/* 扫视节奏（与原版一致）：中 → 左 → 右 → 下 → 回中 */
+/* 扫视节奏（节拍与原版一致，相位前移）：0% 就看向左——加载太快时用户第一眼
+   也是「偏着头」的动态帧，不会看到静止的正中（11-25 用户反馈）：
+   左（开场） → 右 → 下 → 回中 → 回左（无缝循环） */
 @keyframes eyes-move {
   0%,
   10% {
-    transform: translate(0, 0);
+    transform: translate(-20rpx, 0);
   }
   13%,
   40% {
-    transform: translate(-20rpx, 0);
+    transform: translate(20rpx, 0);
   }
   43%,
   70% {
-    transform: translate(20rpx, 0);
+    transform: translate(0, 20rpx);
   }
   73%,
   90% {
-    transform: translate(0, 20rpx);
+    transform: translate(0, 0);
   }
   93%,
   100% {
-    transform: translate(0, 0);
+    transform: translate(-20rpx, 0);
   }
 }
 

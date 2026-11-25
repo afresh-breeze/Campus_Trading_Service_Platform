@@ -1,5 +1,17 @@
 <!-- 找跑腿匹配页（B 成员，11-15）：私单已建好，这里只「展示 + 联系」，不改订单状态 -->
 <nav-top back title="{{pageTitle}}" />
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page-body">
 
   <!-- 登录门 -->
@@ -186,3 +198,4 @@
 
   <view class="safe-bottom"></view>
 </view>
+</scroll-view>

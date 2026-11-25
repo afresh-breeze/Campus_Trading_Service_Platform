@@ -544,6 +544,20 @@
 - 页面 wxml 内 `sk-card` 引用清零（hall 本就用 `hall-state`，未波及）。
 - **验证**：wxml_check PASS（5 个 wxml）；冒烟 12 脚本合计 **596/0**，契约 **168/0**。
 
+#### 38）11-25 当日任务：下拉刷新换眼睛 + 眼球首帧偏移 + 居中巡检收尾
+
+- 原生三点条样式只有 dark/light 两档 → 10 页全改 scroll-view refresher（slot 放 mini 眼睛，
+  motto 关、pull-eyes 居中、transparent 背景）；chat/detail 本就没开下拉（轮询覆盖）不加。
+- 组件 `eyes-move` 相位前移：0% 就看向左，加载再快第一眼也是动态帧；节拍/眨眼不变。
+- js：onPullDownRefresh→onRefresh（pulling 复位用 then(done,done) 防卡）；pageScrollTo 回顶
+  改 scroll-top 绑定抖动触发（7 处）；search onPageScroll 改挂 bindscroll。
+- 包裹两模式：Mode B 整页包 100vh scroll-view（导航非 fixed）；Mode A fixed 导航页
+  nav-top 外置 + sv-flex 内联高度（mine/items、favorites、errand/detail——detail 新算 stickyTop）。
+- 居中巡检：hall-state、me-state 补 --loading 居中变体（全站 13 个加载点闭环）。
+- **验证**：11 js 语法过、wxml_check PASS、冒烟 **596/0**、契约 **168/0**。
+- **A 页面结构级波及**：index、search、mine/items、mine/favorites——群里必须告知。
+
+
 
 ### 0.5 每天建议节奏
 

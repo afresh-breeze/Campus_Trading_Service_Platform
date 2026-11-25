@@ -1,5 +1,17 @@
 <!-- 消息列表（B 成员，11-14，tab 3）：会话卡片 + 未读红点 -->
 <nav-top />
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page--tab page-body">
 
   <!-- 登录门 -->
@@ -74,3 +86,4 @@
 
   <view class="safe-bottom"></view>
 </view>
+</scroll-view>

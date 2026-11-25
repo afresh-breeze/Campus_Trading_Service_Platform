@@ -2,6 +2,19 @@
 <!-- 11-16 反馈：返回按钮 fixed 固定在顶部，不随内容滚动消失（nav-top 组件 11-15 已支持 fixed） -->
 <nav-top back fixed />
 
+<view class="sv-flex" style="height: calc(100vh - {{stickyTop}}px)">
+<scroll-view
+  class="page-scroll page-scroll--fill"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
 <view class="detail {{actions.length ? 'detail--bar' : ''}}">
   <!-- 等待 / 加载失败互斥；404 说明无权可见，单独给「回大厅」出路 -->
   <view wx:if="{{loading}}" class="detail-state">
@@ -205,4 +218,6 @@
       bindtap="onAction"
     >{{item.text}}</button>
   </view>
+</view>
+</scroll-view>
 </view>

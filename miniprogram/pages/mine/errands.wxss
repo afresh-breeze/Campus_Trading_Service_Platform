@@ -198,6 +198,12 @@
 .me-state {
   padding: 40rpx 0;
 }
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，同 rp-state--loading 方案） */
+.me-state--loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
+}
 .me-state__card {
   text-align: center;
 }

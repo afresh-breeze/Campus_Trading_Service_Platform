@@ -37,6 +37,7 @@ Page({
     firstLoading: true,
     loadingMore: false,
     refreshing: false,
+    pulling: false,
     error: '',
     list: [],
     total: 0,
@@ -63,8 +64,10 @@ Page({
     this.refresh();
   },
 
-  onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh().then(done, done);
   },
 
   onReachBottom() {
@@ -215,7 +218,7 @@ Page({
         patch
       )
     );
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetch(1);
   },
 

@@ -1,4 +1,16 @@
 <!-- 二手市场（A 成员，11-14）：列表、分类、排序、下拉刷新、上拉加载 -->
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page--tab home">
   <!-- 整块吸附：块从屏幕最顶(top:0)开始覆盖且背景不透明，列表从它下方滚过。
        标题行与右上角胶囊齐平（安全区占位到胶囊顶、行高=胶囊高），滚动全程冻结不动。 -->
@@ -66,7 +78,7 @@
   <!-- 首屏骨架：只用占位块，不编假数据 -->
   <block wx:elif="{{firstLoading}}">
     <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
-    <view class="home-state">
+    <view class="home-state home-state--loading">
       <loading-eyes />
     </view>
   </block>
@@ -121,3 +133,4 @@
   <!-- 我要卖：登录后才显示 FAB -->
   <view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover" aria-label="我要卖">＋</view>
 </view>
+</scroll-view>

@@ -147,6 +147,28 @@ scroll-view {
   min-height: 100vh;
   background-color: var(--color-bg);
 }
+
+/* 自定义下拉刷新（11-25）：原生三点条样式换不了，改 scroll-view refresher 放眼睛 */
+.page-scroll {
+  height: 100vh;
+  box-sizing: border-box;
+}
+/* fixed 导航页（Mode A）：滚动容器在导航占位之下，flex 撑满剩余高度（高度由页面按 stickyTop 内联给定） */
+.sv-flex {
+  display: flex;
+  flex-direction: column;
+}
+.page-scroll--fill {
+  flex: 1;
+  min-height: 0;
+}
+/* refresher 区：眼睛居中 */
+.pull-eyes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 0;
+}
 /* B-2：底部避让只属于 tab 页（悬浮胶囊 tabBar 会遮挡内容），
    非 tab 页（详情/发布等）不再多出一条底部留白 */
 .page--tab {

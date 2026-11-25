@@ -125,14 +125,15 @@ Page({
     if (this.data.showSuggest) this.setData({ showSuggest: false });
   },
 
-  onPullDownRefresh() {
+  onRefresh() {
     if (!this.data.submittedKeyword) {
-      wx.stopPullDownRefresh();
+      this.setData({ pulling: false });
       return;
     }
+    this.setData({ pulling: true });
     const jobs = [this.fetchItems(1)];
     if (!this.data.activeBook) jobs.push(this.fetchBooks(this.data.submittedKeyword));
-    Promise.all(jobs).then(() => wx.stopPullDownRefresh());
+    Promise.all(jobs).then(() => this.setData({ pulling: false }), () => this.setData({ pulling: false }));
   },
 
   onReachBottom() {
@@ -346,7 +347,7 @@ Page({
       suggestLoading: false
     });
     this.saveHistory(keyword);
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchBooks(keyword);
     this.fetchItems(1);
   },
@@ -436,7 +437,7 @@ Page({
       loadingMore: false,
       error: ''
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchItems(1);
   },
 
@@ -453,7 +454,7 @@ Page({
       loadingMore: false,
       error: ''
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchItems(1);
   },
 
@@ -565,7 +566,7 @@ Page({
       loadingMore: false,
       error: ''
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchItems(1);
   },
 

@@ -1,5 +1,17 @@
 <!-- 我的（B 成员：个人中心，tab 4） -->
 <nav-top />
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page--tab mine">
   <!-- 用户卡：未登录整卡可点，跳登录 -->
   <view class="mine-hero" bindtap="onTapProfile" hover-class="mine-hero--hover">
@@ -64,3 +76,4 @@
 
   <view class="mine-footer">校园易站 {{version}}</view>
 </view>
+</scroll-view>

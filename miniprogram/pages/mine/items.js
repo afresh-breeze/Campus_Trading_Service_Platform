@@ -93,12 +93,13 @@ Page({
     listCommon.clearLoadingWatchdog(this);
   },
 
-  onPullDownRefresh() {
+  onRefresh() {
     if (!listCommon.hasLogin()) {
-      wx.stopPullDownRefresh();
+      this.setData({ pulling: false });
       return;
     }
-    this.loadFirst().then(() => wx.stopPullDownRefresh());
+    this.setData({ pulling: true });
+    this.loadFirst().then(() => this.setData({ pulling: false }), () => this.setData({ pulling: false }));
   },
 
   onReachBottom() {

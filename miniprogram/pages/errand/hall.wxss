@@ -153,6 +153,12 @@
 .hall-state {
   padding: var(--space-xl) var(--space);
 }
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，同 rp-state--loading 方案） */
+.hall-state--loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
+}
 .hall-state__card {
   text-align: center;
 }

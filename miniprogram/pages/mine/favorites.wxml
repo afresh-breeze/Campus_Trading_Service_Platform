@@ -1,6 +1,19 @@
 <!-- 我的收藏（A 成员，11-18）：item-card 只读列表 + 右下角悬浮心形取消收藏 -->
 <nav-top back title="我的收藏" fixed />
 
+<view class="sv-flex" style="height: calc(100vh - {{stickyTop}}px)">
+<scroll-view
+  class="page-scroll page-scroll--fill"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page-body fav-page">
   <!-- 吸顶状态条：复用首页分类的横滑椭圆条，与我的发布一致 -->
   <view class="fav-cats-wrap" style="top: {{stickyTop}}px">
@@ -66,4 +79,6 @@
     <view wx:if="{{loadingMore}}" class="fav-foot"><loading-eyes mini /></view>
     <view wx:elif="{{!hasMore}}" class="fav-foot">没有更多了</view>
   </block>
+</view>
+</scroll-view>
 </view>

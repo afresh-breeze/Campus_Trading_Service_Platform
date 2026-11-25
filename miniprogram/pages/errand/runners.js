@@ -161,8 +161,10 @@ Page({
     this.fetch(1);
   },
 
-  onPullDownRefresh() {
-    this.fetch(1).then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.fetch(1).then(done, done);
   },
 
   onReachBottom() {
