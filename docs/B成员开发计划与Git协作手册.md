@@ -609,6 +609,16 @@
   rider 插画 300→236rpx 与 trade 统一。
 - **验证**：冒烟 **596/0**、契约 **168/0**。
 
+#### 46）11-25 当日任务：详情页转场增强（缓入/缓出/视差，用户确认折衷方案）
+
+- webview 原生转场不可定制 → 详情页内容节点 CSS animation 补充：入场 300ms ease-out、
+  点返回按钮退场 240ms ease-in（nav-top 加 customBack 属性）、六入口页视差（±20px）。
+- 铁律补充：**transform 动画类不可套在含 fixed 子元素的容器外**（包含块坑）；
+  入场动画播完必须移除类；改 class 必须拼进属性值内。
+- **验证**：冒烟 **596/0**、契约 **168/0**、wxml_check 8 PASS。
+- **A 波及**：nav-top 组件 + item/detail + index/search/items/favorites——群里必须告知。
+
+
 
 
 
