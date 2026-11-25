@@ -109,11 +109,6 @@
 .detail-state__desc {
   margin-top: 12rpx;
 }
-/* 眼睛 loading 下方的文案：与组件留出呼吸空间 */
-.detail-state__text {
-  display: block;
-  margin-top: 24rpx;
-}
 .detail-state__btn {
   margin-top: 32rpx;
 }

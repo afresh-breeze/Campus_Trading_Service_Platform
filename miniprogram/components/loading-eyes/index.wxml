@@ -1,5 +1,8 @@
-<!-- 游走的眼睛 loading（移植自 loading-ui WanderingEyes，MIT）：扫视 + 眨眼 -->
-<view class="eyes" style="--dur: {{duration}}ms">
-  <view class="eye"><view class="eye__pupil"></view></view>
-  <view class="eye"><view class="eye__pupil"></view></view>
+<!-- 游走的眼睛 loading（移植自 loading-ui WanderingEyes，MIT）：扫视 + 眨眼 + 随机短句 -->
+<view class="wrap {{mini ? 'wrap--mini' : ''}}">
+  <view class="eyes" style="--dur: {{duration}}ms">
+    <view class="eye" bindanimationiteration="onCycle"><view class="eye__pupil"></view></view>
+    <view class="eye"><view class="eye__pupil"></view></view>
+  </view>
+  <text wx:if="{{motto}}" class="eyes__motto">{{mottoText}}</text>
 </view>

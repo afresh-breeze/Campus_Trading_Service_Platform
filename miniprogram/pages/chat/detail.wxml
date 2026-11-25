@@ -15,9 +15,7 @@
 <view wx:elif="{{loading}}" class="page page-body">
   <nav-top back />
   <view class="sk-card">
-    <view class="sk-line sk-line--lg"></view>
-    <view class="sk-line sk-line--md"></view>
-    <view class="sk-line sk-line--sm"></view>
+    <loading-eyes />
   </view>
 </view>
 

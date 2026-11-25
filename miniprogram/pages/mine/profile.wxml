@@ -3,10 +3,8 @@
 
 <view class="page page-body pf">
   <!-- 加载态：骨架屏（不用「加载中…」纯文字，避免布局跳动） -->
-  <view wx:if="{{loading}}" class="sk-card">
-    <view class="sk-line sk-line--lg"></view>
-    <view class="sk-line sk-line--md"></view>
-    <view class="sk-line sk-line--sm"></view>
+  <view wx:if="{{loading}}" class="pf-state">
+    <loading-eyes />
   </view>
 
   <!-- 错误态：区分「未登录」与「网络失败」，给对应出路 -->

@@ -18,13 +18,8 @@
 
   <!-- 首屏骨架 -->
   <block wx:if="{{loading}}">
-    <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="card fav-sk">
-      <view class="fav-sk__cover"></view>
-      <view class="fav-sk__body">
-        <view class="fav-sk__line fav-sk__line--lg"></view>
-        <view class="fav-sk__line fav-sk__line--md"></view>
-        <view class="fav-sk__line fav-sk__line--sm"></view>
-      </view>
+    <view class="fav-state">
+      <loading-eyes />
     </view>
   </block>
 
@@ -68,7 +63,7 @@
       >{{cancelingId === item.itemId ? '…' : '♥'}}</view>
     </view>
 
-    <view wx:if="{{loadingMore}}" class="fav-foot">加载中…</view>
+    <view wx:if="{{loadingMore}}" class="fav-foot"><loading-eyes mini /></view>
     <view wx:elif="{{!hasMore}}" class="fav-foot">没有更多了</view>
   </block>
 </view>

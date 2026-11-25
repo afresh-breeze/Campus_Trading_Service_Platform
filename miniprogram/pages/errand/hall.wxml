@@ -68,11 +68,9 @@
   </view>
 
   <block wx:elif="{{firstLoading}}">
-    <!-- 首屏骨架：只用占位块，不编假数据 -->
-    <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-      <view class="sk-line sk-line--lg"></view>
-      <view class="sk-line sk-line--md"></view>
-      <view class="sk-line sk-line--sm"></view>
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
+    <view class="hall-state">
+      <loading-eyes />
     </view>
   </block>
 
@@ -159,7 +157,7 @@
 
     <!-- 上拉加载：三态文案，避免「到底了还在转圈」 -->
     <view class="hall-more">
-      <text wx:if="{{loadingMore}}" class="hall-more__text">加载中…</text>
+      <loading-eyes mini wx:if="{{loadingMore}}" />
       <text wx:elif="{{hasMore}}" class="hall-more__text">上拉加载更多</text>
       <text wx:else class="hall-more__text">没有更多了</text>
     </view>

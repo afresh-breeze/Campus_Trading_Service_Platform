@@ -5,10 +5,8 @@
 
   <!-- 三态（11-17 走查补）：加载中给骨架屏，失败给错误卡片 + 重试。
        此前 loading 只在 JS 里设、WXML 直接渲染空表单，用户会以为「设置被清空了」 -->
-  <view wx:if="{{loading}}" class="sk-card">
-    <view class="sk-line sk-line--lg"></view>
-    <view class="sk-line sk-line--md"></view>
-    <view class="sk-line sk-line--sm"></view>
+  <view wx:if="{{loading}}" class="rn-state">
+    <loading-eyes />
   </view>
 
   <view wx:elif="{{loadError}}" class="card rn-state">

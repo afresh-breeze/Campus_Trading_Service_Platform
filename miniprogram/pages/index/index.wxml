@@ -65,13 +65,9 @@
 
   <!-- 首屏骨架：只用占位块，不编假数据 -->
   <block wx:elif="{{firstLoading}}">
-    <view class="home-sk" wx:for="{{[1,2,3]}}" wx:key="*this">
-      <view class="home-sk__cover sk-block"></view>
-      <view class="home-sk__body">
-        <view class="home-sk__line home-sk__line--lg sk-block"></view>
-        <view class="home-sk__line home-sk__line--md sk-block"></view>
-        <view class="home-sk__line home-sk__line--sm sk-block"></view>
-      </view>
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
+    <view class="home-state">
+      <loading-eyes />
     </view>
   </block>
 
@@ -116,7 +112,7 @@
 
     <!-- 上拉加载：三态文案，避免「到底了还在转圈」 -->
     <view class="home-more">
-      <text wx:if="{{loadingMore}}" class="home-more__text">加载中…</text>
+      <loading-eyes mini wx:if="{{loadingMore}}" />
       <text wx:elif="{{hasMore}}" class="home-more__text">上拉加载更多</text>
       <text wx:else class="home-more__text">没有更多了</text>
     </view>

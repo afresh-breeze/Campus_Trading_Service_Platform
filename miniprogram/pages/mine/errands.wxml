@@ -36,10 +36,8 @@
 
     <!-- 首屏加载 -->
     <block wx:if="{{loading}}">
-      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-        <view class="sk-line sk-line--lg"></view>
-        <view class="sk-line sk-line--md"></view>
-        <view class="sk-line sk-line--sm"></view>
+      <view class="me-state">
+        <loading-eyes />
       </view>
     </block>
 

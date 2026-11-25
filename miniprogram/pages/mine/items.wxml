@@ -18,13 +18,8 @@
 
   <!-- 首屏骨架 -->
   <block wx:if="{{loading}}">
-    <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="card mi-sk">
-      <view class="mi-sk__cover"></view>
-      <view class="mi-sk__body">
-        <view class="mi-sk__line mi-sk__line--lg"></view>
-        <view class="mi-sk__line mi-sk__line--md"></view>
-        <view class="mi-sk__line mi-sk__line--sm"></view>
-      </view>
+    <view class="mi-state">
+      <loading-eyes />
     </view>
   </block>
 
@@ -60,7 +55,7 @@
       />
     </view>
 
-    <view wx:if="{{loadingMore}}" class="mi-foot">加载中…</view>
+    <view wx:if="{{loadingMore}}" class="mi-foot"><loading-eyes mini /></view>
     <view wx:elif="{{!hasMore}}" class="mi-foot">没有更多了</view>
   </block>
 </view>

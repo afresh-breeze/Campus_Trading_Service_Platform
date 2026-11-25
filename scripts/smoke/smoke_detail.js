@@ -259,12 +259,39 @@ function check(name, cond, extra) {
   check('瞳孔占比对齐原版（直径 40rpx = 眼白 × 0.64，负 margin 居中锚点）', /margin: -20rpx 0 0 -20rpx/.test(compWxss)
     && /width: 40rpx/.test(compWxss) && /left: 50%/.test(compWxss), '瞳孔定位不符');
   check('周期可配（duration 属性 → --dur）', /duration: \{ type: Number/.test(compJs) && /--dur: \{\{duration\}\}ms/.test(compWxml), '周期配置不符');
-  check('详情页已注册并接入（loading 态：眼睛 + 加载中文案）', (function () {
+  check('短句随动画周期轮换（bindanimationiteration → onCycle，不用计时器防漂移）', /bindanimationiteration="onCycle"/.test(compWxml)
+    && /onCycle\(\)/.test(compJs) && /mottoUtil\.randomMotto\(\)/.test(compJs), '短句轮换不符');
+  check('mini 紧凑模式（footer 缩放）+ 短句可关', /mini: \{ type: Boolean/.test(compJs) && /wrap--mini/.test(compWxml) && /motto: \{ type: Boolean/.test(compJs), '模式参数不符');
+  check('详情页已注册并接入（loading 态只挂组件，无旧「加载中」文字）', (function () {
     const pj = JSON.parse(fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.json'), 'utf8'));
     return pj.usingComponents['loading-eyes'] === '/components/loading-eyes/index'
-      && /<loading-eyes /.test(wxmlD)
-      && wxmlD.indexOf('loading-eyes') < wxmlD.indexOf('加载中…');
+      && /<loading-eyes \/>/.test(wxmlD) && !/加载中/.test(wxmlD);
     })(), '页面接入不符');
+  check('全站接入（13 个加载点：7 骨架 + 6 footer，均为页面注册 + wxml 使用）', (function () {
+    const pages = ['errand/hall', 'errand/runners', 'errand/detail', 'index/index', 'item/detail',
+      'chat/detail', 'chat/list', 'mine/errands', 'mine/favorites', 'mine/items',
+      'mine/profile', 'mine/runner', 'search/result'];
+    return pages.every(function (pg) {
+      const w = fsD.readFileSync(path.join(REPO, 'pages', pg + '.wxml'), 'utf8');
+      const j = JSON.parse(fsD.readFileSync(path.join(REPO, 'pages', pg + '.json'), 'utf8'));
+      return (w.match(/<loading-eyes/g) || []).length >= 1
+        && j.usingComponents['loading-eyes'] === '/components/loading-eyes/index';
+    });
+  })(), '全站接入不符');
+  check('旧「加载中」文字全站无残留（被短句取代）', (function () {
+    let bad = 0;
+    const glob = fsD.readdirSync(path.join(REPO, 'pages'));
+    glob.forEach(function (dir) {
+      const dirP = path.join(REPO, 'pages', dir);
+      if (!fsD.statSync(dirP).isDirectory()) return;
+      fsD.readdirSync(dirP).forEach(function (f) {
+        if (!/\.wxml$/.test(f)) return;
+        const w = fsD.readFileSync(path.join(dirP, f), 'utf8');
+        if (/>加载中…</.test(w)) bad += 1;
+      });
+    });
+    return bad === 0;
+  })(), '加载中残留');
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);

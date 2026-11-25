@@ -4,16 +4,8 @@
 <view class="detail {{showBar ? 'detail--bar' : ''}}">
   <!-- 首屏骨架 -->
   <block wx:if="{{loading}}">
-    <view class="card detail-sk">
-      <view class="detail-sk__gallery sk-block"></view>
-      <view class="detail-sk__line detail-sk__line--lg sk-block"></view>
-      <view class="detail-sk__line detail-sk__line--md sk-block"></view>
-      <view class="detail-sk__line detail-sk__line--sm sk-block"></view>
-    </view>
-    <view class="card detail-sk">
-      <view class="detail-sk__line detail-sk__line--md sk-block"></view>
-      <view class="detail-sk__line sk-block"></view>
-      <view class="detail-sk__line sk-block"></view>
+    <view class="detail-sk">
+      <loading-eyes />
     </view>
   </block>
 

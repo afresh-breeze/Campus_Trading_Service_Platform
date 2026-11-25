@@ -93,12 +93,10 @@
       </button>
     </view>
 
-    <!-- 首屏加载 -->
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
     <block wx:if="{{firstLoading}}">
-      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-        <view class="sk-line sk-line--lg"></view>
-        <view class="sk-line sk-line--md"></view>
-        <view class="sk-line sk-line--sm"></view>
+      <view class="sk-card">
+        <loading-eyes />
       </view>
     </block>
 
@@ -169,7 +167,7 @@
       </view>
 
       <view class="rp-more">
-        <text wx:if="{{loadingMore}}" class="rp-more__text">加载中…</text>
+        <loading-eyes mini wx:if="{{loadingMore}}" />
         <text wx:elif="{{hasMore}}" class="rp-more__text">上拉加载更多</text>
         <text wx:else class="rp-more__text">没有更多了</text>
       </view>

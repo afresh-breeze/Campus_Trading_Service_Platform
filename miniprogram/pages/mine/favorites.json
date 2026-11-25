@@ -6,6 +6,7 @@
     "nav-top": "/components/nav-top/index",
     "item-card": "/components/item-card/index",
     "empty-state": "/components/empty-state/index",
-    "status-tag": "/components/status-tag/index"
+    "status-tag": "/components/status-tag/index",
+    "loading-eyes": "/components/loading-eyes/index"
   }
 }

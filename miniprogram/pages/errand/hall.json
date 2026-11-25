@@ -3,6 +3,7 @@
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
   "usingComponents": {
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "loading-eyes": "/components/loading-eyes/index"
   }
 }

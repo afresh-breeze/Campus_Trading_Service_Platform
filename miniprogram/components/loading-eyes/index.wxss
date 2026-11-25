@@ -1,10 +1,24 @@
 /**
  * 游走的眼睛 loading（移植自 loading-ui WanderingEyes，MIT；配色改奶茶色系）
- * 几何固定（eye 64 / pupil 20 / travel 20 / blink 24 / gap 12，单位 rpx），
+ * 几何固定（eye 64 / pupil 40 / travel 20 / blink 24 / gap 12，单位 rpx），
  * 周期由页面经 --dur 传入；想整体放大时在外层套 transform: scale() 即可。
  */
 :host {
   display: inline-flex;
+}
+
+/* 纵排容器：眼睛在上、短句在下；mini 模式只缩放眼睛（短句保持原字号可读），用于上拉加载 footer 等小空间 */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wrap--mini .eyes {
+  transform: scale(0.55);
+  margin: -6rpx 0;
+}
+.wrap--mini .eyes__motto {
+  margin-top: 8rpx;
 }
 
 .eyes {
@@ -95,4 +109,11 @@
   99% {
     height: 24rpx;
   }
+}
+
+/* 短句：每轮动画结束换一条（onCycle），样式与落款短句同档 */
+.eyes__motto {
+  margin-top: 20rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
 }
