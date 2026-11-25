@@ -182,15 +182,15 @@ function check(name, cond, extra) {
   check('齿条 overflow hidden（裁掉第 27 齿）', /\.receipt__saw\s*\{[\s\S]*?overflow: hidden/.test(wxssD), '齿条未裁边');
   check('小票内卡片去浮层（透明 + 无阴影 + 无内边距）', /\.receipt__body \.card\s*\{[\s\S]*?padding: 0[\s\S]*?background-color: transparent[\s\S]*?box-shadow: none/.test(wxssD), '卡片覆盖不符');
   check('分段之间是虚线撕线', /\.receipt__body \.receipt__sec \+ \.receipt__sec\s*\{[\s\S]*?border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '撕线不符');
-  check('4 张落款图案已入库（doodle-1~4）', ['1', '2', '3', '4'].every(function (n) {
-    return fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'doodle-' + n + '.png'));
-  }), '图案文件缺失');
+  check('6 张落款图案已入库（语义命名，旧 doodle-* 已删）', ['dog', 'cat', 'mouse', 'cake', 'umbrella', 'trees'].every(function (n) {
+      return fsD.existsSync(path.join(REPO, 'assets', 'receipt', n + '.png'));
+    }) && !fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'doodle-1.png')), '图案文件不符');
   check('js：27 齿 + 图案清单 + 随机抽取 + 日期/打印时间字段', (function () {
     const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
     const onLoadBody = (src.match(/onLoad\(options\) \{[\s\S]*?\n  \},/) || [''])[0];
     return /i < 27/.test(src)
       && /const DOODLE_IMAGES = \[/.test(src)
-      && /doodle-1\.png/.test(src) && /doodle-4\.png/.test(src)
+      && /dog\.png/.test(src) && /trees\.png/.test(src)
       && /Math\.random\(\) \* DOODLE_IMAGES\.length/.test(onLoadBody)
       && /receiptDate: util\.formatTime\(printAt, false\)/.test(src)
       && /receiptPrintTime: util\.formatTime\(printAt\)/.test(src);
