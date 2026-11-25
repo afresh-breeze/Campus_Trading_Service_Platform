@@ -177,6 +177,8 @@
   </block>
 
   <!-- 发布入口：登录后才显示 FAB -->
-  <view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover">＋</view>
 </view>
 </scroll-view>
+
+<!-- FAB 必须在 scroll-view 外：fixed 在其内会被 transform 破坏（11-25） -->
+<view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover">＋</view>

@@ -203,8 +203,10 @@
     </view>
   </block>
 </view>
+</scroll-view>
 
-<!-- 底部操作栏：聊天入口与订单动作并排（11-16 反馈），按钮全部来自 js 的 actions -->
+<!-- 底部操作栏：聊天入口与订单动作并排（11-16 反馈），按钮全部来自 js 的 actions。
+     必须放在 scroll-view 外：fixed 在 scroll-view 内会被内部 transform 破坏、跟随内容滚动（11-25 错位根因） -->
 <view wx:if="{{actions.length}}" class="detail-bar">
   <text wx:if="{{chatTip}}" class="detail-bar__tip">{{chatTip}}</text>
   <view class="detail-bar__row">
@@ -220,5 +222,4 @@
     >{{item.text}}</button>
   </view>
 </view>
-</scroll-view>
 </view>
