@@ -104,6 +104,7 @@ function read(rel) {
   check('FLIP 动画：每条卡片一次性 translateY 到目标槽位', /createAnimation\(\{ duration: 320/.test(listJs) && /translateY\(delta\)\.step\(\)/.test(listJs));
   check('FLIP 动画：换代时重建行节点，避免 transform 残留', /wx:key="rowKey"/.test(listWxml) && /rowKey: String\(row\.conversationId\)/.test(listJs) && /_reorderSeq = \(this\._reorderSeq \|\| 0\) \+ 1/.test(listJs));
   check('点置顶先收回左滑卡再动画', /const wasOpen = this\.data\.list\.some\(\(c\) => c\.swipeX < 0\)/.test(listJs) && /_setSwipe\(-1, 0, false\)/.test(listJs) && /setTimeout\(start, 160\)/.test(listJs));
+  check('底色随滑动同帧过渡，换代时不再生切', /item\.showPinned/.test(listWxml) && /item\.colorAnimating/.test(listWxml) && /\.cl-conv--color-anim\s*\{[^}]*background-color 320ms/.test(listWxss) && /showPinned'\] = !!targetPinned/.test(listJs));
   check('FLIP 动画：移动中的卡片浮在上层', /cl-swipe--flip-active/.test(listWxml) && /\.cl-swipe--flip-active\s*\{[^}]*z-index: 3/.test(listWxss));
 
   console.log('\n[5] 聊天输入框自动增高');

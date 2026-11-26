@@ -47,6 +47,9 @@ function toCard(row, keySeq) {
     unreadText: unread > 99 ? '99+' : String(unread),
     hasUnread: unread > 0,
     isPinned: row.isPinned === true || Number(row.isPinned) === 1,
+    // 卡片底色随重排动画平滑过渡；showPinned 是动画期间的展示态，最终与 isPinned 一致
+    showPinned: row.isPinned === true || Number(row.isPinned) === 1,
+    colorAnimating: false,
     // 左滑位移（px）：0 = 收起，-actionWidth = 露出全部操作
     swipeX: 0,
     swiping: false,
@@ -302,7 +305,9 @@ Page({
         Object.assign({}, conv, {
           rowKey: String(conv.conversationId) + '_' + seq,
           animData: '',
-          flipActive: false
+          flipActive: false,
+          showPinned: conv.isPinned === true,
+          colorAnimating: false
         })
       );
       this.setData({
@@ -326,17 +331,23 @@ Page({
 
       const updates = {};
       let moved = false;
+      let colorChanged = false;
       oldList.forEach((conv, j) => {
         const target = newIndex[conv.conversationId];
         const delta = Math.round(slots[target] - slots[j]);
         const active = Math.abs(delta) > 1;
+        const targetPinned = list[target] && list[target].isPinned === true;
         if (active) moved = true;
+        if (targetPinned !== !!conv.showPinned) colorChanged = true;
         const anim = wx.createAnimation({ duration: 320, timingFunction: 'ease-out' });
         anim.translateY(delta).step();
         updates['list[' + j + '].animData'] = anim.export();
         updates['list[' + j + '].flipActive'] = active;
+        // 颜色与位移同帧开始过渡，不再等换代那一刻才切
+        updates['list[' + j + '].showPinned'] = !!targetPinned;
+        updates['list[' + j + '].colorAnimating'] = true;
       });
-      if (!moved) return commit();
+      if (!moved && !colorChanged) return commit();
       this.setData(updates);
       // 动画播完再换顺序：此刻视觉位置 == 新布局位置，不会跳
       setTimeout(commit, 340);

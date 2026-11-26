@@ -111,6 +111,13 @@
   background: var(--color-surface-2, #f1eae0);
   box-shadow: var(--shadow-card-hover);
 }
+/* 重排动画期间，让底色跟着位移一起 320ms 平滑变化，避免换代时颜色生切 */
+.cl-conv--color-anim {
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 320ms ease-out,
+    box-shadow 200ms ease-out;
+}
 /* 置顶会话：底色略微加深，与未置顶卡片区分；不透明，避免透出左滑按钮 */
 .cl-conv--pinned {
   background: var(--color-surface-pinned, #f6efe6);

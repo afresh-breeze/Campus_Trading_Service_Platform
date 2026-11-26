@@ -83,7 +83,7 @@
         </view>
 
         <view
-          class="cl-conv {{item.swiping ? 'cl-conv--swiping' : ''}} {{item.isPinned ? 'cl-conv--pinned' : ''}}"
+          class="cl-conv {{item.swiping ? 'cl-conv--swiping' : ''}} {{item.showPinned ? 'cl-conv--pinned' : ''}} {{item.colorAnimating ? 'cl-conv--color-anim' : ''}}"
           style="transform: translateX({{item.swipeX}}px)"
           data-id="{{item.conversationId}}"
           data-peer="{{item.peerId}}"

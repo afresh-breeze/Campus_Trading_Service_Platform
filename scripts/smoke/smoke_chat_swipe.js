@@ -220,11 +220,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   check('原第一条下移到第二个槽位（+100px）', acts0[0] && acts0[0].method === 'translateY' && acts0[0].args[0] === 100, acts0);
   check('被置顶项上移到第一个槽位（-100px）', acts1[0] && acts1[0].method === 'translateY' && acts1[0].args[0] === -100, acts1);
   check('动画单步且时长 320ms', acts0[1] && acts0[1].step.duration === 320 && acts0.length === 2, acts0);
+  check('颜色与位移同时开始过渡', p7.data.list[1].showPinned === true && p7.data.list[0].colorAnimating === true && p7.data.list[1].colorAnimating === true, p7.data.list.map((c) => [c.conversationId, c.showPinned, c.colorAnimating]));
   check('动画期间保持旧顺序，不提前换代', p7.data.list[0].conversationId === 11 && p7.data.list[1].conversationId === 12, p7.data.list.map((c) => c.conversationId));
   check('发生位移的卡片置顶显示', p7.data.list[0].flipActive === true && p7.data.list[1].flipActive === true, p7.data.list.map((c) => c.flipActive));
   await new Promise((r) => setTimeout(r, 380));
   check('动画结束后提交新顺序：置顶项到顶部', p7.data.list[0].conversationId === 12 && p7.data.list[1].conversationId === 11, p7.data.list.map((c) => c.conversationId));
   check('提交时清掉动画与浮层状态', p7.data.list.every((c) => !c.animData && c.flipActive === false), p7.data.list);
+  check('换代后底色已是最终态且不再过渡', p7.data.list[0].showPinned === true && p7.data.list[1].showPinned === false && p7.data.list.every((c) => c.colorAnimating === false), p7.data.list.map((c) => [c.conversationId, c.showPinned, c.colorAnimating]));
   check('提交时换新行 key，强制重建节点', p7.data.list[0].rowKey === '12_1' && p7.data.list[1].rowKey === '11_1', p7.data.list.map((c) => c.rowKey));
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
