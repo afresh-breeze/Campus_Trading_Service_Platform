@@ -12,6 +12,14 @@
  * 中间态只允许「旧项亮 → 新项亮」的配色切换，绝不允许全灰。
  * 新页面实例 attached 时用 globalData.tabIndex 直接渲染最终态，无中间帧。
  *
+ * 缓存旧帧根治（11-26 三修，真机仍现「全灰→点亮→跳页」后定位）：
+ * 目标页是缓存页时，微信会先画它上一次的渲染帧。之前只有发起点击的实例知道
+ * 选中态变了，其余缓存页实例全停在旧值——切回去时旧帧先上屏（胶囊错位/全灰），
+ * onShow 的 syncSelected 才修正，真机上这一帧肉眼可见，连续切换就反复闪。
+ * 对策：点击瞬间把最终选中态广播给 badgeTargets 注册表里所有实例；隐藏实例
+ * 的 setData 属离屏渲染（用户看不见），等它再上屏时缓存帧已是最终态。
+ * 滑动动画只在发起实例上播，节奏（260ms 滑到位再跳页）不变。
+ *
  * 红点防闪断（11-28）：真机/模拟器上偶现「切到“我的”后红点先消失再出现」，
  * 30fps 录屏取证看不到断点（QQ20261126-164651.mp4 全程 203 帧红点恒在），
  * 属亚帧级渲染竞态——某个 0 值瞬时盖上来、随即被回填。对策：setBadge 收到 0
@@ -133,13 +141,36 @@ Component({
     },
 
     /**
+     * 把最终选中态广播给所有已注册的 tabBar 实例（含隐藏页的缓存实例）。
+     * 隐藏实例的 setData 是离屏渲染，用户看不见；等切到它时缓存帧已是最终态，
+     * 「旧帧先上屏再修正」的频闪从机制上消失。
+     */
+    broadcastSelection(index) {
+      const app = getApp();
+      const targets = (app && app.globalData && app.globalData.badgeTargets) || [];
+      for (let i = 0; i < targets.length; i++) {
+        const t = targets[i];
+        // 跳过发起方（它自己播滑动动画）；落点实例只落态、不回广播，防止循环
+        if (!t || t === this || typeof t.applySelection !== 'function') continue;
+        t.applySelection(index);
+      }
+    },
+
+    /** 广播落点：无动画直接落到最终态（只被 broadcastSelection 调用） */
+    applySelection(index) {
+      this.setData({ selected: index, activeIndex: index, animate: false });
+    },
+
+    /**
      * 供页面 onShow 调用：同步选中态但绝对不播动画。
      * 之前直接在页面里 setData({selected}) 会把动画一起触发，是胶囊乱跳的根因。
+     * 广播放在最前：即使本实例已是最终态（早退），也兜底把隐藏缓存实例拉齐。
      */
     syncSelected(index) {
       const app = getApp();
       if (app && app.globalData) app.globalData.tabIndex = index;
       lastIndex = index;
+      this.broadcastSelection(index);
 
       if (this.data.selected === index && this.data.activeIndex === index && !this.data.animate) {
         return;
@@ -162,6 +193,8 @@ Component({
         this._switchTimer = null;
       }
 
+      // 先广播：所有隐藏缓存实例离屏同步到最终态，切过去时旧帧就是对的
+      this.broadcastSelection(index);
       // 目标项配色同帧点亮（绝不允许全灰中间态），胶囊开始滑动；
       // 滑到位（260ms，与 wxss 过渡一致）后再切页面。
       this.setData({ selected: index, activeIndex: index, animate: true });

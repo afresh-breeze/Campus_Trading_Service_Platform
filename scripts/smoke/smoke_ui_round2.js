@@ -95,6 +95,12 @@ function read(rel) {
   check('连点打断：旧跳页定时器先清再排新程', /if \(this\._switchTimer\) \{\s*clearTimeout\(this\._switchTimer\);/.test(tabJs));
   check('红点防闪断：0 值走 400ms 确认窗，非 0 取消待清零', /BADGE_CLEAR_CONFIRM_MS = 400/.test(tabJs) && /_badgeClearTimer/.test(tabJs));
   check('detached 清理红点与跳页定时器', /detached\(\) \{[\s\S]{0,300}clearTimeout\(this\._badgeClearTimer\)[\s\S]{0,300}clearTimeout\(this\._switchTimer\)/.test(tabJs));
+  // 11-26 三修：缓存旧帧根治——点击广播最终态给所有缓存实例（离屏渲染不闪）
+  check('广播方法读取 badgeTargets 注册表', /broadcastSelection\(index\) \{[\s\S]{0,200}badgeTargets[\s\S]{0,400}t\.applySelection\(index\)/.test(tabJs));
+  check('点击先广播再播滑动动画', /this\.broadcastSelection\(index\);[\s\S]{0,120}this\.setData\(\{ selected: index, activeIndex: index, animate: true \}\)/.test(tabJs));
+  check('广播跳过发起方且落点不回传（防循环）', /if \(!t \|\| t === this \|\| typeof t\.applySelection !== 'function'\) continue;/.test(tabJs));
+  check('落点无动画直达最终态（缓存帧即正确）', /applySelection\(index\) \{\s*this\.setData\(\{ selected: index, activeIndex: index, animate: false \}\);/.test(tabJs));
+  check('onShow 同步路径也广播兜底', /syncSelected\(index\) \{[\s\S]{0,300}this\.broadcastSelection\(index\)/.test(tabJs));
 
   console.log('\n[4] 会话左滑操作');
   const listWxml = read('pages/chat/list.wxml');
