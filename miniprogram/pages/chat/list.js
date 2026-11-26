@@ -48,6 +48,10 @@ function toCard(row) {
     // 左滑位移（px）：0 = 收起，-actionWidth = 露出全部操作
     swipeX: 0,
     swiping: false,
+    // 置顶重排 FLIP 动画状态：flipFromY = 先放回旧位置的位移，flipPhase = prepare/run/''
+    flipFromY: 0,
+    flipPhase: '',
+    flipActive: false,
     bizType: row.bizType || '',
     bizId: row.bizId
   };
@@ -138,20 +142,31 @@ Page({
           list = this.data.list.concat(cards.filter((c) => !seen[c.conversationId]));
         }
         const total = Number(data.total || 0);
-        this.setData({
-          list,
-          total,
-          page,
-          hasMore: list.length < total && rows.length > 0,
-          firstLoading: false,
-          loadingMore: false,
-          refreshing: false,
-          error: ''
-        });
+        this.setData(
+          {
+            list,
+            total,
+            page,
+            hasMore: list.length < total && rows.length > 0,
+            firstLoading: false,
+            loadingMore: false,
+            refreshing: false,
+            error: ''
+          },
+          () => {
+            // 置顶成功后第一页重排完成，播放「旧位置 → 新位置」的位移动画
+            if (isFirst && this._pendingFlip) {
+              const oldTops = this._pendingFlip;
+              this._pendingFlip = null;
+              this._playFlip(oldTops);
+            }
+          }
+        );
         return list;
       })
       .catch((err) => {
         if (seq !== this._reqSeq) return null;
+        this._pendingFlip = null;
         this.setData({ firstLoading: false, loadingMore: false, refreshing: false });
         if (isFirst) this.setData({ error: (err && err.message) || '加载失败' });
         else util.toast((err && err.message) || '加载失败，请重试');
@@ -238,15 +253,88 @@ Page({
     this._setSwipe(touch.id, opened ? -this._actionWidth : 0, false);
   },
 
+  // ---------------- 置顶重排动画（FLIP） ----------------
+  /** 采集当前每条卡片在屏幕上的 top，按 conversationId 索引 */
+  _captureTops() {
+    return new Promise((resolve) => {
+      if (typeof wx === 'undefined' || typeof wx.createSelectorQuery !== 'function') return resolve({});
+      const ids = this.data.list.map((c) => c.conversationId);
+      try {
+        wx.createSelectorQuery()
+          .selectAll('.cl-swipe')
+          .boundingClientRect((rects) => {
+            const tops = {};
+            (rects || []).forEach((rect, index) => {
+              if (ids[index] != null && typeof rect.top === 'number') tops[ids[index]] = rect.top;
+            });
+            resolve(tops);
+          })
+          .exec();
+      } catch (e) {
+        resolve({});
+      }
+    });
+  },
+
+  /**
+   * 列表已按新顺序渲染：先把每条卡片 translateY 回旧位置（关过渡），
+   * 下一帧清零位移并开过渡，于是置顶项从原位置上滑、其余项顺势下滑。
+   */
+  _playFlip(oldTops) {
+    if (!oldTops || typeof wx === 'undefined' || typeof wx.createSelectorQuery !== 'function') return;
+    this._captureTops().then((newTops) => {
+      const updates = {};
+      let moved = false;
+      this.data.list.forEach((conv, index) => {
+        const oldTop = oldTops[conv.conversationId];
+        const newTop = newTops[conv.conversationId];
+        const delta =
+          typeof oldTop === 'number' && typeof newTop === 'number' ? Math.round(oldTop - newTop) : 0;
+        const active = Math.abs(delta) > 1;
+        if (active) moved = true;
+        updates['list[' + index + '].flipFromY'] = delta;
+        updates['list[' + index + '].flipPhase'] = 'prepare';
+        updates['list[' + index + '].flipActive'] = active;
+      });
+      if (!moved) return;
+      this.setData(updates);
+      // 等一帧让「回到旧位置」先渲染，再放开过渡滑到新位置
+      const afterPaint = () => {
+        const release = {};
+        this.data.list.forEach((conv, index) => {
+          release['list[' + index + '].flipFromY'] = 0;
+          release['list[' + index + '].flipPhase'] = 'run';
+        });
+        this.setData(release);
+      };
+      if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') wx.nextTick(afterPaint);
+      else setTimeout(afterPaint, 20);
+      // 动画结束后清掉临时状态（360ms 过渡 + 余量）
+      setTimeout(() => {
+        const done = {};
+        this.data.list.forEach((conv, index) => {
+          done['list[' + index + '].flipPhase'] = '';
+          done['list[' + index + '].flipActive'] = false;
+        });
+        this.setData(done);
+      }, 440);
+    });
+  },
+
   onTogglePin(e) {
     const id = Number(e.currentTarget.dataset.id || 0);
     const pinned = e.currentTarget.dataset.pinned === true || e.currentTarget.dataset.pinned === 'true';
     if (!id) return;
+    // 请求发出前同步启动位置采集，确保拿到的是重排前的坐标
+    const capturing = this._captureTops();
     http
       .patch('/api/conversations/' + id + '/pin', { pinned: !pinned }, { silent: true })
       .then(() => {
         util.toast(pinned ? '已取消置顶' : '已置顶');
-        return this.refresh();
+        return capturing.then((tops) => {
+          this._pendingFlip = tops;
+          return this.refresh();
+        });
       })
       .catch((err) => util.toast((err && err.message) || '操作失败'));
   },

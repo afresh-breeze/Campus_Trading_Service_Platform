@@ -147,6 +147,62 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
   await tick();
   check('取消删除不发请求', calls.length === 0, calls);
 
+  console.log('\n[7] 置顶重排：FLIP 位移动画状态');
+  const p7 = makePage();
+  p7.data.list = [
+    { conversationId: 11, peerId: 2, isPinned: false, swipeX: 0, swiping: false },
+    { conversationId: 12, peerId: 3, isPinned: false, swipeX: 0, swiping: false }
+  ];
+  p7.setData = function (patch, cb) {
+    // 真实 setData 会展开 list[0].xxx 路径；测试桩也要展开，否则看不到 FLIP 状态
+    Object.keys(patch).forEach((key) => {
+      const m = /^list\[(\d+)\]\.(.+)$/.exec(key);
+      if (m) {
+        const row = this.data.list[Number(m[1])];
+        if (row) row[m[2]] = patch[key];
+      } else {
+        this.data[key] = patch[key];
+      }
+    });
+    if (typeof cb === 'function') cb();
+  };
+  const rectCbs = [];
+  global.wx.createSelectorQuery = () => {
+    const q = {
+      selectAll(sel) { q.sel = sel; return q; },
+      boundingClientRect(cb) { rectCbs.push(cb); return q; },
+      exec() { return q; }
+    };
+    return q;
+  };
+  calls.length = 0;
+  p7.onTogglePin({ currentTarget: { dataset: { id: 12, pinned: false } } });
+  check('请求前先采集旧坐标', rectCbs.length === 1, rectCbs.length);
+  rectCbs.shift()([{ top: 200 }, { top: 300 }]); // 旧顺序：11 在上、12 在下
+  await tick();
+  flushNext(true, { pinned: true });
+  await tick();
+  check('成功后按新顺序重新拉列表', calls.length === 2 && calls[1].method === 'GET', calls);
+  flushNext(true, {
+    list: [
+      { conversationId: 12, peerId: 3, isPinned: true, unreadCount: 0 },
+      { conversationId: 11, peerId: 2, isPinned: false, unreadCount: 0 }
+    ],
+    total: 2
+  });
+  await tick();
+  check('刷新后采集新坐标', rectCbs.length === 1, rectCbs.length);
+  rectCbs.shift()([{ top: 100 }, { top: 250 }]); // 新顺序：12 到顶、11 下移
+  await tick();
+  check('置顶项先放回旧位置（+200px）', p7.data.list[0].flipFromY === 200, p7.data.list[0]);
+  check('其他项按反向位移放回（-50px）', p7.data.list[1].flipFromY === -50, p7.data.list[1]);
+  check('prepare 阶段关闭过渡', p7.data.list[0].flipPhase === 'prepare', p7.data.list[0].flipPhase);
+  check('发生位移的卡片置顶显示', p7.data.list[0].flipActive === true && p7.data.list[1].flipActive === true, p7.data.list.map((c) => c.flipActive));
+  await new Promise((r) => setTimeout(r, 40));
+  check('下一帧清零位移并开启过渡', p7.data.list[0].flipFromY === 0 && p7.data.list[0].flipPhase === 'run', p7.data.list[0]);
+  await new Promise((r) => setTimeout(r, 450));
+  check('动画结束清理临时状态', p7.data.list.every((c) => c.flipPhase === ''), p7.data.list);
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);
 })().catch((e) => {

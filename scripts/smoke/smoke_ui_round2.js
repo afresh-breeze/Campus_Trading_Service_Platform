@@ -96,6 +96,12 @@ function read(rel) {
   check('删除调用 del', /\.del\('\/api\/conversations\/' \+ id/.test(listJs));
   check('滑动屏蔽一次 tap', /_suppressTap/.test(listJs) && /if \(this\._suppressTap\) return;/.test(listJs));
   check('纵向手势交还 scroll-view', /touch\.lock = 'scroll'/.test(listJs));
+  check('置顶卡片不再显示「置顶」文字', !/cl-conv__pin"/.test(listWxml) && !/>\s*置顶\s*</.test(listWxml));
+  check('置顶项右下角有方向图标', /cl-conv__pin-icon/.test(listWxml) && /src="\/assets\/icons\/direction-up\.png"/.test(listWxml) && fs.existsSync(path.join(MP, 'assets/icons/direction-up.png')));
+  check('置顶卡片底色略微加深', /\.cl-conv--pinned\s*\{[^}]*background: var\(--color-surface-pinned/.test(listWxss));
+  check('FLIP 动画：容器有位移过渡且 prepare 可关过渡', /\.cl-swipe\s*\{[\s\S]*?transition: transform 360ms/.test(listWxss) && /\.cl-swipe--flip-prepare\s*\{[^}]*transition: none/.test(listWxss));
+  check('FLIP 动画：采集旧坐标并在刷新后播放', /_captureTops\(\)/.test(listJs) && /_playFlip\(oldTops\)/.test(listJs) && /flipFromY/.test(listJs));
+  check('FLIP 动画：移动中的卡片浮在上层', /cl-swipe--flip-active/.test(listWxml) && /\.cl-swipe--flip-active\s*\{[^}]*z-index: 3/.test(listWxss));
 
   console.log('\n[5] 聊天输入框自动增高');
   const detailWxml = read('pages/chat/detail.wxml');

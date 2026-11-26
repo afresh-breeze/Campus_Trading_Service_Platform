@@ -56,6 +56,15 @@
   overflow: hidden;
   /* 卡片左滑后左侧圆角缺口露出的底色，用置顶色补满，与第一个按钮连成一体 */
   background: var(--color-primary-dark, #79513D);
+  /* 置顶重排：FLIP 位移过渡；prepare 阶段临时关掉，避免先反向滑回去 */
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cl-swipe--flip-prepare {
+  transition: none;
+}
+/* 正在重排的卡片浮在上层，滑过其他条目时不被遮挡 */
+.cl-swipe--flip-active {
+  z-index: 3;
 }
 .cl-swipe__actions {
   position: absolute;
@@ -107,19 +116,26 @@
   background: var(--color-surface-2, #f1eae0);
   box-shadow: var(--shadow-card-hover);
 }
+/* 置顶会话：底色略微加深，与未置顶卡片区分；不透明，避免透出左滑按钮 */
+.cl-conv--pinned {
+  background: var(--color-surface-pinned, #f6efe6);
+}
+/* 给右下角小箭头留出空间，避免压住最后一条消息 */
+.cl-conv--pinned .cl-conv__bottom {
+  padding-right: 40rpx;
+}
 /* 手指跟随期间关掉过渡，松手再吸到位 */
 .cl-conv--swiping {
   transition: none;
 }
-.cl-conv__pin {
-  flex-shrink: 0;
-  margin-right: 10rpx;
-  padding: 2rpx 10rpx;
-  border-radius: 999rpx;
-  background: var(--color-primary-light, #F7E4CE);
-  color: var(--color-primary-dark, #79513D);
-  font-size: var(--font-xs, 22rpx);
-  line-height: 1.4;
+/* 置顶小箭头：贴在卡片右下角 */
+.cl-conv__pin-icon {
+  position: absolute;
+  right: 20rpx;
+  bottom: 14rpx;
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.5;
 }
 .cl-conv__avatar-wrap {
   position: relative;
