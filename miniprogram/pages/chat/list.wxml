@@ -62,8 +62,8 @@
         animation="{{item.animData || ''}}"
         data-id="{{item.conversationId}}"
       >
-        <!-- 左滑 / 长按唤出的操作区：置顶、标为未读、删除 -->
-        <view class="cl-swipe__actions">
+        <!-- 操作区只在左滑露出时创建：闭合时不渲染，按钮底色就不会从圆角缝透出 -->
+        <view wx:if="{{item.swipeX < 0}}" class="cl-swipe__actions">
           <view
             class="cl-swipe__action cl-swipe__action--pin"
             data-id="{{item.conversationId}}"

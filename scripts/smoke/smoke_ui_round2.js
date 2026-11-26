@@ -62,9 +62,11 @@ function read(rel) {
   const numBlock = /\.mkt-card__num\s*\{[^}]*\}/.exec(mineWxss2)[0];
   const cellTextBlock = /\.mine-cell__text\s*\{[^}]*\}/.exec(mineWxss2)[0];
   check('二手/代取入口文字与底部入口同号（30rpx）', /font-size: 30rpx;/.test(nameBlock) && /font-size: 30rpx;/.test(numBlock) && /font-size: 30rpx;/.test(cellTextBlock));
-  const convBlock2 = /\.cl-conv\s*\{[\s\S]*?\n\}/.exec(read('pages/chat/list.wxss'))[0];
-  check('聊天条用同色描边盖住黑细线', /border: 1rpx solid var\(--color-surface/.test(convBlock2) && /box-sizing: border-box/.test(convBlock2));
-  check('聊天条描边随状态换色', /\.cl-conv--hover\s*\{[^}]*border-color/.test(read('pages/chat/list.wxss')) && /\.cl-conv--pinned\s*\{[^}]*border-color/.test(read('pages/chat/list.wxss')));
+  const listWxss2b = read('pages/chat/list.wxss');
+  const convBlock2 = /\.cl-conv\s*\{[\s\S]*?\n\}/.exec(listWxss2b)[0];
+  check('聊天条自身无边框', convBlock2.indexOf('border:') < 0 && convBlock2.indexOf('border-color') < 0);
+  check('闭合时不渲染操作区，按钮底色不透出', /wx:if="\{\{item\.swipeX < 0\}\}" class="cl-swipe__actions"/.test(read('pages/chat/list.wxml')));
+  check('滑动容器不再常驻深棕底色', /\.cl-swipe\s*\{[^}]*background: transparent/.test(listWxss2b) && /\.cl-swipe__actions\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss2b));
 
   console.log('\n[3] 未读红点位置与广播');
   const tabWxml = read('custom-tab-bar/index.wxml');
@@ -97,7 +99,7 @@ function read(rel) {
   check('触摸手势三件套', /bindtouchstart="onSwipeStart"/.test(listWxml) && /bindtouchmove="onSwipeMove"/.test(listWxml) && /bindtouchend="onSwipeEnd"/.test(listWxml));
   check('操作按钮用 catchtap 防误触', /catchtap="onTogglePin"/.test(listWxml) && /catchtap="onDeleteConv"/.test(listWxml));
   check('WXSS 三色走暖色令牌（无外部蓝/土黄）', /cl-swipe__action--pin[\s\S]{0,120}color-primary-dark/.test(listWxss) && /cl-swipe__action--unread[\s\S]{0,120}color-accent/.test(listWxss) && /cl-swipe__action--delete[\s\S]{0,120}color-danger/.test(listWxss) && !/#4A90D9|#C88A3E/.test(listWxss));
-  check('滑动容器底色=置顶色补圆角缺口', /\.cl-swipe\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss));
+  check('左滑按钮区底色补齐圆角缺口', /\.cl-swipe__actions\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss));
   check('按压态不透底：hover 不用 opacity', !/\.cl-conv--hover\s*\{[^}]*opacity:/.test(listWxss) && /\.cl-conv--hover\s*\{[^}]*background: var\(--color-surface-2/.test(listWxss));
   const convBlock = /\.cl-conv\s*\{[\s\S]*?\n\}/.exec(listWxss)[0];
   check('卡片过渡不含 opacity', convBlock.indexOf('opacity') < 0);

@@ -54,8 +54,9 @@
   margin-bottom: 20rpx;
   border-radius: var(--radius-card, 24rpx);
   overflow: hidden;
-  /* 卡片左滑后左侧圆角缺口露出的底色，用置顶色补满，与第一个按钮连成一体 */
-  background: var(--color-primary-dark, #79513D);
+  /* 不再常驻深棕底色：闭合时卡片应完全不透明，任何底色都会在圆角缝透出细线。
+     底色改由左滑时才创建的 .cl-swipe__actions 自身提供。 */
+  background: transparent;
 }
 /* 正在重排的卡片浮在上层，滑过其他条目时不被遮挡 */
 .cl-swipe--flip-active {
@@ -68,6 +69,8 @@
   bottom: 0;
   display: flex;
   width: 450rpx;
+  /* 只有左滑时才渲染这一层，底色自行补齐圆角缺口 */
+  background: var(--color-primary-dark, #79513D);
 }
 .cl-swipe__action {
   display: flex;
@@ -81,7 +84,7 @@
 }
 /* 三档暖色令牌：深棕 → 焦糖 → 危险红，与小程序主色同源，不使用外部蓝/土黄 */
 .cl-swipe__action--pin {
-  /* 与 .cl-swipe 底色同色：卡片圆角缺口 + 尖角都被这一档补满 */
+  /* 与 .cl-swipe__actions 底色同色：圆角缺口 + 尖角一起补齐 */
   background: var(--color-primary-dark, #79513D);
 }
 .cl-swipe__action--unread {
@@ -97,23 +100,18 @@
   display: flex;
   align-items: center;
   padding: 24rpx;
-  box-sizing: border-box;
   background: var(--color-surface, #ffffff);
-  /* 1rpx 同色描边盖住 .cl-swipe 深棕底色在圆角处透出的黑细线 */
-  border: 1rpx solid var(--color-surface, #ffffff);
   border-radius: var(--radius-card, 24rpx);
   box-shadow: var(--shadow-card);
   transition:
     transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
     background-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease-out;
 }
 .cl-conv--hover {
   /* 会话卡下方压着左滑操作区：不能用 opacity 压暗（半透明会透出按钮文字），
      改为只压暗背景色 + 阴影，卡片始终不透明 */
   background: var(--color-surface-2, #f1eae0);
-  border-color: var(--color-surface-2, #f1eae0);
   box-shadow: var(--shadow-card-hover);
 }
 /* 重排动画期间，让底色跟着位移一起 320ms 平滑变化，避免换代时颜色生切 */
@@ -121,13 +119,11 @@
   transition:
     transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
     background-color 320ms ease-out,
-    border-color 320ms ease-out,
     box-shadow 200ms ease-out;
 }
 /* 置顶会话：底色略微加深，与未置顶卡片区分；不透明，避免透出左滑按钮 */
 .cl-conv--pinned {
   background: var(--color-surface-pinned, #f6efe6);
-  border-color: var(--color-surface-pinned, #f6efe6);
 }
 /* 给右下角小箭头留出空间，避免压住最后一条消息 */
 .cl-conv--pinned .cl-conv__bottom {
