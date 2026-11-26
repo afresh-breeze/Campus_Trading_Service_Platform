@@ -1,5 +1,5 @@
 <!-- 发布代取 / 编辑代取（B 成员，11-13）｜规格见手册 §6.8 -->
-<nav-top back title="{{pageTitle}}" />
+<nav-top back title="{{pageTitle}}" fixed />
 <view class="page page-body">
 
   <!-- 取件位置：弹层选择（搜索 / 分类 / 片区 / 具体地标），替代原三级 picker -->

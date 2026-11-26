@@ -95,7 +95,10 @@ Page({
     input: '',
     sending: false,
     scrollAnchor: '',
-    isAtBottom: true
+    isAtBottom: true,
+    // 11-26：键盘实高（px）。adjust-position 关掉后，输入条用它垫底，
+    // 页面整体不再被键盘顶飞，nav-top 与消息区保持原位
+    keyboardHeight: 0
   },
 
   onLoad(options) {
@@ -494,7 +497,64 @@ Page({
   onPreviewImage(e) {
     const url = e.currentTarget.dataset.url;
     if (!url) return;
-    wx.previewImage({ current: url, urls: [url] });
+    wx.previewImage({
+      current: url,
+      urls: [url],
+      fail: () => util.toast('图片预览失败')
+    });
+  },
+
+  // ---- 图片加载兜底（11-26）----
+  // 真机上 src 不可达（回环地址 / 网络切换 / 服务未启动）时，<image> 只会留
+  // 一块 240rpx 的空白泡。binderror 触发后降级为「点击重试」占位：
+  //   1) 刚发的图优先回退本地临时文件（一定还能显示）；
+  //   2) 服务端图加时间戳破缓存原地重试，避开失败结果的磁盘缓存。
+
+  /** <image> binderror：按气泡 key 标记降级 */
+  onImgError(e) {
+    const key = e.currentTarget.dataset.key;
+    if (!key) return;
+    const list = this.data.messages;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].key === key && !list[i].imgError) {
+        this.setData({ ['messages[' + i + '].imgError']: true });
+        return;
+      }
+    }
+  },
+
+  /** 占位点击重试 */
+  onImgRetry(e) {
+    const key = e.currentTarget.dataset.key;
+    const list = this.data.messages;
+    const idx = list.findIndex((m) => m.key === key);
+    if (idx < 0 || !list[idx].isImage) return;
+    const m = list[idx];
+    if (m._tempPath && m.imageUrl !== m._tempPath) {
+      this.setData({
+        ['messages[' + idx + '].imageUrl']: m._tempPath,
+        ['messages[' + idx + '].imgError']: false
+      });
+      return;
+    }
+    const src = m.imageUrl || '';
+    if (!src) {
+      util.toast('图片地址为空，无法加载');
+      return;
+    }
+    const bust = src + (src.indexOf('?') > -1 ? '&' : '?') + 'r=' + Date.now();
+    this.setData({
+      ['messages[' + idx + '].imgError']: false,
+      ['messages[' + idx + '].imageUrl']: bust
+    });
+  },
+
+  // ---- 键盘（11-26）：页面不再整体上推，输入条按键盘实高垫底 ----
+
+  onKbHeight(e) {
+    const h = (e.detail && e.detail.height) || 0;
+    if (h === this.data.keyboardHeight) return;
+    this.setData({ keyboardHeight: h });
   },
 
   // ---- 图片消息（11-24 补齐用例 27：选图 → 上传 → 发送） ----

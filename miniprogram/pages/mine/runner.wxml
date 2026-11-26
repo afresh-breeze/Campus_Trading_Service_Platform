@@ -218,13 +218,17 @@
       <text wx:if="{{errors.basePrice}}" class="field-error">{{errors.basePrice}}</text>
     </view>
     <view class="field-wrap">
-      <view class="field">
+      <!-- 11-26：备注行放宽为 min-height 自适应，textarea 多行增高不再被 96rpx 定高裁剪 -->
+      <view class="field field--multiline">
         <view class="field-label">备注</view>
-        <input
-          class="field-input"
+        <!-- 11-26：input 换 textarea auto-height，备注超长自动换行不再裁剪 -->
+        <textarea
+          class="field-input field-textarea"
           placeholder="选填，如「大件请自备小推车」"
           placeholder-class="field-placeholder"
           maxlength="255"
+          auto-height="{{true}}"
+          disable-default-padding="{{true}}"
           value="{{remark}}"
           bindinput="onRemarkInput"
         />

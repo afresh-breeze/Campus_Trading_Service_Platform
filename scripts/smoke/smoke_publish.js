@@ -353,6 +353,11 @@ const ev = (value) => ({ detail: { value: value } });
   check('编辑回填图片为 done 状态', p8.data.images.length === 1 && p8.data.images[0].status === 'done', p8.data.images);
   check('编辑回填图片展示完整 URL', /\/uploads\/e1\.png$/.test(p8.data.images[0].displayUrl), p8.data.images[0].displayUrl);
 
+  console.log('\n[13] 返回按钮随滚动固定（11-26 真机反馈）');
+  const fs13 = require('fs');
+  const publishWxml13 = fs13.readFileSync(path.join(process.cwd(), 'miniprogram/pages/errand/publish.wxml'), 'utf8');
+  check('nav-top 挂 fixed（长页面滚动返回键不消失）', /<nav-top back title="\{\{pageTitle\}\}" fixed \/>/.test(publishWxml13));
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => {

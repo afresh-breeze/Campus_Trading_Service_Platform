@@ -3,6 +3,22 @@
   margin: 8rpx 0 16rpx;
 }
 
+/* 11-26：备注 textarea 多行自适应——.field 定高 96rpx 放宽为 min-height，
+   auto-height 增高时不裁剪；textarea 本体给最小行高与基线对齐 */
+.field--multiline {
+  height: auto;
+  min-height: 96rpx;
+  padding-top: 16rpx;
+  padding-bottom: 16rpx;
+}
+.field--multiline .field-textarea {
+  flex: 1;
+  min-height: 44rpx;
+  line-height: 1.5;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+
 /* ---------------- 顶部状态条 ---------------- */
 .status-bar {
   display: flex;

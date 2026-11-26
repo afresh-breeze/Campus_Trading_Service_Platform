@@ -458,6 +458,14 @@ function todayStr() {
   p7.onPlaceCardCancel();
   check('已保存过的片区放弃不回退勾选', p7.data.serviceAreas.indexOf('南区教学区') > -1 && JSON.stringify(p7.data.servicePlaces) === '["第30教学楼"]', p7.data.servicePlaces);
 
+  console.log('\n[12] 备注 textarea 自动换行（11-26 真机反馈）');
+  const fs12 = require('fs');
+  const runnerWxml12 = fs12.readFileSync(path.join(process.cwd(), 'miniprogram/pages/mine/runner.wxml'), 'utf8');
+  const runnerWxss12 = fs12.readFileSync(path.join(process.cwd(), 'miniprogram/pages/mine/runner.wxss'), 'utf8');
+  check('备注字段已换 textarea 且 auto-height', /class="field-input field-textarea"[\s\S]{0,300}auto-height="\{\{true\}\}"/.test(runnerWxml12));
+  check('备注行放宽为 min-height 自适应', /\.field--multiline\s*\{[^}]*height: auto;[^}]*min-height: 96rpx;/.test(runnerWxss12));
+  check('textarea 本体给最小行高', /\.field--multiline \.field-textarea\s*\{[^}]*min-height: 44rpx;/.test(runnerWxss12));
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => {

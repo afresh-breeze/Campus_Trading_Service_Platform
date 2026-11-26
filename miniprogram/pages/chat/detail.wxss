@@ -164,6 +164,20 @@
   border-radius: 8rpx;
   display: block;
 }
+/* 加载失败占位（11-26）：src 不可达时不再留空白泡，点击可重试 */
+.cd-bubble__img--fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  box-sizing: border-box;
+  border: 1rpx dashed var(--color-border, #e8ddcc);
+  background: var(--color-surface-2, #f4f1e7);
+  color: var(--color-text-3, #9a8c7d);
+  font-size: var(--font-xs, 22rpx);
+  text-align: center;
+}
 .cd-bubble__status {
   margin-top: 6rpx;
   font-size: var(--font-xs, 22rpx);
