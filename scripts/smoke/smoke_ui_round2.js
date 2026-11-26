@@ -83,10 +83,11 @@ function read(rel) {
   check('三个操作按钮齐备', ['onTogglePin', 'onMarkUnread', 'onDeleteConv'].every((m) => listWxml.indexOf(m) > -1));
   check('按钮文案含置顶/标为未读/删除', />标为未读</.test(listWxml) && />删除</.test(listWxml) && /取消置顶/.test(listWxml));
   check('左滑用 translateX 跟随', /translateX\(\{\{item\.swipeX\}\}px\)/.test(listWxml));
-  check('长按唤出操作', /bindlongpress="onConvLongPress"/.test(listWxml));
+  check('仅左滑唤出：长按绑定已移除', !/bindlongpress/.test(listWxml) && !/onConvLongPress/.test(listJs));
   check('触摸手势三件套', /bindtouchstart="onSwipeStart"/.test(listWxml) && /bindtouchmove="onSwipeMove"/.test(listWxml) && /bindtouchend="onSwipeEnd"/.test(listWxml));
   check('操作按钮用 catchtap 防误触', /catchtap="onTogglePin"/.test(listWxml) && /catchtap="onDeleteConv"/.test(listWxml));
-  check('WXSS 三色操作按钮', /cl-swipe__action--pin[\s\S]{0,80}#4A90D9/.test(listWxss) && /cl-swipe__action--unread[\s\S]{0,80}#C88A3E/.test(listWxss) && /cl-swipe__action--delete[\s\S]{0,80}color-danger/.test(listWxss));
+  check('WXSS 三色走暖色令牌（无外部蓝/土黄）', /cl-swipe__action--pin[\s\S]{0,120}color-primary-dark/.test(listWxss) && /cl-swipe__action--unread[\s\S]{0,120}color-accent/.test(listWxss) && /cl-swipe__action--delete[\s\S]{0,120}color-danger/.test(listWxss) && !/#4A90D9|#C88A3E/.test(listWxss));
+  check('滑动容器底色=置顶色补圆角缺口', /\.cl-swipe\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss));
   check('置顶调用 PATCH pin', /\.patch\('\/api\/conversations\/' \+ id \+ '\/pin'/.test(listJs));
   check('标为未读调用 PUT unread', /\.put\('\/api\/conversations\/' \+ id \+ '\/unread'/.test(listJs));
   check('删除调用 del', /\.del\('\/api\/conversations\/' \+ id/.test(listJs));

@@ -238,15 +238,6 @@ Page({
     this._setSwipe(touch.id, opened ? -this._actionWidth : 0, false);
   },
 
-  /** 长按等价于右键：直接唤出操作区 */
-  onConvLongPress(e) {
-    this._suppressTap = true;
-    setTimeout(() => {
-      this._suppressTap = false;
-    }, 260);
-    this._setSwipe(e.currentTarget.dataset.id, -this._actionWidth, false);
-  },
-
   onTogglePin(e) {
     const id = Number(e.currentTarget.dataset.id || 0);
     const pinned = e.currentTarget.dataset.pinned === true || e.currentTarget.dataset.pinned === 'true';

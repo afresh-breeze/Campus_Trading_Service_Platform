@@ -48,12 +48,14 @@
   margin: 12rpx 0 24rpx;
 }
 
-/* ---- 会话卡片：左滑 / 长按露出操作 ---- */
+/* ---- 会话卡片：左滑露出操作 ---- */
 .cl-swipe {
   position: relative;
   margin-bottom: 20rpx;
   border-radius: var(--radius-card, 24rpx);
   overflow: hidden;
+  /* 卡片左滑后左侧圆角缺口露出的底色，用置顶色补满，与第一个按钮连成一体 */
+  background: var(--color-primary-dark, #79513D);
 }
 .cl-swipe__actions {
   position: absolute;
@@ -73,11 +75,13 @@
   font-weight: 600;
   text-align: center;
 }
+/* 三档暖色令牌：深棕 → 焦糖 → 危险红，与小程序主色同源，不使用外部蓝/土黄 */
 .cl-swipe__action--pin {
-  background: #4A90D9;
+  /* 与 .cl-swipe 底色同色：卡片圆角缺口 + 尖角都被这一档补满 */
+  background: var(--color-primary-dark, #79513D);
 }
 .cl-swipe__action--unread {
-  background: #C88A3E;
+  background: var(--color-accent, #A7724F);
 }
 .cl-swipe__action--delete {
   background: var(--color-danger, #C62828);

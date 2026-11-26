@@ -87,7 +87,6 @@
           bindtouchmove="onSwipeMove"
           bindtouchend="onSwipeEnd"
           bindtouchcancel="onSwipeEnd"
-          bindlongpress="onConvLongPress"
           bindtap="onTapConv"
           hover-class="cl-conv--hover"
         >
