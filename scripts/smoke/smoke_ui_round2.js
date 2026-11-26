@@ -90,7 +90,11 @@ function read(rel) {
   check('setUnreadBadge 广播所有实例', /badgeTargets\.slice\(\)[\s\S]{0,300}bar\.setBadge\(n\)/.test(appJs));
   check('refreshUnread 复用在途请求', /this\._unreadInFlight/.test(appJs));
   check('失败不清空未读数', /catch\(\(\) => this\.globalData\.unreadCount \|\| 0\)/.test(appJs));
-  check('切 tab 同帧渲染并立即跳页（无全灰中间态/无延迟等待）', /this\.setData\(\{ selected: index, activeIndex: index, animate: true \}\);[\s\S]{0,40}wx\.switchTab\(\{ url: path \}\)/.test(tabJs) && !/activeIndex: -1/.test(tabJs) && !/SLIDE_MS/.test(tabJs) && !/setTimeout/.test(tabJs));
+  check('切 tab：目标项同帧点亮（无全灰中间态）+ 胶囊滑到位再跳页', /this\.setData\(\{ selected: index, activeIndex: index, animate: true \}\);[\s\S]{0,200}wx\.switchTab\(\{ url: path \}\)/.test(tabJs) && !/activeIndex: -1/.test(tabJs));
+  check('跳页延迟与 wxss 胶囊过渡对齐（260ms）', /SLIDE_WAIT_MS = 260/.test(tabJs) && /\.tab-bar__pill\s*\{[^}]*transition: left 0\.26s/.test(tabWxss));
+  check('连点打断：旧跳页定时器先清再排新程', /if \(this\._switchTimer\) \{\s*clearTimeout\(this\._switchTimer\);/.test(tabJs));
+  check('红点防闪断：0 值走 400ms 确认窗，非 0 取消待清零', /BADGE_CLEAR_CONFIRM_MS = 400/.test(tabJs) && /_badgeClearTimer/.test(tabJs));
+  check('detached 清理红点与跳页定时器', /detached\(\) \{[\s\S]{0,300}clearTimeout\(this\._badgeClearTimer\)[\s\S]{0,300}clearTimeout\(this\._switchTimer\)/.test(tabJs));
 
   console.log('\n[4] 会话左滑操作');
   const listWxml = read('pages/chat/list.wxml');

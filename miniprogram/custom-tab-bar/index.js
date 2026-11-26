@@ -5,10 +5,18 @@
  * 两套状态：
  *   - selected：只负责胶囊位置（点击时滑动，切页同步时无动画）；
  *   - activeIndex：只负责图标/文字的选中配色，与 selected 同帧切换。
- * 切换策略（11-28 去频闪）：点击后一次 setData 同帧到位并立即 switchTab。
- * 旧实现「胶囊先滑 240ms 再跳页 + activeIndex=-1 全灰中间态」会让导航栏
- * 在连续切换时反复经历「全灰 → 点亮 → 跳页」，看起来就是频闪；
+ * 切换策略（11-28 二次调整）：点击后一次 setData 同帧点亮目标项，胶囊先滑
+ * 260ms（与 wxss 过渡时长一致），滑到位后再 switchTab；连点用 clearTimeout
+ * 打断上一次未跳页的滑动，直接改道滑向新目标。
+ * 旧实现之一「胶囊先滑 + activeIndex=-1 全灰中间态」会频闪，已废弃；
+ * 中间态只允许「旧项亮 → 新项亮」的配色切换，绝不允许全灰。
  * 新页面实例 attached 时用 globalData.tabIndex 直接渲染最终态，无中间帧。
+ *
+ * 红点防闪断（11-28）：真机/模拟器上偶现「切到“我的”后红点先消失再出现」，
+ * 30fps 录屏取证看不到断点（QQ20261126-164651.mp4 全程 203 帧红点恒在），
+ * 属亚帧级渲染竞态——某个 0 值瞬时盖上来、随即被回填。对策：setBadge 收到 0
+ * 时不立刻隐藏，延迟 400ms 确认后再隐藏；期间任何非 0 到达即取消隐藏。
+ * 「1→0→1」的竞态被直接抹平；真正的清零（读完消息）只是晚 400ms 生效，无感知。
  */
 const TAB_LIST = [
   {
@@ -40,6 +48,11 @@ const TAB_LIST = [
 // 模块级变量：同一小程序内所有 tabBar 实例共享，用于新实例出生时直接定位
 let lastIndex = 0;
 
+// 跳页延迟：与 wxss 里胶囊过渡 0.26s 对齐，滑到位后再切页面
+const SLIDE_WAIT_MS = 260;
+// 红点清零确认窗：0 值到达后等这么久才真的隐藏（防亚帧竞态闪断）
+const BADGE_CLEAR_CONFIRM_MS = 400;
+
 Component({
   data: {
     selected: 0,
@@ -69,6 +82,15 @@ Component({
       }
     },
     detached() {
+      // 清掉未生效的定时器：实例销毁后不应再有 setData / switchTab
+      if (this._badgeClearTimer) {
+        clearTimeout(this._badgeClearTimer);
+        this._badgeClearTimer = null;
+      }
+      if (this._switchTimer) {
+        clearTimeout(this._switchTimer);
+        this._switchTimer = null;
+      }
       const app = getApp();
       if (app && typeof app.unregisterBadgeTarget === 'function') {
         app.unregisterBadgeTarget(this);
@@ -80,17 +102,34 @@ Component({
     show() {
       const app = getApp();
       const unread = (app && app.globalData && app.globalData.unreadCount) || 0;
-      if (unread !== this.data.badge) this.setData({ badge: unread });
+      // 走 setBadge 统一入口：0 值也经过防闪断确认窗，不在 show 时机硬切
+      this.setBadge(unread);
       // 每次切回 tab 都向服务端对齐一次，避免任何页面内的已读操作让红点停在旧值
       if (app && typeof app.refreshUnread === 'function') app.refreshUnread();
     }
   },
 
   methods: {
-    /** 供 app.setUnreadBadge 调用 */
+    /** 供 app.setUnreadBadge 调用；0 值走 400ms 确认窗，抹平「消失再出现」竞态 */
     setBadge(count) {
       const n = Number(count) || 0;
-      if (n !== this.data.badge) this.setData({ badge: n });
+      if (n !== 0) {
+        // 非 0：取消待生效的清零，直接同步显示
+        if (this._badgeClearTimer) {
+          clearTimeout(this._badgeClearTimer);
+          this._badgeClearTimer = null;
+        }
+        if (n !== this.data.badge) this.setData({ badge: n });
+        return;
+      }
+      // 0：已在确认窗里就不用重复排队
+      if (this._badgeClearTimer) return;
+      if (this.data.badge === 0) return;
+      this._badgeClearTimer = setTimeout(() => {
+        this._badgeClearTimer = null;
+        // 窗口期内可能已被非 0 值覆盖，隐藏前再核对一次
+        if (Number(this.data.badge) !== 0) this.setData({ badge: 0 });
+      }, BADGE_CLEAR_CONFIRM_MS);
     },
 
     /**
@@ -110,18 +149,26 @@ Component({
 
     switchTab(e) {
       const { path, index } = e.currentTarget.dataset;
-      // 同项重复点击直接拦掉；不同项走「一次渲染 + 立即跳页」
+      // 同项重复点击直接拦掉
       if (index === this.data.selected) return;
 
       const app = getApp();
       if (app && app.globalData) app.globalData.tabIndex = index;
       lastIndex = index;
 
-      // 胶囊滑动与选中配色同帧切换，页面立即切换：
-      // 新实例 attached 时按 globalData.tabIndex 直接渲染最终态，
-      // 全程没有「全灰图标」「胶囊等待」这类中间帧。
+      // 连点打断：上一次滑动还没跳页就点新目标 → 清掉旧定时器，胶囊改道滑向新项
+      if (this._switchTimer) {
+        clearTimeout(this._switchTimer);
+        this._switchTimer = null;
+      }
+
+      // 目标项配色同帧点亮（绝不允许全灰中间态），胶囊开始滑动；
+      // 滑到位（260ms，与 wxss 过渡一致）后再切页面。
       this.setData({ selected: index, activeIndex: index, animate: true });
-      wx.switchTab({ url: path });
+      this._switchTimer = setTimeout(() => {
+        this._switchTimer = null;
+        wx.switchTab({ url: path });
+      }, SLIDE_WAIT_MS);
     }
   }
 });
