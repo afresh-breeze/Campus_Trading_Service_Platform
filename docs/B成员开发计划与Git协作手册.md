@@ -705,6 +705,19 @@
   `.field--multiline` 放宽定高自适应换行。
 - smoke 桩 setData 升级支持路径键；冒烟 16 脚本 **883/0**、契约 **186/0**。
 
+#### 55）11-26 当日任务：取消私单会话限制 + 键盘贴紧 + 无图线条占位（v0.64，b9507da）
+
+- **私单会话限制取消**：chat.js（B 唯一可改服务端文件）删 403 把关，任何登录
+  用户可就任意订单发起会话（先聊后接）；mock/契约 [9]/smoke_negative [8]/
+  接口文档四处同步。连带影响：errands.js 详情/canTake 依赖 isErrandChatPeer，
+  私单对知道 orderId 的人开放——**群里同步 A**。
+- **键盘贴紧**：`.cd-page--kb` 键盘弹起时置零页面安全区底 padding（消除双重
+  抬升的约 34px 间隙）。
+- **无图占位**：`assets/placeholder/` 7 张用户提供的线条图案 + `utils/
+  placeholder.js` 按 id 稳定哈希随机；二手 item-card 无封面、代取列表/详情
+  hero 接入；11-25 品类插画规则弃用（assets/errand/ 文件保留未删）。
+- 冒烟 16 脚本 **884/0**、契约 **186/0**。
+
 
 
 
