@@ -185,32 +185,31 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
   };
   calls.length = 0;
   p7.onTogglePin({ currentTarget: { dataset: { id: 12, pinned: false } } });
-  check('请求前先采集旧坐标', rectCbs.length === 1, rectCbs.length);
-  rectCbs.shift()([{ top: 200 }, { top: 300 }]); // 旧顺序：11 在上、12 在下
-  await tick();
+  check('置顶请求先发出，不阻塞动画采集', calls.length === 1 && calls[0].method === 'PATCH', calls);
   flushNext(true, { pinned: true });
   await tick();
   check('成功后按新顺序重新拉列表', calls.length === 2 && calls[1].method === 'GET', calls);
   flushNext(true, {
     list: [
-      { conversationId: 12, peerId: 3, isPinned: true, unreadCount: 0 },
-      { conversationId: 11, peerId: 2, isPinned: false, unreadCount: 0 }
+      { conversationId: 12, peerId: 3, isPinned: true, unreadCount: 0, animData: '', flipActive: false },
+      { conversationId: 11, peerId: 2, isPinned: false, unreadCount: 0, animData: '', flipActive: false }
     ],
     total: 2
   });
   await tick();
-  check('刷新后采集新坐标', rectCbs.length === 1, rectCbs.length);
-  rectCbs.shift()([{ top: 100 }, { top: 250 }]); // 新顺序：12 到顶、11 下移
+  check('提交前采集旧顺序坐标', rectCbs.length === 1, rectCbs.length);
+  rectCbs.shift()([{ top: 200 }, { top: 300 }]); // 旧顺序：11 在上(200)、12 在下(300)
   await tick();
   const acts0 = (p7.data.list[0].animData || {}).actions || [];
   const acts1 = (p7.data.list[1].animData || {}).actions || [];
-  check('置顶项瞬时回到旧位置（+200px）', acts0[0] && acts0[0].method === 'translateY' && acts0[0].args[0] === 200, acts0);
-  check('其他项反向位移放回（-50px）', acts1[0] && acts1[0].method === 'translateY' && acts1[0].args[0] === -50, acts1);
-  check('第一步 duration=0 不产生生切', acts0[1] && acts0[1].step && acts0[1].step.duration === 0, acts0[1]);
-  check('第二步 duration=360 平滑滑回新位置', acts0[2] && acts0[2].method === 'translateY' && acts0[2].args[0] === 0 && acts0[3] && acts0[3].step.duration === 360, acts0);
+  check('原第一条下移到第二个槽位（+100px）', acts0[0] && acts0[0].method === 'translateY' && acts0[0].args[0] === 100, acts0);
+  check('被置顶项上移到第一个槽位（-100px）', acts1[0] && acts1[0].method === 'translateY' && acts1[0].args[0] === -100, acts1);
+  check('动画单步且时长 320ms', acts0[1] && acts0[1].step.duration === 320 && acts0.length === 2, acts0);
+  check('动画期间保持旧顺序，不提前换代', p7.data.list[0].conversationId === 11 && p7.data.list[1].conversationId === 12, p7.data.list.map((c) => c.conversationId));
   check('发生位移的卡片置顶显示', p7.data.list[0].flipActive === true && p7.data.list[1].flipActive === true, p7.data.list.map((c) => c.flipActive));
-  await new Promise((r) => setTimeout(r, 450));
-  check('动画结束清理浮层状态', p7.data.list.every((c) => c.flipActive === false), p7.data.list.map((c) => c.flipActive));
+  await new Promise((r) => setTimeout(r, 380));
+  check('动画结束后提交新顺序：置顶项到顶部', p7.data.list[0].conversationId === 12 && p7.data.list[1].conversationId === 11, p7.data.list.map((c) => c.conversationId));
+  check('提交时清掉动画与浮层状态', p7.data.list.every((c) => !c.animData && c.flipActive === false), p7.data.list);
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);
