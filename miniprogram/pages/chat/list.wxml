@@ -57,7 +57,7 @@
     <block wx:else>
       <view
         wx:for="{{list}}"
-        wx:key="conversationId"
+        wx:key="rowKey"
         class="cl-swipe {{item.flipActive ? 'cl-swipe--flip-active' : ''}}"
         animation="{{item.animData || ''}}"
         data-id="{{item.conversationId}}"

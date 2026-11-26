@@ -30,10 +30,12 @@ function getNavMetrics() {
 }
 
 /** 会话行 → 纯展示结构 */
-function toCard(row) {
+function toCard(row, keySeq) {
   const unread = Number(row.unreadCount || 0);
   const nickname = row.peerNickname || '同学';
   return {
+    // 带版本号的行 key：换代时强制重建节点，避免旧 animation 的 transform 残留
+    rowKey: String(row.conversationId) + '_' + (keySeq || 0),
     conversationId: row.conversationId,
     peerId: row.peerId,
     peerNickname: nickname,
@@ -128,7 +130,7 @@ Page({
         if (seq !== this._reqSeq) return null;
         const data = res || {};
         const rows = Array.isArray(data.list) ? data.list : [];
-        const cards = rows.map(toCard);
+        const cards = rows.map((row) => toCard(row, this._reorderSeq || 0));
         // 会话数少且顺序可能因新消息变化，第一页直接替换，翻页按 conversationId 去重
         let list;
         if (isFirst) {
@@ -294,18 +296,25 @@ Page({
       oldList.every((c) => newIndex[c.conversationId] !== undefined);
 
     const commit = () => {
-      const patch = {
-        list,
+      // 递增 key 版本号，强制 wx:for 重建行节点，彻底丢掉带残留 transform 的旧节点
+      const seq = (this._reorderSeq = (this._reorderSeq || 0) + 1);
+      const fresh = list.map((conv) =>
+        Object.assign({}, conv, {
+          rowKey: String(conv.conversationId) + '_' + seq,
+          animData: '',
+          flipActive: false
+        })
+      );
+      this.setData({
+        list: fresh,
         total,
         page: 1,
-        hasMore: list.length < total,
+        hasMore: fresh.length < total,
         firstLoading: false,
         loadingMore: false,
         refreshing: false,
         error: ''
-      };
-      // toCard 已把 animData / flipActive 初始化为 '' / false，无需再按路径覆盖
-      this.setData(patch);
+      });
     };
 
     if (!canAnimate) return commit();

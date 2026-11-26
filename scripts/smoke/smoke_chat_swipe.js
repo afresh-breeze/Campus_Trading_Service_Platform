@@ -210,6 +210,7 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
   await new Promise((r) => setTimeout(r, 380));
   check('动画结束后提交新顺序：置顶项到顶部', p7.data.list[0].conversationId === 12 && p7.data.list[1].conversationId === 11, p7.data.list.map((c) => c.conversationId));
   check('提交时清掉动画与浮层状态', p7.data.list.every((c) => !c.animData && c.flipActive === false), p7.data.list);
+  check('提交时换新行 key，强制重建节点', p7.data.list[0].rowKey === '12_1' && p7.data.list[1].rowKey === '11_1', p7.data.list.map((c) => c.rowKey));
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);
