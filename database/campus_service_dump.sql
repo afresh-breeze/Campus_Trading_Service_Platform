@@ -97,12 +97,14 @@ CREATE TABLE `conversations` (
   `biz_id` bigint NOT NULL DEFAULT '0',
   `last_message` varchar(255) DEFAULT NULL,
   `last_time` datetime DEFAULT NULL,
+  `is_pinned` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`conversation_id`),
   UNIQUE KEY `uk_conversations_pair_biz` (`user_a_id`,`user_b_id`,`biz_type`,`biz_id`),
   KEY `fk_conversations_user_b` (`user_b_id`),
   CONSTRAINT `fk_conversations_user_a` FOREIGN KEY (`user_a_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_conversations_user_b` FOREIGN KEY (`user_b_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `chk_conversations_user_order` CHECK ((`user_a_id` < `user_b_id`))
+  CONSTRAINT `chk_conversations_user_order` CHECK ((`user_a_id` < `user_b_id`)),
+  CONSTRAINT `chk_conversations_is_pinned` CHECK ((`is_pinned` in (0,1)))
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -112,7 +114,7 @@ CREATE TABLE `conversations` (
 
 LOCK TABLES `conversations` WRITE;
 /*!40000 ALTER TABLE `conversations` DISABLE KEYS */;
-INSERT INTO `conversations` VALUES (4,2,6,'item',89,NULL,NULL),(5,2,7,'item',87,'小宝贝','2026-11-16 20:42:05'),(7,2,6,'item',70,NULL,NULL),(8,2,7,'item',94,NULL,NULL);
+INSERT INTO `conversations` (`conversation_id`,`user_a_id`,`user_b_id`,`biz_type`,`biz_id`,`last_message`,`last_time`,`is_pinned`) VALUES (4,2,6,'item',89,NULL,NULL,0),(5,2,7,'item',87,'小宝贝','2026-11-16 20:42:05',0),(7,2,6,'item',70,NULL,NULL,0),(8,2,7,'item',94,NULL,NULL,0);
 /*!40000 ALTER TABLE `conversations` ENABLE KEYS */;
 UNLOCK TABLES;
 

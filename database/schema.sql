@@ -248,12 +248,15 @@ CREATE TABLE conversations (
   biz_id BIGINT NOT NULL DEFAULT 0,
   last_message VARCHAR(255) NULL,
   last_time DATETIME NULL,
+  -- 会话置顶：列表按 is_pinned DESC 排，置顶项始终在最前
+  is_pinned TINYINT(1) NOT NULL DEFAULT 0,
   -- user_id 自增且从不更新；这两列参与 CHECK，MySQL 不允许其外键带 ON UPDATE CASCADE
   CONSTRAINT fk_conversations_user_a FOREIGN KEY (user_a_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT fk_conversations_user_b FOREIGN KEY (user_b_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT chk_conversations_user_order CHECK (user_a_id < user_b_id),
+  CONSTRAINT chk_conversations_is_pinned CHECK (is_pinned IN (0,1)),
   UNIQUE KEY uk_conversations_pair_biz (user_a_id, user_b_id, biz_type, biz_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

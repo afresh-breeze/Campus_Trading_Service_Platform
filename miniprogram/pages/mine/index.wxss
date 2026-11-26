@@ -1,7 +1,35 @@
 /* 我的（B 成员：个人中心，tab 4）——只引用 app.wxss 变量，不写魔法色值 */
 .mine {
-  /* 注意：padding 简写会覆盖 .page 的 padding-bottom，这里必须显式补回悬浮 tabBar 的避让高度 */
-  padding: 24rpx 24rpx calc(150rpx + env(safe-area-inset-bottom));
+  /* 顶部交给吸顶标题栏，这里只补回悬浮 tabBar 的避让高度 */
+  padding: 0 0 calc(150rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部吸顶标题（与二手市场 / 代取大厅同位置） ---------- */
+.mine-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 var(--space-page) 10rpx;
+  background-color: var(--color-bg);
+}
+.mine-bar__safe {
+  overflow: hidden;
+}
+.mine-bar__head {
+  display: flex;
+  align-items: center;
+}
+.mine-bar__title {
+  font-size: var(--font-2xl);
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
+  color: var(--color-text);
+  letter-spacing: 2rpx;
+  line-height: 1;
+}
+.mine-content {
+  padding: 24rpx;
 }
 
 /* ---------- 用户卡 ---------- */

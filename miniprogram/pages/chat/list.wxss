@@ -1,5 +1,36 @@
 /* 消息列表（B 成员，11-14） */
 
+/* ---------- 顶部吸顶标题（与二手市场 / 代取大厅同位置） ---------- */
+.cl-page {
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+.cl-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 var(--space-page) 10rpx;
+  background-color: var(--color-bg);
+}
+.cl-bar__safe {
+  overflow: hidden;
+}
+.cl-bar__head {
+  display: flex;
+  align-items: center;
+}
+.cl-bar__title {
+  font-size: var(--font-2xl);
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
+  color: var(--color-text);
+  letter-spacing: 2rpx;
+  line-height: 1;
+}
+.cl-content {
+  padding: 0 var(--space-page);
+}
+
 .cl-state {
   padding: 40rpx 0;
 }
@@ -17,12 +48,47 @@
   margin: 12rpx 0 24rpx;
 }
 
-/* ---- 会话卡片 ---- */
+/* ---- 会话卡片：左滑 / 长按露出操作 ---- */
+.cl-swipe {
+  position: relative;
+  margin-bottom: 20rpx;
+  border-radius: var(--radius-card, 24rpx);
+  overflow: hidden;
+}
+.cl-swipe__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  width: 450rpx;
+}
+.cl-swipe__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150rpx;
+  color: #ffffff;
+  font-size: var(--font-sm, 26rpx);
+  font-weight: 600;
+  text-align: center;
+}
+.cl-swipe__action--pin {
+  background: #4A90D9;
+}
+.cl-swipe__action--unread {
+  background: #C88A3E;
+}
+.cl-swipe__action--delete {
+  background: var(--color-danger, #C62828);
+}
+
 .cl-conv {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   padding: 24rpx;
-  margin-bottom: 20rpx;
   background: var(--color-surface, #ffffff);
   border-radius: var(--radius-card, 24rpx);
   box-shadow: var(--shadow-card);
@@ -35,6 +101,20 @@
   /* 全站口径：只压暗不缩放（11-25 方案二） */
   opacity: 0.94;
   box-shadow: var(--shadow-card-hover);
+}
+/* 手指跟随期间关掉过渡，松手再吸到位 */
+.cl-conv--swiping {
+  transition: none;
+}
+.cl-conv__pin {
+  flex-shrink: 0;
+  margin-right: 10rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary-light, #F7E4CE);
+  color: var(--color-primary-dark, #79513D);
+  font-size: var(--font-xs, 22rpx);
+  line-height: 1.4;
 }
 .cl-conv__avatar-wrap {
   position: relative;

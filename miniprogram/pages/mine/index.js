@@ -15,6 +15,18 @@ const { APP_VERSION } = require('../../utils/version');
 // 版本号单一来源见 utils/version.js（11-17 走查：三个页面各写一份会漂移）
 const TAB_INDEX = 3;
 
+/** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
+function getNavMetrics() {
+  try {
+    const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+    if (menu && menu.top && menu.height) return { top: menu.top, height: menu.height };
+    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    return { top: (win.statusBarHeight || 20) + 4, height: 32 };
+  } catch (e) {
+    return { top: 24, height: 32 };
+  }
+}
+
 // 11-25 用户反馈二次演进：统计条拆组仍不够直观 → 上下两块插画卡（二手市场 / 代取）：
 // 行级入口 + 数量（上卡数量在右、下卡在左，「接单设置」不显示数量留白），插画占满卡高。
 // 素材：assets/mine/trade.png（二手交接）、rider.png（代取骑车），黑线稿透明底 512²。
@@ -80,6 +92,8 @@ const GROUPS = [
 
 Page({
   data: {
+    stickyTop: 24,
+    barHead: 32,
     ready: false,
     isLogin: false,
     user: null,
@@ -90,6 +104,11 @@ Page({
     marketCards: emptyMarket(),
     groups: GROUPS,
     version: APP_VERSION
+  },
+
+  onLoad() {
+    const nav = getNavMetrics();
+    this.setData({ stickyTop: nav.top, barHead: nav.height });
   },
 
   onShow() {

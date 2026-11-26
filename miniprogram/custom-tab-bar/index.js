@@ -61,6 +61,16 @@ Component({
         animate: false,
         badge: (app && app.globalData && app.globalData.unreadCount) || 0
       });
+      // 注册到全局注册表：在非 tab 页（如聊天详情）标记已读时也能收到广播
+      if (app && typeof app.registerBadgeTarget === 'function') {
+        app.registerBadgeTarget(this);
+      }
+    },
+    detached() {
+      const app = getApp();
+      if (app && typeof app.unregisterBadgeTarget === 'function') {
+        app.unregisterBadgeTarget(this);
+      }
     }
   },
 
@@ -69,6 +79,8 @@ Component({
       const app = getApp();
       const unread = (app && app.globalData && app.globalData.unreadCount) || 0;
       if (unread !== this.data.badge) this.setData({ badge: unread });
+      // 每次切回 tab 都向服务端对齐一次，避免任何页面内的已读操作让红点停在旧值
+      if (app && typeof app.refreshUnread === 'function') app.refreshUnread();
     }
   },
 

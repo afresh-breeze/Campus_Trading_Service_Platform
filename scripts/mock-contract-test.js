@@ -65,10 +65,14 @@ const OK_ERRAND = {
   console.log('\n[0] 路由覆盖');
   const keys = mock.routeKeys();
   console.log('  已登记路由 ' + keys.length + ' 条');
-  // 服务端 40 条 = 39 条 router.* + GET /api/health；mock 39 条 = 40 − POST /api/upload（真机文件上传不适合 mock）
-  check('路由数 = 39（服务端 40 − upload）', keys.length === 39, keys.length);
+  // 服务端 43 条 = 42 条 router.* + GET /api/health；mock 42 条 = 43 − POST /api/upload（真机文件上传不适合 mock）
+  // 11-26 新增会话操作 3 条：PATCH /:id/pin、PUT /:id/unread、DELETE /:id
+  check('路由数 = 42（服务端 43 − upload）', keys.length === 42, keys.length);
   check('has() 命中 PUT /api/errands/:id', mock.has('/api/errands/2001', 'PUT') === true);
   check('has() 命中 POST /api/errands/:id/publish', mock.has('/api/errands/2001/publish', 'POST') === true);
+  check('has() 命中 PATCH /api/conversations/:id/pin', mock.has('/api/conversations/3001/pin', 'PATCH') === true);
+  check('has() 命中 PUT /api/conversations/:id/unread', mock.has('/api/conversations/3001/unread', 'PUT') === true);
+  check('has() 命中 DELETE /api/conversations/:id', mock.has('/api/conversations/3001', 'DELETE') === true);
   check('自检无告警', mock.selfCheck().length === 0, mock.selfCheck());
 
   console.log('\n[1] 代取大厅 / 我的代取：可见性与身份过滤');
@@ -213,6 +217,28 @@ const OK_ERRAND = {
   await expectFail('创建会话缺 peerId 400', '/api/conversations', 'POST', { bizType: 'item', bizId: 1001 }, 400);
   const createdConv = await mock.run('/api/conversations', 'POST', { peerId: 3, bizType: 'item', bizId: 1002 });
   check('创建会话返回 conversationId + 对方昵称', !!createdConv.conversationId && createdConv.peerNickname === '王同学', createdConv);
+
+  console.log('\n[6b] 会话操作：置顶 / 标为未读 / 删除（11-26 左滑操作）');
+  const pinned = await mock.run('/api/conversations/3003/pin', 'PATCH', { pinned: true });
+  check('置顶返回 {pinned:true}', pinned.pinned === true, pinned);
+  const convAfterPin = await mock.run('/api/conversations', 'GET', { page: 1, pageSize: 20 });
+  check('置顶会话排到第一', (convAfterPin.list || [])[0] && convAfterPin.list[0].conversationId === 3003, (convAfterPin.list || []).map((c) => c.conversationId));
+  check('列表带 isPinned 字段', (convAfterPin.list || [])[0] && convAfterPin.list[0].isPinned === true, (convAfterPin.list || [])[0]);
+  const unpinned = await mock.run('/api/conversations/3003/pin', 'PATCH', { pinned: false });
+  check('取消置顶返回 {pinned:false}', unpinned.pinned === false, unpinned);
+  await expectFail('置顶参数非布尔 → 400', '/api/conversations/3003/pin', 'PATCH', { pinned: 'yes' }, 400);
+  await expectFail('置顶不存在的会话 → 404', '/api/conversations/9999/pin', 'PATCH', { pinned: true }, 404);
+
+  await mock.run('/api/conversations/3002/read', 'PUT', {});
+  const markUnread = await mock.run('/api/conversations/3002/unread', 'PUT', {});
+  check('标为未读返回 unreadCount>=1', markUnread.unreadCount >= 1, markUnread);
+  const totalAfterUnread = await mock.run('/api/conversations/unread-count', 'GET', {});
+  check('全局未读随标未读增加', totalAfterUnread.count >= 1, totalAfterUnread);
+  await expectFail('标未读不存在的会话 → 404', '/api/conversations/9999/unread', 'PUT', {}, 404);
+
+  const deleted = await mock.run('/api/conversations/' + createdConv.conversationId, 'DELETE', {});
+  check('删除会话返回 {deleted:true}', deleted.deleted === true, deleted);
+  await expectFail('删除后会话不存在 → 404', '/api/conversations/' + createdConv.conversationId, 'PATCH', { pinned: true }, 404);
 
   console.log('\n[7] 商品 / 书目 / 用户：校验与字段等价');
   const itemNoCond = await mock.run('/api/items', 'POST', {

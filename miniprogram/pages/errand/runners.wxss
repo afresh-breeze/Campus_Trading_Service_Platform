@@ -45,6 +45,10 @@
 .rp-filter__btn {
   margin-top: 24rpx;
 }
+/* 无匹配时的发布入口：与「重新匹配」同卡片内，用描边按钮做颜色区分 */
+.rp-filter__publish {
+  margin-top: 16rpx;
+}
 
 /* ---- 结果头 ---- */
 .rp-head {
@@ -187,6 +191,19 @@
   margin-top: 20rpx;
   text-align: center;
   display: block;
+}
+.rp-state__go-hall {
+  margin-top: 20rpx;
+}
+
+/* 有匹配时页面底部的发布入口 */
+.rp-publish {
+  margin-top: 24rpx;
+}
+.rp-publish__tip {
+  display: block;
+  margin-top: 12rpx;
+  text-align: center;
 }
 
 /* ---- 加载更多 ---- */

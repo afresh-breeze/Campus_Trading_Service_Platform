@@ -93,12 +93,16 @@
         bindtap="onPickImage"
         aria-label="发送图片"
       >＋</view>
-      <input
+      <!-- 多行输入：auto-height 随内容自动换行增高，键盘右下角「发送」仍可发消息 -->
+      <textarea
         class="cd-inputbar__input"
         value="{{input}}"
         maxlength="500"
+        auto-height="{{true}}"
+        show-confirm-bar="{{false}}"
         confirm-type="send"
         adjust-position="{{true}}"
+        hold-keyboard="{{true}}"
         placeholder="输入消息…"
         placeholder-class="cd-inputbar__placeholder"
         bindinput="onInput"

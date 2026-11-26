@@ -13,6 +13,10 @@ App({
     baseUrl: config.BASE_URL,
     // 自定义 tabBar 当前选中索引（各页面实例据此初始化，避免切换时胶囊跳位）
     tabIndex: 0,
+    // 存活的自定义 tabBar 实例注册表。未读数变化时逐个广播，
+    // 不能只更新当前页那个实例：在聊天详情（非 tab 页）标记已读时
+    // getTabBar() 拿不到组件，其它 tab 上的红点会一直残留到用户切过去重建。
+    badgeTargets: [],
     // bootstrap 完成前为 false，页面可据此避免"空数据闪一下"
     ready: false
   },
@@ -89,14 +93,37 @@ App({
       this.setUnreadBadge(0);
       return Promise.resolve(0);
     }
-    return http.get('/api/conversations/unread-count', {}, { silent: true })
+    // tabBar 的 show 与消息页 onShow 常常同时触发，复用同一在途请求，
+    // 避免两次响应交错写角标（后到的旧值把新值盖回去）。
+    if (this._unreadInFlight) return this._unreadInFlight;
+    const task = http.get('/api/conversations/unread-count', {}, { silent: true })
       .then((data) => {
         const total = Number((data && data.count) || 0);
         this.globalData.unreadCount = total;
         this.setUnreadBadge(total);
         return total;
       })
-      .catch(() => 0);
+      .catch(() => this.globalData.unreadCount || 0)
+      .then((count) => {
+        this._unreadInFlight = null;
+        return count;
+      });
+    this._unreadInFlight = task;
+    return task;
+  },
+
+  /** 注册自定义 tabBar 实例（每个 tab 页各有一个，销毁时自动注销） */
+  registerBadgeTarget(target) {
+    const list = this.globalData.badgeTargets;
+    if (!target || list.indexOf(target) > -1) return;
+    list.push(target);
+    this.setUnreadBadge(this.globalData.unreadCount || 0);
+  },
+
+  unregisterBadgeTarget(target) {
+    const list = this.globalData.badgeTargets;
+    const i = list.indexOf(target);
+    if (i > -1) list.splice(i, 1);
   },
 
   /** 写 tabBar 红点；消息 tab 索引固定为 2 */
@@ -106,14 +133,28 @@ App({
     // 关掉后不再画红点，但未读数仍正常同步到 globalData——开关只管「显不显示」
     const muted = wx.getStorageSync('cs_notify_enabled') === false;
     const n = muted ? 0 : count;
-    // 启用自定义 tabBar 后 wx.setTabBarBadge 不生效，优先让组件自己画
+
+    // 广播给所有存活的自定义 tabBar 实例，而不是只更新当前页那个。
+    // 这样在聊天详情里标记已读后，其它 tab 上的红点也会立刻同步消失。
+    const targets = this.globalData.badgeTargets.slice();
+    let painted = false;
+    targets.forEach((bar) => {
+      if (bar && typeof bar.setBadge === 'function') {
+        bar.setBadge(n);
+        painted = true;
+      }
+    });
+
     const pages = getCurrentPages();
     const current = pages[pages.length - 1];
-    const bar = current && typeof current.getTabBar === 'function' && current.getTabBar();
-    if (bar && typeof bar.setBadge === 'function') {
-      bar.setBadge(n);
-      return;
+    const currentBar = current && typeof current.getTabBar === 'function' && current.getTabBar();
+    if (currentBar && typeof currentBar.setBadge === 'function' && targets.indexOf(currentBar) === -1) {
+      currentBar.setBadge(n);
+      painted = true;
     }
+    if (painted) return;
+
+    // 极端兜底：自定义组件还没起来时才走原生 API（启用自定义 tabBar 后原生角标不显示）
     if (n > 0) {
       wx.setTabBarBadge({
         index: index,

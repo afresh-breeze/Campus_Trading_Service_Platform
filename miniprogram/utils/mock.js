@@ -839,10 +839,10 @@ function validateRunnerTimeSlots(raw, availabilityType, now) {
 
 // 会话：表结构 userAId / userBId，接口层再按当前用户取「对方」信息（对齐 chat.js peerOf）
 const conversations = [
-  { conversationId: 3001, userAId: 1, userBId: 2, bizType: 'item', bizId: 1001, lastMessage: '好的，那我们五点在图书馆门口见', lastTime: '2026-11-08 15:31:00' },
-  { conversationId: 3002, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2001, lastMessage: '取件码发你了，麻烦快点哦', lastTime: '2026-11-08 14:58:00' },
+  { conversationId: 3001, userAId: 1, userBId: 2, bizType: 'item', bizId: 1001, lastMessage: '好的，那我们五点在图书馆门口见', lastTime: '2026-11-08 15:31:00', isPinned: false },
+  { conversationId: 3002, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2001, lastMessage: '取件码发你了，麻烦快点哦', lastTime: '2026-11-08 14:58:00', isPinned: false },
   // 私单会话：当前用户（跑腿）与发布者就 2008 这张私单聊过 → 详情 canTake = true
-  { conversationId: 3003, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2008, lastMessage: '这单我接了，马上到', lastTime: '2026-11-11 19:05:00' }
+  { conversationId: 3003, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2008, lastMessage: '这单我接了，马上到', lastTime: '2026-11-11 19:05:00', isPinned: false }
 ];
 
 // 消息：字段对齐 chat.js（message_id / sender_id / msg_type / content / is_read / created_at）
@@ -2171,6 +2171,8 @@ const routes = {
     if (!pg) return fail(400, '页码或每页条数不合法');
     const mine = conversations.filter((c) => isParticipant(c, CURRENT_USER_ID));
     mine.sort((a, b) => {
+      // 置顶优先，其余按最后消息时间倒序（与 chat.js 的 ORDER BY 同口径）
+      if (!!a.isPinned !== !!b.isPinned) return a.isPinned ? -1 : 1;
       if (!a.lastTime && !b.lastTime) return b.conversationId - a.conversationId;
       if (!a.lastTime) return 1;
       if (!b.lastTime) return -1;
@@ -2186,11 +2188,55 @@ const routes = {
         lastMessage: c.lastMessage,
         lastTime: c.lastTime,
         unreadCount: unreadOf(c.conversationId, CURRENT_USER_ID),
+        isPinned: !!c.isPinned,
         bizType: c.bizType,
         bizId: c.bizId
       };
     });
     return delay({ list: list, total: mine.length, page: pg.page, pageSize: pg.pageSize });
+  },
+
+  /** 置顶 / 取消置顶：对齐 PATCH /api/conversations/:id/pin */
+  'PATCH /api/conversations/:id/pin': (data) => {
+    const conversationId = parsePositiveInt(data.id);
+    if (!conversationId) return fail(400, '会话 ID 不合法');
+    const conv = findConversation(conversationId);
+    if (!conv) return fail(404, '会话不存在');
+    if (!isParticipant(conv, CURRENT_USER_ID)) return fail(403, '无权操作该会话');
+    if (typeof data.pinned !== 'boolean') return fail(400, 'pinned 必须是布尔值');
+    conv.isPinned = data.pinned;
+    return delay({ pinned: conv.isPinned });
+  },
+
+  /** 标为未读：把对方发的最后一条消息置回未读 */
+  'PUT /api/conversations/:id/unread': (data) => {
+    const conversationId = parsePositiveInt(data.id);
+    if (!conversationId) return fail(400, '会话 ID 不合法');
+    const conv = findConversation(conversationId);
+    if (!conv) return fail(404, '会话不存在');
+    if (!isParticipant(conv, CURRENT_USER_ID)) return fail(403, '无权操作该会话');
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.conversationId !== conversationId) continue;
+      if (Number(m.senderId) === CURRENT_USER_ID) continue;
+      m.isRead = 0;
+      break;
+    }
+    return delay({ unreadCount: unreadOf(conversationId, CURRENT_USER_ID) });
+  },
+
+  /** 删除会话：messages 随会话一并移除 */
+  'DELETE /api/conversations/:id': (data) => {
+    const conversationId = parsePositiveInt(data.id);
+    if (!conversationId) return fail(400, '会话 ID 不合法');
+    const index = conversations.findIndex((c) => c.conversationId === conversationId);
+    if (index < 0) return fail(404, '会话不存在');
+    if (!isParticipant(conversations[index], CURRENT_USER_ID)) return fail(403, '无权操作该会话');
+    conversations.splice(index, 1);
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].conversationId === conversationId) messages.splice(i, 1);
+    }
+    return delay({ deleted: true });
   },
 
   'GET /api/conversations/:id/context': (data) => {

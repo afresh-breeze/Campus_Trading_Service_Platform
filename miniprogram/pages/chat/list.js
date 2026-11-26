@@ -13,6 +13,21 @@ const adapter = require('../../utils/adapter');
 
 const TAB_INDEX = 2;
 const PAGE_SIZE = 20;
+// 左滑露出的操作区：3 个按钮各 150rpx，换算成 px 用于手指跟随位移
+const ACTION_ITEM_RPX = 150;
+const ACTION_COUNT = 3;
+
+/** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
+function getNavMetrics() {
+  try {
+    const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+    if (menu && menu.top && menu.height) return { top: menu.top, height: menu.height };
+    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    return { top: (win.statusBarHeight || 20) + 4, height: 32 };
+  } catch (e) {
+    return { top: 24, height: 32 };
+  }
+}
 
 /** 会话行 → 纯展示结构 */
 function toCard(row) {
@@ -29,6 +44,10 @@ function toCard(row) {
     unreadCount: unread,
     unreadText: unread > 99 ? '99+' : String(unread),
     hasUnread: unread > 0,
+    isPinned: row.isPinned === true || Number(row.isPinned) === 1,
+    // 左滑位移（px）：0 = 收起，-actionWidth = 露出全部操作
+    swipeX: 0,
+    swiping: false,
     bizType: row.bizType || '',
     bizId: row.bizId
   };
@@ -36,6 +55,8 @@ function toCard(row) {
 
 Page({
   data: {
+    stickyTop: 24,
+    barHead: 32,
     list: [],
     total: 0,
     page: 1,
@@ -49,6 +70,14 @@ Page({
 
   onLoad() {
     this._reqSeq = 0;
+    const nav = getNavMetrics();
+    this.setData({ stickyTop: nav.top, barHead: nav.height });
+    let windowWidth = 375;
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+      windowWidth = win.windowWidth || windowWidth;
+    } catch (e) {}
+    this._actionWidth = (ACTION_ITEM_RPX * ACTION_COUNT * windowWidth) / 750;
   },
 
   onShow() {
@@ -135,7 +164,140 @@ Page({
     this.refresh();
   },
 
+  // ---------------- 会话左滑 / 长按操作 ----------------
+  _setSwipe(id, x, swiping) {
+    const updates = {};
+    this.data.list.forEach((conv, index) => {
+      if (conv.conversationId === id) {
+        updates['list[' + index + '].swipeX'] = x;
+        updates['list[' + index + '].swiping'] = !!swiping;
+      } else if (conv.swipeX !== 0 || conv.swiping) {
+        // 同一时刻只允许一行露出操作，避免多张卡片叠在一起
+        updates['list[' + index + '].swipeX'] = 0;
+        updates['list[' + index + '].swiping'] = false;
+      }
+    });
+    if (Object.keys(updates).length) this.setData(updates);
+  },
+
+  _offsetOf(id) {
+    const hit = this.data.list.find((c) => c.conversationId === id);
+    return hit ? hit.swipeX || 0 : 0;
+  },
+
+  onSwipeStart(e) {
+    const t = (e.touches && e.touches[0]) || {};
+    this._touch = {
+      id: e.currentTarget.dataset.id,
+      startX: t.clientX || 0,
+      startY: t.clientY || 0,
+      base: this._offsetOf(e.currentTarget.dataset.id),
+      lastX: this._offsetOf(e.currentTarget.dataset.id),
+      lock: '',
+      moved: false
+    };
+    this._suppressTap = false;
+  },
+
+  onSwipeMove(e) {
+    const touch = this._touch;
+    if (!touch) return;
+    const t = (e.touches && e.touches[0]) || {};
+    const dx = (t.clientX || 0) - touch.startX;
+    const dy = (t.clientY || 0) - touch.startY;
+
+    // 先判定手势方向：纵向优先交给 scroll-view，避免滑动列表时卡片乱跑
+    if (!touch.lock) {
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) {
+        touch.lock = 'scroll';
+        return;
+      }
+      if (Math.abs(dx) > 8) touch.lock = 'swipe';
+      else return;
+    }
+    if (touch.lock !== 'swipe') return;
+
+    touch.moved = true;
+    let x = touch.base + dx;
+    if (x > 0) x = 0;
+    if (x < -this._actionWidth) x = -this._actionWidth;
+    touch.lastX = x;
+    this._setSwipe(touch.id, x, true);
+  },
+
+  onSwipeEnd() {
+    const touch = this._touch;
+    this._touch = null;
+    if (!touch || !touch.moved) return;
+    // 结束手势后屏蔽一次 tap，防止「滑动松手」误进聊天页
+    this._suppressTap = true;
+    setTimeout(() => {
+      this._suppressTap = false;
+    }, 260);
+    const opened = touch.lastX < -this._actionWidth / 2;
+    this._setSwipe(touch.id, opened ? -this._actionWidth : 0, false);
+  },
+
+  /** 长按等价于右键：直接唤出操作区 */
+  onConvLongPress(e) {
+    this._suppressTap = true;
+    setTimeout(() => {
+      this._suppressTap = false;
+    }, 260);
+    this._setSwipe(e.currentTarget.dataset.id, -this._actionWidth, false);
+  },
+
+  onTogglePin(e) {
+    const id = Number(e.currentTarget.dataset.id || 0);
+    const pinned = e.currentTarget.dataset.pinned === true || e.currentTarget.dataset.pinned === 'true';
+    if (!id) return;
+    http
+      .patch('/api/conversations/' + id + '/pin', { pinned: !pinned }, { silent: true })
+      .then(() => {
+        util.toast(pinned ? '已取消置顶' : '已置顶');
+        return this.refresh();
+      })
+      .catch((err) => util.toast((err && err.message) || '操作失败'));
+  },
+
+  onMarkUnread(e) {
+    const id = Number(e.currentTarget.dataset.id || 0);
+    if (!id) return;
+    http
+      .put('/api/conversations/' + id + '/unread', {}, { silent: true })
+      .then(() => {
+        util.toast('已标为未读');
+        const app = getApp();
+        if (app && typeof app.refreshUnread === 'function') app.refreshUnread();
+        return this.refresh();
+      })
+      .catch((err) => util.toast((err && err.message) || '操作失败'));
+  },
+
+  onDeleteConv(e) {
+    const id = Number(e.currentTarget.dataset.id || 0);
+    if (!id) return;
+    util.confirm('删除后该会话的聊天记录也会一并删除，确认？', '删除会话').then((ok) => {
+      if (!ok) return;
+      http
+        .del('/api/conversations/' + id, {}, { silent: true })
+        .then(() => {
+          util.toast('已删除');
+          const app = getApp();
+          if (app && typeof app.refreshUnread === 'function') app.refreshUnread();
+          return this.refresh();
+        })
+        .catch((err) => util.toast((err && err.message) || '删除失败'));
+    });
+  },
+
   onTapConv(e) {
+    if (this._suppressTap) return;
+    // 操作区露出时，第一下点击只负责收起，不进聊天页
+    if (this.data.list.some((c) => c.swipeX < 0)) {
+      this._setSwipe(-1, 0, false);
+      return;
+    }
     const { id, peer, biztype, bizid } = e.currentTarget.dataset;
     if (!id) return;
     wx.navigateTo({

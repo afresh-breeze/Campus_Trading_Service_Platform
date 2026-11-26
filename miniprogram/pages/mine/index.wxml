@@ -1,5 +1,4 @@
 <!-- 我的（B 成员：个人中心，tab 4） -->
-<nav-top />
 <scroll-view
   class="page-scroll"
   scroll-y
@@ -14,6 +13,15 @@
   <view slot="refresher" class="pull-eyes"
     style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page--tab mine">
+  <!-- 顶部整块吸附：占位到胶囊顶，标题行与胶囊同排，位置与二手/代取大厅一致 -->
+  <view class="mine-bar">
+    <view class="mine-bar__safe" style="height: {{stickyTop}}px"></view>
+    <view class="mine-bar__head" style="height: {{barHead}}px">
+      <text class="mine-bar__title">我的</text>
+    </view>
+  </view>
+
+  <view class="mine-content">
   <!-- 用户卡：未登录整卡可点，跳登录 -->
   <view class="mine-hero" bindtap="onTapProfile" hover-class="mine-hero--hover">
     <view class="mine-hero__avatar">
@@ -93,5 +101,6 @@
   </view>
 
   <view class="mine-footer">校园易站 {{version}}</view>
+  </view>
 </view>
 </scroll-view>

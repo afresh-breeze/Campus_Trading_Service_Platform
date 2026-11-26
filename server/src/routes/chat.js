@@ -227,13 +227,15 @@ router.get('/', async (req, res, next) => {
     const total = Number(countRows[0].total || 0);
 
     const [rows] = await pool.query(
-      `SELECT conversationId, userAId, userBId, bizType, bizId,
-              userANickname, userAAvatar, userBNickname, userBAvatar,
-              lastMessage, lastTime,
-              fn_unread_count(conversationId, ?) AS unreadCount
-         FROM v_conversation_base
-        WHERE userAId = ? OR userBId = ?
-        ORDER BY (lastTime IS NULL) ASC, lastTime DESC, conversationId DESC
+      `SELECT v.conversationId, v.userAId, v.userBId, v.bizType, v.bizId,
+              v.userANickname, v.userAAvatar, v.userBNickname, v.userBAvatar,
+              v.lastMessage, v.lastTime,
+              fn_unread_count(v.conversationId, ?) AS unreadCount,
+              c.is_pinned AS isPinned
+         FROM v_conversation_base v
+         JOIN conversations c ON c.conversation_id = v.conversationId
+        WHERE v.userAId = ? OR v.userBId = ?
+        ORDER BY c.is_pinned DESC, (v.lastTime IS NULL) ASC, v.lastTime DESC, v.conversationId DESC
         LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
       [userId, userId, userId]
     );
@@ -248,12 +250,105 @@ router.get('/', async (req, res, next) => {
         lastMessage: row.lastMessage === null ? null : row.lastMessage,
         lastTime: row.lastTime === null ? null : row.lastTime,
         unreadCount: Number(row.unreadCount || 0),
+        isPinned: Number(row.isPinned || 0) === 1,
         bizType: row.bizType,
         bizId: row.bizId
       };
     });
 
     return ok(res, { list, total, page, pageSize });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/**
+ * 会话写操作直读 conversations 表（视图只用于展示）。
+ * 返回 { status: 'ok'|'not_found'|'forbidden', conversation }
+ */
+async function loadOwnedConversation(conversationId, userId) {
+  const [rows] = await pool.query(
+    'SELECT conversation_id, user_a_id, user_b_id FROM conversations WHERE conversation_id = ?',
+    [conversationId]
+  );
+  if (!rows.length) return { status: 'not_found', conversation: null };
+  const row = rows[0];
+  const isParticipant =
+    Number(row.user_a_id) === Number(userId) || Number(row.user_b_id) === Number(userId);
+  return { status: isParticipant ? 'ok' : 'forbidden', conversation: row };
+}
+
+// ============================================================
+// PATCH /api/conversations/:id/pin  置顶 / 取消置顶
+// ============================================================
+router.patch('/:id/pin', async (req, res, next) => {
+  const conversationId = parsePositiveInt(req.params.id);
+  if (!conversationId) return fail(res, 400, '会话 ID 不合法');
+  const body = req.body || {};
+  if (typeof body.pinned !== 'boolean') return fail(res, 400, 'pinned 必须是布尔值');
+
+  try {
+    const owned = await loadOwnedConversation(conversationId, req.user.userId);
+    if (owned.status === 'not_found') return fail(res, 404, '会话不存在');
+    if (owned.status === 'forbidden') return fail(res, 403, '无权操作该会话');
+    await pool.query('UPDATE conversations SET is_pinned = ? WHERE conversation_id = ?', [
+      body.pinned ? 1 : 0,
+      conversationId
+    ]);
+    return ok(res, { pinned: body.pinned });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ============================================================
+// PUT /api/conversations/:id/unread  标为未读
+// 口径：把该会话里「对方发的最后一条消息」置回未读，和微信一致；
+// 不把全部历史消息置未读，否则一个会话会瞬间变成几十条未读。
+// ============================================================
+router.put('/:id/unread', async (req, res, next) => {
+  const conversationId = parsePositiveInt(req.params.id);
+  if (!conversationId) return fail(res, 400, '会话 ID 不合法');
+
+  try {
+    const owned = await loadOwnedConversation(conversationId, req.user.userId);
+    if (owned.status === 'not_found') return fail(res, 404, '会话不存在');
+    if (owned.status === 'forbidden') return fail(res, 403, '无权操作该会话');
+    // 派生表包一层，绕开 MySQL「UPDATE 目标表不能在子查询里直接读」的限制
+    await pool.query(
+      `UPDATE messages SET is_read = 0
+        WHERE message_id = (
+          SELECT message_id FROM (
+            SELECT message_id FROM messages
+             WHERE conversation_id = ? AND sender_id <> ?
+             ORDER BY message_id DESC LIMIT 1
+          ) AS target
+        )`,
+      [conversationId, req.user.userId]
+    );
+    const [rows] = await pool.query('SELECT fn_unread_count(?, ?) AS unreadCount', [
+      conversationId,
+      req.user.userId
+    ]);
+    return ok(res, { unreadCount: Number(rows[0].unreadCount || 0) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ============================================================
+// DELETE /api/conversations/:id  删除会话（messages 外键 ON DELETE CASCADE）
+// ============================================================
+router.delete('/:id', async (req, res, next) => {
+  const conversationId = parsePositiveInt(req.params.id);
+  if (!conversationId) return fail(res, 400, '会话 ID 不合法');
+
+  try {
+    const owned = await loadOwnedConversation(conversationId, req.user.userId);
+    if (owned.status === 'not_found') return fail(res, 404, '会话不存在');
+    if (owned.status === 'forbidden') return fail(res, 403, '无权操作该会话');
+    await pool.query('DELETE FROM conversations WHERE conversation_id = ?', [conversationId]);
+    return ok(res, { deleted: true });
   } catch (err) {
     return next(err);
   }

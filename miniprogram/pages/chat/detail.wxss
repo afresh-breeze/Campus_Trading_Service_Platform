@@ -179,7 +179,8 @@
 /* ---- 输入条 ---- */
 .cd-inputbar {
   display: flex;
-  align-items: center;
+  /* 输入框增高时，「＋」和发送按钮贴底对齐，不跟着垂直居中飘 */
+  align-items: flex-end;
   padding: 16rpx 20rpx;
   background: #ffffff;
   border-top: 1rpx solid var(--color-border, #eee6d8);
@@ -209,10 +210,14 @@
 .cd-inputbar__input {
   flex: 1;
   min-height: 64rpx;
-  padding: 0 20rpx;
+  /* max-height 只兜底极端长文本；日常增高交给 textarea 的 auto-height */
+  max-height: 240rpx;
+  box-sizing: border-box;
+  padding: 10rpx 20rpx;
   background: var(--color-surface-2, #f4f1e7);
-  border-radius: 999rpx;
+  border-radius: 20rpx;
   font-size: var(--font-md, 28rpx);
+  line-height: 44rpx;
 }
 .cd-inputbar__placeholder {
   color: var(--color-text-4, #b3a695);
