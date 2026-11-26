@@ -161,11 +161,12 @@ router.post('/', async (req, res, next) => {
       }
     } else if (bizId > 0) {
       // P0-4：私单的查看/接单授权依赖「存在该单会话」（errands.js 的 isErrandChatPeer
-      // 与 sp_take_errand），所以建会话这一步必须自己把关：私单只允许发布者发起。
-      // 否则知道 publisherId + orderId 的人可以先插一条会话，再据此查看甚至接走私单。
+      // 与 sp_take_errand），所以建会话这一步必须把关：私单只允许发布者或该单接单者发起。
+      // 接单者（runner_id）本就拥有详情查看权，会话被删后也应能重新联系发布者；
+      // 陌生人知道 publisherId + orderId 依然不能先插会话再据此查看/接走私单。
       // 大厅单（visibility='hall'）不受限，任何人都可以就它发起咨询。
       const [orderRows] = await pool.query(
-        `SELECT order_id AS orderId, publisher_id AS publisherId, visibility
+        `SELECT order_id AS orderId, publisher_id AS publisherId, runner_id AS runnerId, visibility
            FROM errand_orders
           WHERE order_id = ?`,
         [bizId]
@@ -174,7 +175,9 @@ router.post('/', async (req, res, next) => {
         return fail(res, 404, '订单不存在');
       }
       const order = orderRows[0];
-      if (order.visibility === 'private' && Number(order.publisherId) !== Number(userId)) {
+      const isPublisher = Number(order.publisherId) === Number(userId);
+      const isRunner = order.runnerId !== null && Number(order.runnerId) === Number(userId);
+      if (order.visibility === 'private' && !isPublisher && !isRunner) {
         return fail(res, 403, '私单只能由发布者发起会话');
       }
     }

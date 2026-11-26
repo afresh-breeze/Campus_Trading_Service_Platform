@@ -377,14 +377,15 @@ if (allowed.indexOf(status) < 0) return fail(409, '当前状态不能变更为�
 
 ### 7.4.3 聊天会话建立（B 参与 chat.js，A 文件）
 
-**需求**：同一对用户对同一业务对象（商品/代取单）只会话建一条；私单只有发布者能发起会话。
+**需求**：同一对用户对同一业务对象（商品/代取单）只会话建一条；私单只允许发布者或该单接单者发起会话（11-28 放宽：接单者会话被删后也能凭 `runner_id` 重新联系发布者；陌生人对私单仍 403，防越权接单）。
 
 **设计**：会话表以 `chk_conversations_user_order` 约束 `user_a_id < user_b_id` 归一化 + 四元组唯一键去重；路由层调存储过程 `sp_get_or_create_conversation`，存储过程内部先查后插，配合唯一键在两端并发创建时也只留一条。
 
 ```js
-// server/src/routes/chat.js（B 实现，节选）
-if (order.visibility === 'private'
-    && Number(order.publisherId) !== Number(userId)) {
+// server/src/routes/chat.js（B 实现，节选；11-28 放宽为发布者或接单者）
+const isPublisher = Number(order.publisherId) === Number(userId);
+const isRunner = order.runnerId !== null && Number(order.runnerId) === Number(userId);
+if (order.visibility === 'private' && !isPublisher && !isRunner) {
   return fail(res, 403, '私单只能由发布者发起会话');
 }
 // 存储过程保证 user_a_id < user_b_id 归一化 + 唯一键去重
@@ -511,7 +512,7 @@ onHide() { this.stopPoll(); this.markRead(); }   // 隐藏即停轮询 + 标已�
 | 5 | 提交空表单 | ✅ 字段级红字拦截，请求数为 0 |
 | 6 | 报酬 abc / -1 / 9999 | ✅ 前端全部拦截（0 < r ≤ 200） |
 | 7 | 消息发空 / 501 字 | ✅ 前端 maxlength 截断 + 后端 400 双层 |
-| 8 | 打开别人的私单（越权） | ✅ 403「私单只能由发布者发起会话」，友好错误卡 |
+| 8 | 打开别人的私单（越权） | ✅ 403「私单只能由发布者发起会话」，友好错误卡（发布者/接单者可发起，陌生人仍拦截） |
 | 9 | 快速连点接单 3 次 | ✅ `submitting` 守卫，只发 1 次请求 |
 | 10 | 聊天页快速进出 10 次 | ✅ 定时器集合为空，无泄漏 |
 | 11 | 长昵称 / 长标题 | ✅ 省略号截断，不撑破布局 |

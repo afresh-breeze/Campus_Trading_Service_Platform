@@ -10,7 +10,7 @@
  * 维护约定：后端新增/改动接口时，先改 mock.js，再在这里补一条断言。
  * 变更：2026-11-12 按 A 的全面排查补 [3] 私单全流程、[4] 代取校验等价、
  *       [7] 商品/书目/用户校验等价，并修正「登录学号 5 位 → 400」这条**错误契约**。
- *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权）、[10] 大厅筛选
+ *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权，11-28 放宽为发布者或接单者）、[10] 大厅筛选
  *       （area/itemSize/timeType/sort，同维度 OR + 跨维度 AND + 筛选后 total）。
  *       2026-11-15 A 的实现（f3d44dc）推送后，[10] 的 400 改为**逐字断言文案**，
  *       并澄清 timeType 合法筛选项含 range（与订单类型一致）、参数支持字符串数组。
@@ -303,7 +303,7 @@ const OK_ERRAND = {
   await expectFail('注册昵称 13 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: '一二三四五六七八九十一二三', password: '123456' }, 400);
   await expectFail('注册学号 5 位 400', '/api/auth/register', 'POST', { studentNo: '12345', nickname: '五六', password: '123456' }, 400);
 
-  console.log('\n[9] 会话发起权限：私单只允许发布者（P0-4）');
+  console.log('\n[9] 会话发起权限：私单允许发布者或接单者（P0-4 放宽）');
   // 2004 = 当前用户（1）发布的未发布私单
   const convOwnPrivate = await mock.run('/api/conversations', 'POST', {
     peerId: 6,
@@ -311,10 +311,19 @@ const OK_ERRAND = {
     bizId: 2004
   });
   check('自己发布的私单可以发起会话', !!convOwnPrivate.conversationId, convOwnPrivate);
-  // 2008 = 别人（5）的私单：不拦的话，知道 publisherId + orderId 就能先插会话，
-  // 再靠 isErrandChatPeer 拿到查看/接单授权（越权）
+  // 2008 = 别人（5）的私单，[4] 里当前用户已接单（runnerId=1）→ 接单者也可以发起会话，
+  // 幂等复用已有会话 3003；接单者删了会话也能凭 runnerId 重新联系发布者
+  const convAsRunner = await mock.run('/api/conversations', 'POST', {
+    peerId: 5,
+    bizType: 'errand',
+    bizId: 2008
+  });
+  check('接了私单的同学可以发起会话（复用 3003）', convAsRunner.conversationId === 3003, convAsRunner);
+  // 释放接单后，当前用户既非发布者也非接单者：不拦的话，知道 publisherId + orderId
+  // 就能先插会话，再靠 isErrandChatPeer 拿到查看/接单授权（越权）
+  await mock.run('/api/errands/2008/release', 'POST', {});
   await expectFailMsg(
-    '别人的私单发起会话 → 403',
+    '非发布者且非接单者的私单发起会话 → 403',
     '/api/conversations',
     'POST',
     { peerId: 5, bizType: 'errand', bizId: 2008 },
