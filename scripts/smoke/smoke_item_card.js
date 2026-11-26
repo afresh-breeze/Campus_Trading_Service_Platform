@@ -131,5 +131,11 @@ check('时间样式 22rpx + text-3', /\.card__time[\s\S]*?font-size: 22rpx[\s\S]
 check('卡片按压只压暗不缩放（11-25 方案二：scale 与视差同帧最伤）',
   /\.card--hover\s*\{[^}]*opacity:\s*0\.94/.test(wxss) && !/\.card--hover\s*\{[^}]*scale\(/.test(wxss), '按压口径不符');
 
+console.log('\n[ ] 无封面占位：线条图案稳定随机（11-26 定稿）');
+const phCompJs = fs.readFileSync(path.join(MP, 'components/item-card/index.js'), 'utf8');
+check('组件接 placeholder.pick（itemId 稳定随机）', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(phCompJs) && /placeholder\.pick\(item\.itemId\)/.test(phCompJs) && /placeholder: item\.coverUrl \? '' : placeholder\.pick/.test(phCompJs));
+check('wxml 无封面分支渲染占位图（不再「暂无图片」灰框）', wxml.indexOf('{{placeholder}}"') > -1 && wxml.indexOf('card__img--empty') < 0);
+check('占位图资源齐备（7 张全部存在）', [1, 2, 3, 4, 5, 6, 7].every((n) => fs.existsSync(path.join(MP, 'assets/placeholder/ph-' + n + '.png'))));
+
 console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
 process.exit(fail ? 1 : 0);

@@ -160,25 +160,18 @@ router.post('/', async (req, res, next) => {
         return fail(res, 404, '商品不存在');
       }
     } else if (bizId > 0) {
-      // P0-4：私单的查看/接单授权依赖「存在该单会话」（errands.js 的 isErrandChatPeer
-      // 与 sp_take_errand），所以建会话这一步必须把关：私单只允许发布者或该单接单者发起。
-      // 接单者（runner_id）本就拥有详情查看权，会话被删后也应能重新联系发布者；
-      // 陌生人知道 publisherId + orderId 依然不能先插会话再据此查看/接走私单。
-      // 大厅单（visibility='hall'）不受限，任何人都可以就它发起咨询。
+      // 11-26 用户定稿：取消「私单只能由发布者发起会话」限制（真机反馈：点进对话
+      // 入口应直接能聊）。任何登录用户都可以就任何订单发起会话——「先聊后接」。
+      // 注意连带影响：errands.js 的详情查看与 canTake 授权依赖 isErrandChatPeer
+      // （存在该单会话即可见/可接），放开后私单事实上对知道 orderId 的人开放，
+      // 与「私单靠分享 orderId 邀请同学」的产品预期一致；**此改动需要群里同步 A**。
+      // 这里保留订单存在性检查（404），确保会话卡片有合法的业务上下文。
       const [orderRows] = await pool.query(
-        `SELECT order_id AS orderId, publisher_id AS publisherId, runner_id AS runnerId, visibility
-           FROM errand_orders
-          WHERE order_id = ?`,
+        `SELECT order_id AS orderId FROM errand_orders WHERE order_id = ?`,
         [bizId]
       );
       if (!orderRows.length) {
         return fail(res, 404, '订单不存在');
-      }
-      const order = orderRows[0];
-      const isPublisher = Number(order.publisherId) === Number(userId);
-      const isRunner = order.runnerId !== null && Number(order.runnerId) === Number(userId);
-      if (order.visibility === 'private' && !isPublisher && !isRunner) {
-        return fail(res, 403, '私单只能由发布者发起会话');
       }
     }
 

@@ -21,6 +21,11 @@
 .cd-page .nav-top {
   flex-shrink: 0;
 }
+/* 键盘弹起：置零页面底部安全区 padding，输入条 padding-bottom=键盘实高
+   刚好贴住键盘顶沿（11-26 真机反馈：间距太大） */
+.cd-page--kb {
+  padding-bottom: 0;
+}
 
 /* ---- 业务卡片 ---- */
 .cd-biz {

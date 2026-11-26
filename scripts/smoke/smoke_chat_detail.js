@@ -369,6 +369,7 @@ const msg = (id, senderId, content, extra) =>
   check('WXML 图片 binderror 兜底分支 + 点击重试', wxmlText.indexOf('binderror="onImgError"') > -1 && wxmlText.indexOf('onImgRetry') > -1 && wxmlText.indexOf('cd-bubble__img--fallback') > -1);
   check('WXML 关闭 adjust-position（页面不被顶飞）', /adjust-position="\{\{false\}\}"/.test(wxmlText) && wxmlText.indexOf('bindkeyboardheightchange="onKbHeight"') > -1);
   check('WXML 输入条按键盘高度垫底', /padding-bottom:' \+ keyboardHeight \+ 'px'/.test(wxmlText));
+  check('键盘弹起时置零页面安全区 padding（贴住键盘）', /cd-page \{\{keyboardHeight \? 'cd-page--kb' : ''\}\}/.test(wxmlText) && /\.cd-page--kb\s*\{[^}]*padding-bottom: 0;/.test(wxss13));
   check('WXSS 加载失败占位样式', /\.cd-bubble__img--fallback\s*\{/.test(wxss13));
 
   q.onUnload();

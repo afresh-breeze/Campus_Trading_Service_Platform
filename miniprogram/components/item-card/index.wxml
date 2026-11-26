@@ -1,7 +1,8 @@
 <view class="card card--{{mode}}" bindtap="onTap" hover-class="card--hover">
   <view class="card__cover">
     <image wx:if="{{cover}}" class="card__img" src="{{cover}}" mode="aspectFill" lazy-load />
-    <view wx:else class="card__img card__img--empty">暂无图片</view>
+    <!-- 无封面：线条图案占位（11-26 定稿，按 itemId 稳定随机，不再是「暂无图片」灰框） -->
+    <image wx:else class="card__img" src="{{placeholder}}" mode="aspectFill" lazy-load />
     <!-- 压在图片上：用实心标签，浅底标签压图会糊（走查记录 #4） -->
     <view class="card__tag" wx:if="{{mode === 'grid' && item.status && item.status !== 'on_sale'}}">
       <status-tag domain="item" status="{{item.status}}" plain="{{false}}" />

@@ -2132,14 +2132,9 @@ const routes = {
     if (bizType === 'errand' && bizId > 0) {
       const order = errands.filter((e) => Number(e.orderId) === Number(bizId))[0];
       if (!order) return fail(404, '订单不存在');
-      // P0-4：私单的查看/接单授权依赖「存在该单会话」，所以建会话必须把关：
-      // 只允许发布者或该单接单者发起（接单者本就有详情查看权，会话删了也能重新联系）；
-      // 陌生人知道 publisherId + orderId 依然不能先插会话再查看/接走私单。
-      const isPublisher = Number(order.publisherId) === CURRENT_USER_ID;
-      const isRunner = order.runnerId !== null && Number(order.runnerId) === CURRENT_USER_ID;
-      if (order.visibility === 'private' && !isPublisher && !isRunner) {
-        return fail(403, '私单只能由发布者发起会话');
-      }
+      // 11-26 用户定稿：取消「私单只能由发布者发起会话」限制（与 server chat.js
+      // 同步）。任何登录用户都能就任何订单发起会话，先聊后接；只保留订单存在性
+      // 检查。连带影响：详情 canTake 依赖 isChatPeer，私单对知道 orderId 的人开放。
     }
 
     let conv = conversations.find(

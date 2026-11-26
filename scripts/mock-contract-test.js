@@ -303,7 +303,7 @@ const OK_ERRAND = {
   await expectFail('注册昵称 13 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: '一二三四五六七八九十一二三', password: '123456' }, 400);
   await expectFail('注册学号 5 位 400', '/api/auth/register', 'POST', { studentNo: '12345', nickname: '五六', password: '123456' }, 400);
 
-  console.log('\n[9] 会话发起权限：私单允许发布者或接单者（P0-4 放宽）');
+  console.log('\n[9] 会话发起权限：任何登录用户可就任意订单发起会话（11-26 定稿，取消私单限制）');
   // 2004 = 当前用户（1）发布的未发布私单
   const convOwnPrivate = await mock.run('/api/conversations', 'POST', {
     peerId: 6,
@@ -319,16 +319,16 @@ const OK_ERRAND = {
     bizId: 2008
   });
   check('接了私单的同学可以发起会话（复用 3003）', convAsRunner.conversationId === 3003, convAsRunner);
-  // 释放接单后，当前用户既非发布者也非接单者：不拦的话，知道 publisherId + orderId
-  // 就能先插会话，再靠 isErrandChatPeer 拿到查看/接单授权（越权）
+  // 11-26 用户定稿：释放接单后，当前用户既非发布者也非接单者，也能发起会话
+  //（先聊后接）。连带影响：errands.js 详情 canTake 依赖 isErrandChatPeer，
+  // 私单对知道 orderId 的人开放；**此口径需要群里同步 A**。
   await mock.run('/api/errands/2008/release', 'POST', {});
-  await expectFailMsg(
-    '非发布者且非接单者的私单发起会话 → 403',
-    '/api/conversations',
-    'POST',
-    { peerId: 5, bizType: 'errand', bizId: 2008 },
-    '私单只能由发布者发起会话'
-  );
+  const convAnyUser = await mock.run('/api/conversations', 'POST', {
+    peerId: 5,
+    bizType: 'errand',
+    bizId: 2008
+  });
+  check('非发布者/接单者也能就私单发起会话（复用 3003）', convAnyUser.conversationId === 3003, convAnyUser);
   // 2001 = 大厅单：任何登录用户都能就它发起咨询
   const convHall = await mock.run('/api/conversations', 'POST', {
     peerId: 5,

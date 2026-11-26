@@ -20,7 +20,10 @@
 </view>
 
 <block wx:else>
-  <view class="cd-page">
+  <!-- 11-26：键盘弹起时 cd-page--kb 置零安全区底 padding——键盘实高不含
+       home-indicator 安全区，页面再垫一次会双重抬升（输入条与键盘之间
+       隔出约 34px 空隙，真机反馈要求贴近） -->
+  <view class="cd-page {{keyboardHeight ? 'cd-page--kb' : ''}}">
     <nav-top back title="{{pageTitle}}" />
     <!-- 业务卡片：点击进商品/代取详情；动作仍在详情页做 -->
     <view wx:if="{{bizCard}}" class="cd-biz" bindtap="onBizTap" hover-class="cd-biz--hover">

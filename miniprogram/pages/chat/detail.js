@@ -192,7 +192,7 @@ Page({
     if (code === 403) {
       this.setData({
         loading: false,
-        // 透出后端原因（如「私单只能由发布者发起会话」），比通用文案更有用
+        // 透出后端原因（如订单/商品校验文案），比通用文案更有用
         fatalError: '无法打开会话',
         fatalDesc: (err && err.message) || '只有会话参与者才能查看消息',
         canRetry: false

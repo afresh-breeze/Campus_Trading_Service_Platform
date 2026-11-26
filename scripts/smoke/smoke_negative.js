@@ -199,12 +199,14 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
   const chatWxml = fs.readFileSync(path.join(REPO, 'pages', 'chat', 'detail.wxml'), 'utf8');
   check('输入框 maxlength=500 前端就拦', chatWxml.indexOf('maxlength="500"') > -1, null);
 
-  // ============ [8] 打开别人的订单详情（越权）→ 403 友好提示 ============
-  console.log('\n[8] 越权 403 → 友好提示不空白');
-  let e8 = null;
-  await mock.run('/api/conversations', 'POST', { peerId: 5, bizType: 'errand', bizId: 2008 }).catch((e) => { e8 = e; });
-  check('别人私单建会话 403', e8 && e8.code === 403, e8);
-  check('文案可读（非技术报错）', e8 && e8.message === '私单只能由发布者发起会话', e8);
+  // ============ [8] 私单建会话（11-26 定稿：取消限制，先聊后接） ============
+  console.log('\n[8] 私单建会话不再 403');
+  let c8 = null;
+  await mock
+    .run('/api/conversations', 'POST', { peerId: 5, bizType: 'errand', bizId: 2008 })
+    .then((r) => { c8 = r; })
+    .catch(() => {});
+  check('非发布者/接单者也能就私单建会话（幂等复用 3003）', c8 && c8.conversationId === 3003, c8);
   const detailSrc = fs.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
   check('详情页 403 透出后端原因而非空白', detailSrc.indexOf('err.message') > -1 || detailSrc.indexOf('err && err.message') > -1, null);
 

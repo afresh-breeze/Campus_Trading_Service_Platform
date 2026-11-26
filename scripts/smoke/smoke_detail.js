@@ -236,17 +236,16 @@ function check(name, cond, extra) {
     /\/uploads\/errand-real\.png$/.test(pImg.data.heroImage) && pImg.data.errandImages.length === 1,
     { hero: pImg.data.heroImage, images: pImg.data.errandImages });
 
-  check('公共层 errand.js 存在且插画已放大到 512²', (function () {
+  check('公共层 errand.js 走占位模块，7 张线条图案齐备', (function () {
     const u = fsD.readFileSync(path.join(REPO, 'utils', 'errand.js'), 'utf8');
-    return /food/.test(u) && /guessCategory/.test(u) && /categoryIcon/.test(u)
-      && ['food', 'doc', 'daily', 'express', 'other'].every(function (n) {
-        const p2 = path.join(REPO, 'assets', 'errand', n + '.png');
-        if (!fsD.existsSync(p2)) return false;
-        const buf = fsD.readFileSync(p2);
-        // PNG IHDR：宽高在字节 16..24（大端）
-        return buf.readUInt32BE(16) === 512 && buf.readUInt32BE(20) === 512;
-      });
-  })(), '公共层或插画缺失');
+    if (!(/placeholder\.pick/.test(u) && /categoryIcon/.test(u))) return false;
+    // 11-26 定稿：占位图统一 assets/placeholder/（7 张），品类插画已弃用
+    return [1, 2, 3, 4, 5, 6, 7].every(function (n) {
+      const p2 = path.join(REPO, 'assets', 'placeholder', 'ph-' + n + '.png');
+      if (!fsD.existsSync(p2)) return false;
+      return fsD.readFileSync(p2).length > 0;
+    });
+  })(), '公共层或占位图缺失');
   check('hall.js 已切换到公共层（本地 guessCategory 无残留）', (function () {
     const h = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'hall.js'), 'utf8');
     return /errandUtil\.categoryIcon\(order\)/.test(h) && !/function guessCategory/.test(h);

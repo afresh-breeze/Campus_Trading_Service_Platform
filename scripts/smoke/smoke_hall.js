@@ -295,26 +295,28 @@ function order(id, extra) {
   p8.onFilterTap({ currentTarget: { dataset: { type: 'itemSize', value: 'small' } } });
   check('重复点同一筛选不发请求', calls[calls.length - 1].query.timeType === 'asap' && calls[calls.length - 1].query.page === 1);
 
-  console.log('\n[10] 品类缩略图派生（toCard 内的 guessCategory）');
+  console.log('\n[10] 无图占位：7 张线条图案按 orderId 稳定随机（11-26 定稿）');
+  const phRe10 = /^\/assets\/placeholder\/ph-[1-7]\.png$/;
+  const phList = [
+    order(1, { itemDesc: '帮我带一份外卖' }),
+    order(2, { itemDesc: '', remark: '菜鸟驿站取件' }),
+    order(3, { itemDesc: '打印资料' }),
+    order(4, { itemDesc: '帮拿药' }),
+    order(5, { itemDesc: '' })
+  ];
   const p9 = makePage();
   calls.length = 0;
   p9.fetch(1);
-  flushNext(true, {
-    list: [
-      order(1, { itemDesc: '帮我带一份外卖' }),
-      order(2, { itemDesc: '', remark: '菜鸟驿站取件' }),
-      order(3, { itemDesc: '打印资料' }),
-      order(4, { itemDesc: '帮拿药' }),
-      order(5, { itemDesc: '' })
-    ],
-    total: 5
-  });
+  flushNext(true, { list: JSON.parse(JSON.stringify(phList)), total: 5 });
   await tick();
-  check('外卖→food', p9.data.list[0].categoryIcon === '/assets/errand/food.png', p9.data.list[0].categoryIcon);
-  check('驿站取件→express', p9.data.list[1].categoryIcon === '/assets/errand/express.png', p9.data.list[1].categoryIcon);
-  check('打印资料→doc', p9.data.list[2].categoryIcon === '/assets/errand/doc.png', p9.data.list[2].categoryIcon);
-  check('帮拿药→daily', p9.data.list[3].categoryIcon === '/assets/errand/daily.png', p9.data.list[3].categoryIcon);
-  check('空描述→other 兜底', p9.data.list[4].categoryIcon === '/assets/errand/other.png', p9.data.list[4].categoryIcon);
+  const icons10 = p9.data.list.map((o) => o.categoryIcon);
+  check('5 张卡片全部落在 7 张占位图内', icons10.every((u) => phRe10.test(u)), icons10);
+  const p9b = makePage();
+  p9b.fetch(1);
+  flushNext(true, { list: JSON.parse(JSON.stringify(phList)), total: 5 });
+  await tick();
+  check('同一订单跨请求稳定同图（列表/详情/刷新不跳变）', JSON.stringify(icons10) === JSON.stringify(p9b.data.list.map((o) => o.categoryIcon)), { a: icons10, b: p9b.data.list.map((o) => o.categoryIcon) });
+  check('占位图资源齐备（7 张全部存在）', [1, 2, 3, 4, 5, 6, 7].every((n) => require('fs').existsSync(path.join(MP, 'assets/placeholder/ph-' + n + '.png'))));
 
   console.log('\n[11] 标题与胶囊齐平、滚动全程冻结（无任何动画）');
   const p10 = makePage();
