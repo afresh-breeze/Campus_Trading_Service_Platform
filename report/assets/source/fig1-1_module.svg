@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="830" viewBox="0 0 1120 830" font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
+  <rect x="0" y="0" width="1120" height="830" fill="#F4F1E7"/>
+
+  <text x="40" y="58" font-size="30" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 系统功能模块图</text>
+  <text x="40" y="86" font-size="13" fill="#806E5C">20 个页面　|　5 个功能模块　|　40 个后端接口　|　14 张数据库表</text>
+  <line x1="40" y1="98" x2="760" y2="98" stroke="#E6A874" stroke-width="2"/>
+  <text x="40" y="126" font-size="13" fill="#806E5C">三层结构：表现层（小程序端）→ 服务层（Express REST API）→ 数据层（MySQL 8.0）</text>
+  <text x="40" y="147" font-size="13" fill="#806E5C">页面按模块分组；登录注册只负责身份，二手、代取、聊天按业务闭环组织，个人中心承载个人数据入口</text>
+
+  <!-- 表现层 -->
+  <text x="40" y="176" font-size="15" font-weight="700" fill="#5D4630">表现层　小程序端（20 页）</text>
+  <rect x="40" y="186" width="1040" height="244" rx="4" fill="#FFFDF8" stroke="#E8DDC9" stroke-width="1.2"/>
+
+  <!-- 登录注册 -->
+  <rect x="60" y="204" width="192" height="210" rx="6" fill="#FFFFFF" stroke="#E6A874" stroke-width="1.4"/>
+  <rect x="60" y="204" width="192" height="36" rx="6" fill="#FCE7CF" stroke="#E6A874" stroke-width="1.4"/>
+  <text x="156" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#3D2B1F">登录注册</text>
+  <text x="78" y="266" font-size="12.5" fill="#5D4630">登录</text>
+  <text x="78" y="290" font-size="12.5" fill="#5D4630">注册</text>
+  <text x="78" y="334" font-size="11.5" fill="#806E5C">2 页 · P0</text>
+
+  <!-- 二手交易 -->
+  <rect x="264" y="204" width="192" height="210" rx="6" fill="#FFFFFF" stroke="#E6A874" stroke-width="1.4"/>
+  <rect x="264" y="204" width="192" height="36" rx="6" fill="#FCE7CF" stroke="#E6A874" stroke-width="1.4"/>
+  <text x="360" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#3D2B1F">二手交易</text>
+  <text x="282" y="266" font-size="12.5" fill="#5D4630">二手首页</text>
+  <text x="282" y="288" font-size="12.5" fill="#5D4630">搜索结果</text>
+  <text x="282" y="310" font-size="12.5" fill="#5D4630">商品详情</text>
+  <text x="282" y="332" font-size="12.5" fill="#5D4630">发布商品</text>
+  <text x="282" y="354" font-size="12.5" fill="#5D4630">我的发布</text>
+  <text x="282" y="376" font-size="12.5" fill="#5D4630">我的收藏</text>
+  <text x="282" y="404" font-size="11.5" fill="#806E5C">6 页 · P0 4 / P1 2</text>
+
+  <!-- 代取服务 -->
+  <rect x="468" y="204" width="192" height="210" rx="6" fill="#FFFFFF" stroke="#E6A874" stroke-width="1.4"/>
+  <rect x="468" y="204" width="192" height="36" rx="6" fill="#FCE7CF" stroke="#E6A874" stroke-width="1.4"/>
+  <text x="564" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#3D2B1F">代取服务</text>
+  <text x="486" y="266" font-size="12.5" fill="#5D4630">代取大厅</text>
+  <text x="486" y="288" font-size="12.5" fill="#5D4630">发布代取</text>
+  <text x="486" y="310" font-size="12.5" fill="#5D4630">代取详情</text>
+  <text x="486" y="332" font-size="12.5" fill="#5D4630">找跑腿匹配</text>
+  <text x="486" y="354" font-size="12.5" fill="#5D4630">我的代取</text>
+  <text x="486" y="376" font-size="12.5" fill="#5D4630">接单设置 / 上线</text>
+  <text x="486" y="404" font-size="11.5" fill="#806E5C">6 页 · P0 5 / P1 1</text>
+
+  <!-- 即时聊天 -->
+  <rect x="672" y="204" width="192" height="210" rx="6" fill="#FFFFFF" stroke="#E6A874" stroke-width="1.4"/>
+  <rect x="672" y="204" width="192" height="36" rx="6" fill="#FCE7CF" stroke="#E6A874" stroke-width="1.4"/>
+  <text x="768" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#3D2B1F">即时聊天</text>
+  <text x="690" y="266" font-size="12.5" fill="#5D4630">消息列表</text>
+  <text x="690" y="288" font-size="12.5" fill="#5D4630">聊天页</text>
+  <text x="690" y="334" font-size="11.5" fill="#806E5C">2 页 · P0</text>
+
+  <!-- 个人中心 -->
+  <rect x="876" y="204" width="184" height="210" rx="6" fill="#FFFFFF" stroke="#E6A874" stroke-width="1.4"/>
+  <rect x="876" y="204" width="184" height="36" rx="6" fill="#FCE7CF" stroke="#E6A874" stroke-width="1.4"/>
+  <text x="968" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#3D2B1F">个人中心</text>
+  <text x="894" y="266" font-size="12.5" fill="#5D4630">个人中心</text>
+  <text x="894" y="288" font-size="12.5" fill="#5D4630">个人资料</text>
+  <text x="894" y="310" font-size="12.5" fill="#5D4630">设置</text>
+  <text x="894" y="332" font-size="12.5" fill="#5D4630">帮助</text>
+  <text x="894" y="404" font-size="11.5" fill="#806E5C">4 页 · P0 1 / P1 3</text>
+
+  <!-- 表现层 → 服务层 -->
+  <line x1="560" y1="434" x2="560" y2="472" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow-down)"/>
+  <defs>
+    <marker id="arrow-down" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="90">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-down2" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="90">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  <text x="574" y="458" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#F4F1E7" stroke-width="4" paint-order="stroke">HTTPS / JSON</text>
+
+  <!-- 服务层 -->
+  <text x="40" y="496" font-size="15" font-weight="700" fill="#5D4630">服务层　Express REST API</text>
+  <rect x="40" y="506" width="1040" height="116" rx="4" fill="#FFFDF8" stroke="#E8DDC9" stroke-width="1.2"/>
+
+  <rect x="60" y="522" width="238" height="84" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.4"/>
+  <text x="179" y="548" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">REST API</text>
+  <text x="179" y="572" text-anchor="middle" font-size="12" fill="#475569">40 个接口</text>
+  <text x="179" y="592" text-anchor="middle" font-size="11.5" fill="#64748B">统一响应 {code, message, data}</text>
+
+  <rect x="310" y="522" width="238" height="84" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.4"/>
+  <text x="429" y="548" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">鉴权与校验</text>
+  <text x="429" y="572" text-anchor="middle" font-size="12" fill="#475569">JWT 有效期 7 天 · bcrypt 密码哈希</text>
+  <text x="429" y="592" text-anchor="middle" font-size="11.5" fill="#64748B">参数化查询 · 越权校验</text>
+
+  <rect x="560" y="522" width="238" height="84" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.4"/>
+  <text x="679" y="548" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">图片上传</text>
+  <text x="679" y="572" text-anchor="middle" font-size="12" fill="#475569">jpg / png / webp</text>
+  <text x="679" y="592" text-anchor="middle" font-size="11.5" fill="#64748B">单张不超过 5MB · 只存路径</text>
+
+  <rect x="810" y="522" width="250" height="84" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.4"/>
+  <text x="935" y="548" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">在线计划</text>
+  <text x="935" y="572" text-anchor="middle" font-size="12" fill="#475569">node-cron 每分钟扫描</text>
+  <text x="935" y="592" text-anchor="middle" font-size="11.5" fill="#64748B">slot 自动上下线 · 手动覆盖</text>
+
+  <!-- 服务层 → 数据层 -->
+  <line x1="560" y1="624" x2="560" y2="662" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow-down2)"/>
+  <text x="574" y="648" font-size="12.5" font-weight="700" fill="#5D4630" stroke="#F4F1E7" stroke-width="4" paint-order="stroke">SQL / 事务</text>
+
+  <!-- 数据层 -->
+  <text x="40" y="686" font-size="15" font-weight="700" fill="#5D4630">数据层　MySQL 8.0（InnoDB · utf8mb4）</text>
+  <rect x="40" y="696" width="1040" height="106" rx="4" fill="#FFF8EE" stroke="#C9A87C" stroke-width="1.2"/>
+
+  <rect x="60" y="712" width="238" height="82" rx="6" fill="#FFFDF8" stroke="#A7724F" stroke-width="1.4"/>
+  <text x="179" y="736" text-anchor="middle" font-size="14" font-weight="700" fill="#5D4630">14 张表</text>
+  <text x="179" y="758" text-anchor="middle" font-size="11" fill="#806E5C">用户与二手 7 · 代取 4</text>
+  <text x="179" y="776" text-anchor="middle" font-size="11" fill="#806E5C">聊天 2 · 反馈 1</text>
+
+  <rect x="310" y="712" width="238" height="82" rx="6" fill="#FFFDF8" stroke="#A7724F" stroke-width="1.4"/>
+  <text x="429" y="736" text-anchor="middle" font-size="14" font-weight="700" fill="#5D4630">4 个视图</text>
+  <text x="429" y="758" text-anchor="middle" font-size="10.5" fill="#806E5C">v_item_list / v_errand_hall</text>
+  <text x="429" y="776" text-anchor="middle" font-size="10.5" fill="#806E5C">v_conversation_base / v_user_summary</text>
+
+  <rect x="560" y="712" width="238" height="82" rx="6" fill="#FFFDF8" stroke="#A7724F" stroke-width="1.4"/>
+  <text x="679" y="736" text-anchor="middle" font-size="14" font-weight="700" fill="#5D4630">5 个存储过程 + 2 个函数</text>
+  <text x="679" y="758" text-anchor="middle" font-size="11" fill="#806E5C">发布 / 接单 / 完成 / 会话 / 信用分</text>
+  <text x="679" y="776" text-anchor="middle" font-size="11" fill="#806E5C">未读数 / 完成数</text>
+
+  <rect x="810" y="712" width="250" height="82" rx="6" fill="#FFFDF8" stroke="#A7724F" stroke-width="1.4"/>
+  <text x="935" y="736" text-anchor="middle" font-size="14" font-weight="700" fill="#5D4630">5 个触发器</text>
+  <text x="935" y="758" text-anchor="middle" font-size="11" fill="#806E5C">收藏数 ±1 · 两类状态日志</text>
+  <text x="935" y="776" text-anchor="middle" font-size="11" fill="#806E5C">会话最后消息</text>
+
+  <text x="40" y="820" font-size="12" fill="#806E5C">注：页面数、接口数与数据库对象数量为课程设计最终口径；未实现的搭子、支付、后台等功能列入第 9 章“不足与展望”。</text>
+</svg>
