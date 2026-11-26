@@ -112,8 +112,12 @@
               <text class="cl-conv__last ellipsis">{{item.lastMessage}}</text>
             </view>
           </view>
-          <!-- 置顶标识：右下角小箭头，替代原来的「置顶」文字 -->
-          <image wx:if="{{item.isPinned}}" class="cl-conv__pin-icon" src="/assets/icons/direction-up.png" mode="aspectFit" />
+          <!-- 置顶小箭头：常驻渲染只切状态类，才有上滑渐显 / 下滑渐隐的过渡 -->
+          <image
+            class="cl-conv__pin-icon {{item.showPinned ? 'cl-conv__pin-icon--show' : ''}}"
+            src="/assets/icons/direction-up.png"
+            mode="aspectFit"
+          />
         </view>
       </view>
 

@@ -141,14 +141,21 @@
 .cl-conv--swiping {
   transition: none;
 }
-/* 置顶小箭头：贴在卡片右下角 */
+/* 置顶小箭头：贴在卡片右下角；常驻渲染只切状态类，过渡才能播放 */
 .cl-conv__pin-icon {
   position: absolute;
   right: 20rpx;
   bottom: 14rpx;
   width: 28rpx;
   height: 28rpx;
+  /* 隐藏态位于展示位下方：置顶时上滑渐显，取消置顶时下滑渐隐 */
+  opacity: 0;
+  transform: translateY(14rpx);
+  transition: opacity 320ms ease-out, transform 320ms ease-out;
+}
+.cl-conv__pin-icon--show {
   opacity: 0.5;
+  transform: translateY(0);
 }
 .cl-conv__avatar-wrap {
   position: relative;
@@ -210,6 +217,8 @@
 }
 .cl-conv__bottom {
   margin-top: 8rpx;
+  /* 置顶态预留的箭头右边距随动画同步过渡，避免取消置顶时文字生切 */
+  transition: padding-right 320ms ease-out;
 }
 .cl-conv__last {
   font-size: var(--font-sm, 26rpx);

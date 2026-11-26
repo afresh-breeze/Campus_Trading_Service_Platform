@@ -113,6 +113,12 @@ function read(rel) {
   check('纵向手势交还 scroll-view', /touch\.lock = 'scroll'/.test(listJs));
   check('置顶卡片不再显示「置顶」文字', !/cl-conv__pin"/.test(listWxml) && !/>\s*置顶\s*</.test(listWxml));
   check('置顶项右下角有方向图标', /cl-conv__pin-icon/.test(listWxml) && /src="\/assets\/icons\/direction-up\.png"/.test(listWxml) && fs.existsSync(path.join(MP, 'assets/icons/direction-up.png')));
+  check('小箭头常驻渲染并随 showPinned 切状态类', /cl-conv__pin-icon \{\{item\.showPinned/.test(listWxml) && !/wx:if="\{\{item\.isPinned\}\}"[^>]*cl-conv__pin-icon/.test(listWxml));
+  const pinIconBlock = /\.cl-conv__pin-icon\s*\{[^}]*\}/.exec(listWxss)[0];
+  const pinIconShowBlock = /\.cl-conv__pin-icon--show\s*\{[^}]*\}/.exec(listWxss)[0];
+  check('箭头上滑渐显（隐藏态在下方 + 320ms 过渡）', /opacity: 0;/.test(pinIconBlock) && /translateY\(14rpx\)/.test(pinIconBlock) && /transition: opacity 320ms ease-out, transform 320ms ease-out;/.test(pinIconBlock), pinIconBlock);
+  check('箭头展示态回正且保持半透明', /opacity: 0\.5;/.test(pinIconShowBlock) && /translateY\(0\)/.test(pinIconShowBlock), pinIconShowBlock);
+  check('消息行预留边距随动画同步过渡', /\.cl-conv__bottom\s*\{[^}]*transition: padding-right 320ms ease-out;/.test(listWxss));
   check('置顶卡片底色略微加深', /\.cl-conv--pinned\s*\{[^}]*background: var\(--color-surface-pinned/.test(listWxss));
   check('FLIP 动画：用 animation 属性承载位移', /animation="\{\{item\.animData \|\| ''\}\}"/.test(listWxml));
   check('FLIP 动画：旧顺序先滑到目标位置，再提交新顺序', /_commitWithReorder\(list, total\)/.test(listJs) && /setTimeout\(commit, 340\)/.test(listJs) && !/_playFlip/.test(listJs));
