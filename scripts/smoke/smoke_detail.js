@@ -218,12 +218,24 @@ function check(name, cond, extra) {
   check('预览图位于头部卡之前（wxml 中 hero 在 detail-head 前面）', wxmlD.indexOf('detail-hero') < wxmlD.indexOf('detail-head'), '顺序不符');
   check('预览块等宽正方形（614rpx）+ 满铺 aspectFill + 防溢出裁切', /\.detail-hero\s*\{[\s\S]*?height: 614rpx[\s\S]*?overflow: hidden/.test(wxssD)
     && /detail-hero__img\s*\{[\s\S]*?width: 100%[\s\S]*?height: 100%/.test(wxssD) && /mode="aspectFill"/.test(wxmlD), 'hero 样式不符');
-  check('js 预览图与列表缩略图同一派生（utils/errand.categoryIcon）', (function () {
+  check('js 预览图优先实拍图、无图时回退品类插画', (function () {
     const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
     return /require\('\.\.\/\.\.\/utils\/errand'\)/.test(src)
-      && /heroImage: errandUtil\.categoryIcon\(order\)/.test(src)
-      && /heroImage: ''/.test(src);
+      && /heroImage: adapter\.toImageList\(order\)\[0\] \|\| errandUtil\.categoryIcon\(order\)/.test(src)
+      && /heroImage: ''/.test(src)
+      && /errandImages: adapter\.toImageList\(order\)/.test(src);
   })(), 'js 派生不符');
+  check('物品描述下方挂图片预览网格', /detail-info__images/.test(wxmlD)
+    && /wx:for="\{\{errandImages\}\}"/.test(wxmlD)
+    && /onPreviewErrandImage/.test(wxmlD), '图片网格结构不符');
+  const pImg = makePage();
+  pImg.apply(Object.assign({}, await mock.run('/api/errands/2004', 'GET', {}), {
+    images: [{ url: '/uploads/errand-real.png', sortNo: 1 }]
+  }));
+  check('订单有实拍图时 hero 与预览列表用它',
+    /\/uploads\/errand-real\.png$/.test(pImg.data.heroImage) && pImg.data.errandImages.length === 1,
+    { hero: pImg.data.heroImage, images: pImg.data.errandImages });
+
   check('公共层 errand.js 存在且插画已放大到 512²', (function () {
     const u = fsD.readFileSync(path.join(REPO, 'utils', 'errand.js'), 'utf8');
     return /food/.test(u) && /guessCategory/.test(u) && /categoryIcon/.test(u)

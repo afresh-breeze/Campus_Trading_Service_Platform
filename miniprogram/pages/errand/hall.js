@@ -82,7 +82,8 @@ function toCard(order) {
     timeText: shortTime(order),
     rewardText: util.formatPrice(order.reward),
     itemDesc: order.itemDesc || '',
-    categoryIcon: errandUtil.categoryIcon(order),
+    // 有实拍图就用第一张做卡片缩略图，否则退回品类插画
+    categoryIcon: adapter.toImageList(order)[0] || errandUtil.categoryIcon(order),
     publisherNickname: nickname,
     publisherInitial: nickname.slice(0, 1),
     publisherAvatarUrl: adapter.fullUrl(order.publisherAvatar),

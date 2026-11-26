@@ -161,6 +161,22 @@ const OK_ERRAND = {
   await expectFailMsg('送达地点 101 字 → 400', '/api/errands', 'POST',
     Object.assign({}, OK_ERRAND, { deliveryLocation: 'x'.repeat(101) }), '送达地点不能超过 100 字');
 
+  console.log('\n[4b] 代取物品图片：与 errands.js readImages 等价');
+  const withImages = await mock.run('/api/errands', 'POST', Object.assign({}, OK_ERRAND, {
+    visibility: 'private',
+    images: [{ url: '/uploads/e-second.png', sortNo: 2 }, { url: '/uploads/e-first.png', sortNo: 1 }]
+  }));
+  const imgDetail = await mock.run('/api/errands/' + withImages.orderId, 'GET', {});
+  check('代取图片按 sortNo 排序回显',
+    JSON.stringify((imgDetail.images || []).map((x) => x.url)) === '["/uploads/e-first.png","/uploads/e-second.png"]',
+    imgDetail.images);
+  await expectFailMsg('代取图片超过 3 张 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { images: [
+      { url: '/uploads/a.png' }, { url: '/uploads/b.png' }, { url: '/uploads/c.png' }, { url: '/uploads/d.png' }
+    ] }), '最多上传 3 张图片');
+  await expectFailMsg('代取图片非 /uploads/ → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { images: [{ url: '/tmp/a.png' }] }), '图片地址不合法');
+
   console.log('\n[5] 跑腿匹配：place 属于片区 + 在线/计划过滤');
   await expectFail('缺 area 400', '/api/runners', 'GET', { timeType: 'asap' }, 400);
   await expectFail('place 不属于该片区 400', '/api/runners', 'GET', { area: '桃园', place: '第30教学楼', timeType: 'asap' }, 400);

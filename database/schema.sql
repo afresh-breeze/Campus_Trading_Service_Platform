@@ -217,6 +217,8 @@ CREATE TABLE errand_orders (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   taken_at DATETIME NULL,
   completed_at DATETIME NULL,
+  -- 物品图片整组读写（最多 3 张），不新增表：与 runner_profiles 的多值 JSON 同一取舍
+  images JSON NULL,
   CONSTRAINT fk_errands_publisher FOREIGN KEY (publisher_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_errands_runner FOREIGN KEY (runner_id) REFERENCES users(user_id)
@@ -226,6 +228,9 @@ CREATE TABLE errand_orders (
     (time_type = 'asap' AND time_start IS NULL AND deadline IS NULL)
     OR (time_type = 'deadline' AND time_start IS NULL AND deadline IS NOT NULL)
     OR (time_type = 'range' AND time_start IS NOT NULL AND deadline IS NOT NULL AND time_start < deadline)
+  ),
+  CONSTRAINT chk_errands_images CHECK (
+    images IS NULL OR (JSON_TYPE(images) = 'ARRAY' AND JSON_LENGTH(images) <= 3)
   ),
   KEY idx_errands_visibility_status_created (visibility, status, created_at),
   KEY idx_errands_publisher_status (publisher_id, status),

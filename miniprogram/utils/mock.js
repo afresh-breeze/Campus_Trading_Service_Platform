@@ -1084,6 +1084,10 @@ function parseErrandPayload(body) {
   const remark = readOptionalText(body.remark, 255, '备注');
   if (remark.error) return { error: remark.error };
 
+  // 对齐 errands.js readImages：最多 3 张、/uploads/ 相对路径
+  const images = parseImages(body.images);
+  if (images.error) return { error: images.error };
+
   if (body.reward === undefined || body.reward === null || body.reward === '') {
     return { error: '报酬不能为空' };
   }
@@ -1123,6 +1127,7 @@ function parseErrandPayload(body) {
       deliveryLocation: deliveryLocation,
       itemSize: itemSize,
       itemDesc: itemDesc.value,
+      images: images.images,
       remark: remark.value,
       reward: reward,
       timeType: timeType,
@@ -1856,6 +1861,7 @@ const routes = {
       deliveryLocation: d.deliveryLocation,
       itemSize: d.itemSize,
       itemDesc: d.itemDesc,
+      images: d.images,
       remark: d.remark,
       reward: d.reward,
       timeType: d.timeType,
@@ -1931,6 +1937,7 @@ const routes = {
       deliveryLocation: d.deliveryLocation,
       itemSize: d.itemSize,
       itemDesc: d.itemDesc,
+      images: d.images,
       remark: d.remark,
       reward: d.reward,
       timeType: d.timeType,

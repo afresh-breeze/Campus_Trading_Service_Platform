@@ -18,6 +18,7 @@ const ERRAND_VISIBILITIES = ['private', 'hall'];
 const TIME_TYPES = ['asap', 'deadline', 'range'];
 const ROLES = ['publisher', 'runner'];
 const MAX_REWARD = 99999999.99;
+const MAX_IMAGES = 3;
 const SORT_ORDERS = {
   latest: 'e.created_at DESC, e.order_id DESC',
   reward_desc: 'e.reward DESC, e.order_id DESC',
@@ -35,6 +36,7 @@ const BASE_FIELDS = `
   e.delivery_location  AS deliveryLocation,
   e.item_size          AS itemSize,
   e.item_desc          AS itemDesc,
+  e.images             AS images,
   e.remark             AS remark,
   e.reward             AS reward,
   e.time_type          AS timeType,
@@ -82,6 +84,57 @@ function readTime(value) {
     return { text: '', date: null, empty: true };
   }
   return { text, date: parseDateTime(text), empty: false };
+}
+
+/** 物品图片：最多 3 张，只接受 /uploads/ 下的相对路径（与 items.js 同口径） */
+function readImages(value) {
+  if (value === undefined || value === null) {
+    return { images: [], error: '' };
+  }
+  if (!Array.isArray(value)) {
+    return { images: [], error: '参数错误' };
+  }
+  if (value.length > MAX_IMAGES) {
+    return { images: [], error: `最多上传 ${MAX_IMAGES} 张图片` };
+  }
+
+  const images = [];
+  for (const image of value) {
+    if (!image || typeof image !== 'object' || typeof image.url !== 'string') {
+      return { images: [], error: '图片地址不合法' };
+    }
+    const url = image.url.trim();
+    if (!url.startsWith('/uploads/') || url.length > 255) {
+      return { images: [], error: '图片地址不合法' };
+    }
+    images.push({ url, sortNo: parsePositiveInt(image.sortNo) || images.length + 1 });
+  }
+  images.sort((a, b) => a.sortNo - b.sortNo);
+  return {
+    images: images.map((image, index) => ({ url: image.url, sortNo: index + 1 })),
+    error: ''
+  };
+}
+
+/** 图片整组读写：落 JSON 列，不新增表（课程设计仍是 14 张表） */
+function toDbImages(images) {
+  return images.length ? JSON.stringify(images) : null;
+}
+
+/** mysql2 可能把 JSON 列返回为字符串，也可能已经是数组，统一转数组 */
+function parseDbImages(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function attachImages(rows) {
+  return rows.map((row) => Object.assign({}, row, { images: parseDbImages(row.images) }));
 }
 
 function readStatusFilter(value) {
@@ -203,6 +256,11 @@ function parseErrandPayload(body) {
     return { error: remark.error };
   }
 
+  const images = readImages(body.images);
+  if (images.error) {
+    return { error: images.error };
+  }
+
   if (body.reward === undefined || body.reward === null || body.reward === '') {
     return { error: '报酬不能为空' };
   }
@@ -255,6 +313,7 @@ function parseErrandPayload(body) {
       deliveryLocation,
       itemSize,
       itemDesc: itemDesc.value,
+      images: images.images,
       remark: remark.value,
       reward,
       timeType,
@@ -342,7 +401,7 @@ router.get('/', async (req, res, next) => {
     );
 
     return ok(res, {
-      list: rows,
+      list: await attachImages(rows),
       total: countRow.total,
       page: pagination.page,
       pageSize: pagination.pageSize
@@ -392,7 +451,7 @@ router.get('/mine', async (req, res, next) => {
     );
 
     return ok(res, {
-      list: rows,
+      list: await attachImages(rows),
       total: countRow.total,
       page: pagination.page,
       pageSize: pagination.pageSize
@@ -425,12 +484,14 @@ router.post('/', async (req, res, next) => {
   }
   const data = parsed.data;
 
+  const conn = await pool.getConnection();
   try {
-    const [result] = await pool.query(
+    await conn.beginTransaction();
+    const [result] = await conn.query(
       `INSERT INTO errand_orders
          (publisher_id, pickup_area, pickup_place, delivery_location, item_size,
-          item_desc, remark, reward, time_type, time_start, deadline, visibility)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          item_desc, images, remark, reward, time_type, time_start, deadline, visibility)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.user.userId,
         data.pickupArea,
@@ -438,6 +499,7 @@ router.post('/', async (req, res, next) => {
         data.deliveryLocation,
         data.itemSize,
         data.itemDesc,
+        toDbImages(data.images),
         data.remark,
         data.reward,
         data.timeType,
@@ -446,14 +508,23 @@ router.post('/', async (req, res, next) => {
         visibility
       ]
     );
+    const orderId = result.insertId;
+    await conn.commit();
 
     return ok(
       res,
-      { orderId: result.insertId, visibility },
+      { orderId, visibility },
       visibility === 'private' ? '订单已创建，尚未发布到大厅' : '发布成功'
     );
   } catch (err) {
+    try {
+      await conn.rollback();
+    } catch (rollbackErr) {
+      // ignore rollback error
+    }
     return next(err);
+  } finally {
+    conn.release();
   }
 });
 
@@ -486,9 +557,10 @@ router.get('/:id', async (req, res, next) => {
 
     const editable =
       isPublisher && order.status === 'pending' && order.visibility === 'private';
+    const [withImages] = await attachImages([order]);
 
     return ok(res, {
-      ...order,
+      ...withImages,
       canTake:
         !isPublisher &&
         order.status === 'pending' &&
@@ -543,7 +615,7 @@ router.put('/:id', async (req, res, next) => {
     await conn.query(
       `UPDATE errand_orders
           SET pickup_area = ?, pickup_place = ?, delivery_location = ?,
-              item_size = ?, item_desc = ?, remark = ?, reward = ?,
+              item_size = ?, item_desc = ?, images = ?, remark = ?, reward = ?,
               time_type = ?, time_start = ?, deadline = ?
         WHERE order_id = ?`,
       [
@@ -552,6 +624,7 @@ router.put('/:id', async (req, res, next) => {
         data.deliveryLocation,
         data.itemSize,
         data.itemDesc,
+        toDbImages(data.images),
         data.remark,
         data.reward,
         data.timeType,

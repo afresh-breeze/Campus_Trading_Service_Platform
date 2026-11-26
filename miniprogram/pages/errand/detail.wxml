@@ -44,10 +44,9 @@
       </view>
 
       <view class="receipt__body">
-        <!-- ⓪ 顶部预览图（11-25 对齐二手详情页：预览图在上、详情在下）。
-             errand_orders 没有图片字段，先用与大厅卡片同一套品类插画
-             （utils/errand.js 关键词匹配，源图已放大到 512² 保证大图清晰度） -->
-        <view class="card detail-hero receipt__sec">
+        <!-- ⓪ 顶部预览图：发布时上传了物品图就显示第一张（可点开预览），
+             没有图片时退回与大厅卡片同一套品类插画 -->
+        <view class="card detail-hero receipt__sec" data-index="0" bindtap="onPreviewErrandImage" hover-class="detail-hero--hover">
           <image class="detail-hero__img" src="{{heroImage}}" mode="aspectFill" />
         </view>
 
@@ -127,6 +126,18 @@
           <view class="detail-info__desc-block">
             <text class="detail-info__label">物品描述</text>
             <text class="detail-info__desc {{order.itemDesc ? '' : 'detail-info__desc--empty'}}">{{order.itemDesc || '未填写'}}</text>
+            <view wx:if="{{errandImages.length}}" class="detail-info__images">
+              <image
+                wx:for="{{errandImages}}"
+                wx:key="*this"
+                class="detail-info__image"
+                src="{{item}}"
+                mode="aspectFill"
+                data-index="{{index}}"
+                bindtap="onPreviewErrandImage"
+                hover-class="detail-info__image--hover"
+              />
+            </view>
           </view>
           <view class="detail-info__meta">
             <view class="detail-info__row detail-info__row--meta" bindtap="onCopyOrderId" hover-class="detail-info__row--hover">

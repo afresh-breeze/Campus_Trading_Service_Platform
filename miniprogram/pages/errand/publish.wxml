@@ -79,6 +79,43 @@
       <text wx:if="{{errors.itemDesc}}" class="field-error">{{errors.itemDesc}}</text>
     </view>
 
+    <!-- 物品图片：紧跟物品描述，选完即上传；第一张作为详情页封面 -->
+    <view class="field-wrap" id="field-images">
+      <view class="field field--top image-field">
+        <view class="field-label">物品图片</view>
+        <view class="image-field__body">
+          <view class="img-grid">
+            <view
+              wx:for="{{images}}"
+              wx:key="id"
+              class="img-item"
+              data-id="{{item.id}}"
+              bindtap="onImageTap"
+            >
+              <image class="img-item__img" src="{{item.displayUrl}}" mode="aspectFill" />
+              <view wx:if="{{item.status === 'uploading'}}" class="img-item__mask">上传中…</view>
+              <view wx:if="{{item.status === 'failed'}}" class="img-item__mask img-item__mask--fail">
+                <view>上传失败</view>
+                <view>点击重试</view>
+              </view>
+              <view class="img-item__del" data-id="{{item.id}}" catchtap="onDeleteImage" hover-class="img-item__del--hover">×</view>
+            </view>
+            <view
+              wx:if="{{images.length < maxImages}}"
+              class="img-item img-item--add"
+              bindtap="onChooseImages"
+              hover-class="img-item--hover"
+            >
+              <view class="img-item__plus">+</view>
+              <view class="img-item__add-text">添加图片</view>
+            </view>
+          </view>
+          <view class="image-tip">选填，最多 {{maxImages}} 张；第一张作为详情封面</view>
+        </view>
+      </view>
+      <text wx:if="{{errors.images}}" class="field-error field-error--block">{{errors.images}}</text>
+    </view>
+
     <view class="field-wrap">
       <view class="field field--top">
         <view class="field-label">备注</view>
@@ -161,11 +198,11 @@
 
   <!-- 底部操作 -->
   <view class="form-actions">
-    <button hover-class="btn--press" class="btn btn-ghost btn-block" disabled="{{submitting}}" bindtap="onTapPrivate" wx:if="{{!isEdit}}">
+    <button hover-class="btn--press" class="btn btn-ghost btn-block" disabled="{{submitting || imageUploading}}" bindtap="onTapPrivate" wx:if="{{!isEdit}}">
       存为私单，先找跑腿
     </button>
-    <button hover-class="btn--press" class="btn btn-primary btn-block" disabled="{{submitting}}" bindtap="onTapSubmit">
-      {{submitting ? '提交中…' : (isEdit ? '保存修改' : '发布到大厅')}}
+    <button hover-class="btn--press" class="btn btn-primary btn-block" disabled="{{submitting || imageUploading}}" bindtap="onTapSubmit">
+      {{submitting ? '提交中…' : (imageUploading ? '图片上传中…' : (isEdit ? '保存修改' : '发布到大厅'))}}
     </button>
     <view class="t-sub form-footnote" wx:if="{{!isEdit}}">
       私单不会出现在大厅；谈妥后由对方在详情页接单，也可稍后在详情页「发布到大厅」。

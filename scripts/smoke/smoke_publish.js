@@ -32,6 +32,10 @@ const fakeRequest = {
   put(url, data) {
     calls.push({ method: 'PUT', url, data });
     return respond('PUT', url);
+  },
+  upload(filePath) {
+    calls.push({ method: 'UPLOAD', filePath });
+    return Promise.resolve({ url: '/uploads/errand-smoke.png' });
   }
 };
 function respond(method, url) {
@@ -64,13 +68,16 @@ global.getCurrentPages = () => [{}, {}];
 const redirects = [];
 const navBacks = [];
 const toasts = [];
+let chooseFiles = [];
 global.wx = {
   redirectTo: (o) => redirects.push(o.url),
   navigateBack: () => navBacks.push(1),
   switchTab: () => {},
   showToast: (o) => toasts.push(o.title),
   showModal: () => {},
-  setClipboardData: () => {}
+  setClipboardData: () => {},
+  chooseMedia: (o) => o.success({ tempFiles: chooseFiles }),
+  previewImage: () => {}
 };
 
 require(path.join(process.cwd(), 'miniprogram/pages/errand/publish.js'));
@@ -305,6 +312,46 @@ const ev = (value) => ({ detail: { value: value } });
   p6.onTimeTypeChange(ev('asap'));
   const plAsap = p6.buildPayload();
   check('asap 不携带任何时间字段（后端硬约束）', plAsap.timeType === 'asap' && plAsap.timeStart === undefined && plAsap.deadline === undefined, plAsap);
+
+  console.log('\n[11] 物品图片：选择 → 上传 → 入 payload → 失败拦截');
+  const p7 = makePage();
+  p7.onLoad({});
+  chooseFiles = [{ tempFilePath: '/tmp/errand-a.png' }];
+  p7.onChooseImages();
+  await wait(50);
+  const up = calls.filter((c) => c.method === 'UPLOAD').pop();
+  check('选图后调用上传接口', !!up && up.filePath === '/tmp/errand-a.png', up);
+  check('上传成功状态 done', p7.data.images.length === 1 && p7.data.images[0].status === 'done', p7.data.images);
+  check('上传完成释放提交按钮', p7.data.imageUploading === false, p7.data.imageUploading);
+  const imagePayload = p7.buildPayload();
+  check('payload 只带已上传的 /uploads/ 图片',
+    imagePayload.images.length === 1 && imagePayload.images[0].url === '/uploads/errand-smoke.png' && imagePayload.images[0].sortNo === 1,
+    imagePayload.images);
+  p7.patchImage(p7.data.images[0].id, { status: 'failed' });
+  check('上传失败时阻止提交', !!p7.validate(p7.buildPayload()).images, p7.data.errors);
+  p7.onDeleteImage({ currentTarget: { dataset: { id: p7.data.images[0].id } } });
+  check('删除图片后列表清空', p7.data.images.length === 0, p7.data.images);
+
+  console.log('\n[12] 编辑模式回填已有图片');
+  const p8 = makePage();
+  responses = {
+    'GET /api/errands/:id': {
+      orderId: 2004,
+      canEdit: true,
+      pickupArea: '李园',
+      pickupPlace: '李园',
+      deliveryLocation: '5 号宿舍楼 108',
+      itemSize: 'small',
+      itemDesc: '箱子',
+      images: [{ url: '/uploads/e1.png', sortNo: 1 }],
+      reward: 6,
+      timeType: 'asap'
+    }
+  };
+  p8.onLoad({ id: '2004' });
+  await wait(50);
+  check('编辑回填图片为 done 状态', p8.data.images.length === 1 && p8.data.images[0].status === 'done', p8.data.images);
+  check('编辑回填图片展示完整 URL', /\/uploads\/e1\.png$/.test(p8.data.images[0].displayUrl), p8.data.images[0].displayUrl);
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
