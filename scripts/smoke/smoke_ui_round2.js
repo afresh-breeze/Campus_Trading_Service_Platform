@@ -61,11 +61,13 @@ function read(rel) {
   const tabWxss = read('custom-tab-bar/index.wxss');
   const tabJs = read('custom-tab-bar/index.js');
   const appJs = read('app.js');
-  const iconWrapAt = tabWxml.indexOf('class="tab-bar__icon-wrap"');
+  const textWrapAt = tabWxml.indexOf('class="tab-bar__text-wrap"');
   const badgeAt = tabWxml.indexOf('class="tab-bar__badge"');
-  check('badge 是图标容器的子节点', badgeAt > iconWrapAt && badgeAt < tabWxml.indexOf('</view>\n    <text class="tab-bar__text"'));
-  check('badge 水平居中不按文字偏移', /\.tab-bar__badge\s*\{[^}]*left: 50%;[\s\S]{0,80}transform: translateX\(-50%\)/.test(tabWxss));
-  check('badge 不再用 margin-left 偏移', /\.tab-bar__badge\s*\{[^}]*\}/.exec(tabWxss)[0].indexOf('margin-left') < 0);
+  const badgeBlock = /\.tab-bar__badge\s*\{[^}]*\}/.exec(tabWxss)[0];
+  check('badge 是文字容器的子节点', textWrapAt > -1 && badgeAt > textWrapAt && badgeAt < tabWxml.indexOf('</view>\n  </view>\n</view>'));
+  check('文字容器为定位锚点', /\.tab-bar__text-wrap\s*\{[^}]*position: relative;/.test(tabWxss));
+  check('badge 定位在息字右上角', /top: -14rpx;/.test(badgeBlock) && /right: -14rpx;/.test(badgeBlock));
+  check('badge 不再按图标居中或 margin 偏移', badgeBlock.indexOf('left: 50%') < 0 && badgeBlock.indexOf('margin-left') < 0);
   check('tabBar 注册到全局注册表', /app\.registerBadgeTarget\(this\)/.test(tabJs));
   check('tabBar 销毁时注销', /app\.unregisterBadgeTarget\(this\)/.test(tabJs));
   check('tabBar show 主动对齐服务端', /pageLifetimes:[\s\S]{0,600}app\.refreshUnread\(\)/.test(tabJs));

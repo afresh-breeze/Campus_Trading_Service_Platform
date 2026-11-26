@@ -80,6 +80,10 @@
 
 /* 文字略缩：40rpx -> 26rpx，图标承担辨识
    不加 color 过渡、不改字重：过渡会在「胶囊未到位」的窗口里闪，字重变化会让文字抖动 */
+.tab-bar__text-wrap {
+  position: relative;
+  flex: none;
+}
 .tab-bar__text {
   font-size: 26rpx;
   font-weight: 500;
@@ -88,12 +92,11 @@
 }
 
 
-/* 未读红点 */
+/* 未读红点：贴在「消息」里「息」字的右上角 */
 .tab-bar__badge {
   position: absolute;
-  top: -12rpx;
-  left: 50%;
-  transform: translateX(-50%);
+  top: -14rpx;
+  right: -14rpx;
   min-width: 32rpx;
   height: 32rpx;
   padding: 0 6rpx;
