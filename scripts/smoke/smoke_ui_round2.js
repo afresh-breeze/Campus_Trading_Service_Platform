@@ -67,6 +67,9 @@ function read(rel) {
   check('聊天条自身无边框', convBlock2.indexOf('border:') < 0 && convBlock2.indexOf('border-color') < 0);
   check('闭合时不渲染操作区，按钮底色不透出', /wx:if="\{\{item\.swipeX < 0\}\}" class="cl-swipe__actions"/.test(read('pages/chat/list.wxml')));
   check('滑动容器不再常驻深棕底色', /\.cl-swipe\s*\{[^}]*background: transparent/.test(listWxss2b) && /\.cl-swipe__actions\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss2b));
+  const listWxml2b = read('pages/chat/list.wxml');
+  check('左滑态容器补深棕底，填满圆角与尖角交界缺口', /\.cl-swipe--open\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss2b) && /item\.swipeX < 0 \? 'cl-swipe--open'/.test(listWxml2b));
+  check('按钮区铺满容器且按钮靠右，缺口无处可露', /\.cl-swipe__actions\s*\{[^}]*left: 0;[^}]*justify-content: flex-end/.test(listWxss2b) && !/width: 450rpx/.test(listWxss2b));
 
   console.log('\n[3] 未读红点位置与广播');
   const tabWxml = read('custom-tab-bar/index.wxml');

@@ -58,7 +58,7 @@
       <view
         wx:for="{{list}}"
         wx:key="rowKey"
-        class="cl-swipe {{item.flipActive ? 'cl-swipe--flip-active' : ''}}"
+        class="cl-swipe {{item.flipActive ? 'cl-swipe--flip-active' : ''}} {{item.swipeX < 0 ? 'cl-swipe--open' : ''}}"
         animation="{{item.animData || ''}}"
         data-id="{{item.conversationId}}"
       >

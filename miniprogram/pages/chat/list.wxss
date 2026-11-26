@@ -62,20 +62,28 @@
 .cl-swipe--flip-active {
   z-index: 3;
 }
+/* 左滑态才补深棕底色：卡片滑开后左/右圆角与尖角交界处的缺口由它填满；
+   闭合态保持 transparent，避免底色从卡片圆角缝透出细线。 */
+.cl-swipe--open {
+  background: var(--color-primary-dark, #79513D);
+}
 .cl-swipe__actions {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
+  left: 0;
   display: flex;
-  width: 450rpx;
-  /* 只有左滑时才渲染这一层，底色自行补齐圆角缺口 */
+  /* 三个按钮靠右，与原来 right:0/450rpx 的位置一致；
+     底色铺满整个容器，卡片右圆角处的三角缺口也被补满 */
+  justify-content: flex-end;
   background: var(--color-primary-dark, #79513D);
 }
 .cl-swipe__action {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 150rpx;
   color: #ffffff;
   font-size: var(--font-sm, 26rpx);
