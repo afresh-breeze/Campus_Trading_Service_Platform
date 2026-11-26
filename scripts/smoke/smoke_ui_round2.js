@@ -90,6 +90,7 @@ function read(rel) {
   check('setUnreadBadge 广播所有实例', /badgeTargets\.slice\(\)[\s\S]{0,300}bar\.setBadge\(n\)/.test(appJs));
   check('refreshUnread 复用在途请求', /this\._unreadInFlight/.test(appJs));
   check('失败不清空未读数', /catch\(\(\) => this\.globalData\.unreadCount \|\| 0\)/.test(appJs));
+  check('切 tab 同帧渲染并立即跳页（无全灰中间态/无延迟等待）', /this\.setData\(\{ selected: index, activeIndex: index, animate: true \}\);[\s\S]{0,40}wx\.switchTab\(\{ url: path \}\)/.test(tabJs) && !/activeIndex: -1/.test(tabJs) && !/SLIDE_MS/.test(tabJs) && !/setTimeout/.test(tabJs));
 
   console.log('\n[4] 会话左滑操作');
   const listWxml = read('pages/chat/list.wxml');

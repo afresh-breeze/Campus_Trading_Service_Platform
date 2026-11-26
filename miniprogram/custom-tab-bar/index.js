@@ -2,10 +2,13 @@
  * 自定义 tabBar（悬浮胶囊样式）
  * ------------------------------------------------------------------
  * 每个 tab 页各持有一个 tabBar 实例，切页时新实例会重新渲染。
- * 为避免「胶囊瞬移」和「文字频闪」，这里拆成两套状态：
- *   - selected：只负责胶囊位置（点击时带滑动动画，切页同步时无动画）；
- *   - activeIndex：只负责图标/文字的选中配色，等胶囊滑到位再切换，
- *     避免出现「白字压在白底上」的闪烁窗口。
+ * 两套状态：
+ *   - selected：只负责胶囊位置（点击时滑动，切页同步时无动画）；
+ *   - activeIndex：只负责图标/文字的选中配色，与 selected 同帧切换。
+ * 切换策略（11-28 去频闪）：点击后一次 setData 同帧到位并立即 switchTab。
+ * 旧实现「胶囊先滑 240ms 再跳页 + activeIndex=-1 全灰中间态」会让导航栏
+ * 在连续切换时反复经历「全灰 → 点亮 → 跳页」，看起来就是频闪；
+ * 新页面实例 attached 时用 globalData.tabIndex 直接渲染最终态，无中间帧。
  */
 const TAB_LIST = [
   {
@@ -36,7 +39,6 @@ const TAB_LIST = [
 
 // 模块级变量：同一小程序内所有 tabBar 实例共享，用于新实例出生时直接定位
 let lastIndex = 0;
-const SLIDE_MS = 240;
 
 Component({
   data: {
@@ -108,29 +110,18 @@ Component({
 
     switchTab(e) {
       const { path, index } = e.currentTarget.dataset;
-
-      if (this._switching) return;
+      // 同项重复点击直接拦掉；不同项走「一次渲染 + 立即跳页」
       if (index === this.data.selected) return;
 
-      this._switching = true;
-      lastIndex = index;
       const app = getApp();
       if (app && app.globalData) app.globalData.tabIndex = index;
+      lastIndex = index;
 
-      // 1) 胶囊先滑；activeIndex 置 -1 让所有项回到未选中配色，
-      //    避免旧项「白字压白底」、新项「白字等胶囊」两种闪烁
-      this.setData({ selected: index, activeIndex: -1, animate: true });
-
-      // 2) 胶囊到位后再点亮目标项，并立即跳页
-      setTimeout(() => {
-        this.setData({ activeIndex: index });
-        wx.switchTab({
-          url: path,
-          complete: () => {
-            this._switching = false;
-          }
-        });
-      }, SLIDE_MS);
+      // 胶囊滑动与选中配色同帧切换，页面立即切换：
+      // 新实例 attached 时按 globalData.tabIndex 直接渲染最终态，
+      // 全程没有「全灰图标」「胶囊等待」这类中间帧。
+      this.setData({ selected: index, activeIndex: index, animate: true });
+      wx.switchTab({ url: path });
     }
   }
 });
