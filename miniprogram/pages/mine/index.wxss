@@ -172,7 +172,8 @@
 }
 .mkt-card__name {
   flex: 1;
-  font-size: var(--font-md);
+  /* 与底部「设置 / 帮助与反馈 / 关于」入口文字同号（11-28 用户要求） */
+  font-size: 30rpx;
   color: var(--color-text);
   white-space: nowrap;
 }
@@ -181,7 +182,8 @@
   flex: none;
   width: 60rpx;
   text-align: right;
-  font-size: var(--font-md);
+  /* 数量与名称同号，并与底部入口文字一致 */
+  font-size: 30rpx;
   font-weight: 700;
   color: var(--color-primary-dark);
   font-variant-numeric: tabular-nums;

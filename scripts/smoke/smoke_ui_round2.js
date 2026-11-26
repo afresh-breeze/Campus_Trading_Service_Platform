@@ -56,6 +56,16 @@ function read(rel) {
     check(file + ' 已移除 nav-top', wxml.indexOf('<nav-top') < 0);
   });
 
+  console.log('\n[2b] 我的页字号一致 + 聊天卡无黑细线');
+  const mineWxss2 = read('pages/mine/index.wxss');
+  const nameBlock = /\.mkt-card__name\s*\{[^}]*\}/.exec(mineWxss2)[0];
+  const numBlock = /\.mkt-card__num\s*\{[^}]*\}/.exec(mineWxss2)[0];
+  const cellTextBlock = /\.mine-cell__text\s*\{[^}]*\}/.exec(mineWxss2)[0];
+  check('二手/代取入口文字与底部入口同号（30rpx）', /font-size: 30rpx;/.test(nameBlock) && /font-size: 30rpx;/.test(numBlock) && /font-size: 30rpx;/.test(cellTextBlock));
+  const convBlock2 = /\.cl-conv\s*\{[\s\S]*?\n\}/.exec(read('pages/chat/list.wxss'))[0];
+  check('聊天条用同色描边盖住黑细线', /border: 1rpx solid var\(--color-surface/.test(convBlock2) && /box-sizing: border-box/.test(convBlock2));
+  check('聊天条描边随状态换色', /\.cl-conv--hover\s*\{[^}]*border-color/.test(read('pages/chat/list.wxss')) && /\.cl-conv--pinned\s*\{[^}]*border-color/.test(read('pages/chat/list.wxss')));
+
   console.log('\n[3] 未读红点位置与广播');
   const tabWxml = read('custom-tab-bar/index.wxml');
   const tabWxss = read('custom-tab-bar/index.wxss');
