@@ -265,6 +265,7 @@ module.exports = {
   get: http.get,
   post: http.post,
   put: http.put,
+  patch: http.patch,
   del: http.del,
   upload
 };
