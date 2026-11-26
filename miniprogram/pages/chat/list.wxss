@@ -98,12 +98,13 @@
   box-shadow: var(--shadow-card);
   transition:
     transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease-out;
 }
 .cl-conv--hover {
-  /* 全站口径：只压暗不缩放（11-25 方案二） */
-  opacity: 0.94;
+  /* 会话卡下方压着左滑操作区：不能用 opacity 压暗（半透明会透出按钮文字），
+     改为只压暗背景色 + 阴影，卡片始终不透明 */
+  background: var(--color-surface-2, #f1eae0);
   box-shadow: var(--shadow-card-hover);
 }
 /* 手指跟随期间关掉过渡，松手再吸到位 */

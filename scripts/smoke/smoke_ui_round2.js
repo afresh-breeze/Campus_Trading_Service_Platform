@@ -88,6 +88,9 @@ function read(rel) {
   check('操作按钮用 catchtap 防误触', /catchtap="onTogglePin"/.test(listWxml) && /catchtap="onDeleteConv"/.test(listWxml));
   check('WXSS 三色走暖色令牌（无外部蓝/土黄）', /cl-swipe__action--pin[\s\S]{0,120}color-primary-dark/.test(listWxss) && /cl-swipe__action--unread[\s\S]{0,120}color-accent/.test(listWxss) && /cl-swipe__action--delete[\s\S]{0,120}color-danger/.test(listWxss) && !/#4A90D9|#C88A3E/.test(listWxss));
   check('滑动容器底色=置顶色补圆角缺口', /\.cl-swipe\s*\{[^}]*background: var\(--color-primary-dark/.test(listWxss));
+  check('按压态不透底：hover 不用 opacity', !/\.cl-conv--hover\s*\{[^}]*opacity:/.test(listWxss) && /\.cl-conv--hover\s*\{[^}]*background: var\(--color-surface-2/.test(listWxss));
+  const convBlock = /\.cl-conv\s*\{[\s\S]*?\n\}/.exec(listWxss)[0];
+  check('卡片过渡不含 opacity', convBlock.indexOf('opacity') < 0);
   check('置顶调用 PATCH pin', /\.patch\('\/api\/conversations\/' \+ id \+ '\/pin'/.test(listJs));
   check('标为未读调用 PUT unread', /\.put\('\/api\/conversations\/' \+ id \+ '\/unread'/.test(listJs));
   check('删除调用 del', /\.del\('\/api\/conversations\/' \+ id/.test(listJs));
