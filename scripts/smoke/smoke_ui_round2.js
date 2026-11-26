@@ -99,8 +99,9 @@ function read(rel) {
   check('置顶卡片不再显示「置顶」文字', !/cl-conv__pin"/.test(listWxml) && !/>\s*置顶\s*</.test(listWxml));
   check('置顶项右下角有方向图标', /cl-conv__pin-icon/.test(listWxml) && /src="\/assets\/icons\/direction-up\.png"/.test(listWxml) && fs.existsSync(path.join(MP, 'assets/icons/direction-up.png')));
   check('置顶卡片底色略微加深', /\.cl-conv--pinned\s*\{[^}]*background: var\(--color-surface-pinned/.test(listWxss));
-  check('FLIP 动画：容器有位移过渡且 prepare 可关过渡', /\.cl-swipe\s*\{[\s\S]*?transition: transform 360ms/.test(listWxss) && /\.cl-swipe--flip-prepare\s*\{[^}]*transition: none/.test(listWxss));
-  check('FLIP 动画：采集旧坐标并在刷新后播放', /_captureTops\(\)/.test(listJs) && /_playFlip\(oldTops\)/.test(listJs) && /flipFromY/.test(listJs));
+  check('FLIP 动画：用 animation 属性承载位移', /animation="\{\{item\.animData \|\| ''\}\}"/.test(listWxml));
+  check('FLIP 动画：单次 setData 两步（瞬时回旧位 + 360ms 滑回新位）', /createAnimation\(\{ duration: 0/.test(listJs) && /translateY\(delta\)\.step\(\{ duration: 0/.test(listJs) && /translateY\(0\)\.step\(\{ duration: active \? 360 : 0/.test(listJs));
+  check('FLIP 动画：采集旧坐标并在刷新后播放', /_captureTops\(\)/.test(listJs) && /_playFlip\(oldTops\)/.test(listJs));
   check('FLIP 动画：移动中的卡片浮在上层', /cl-swipe--flip-active/.test(listWxml) && /\.cl-swipe--flip-active\s*\{[^}]*z-index: 3/.test(listWxss));
 
   console.log('\n[5] 聊天输入框自动增高');

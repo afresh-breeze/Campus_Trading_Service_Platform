@@ -48,9 +48,8 @@ function toCard(row) {
     // 左滑位移（px）：0 = 收起，-actionWidth = 露出全部操作
     swipeX: 0,
     swiping: false,
-    // 置顶重排 FLIP 动画状态：flipFromY = 先放回旧位置的位移，flipPhase = prepare/run/''
-    flipFromY: 0,
-    flipPhase: '',
+    // 置顶重排 FLIP 动画状态：animData 由 wx.createAnimation 生成，flipActive 控制浮层
+    animData: '',
     flipActive: false,
     bizType: row.bizType || '',
     bizId: row.bizId
@@ -277,11 +276,17 @@ Page({
   },
 
   /**
-   * 列表已按新顺序渲染：先把每条卡片 translateY 回旧位置（关过渡），
-   * 下一帧清零位移并开过渡，于是置顶项从原位置上滑、其余项顺势下滑。
+   * 列表已按新顺序渲染：用 wx.createAnimation 一次性给出两步动作——
+   * ① duration:0 瞬时 translateY 回旧位置；② duration:360 滑回新位置。
+   * 真机上两次 setData 可能被合并成「生切」，单 setData 两步动画更稳。
    */
   _playFlip(oldTops) {
-    if (!oldTops || typeof wx === 'undefined' || typeof wx.createSelectorQuery !== 'function') return;
+    if (
+      !oldTops ||
+      typeof wx === 'undefined' ||
+      typeof wx.createAnimation !== 'function' ||
+      typeof wx.createSelectorQuery !== 'function'
+    ) return;
     this._captureTops().then((newTops) => {
       const updates = {};
       let moved = false;
@@ -292,28 +297,18 @@ Page({
           typeof oldTop === 'number' && typeof newTop === 'number' ? Math.round(oldTop - newTop) : 0;
         const active = Math.abs(delta) > 1;
         if (active) moved = true;
-        updates['list[' + index + '].flipFromY'] = delta;
-        updates['list[' + index + '].flipPhase'] = 'prepare';
+        const anim = wx.createAnimation({ duration: 0, timingFunction: 'linear' });
+        anim.translateY(delta).step({ duration: 0, timingFunction: 'linear' });
+        anim.translateY(0).step({ duration: active ? 360 : 0, timingFunction: 'ease-out' });
+        updates['list[' + index + '].animData'] = anim.export();
         updates['list[' + index + '].flipActive'] = active;
       });
       if (!moved) return;
       this.setData(updates);
-      // 等一帧让「回到旧位置」先渲染，再放开过渡滑到新位置
-      const afterPaint = () => {
-        const release = {};
-        this.data.list.forEach((conv, index) => {
-          release['list[' + index + '].flipFromY'] = 0;
-          release['list[' + index + '].flipPhase'] = 'run';
-        });
-        this.setData(release);
-      };
-      if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') wx.nextTick(afterPaint);
-      else setTimeout(afterPaint, 20);
-      // 动画结束后清掉临时状态（360ms 过渡 + 余量）
+      // 动画结束后清掉浮层状态（360ms 动画 + 余量）
       setTimeout(() => {
         const done = {};
         this.data.list.forEach((conv, index) => {
-          done['list[' + index + '].flipPhase'] = '';
           done['list[' + index + '].flipActive'] = false;
         });
         this.setData(done);

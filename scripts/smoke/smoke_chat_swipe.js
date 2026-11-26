@@ -167,6 +167,14 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
     if (typeof cb === 'function') cb();
   };
   const rectCbs = [];
+  global.wx.createAnimation = (opts) => {
+    const actions = [];
+    return {
+      translateY(y) { actions.push({ method: 'translateY', args: [y] }); return this; },
+      step(o) { actions.push({ step: Object.assign({}, opts, o || {}) }); return this; },
+      export() { return { actions: JSON.parse(JSON.stringify(actions)) }; }
+    };
+  };
   global.wx.createSelectorQuery = () => {
     const q = {
       selectAll(sel) { q.sel = sel; return q; },
@@ -194,14 +202,15 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
   check('刷新后采集新坐标', rectCbs.length === 1, rectCbs.length);
   rectCbs.shift()([{ top: 100 }, { top: 250 }]); // 新顺序：12 到顶、11 下移
   await tick();
-  check('置顶项先放回旧位置（+200px）', p7.data.list[0].flipFromY === 200, p7.data.list[0]);
-  check('其他项按反向位移放回（-50px）', p7.data.list[1].flipFromY === -50, p7.data.list[1]);
-  check('prepare 阶段关闭过渡', p7.data.list[0].flipPhase === 'prepare', p7.data.list[0].flipPhase);
+  const acts0 = (p7.data.list[0].animData || {}).actions || [];
+  const acts1 = (p7.data.list[1].animData || {}).actions || [];
+  check('置顶项瞬时回到旧位置（+200px）', acts0[0] && acts0[0].method === 'translateY' && acts0[0].args[0] === 200, acts0);
+  check('其他项反向位移放回（-50px）', acts1[0] && acts1[0].method === 'translateY' && acts1[0].args[0] === -50, acts1);
+  check('第一步 duration=0 不产生生切', acts0[1] && acts0[1].step && acts0[1].step.duration === 0, acts0[1]);
+  check('第二步 duration=360 平滑滑回新位置', acts0[2] && acts0[2].method === 'translateY' && acts0[2].args[0] === 0 && acts0[3] && acts0[3].step.duration === 360, acts0);
   check('发生位移的卡片置顶显示', p7.data.list[0].flipActive === true && p7.data.list[1].flipActive === true, p7.data.list.map((c) => c.flipActive));
-  await new Promise((r) => setTimeout(r, 40));
-  check('下一帧清零位移并开启过渡', p7.data.list[0].flipFromY === 0 && p7.data.list[0].flipPhase === 'run', p7.data.list[0]);
   await new Promise((r) => setTimeout(r, 450));
-  check('动画结束清理临时状态', p7.data.list.every((c) => c.flipPhase === ''), p7.data.list);
+  check('动画结束清理浮层状态', p7.data.list.every((c) => c.flipActive === false), p7.data.list.map((c) => c.flipActive));
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);

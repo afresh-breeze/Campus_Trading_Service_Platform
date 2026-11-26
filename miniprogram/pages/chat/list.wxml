@@ -58,8 +58,8 @@
       <view
         wx:for="{{list}}"
         wx:key="conversationId"
-        class="cl-swipe {{item.flipPhase === 'prepare' ? 'cl-swipe--flip-prepare' : ''}} {{item.flipActive ? 'cl-swipe--flip-active' : ''}}"
-        style="transform: translateY({{item.flipFromY || 0}}px)"
+        class="cl-swipe {{item.flipActive ? 'cl-swipe--flip-active' : ''}}"
+        animation="{{item.animData || ''}}"
         data-id="{{item.conversationId}}"
       >
         <!-- 左滑 / 长按唤出的操作区：置顶、标为未读、删除 -->
