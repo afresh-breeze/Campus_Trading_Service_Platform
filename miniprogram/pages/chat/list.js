@@ -347,14 +347,24 @@ Page({
     const id = Number(e.currentTarget.dataset.id || 0);
     const pinned = e.currentTarget.dataset.pinned === true || e.currentTarget.dataset.pinned === 'true';
     if (!id) return;
-    http
-      .patch('/api/conversations/' + id + '/pin', { pinned: !pinned }, { silent: true })
-      .then(() => {
-        util.toast(pinned ? '已取消置顶' : '已置顶');
-        this._pendingReorder = true;
-        return this.refresh();
-      })
-      .catch((err) => util.toast((err && err.message) || '操作失败'));
+    // 操作区露出时先把聊天条收回成正常卡片，再请求/动画；
+    // 否则动画会带着「半张卡 + 置顶/标为未读/删除」的形态滑动。
+    const wasOpen = this.data.list.some((c) => c.swipeX < 0);
+    if (wasOpen) this._setSwipe(-1, 0, false);
+
+    const start = () => {
+      http
+        .patch('/api/conversations/' + id + '/pin', { pinned: !pinned }, { silent: true })
+        .then(() => {
+          util.toast(pinned ? '已取消置顶' : '已置顶');
+          this._pendingReorder = true;
+          return this.refresh();
+        })
+        .catch((err) => util.toast((err && err.message) || '操作失败'));
+    };
+    // 等横向收回动画（120ms）结束，避免横竖两个动画叠在一起
+    if (wasOpen) setTimeout(start, 160);
+    else start();
   },
 
   onMarkUnread(e) {

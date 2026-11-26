@@ -74,7 +74,18 @@ function makePage() {
     { conversationId: 11, peerId: 2, isPinned: false, swipeX: -225, swiping: false },
     { conversationId: 12, peerId: 3, isPinned: false, swipeX: 0, swiping: false }
   ];
-  inst.setData = function (patch) { Object.assign(this.data, patch); };
+  inst.setData = function (patch, cb) {
+    Object.keys(patch).forEach((key) => {
+      const m = /^list\[(\d+)\]\.(.+)$/.exec(key);
+      if (m) {
+        const row = this.data.list[Number(m[1])];
+        if (row) row[m[2]] = patch[key];
+      } else {
+        this.data[key] = patch[key];
+      }
+    });
+    if (typeof cb === 'function') cb();
+  };
   inst.getTabBar = () => ({ syncSelected: () => {}, setBadge: () => {} });
   inst._actionWidth = 225;
   return inst;
@@ -85,12 +96,15 @@ function flushNext(ok, payload) {
   if (ok) p.resolve(payload); else p.reject(payload);
 }
 const tick = () => new Promise((r) => setTimeout(r, 0));
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async () => {
   console.log('[1] 置顶：点击置顶按钮走 PATCH 并刷新列表');
   const p = makePage();
   calls.length = 0;
   p.onTogglePin({ currentTarget: { dataset: { id: 11, pinned: false } } });
+  await wait(180);
+  check('置顶前先把左滑的聊天条收回成正常卡片', p.data.list[0].swipeX === 0, p.data.list[0].swipeX);
   check('置顶发出 PATCH /api/conversations/11/pin', calls.length === 1 && calls[0].method === 'PATCH' && calls[0].url === '/api/conversations/11/pin', calls);
   check('置顶请求体 pinned=true', calls[0] && calls[0].data.pinned === true, calls[0] && calls[0].data);
   flushNext(true, { pinned: true });
@@ -112,6 +126,7 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
   const p3 = makePage();
   calls.length = 0;
   p3.onTogglePin({ currentTarget: { dataset: { id: 11, pinned: false } } });
+  await wait(180);
   flushNext(false, { code: 500, message: '服务异常' });
   await tick();
   check('失败后不发第二次请求', calls.length === 1, calls);
