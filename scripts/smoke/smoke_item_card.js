@@ -141,5 +141,14 @@ check('wxml 无封面走占位分支（插画 + 小字，有封面仍满铺）',
 check('wxss 占位插画 50% 透明 + 按模式 1/3 尺寸（grid 106 / list 66）', /card__ph-img\s*\{[^}]*opacity: 0\.5;/.test(wxss) && /card--grid \.card__ph-img\s*\{[^}]*width: 106rpx;/.test(wxss) && /card--list \.card__ph-img\s*\{[^}]*width: 66rpx;/.test(wxss));
 check('wxss 占位小字 18rpx + 居中容器', /card__ph\s*\{[^}]*align-items: center/.test(wxss) && /card__ph-cap\s*\{[^}]*font-size: 18rpx;/.test(wxss));
 
+// 二手商品详情页无图占位（11-27 对齐代取详情页：插画约 1/3 居中 + 50% 透明 + 小字）
+console.log('\n[ ] 二手详情页无图占位（对齐代取详情）');
+const itemDetailWxml = fs.readFileSync(path.join(MP, 'pages/item/detail.wxml'), 'utf8');
+const itemDetailWxss = fs.readFileSync(path.join(MP, 'pages/item/detail.wxss'), 'utf8');
+const itemDetailJs = fs.readFileSync(path.join(MP, 'pages/item/detail.js'), 'utf8');
+check('详情 js 引占位模块并在无图时生成 galleryPlaceholder', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(itemDetailJs) && /galleryPlaceholder: !images\.length && item\.itemId\s*\?\s*placeholder\.pick\(item\.itemId\)/.test(itemDetailJs));
+check('详情 wxml 无图走占位分支（插画 + 小字，有图走轮播）', /wx:if="\{\{images\.length\}\}"/.test(itemDetailWxml) && /wx:else class="gallery__ph"/.test(itemDetailWxml) && /class="gallery__ph-img" src="\{\{galleryPlaceholder\}\}"/.test(itemDetailWxml) && />暂无图片</.test(itemDetailWxml));
+check('详情 wxss 占位插画 172rpx（520 的约 1/3）+ 50% 透明 + 22rpx 小字', /gallery__ph-img\s*\{[^}]*width: 172rpx;[^}]*opacity: 0\.5;/.test(itemDetailWxss) && /gallery__ph-cap\s*\{[^}]*font-size: 22rpx;/.test(itemDetailWxss));
+
 console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
 process.exit(fail ? 1 : 0);

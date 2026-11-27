@@ -12,6 +12,7 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const placeholder = require('../../utils/placeholder');
 // 小票落款随机短句（11-25 B 加：替换「打印时间」行，与代取详情页同一份清单 utils/motto.js）
 const mottoUtil = require('../../utils/motto');
 
@@ -118,6 +119,11 @@ function mapDetail(raw) {
   return {
     item,
     images,
+    // 无图时轮播区的占位插画（11-27 对齐代取详情页：插画缩至约 1/3 居中 +
+    // 50% 透明 + 下方「暂无图片」小字；有图时此值为空走正常轮播）
+    galleryPlaceholder: !images.length && item.itemId
+      ? placeholder.pick(item.itemId)
+      : '',
     seller: {
       name: sellerName,
       initial: sellerName.slice(0, 1) || '卖',
