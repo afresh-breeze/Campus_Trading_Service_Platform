@@ -146,8 +146,9 @@ console.log('\n[ ] 二手详情页无图占位（对齐代取详情）');
 const itemDetailWxml = fs.readFileSync(path.join(MP, 'pages/item/detail.wxml'), 'utf8');
 const itemDetailWxss = fs.readFileSync(path.join(MP, 'pages/item/detail.wxss'), 'utf8');
 const itemDetailJs = fs.readFileSync(path.join(MP, 'pages/item/detail.js'), 'utf8');
-check('详情 js 引占位模块并在无图时生成 galleryPlaceholder', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(itemDetailJs) && /galleryPlaceholder: !images\.length && item\.itemId\s*\?\s*placeholder\.pick\(item\.itemId\)/.test(itemDetailJs));
+check('详情 js 引占位模块并始终生成 galleryPlaceholder（加载失败也复用）', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(itemDetailJs) && /galleryPlaceholder: placeholder\.pick\(item\.itemId\)/.test(itemDetailJs));
 check('详情 wxml 无图走占位分支（插画 + 小字，有图走轮播）', /wx:if="\{\{images\.length\}\}"/.test(itemDetailWxml) && /wx:else class="gallery__ph"/.test(itemDetailWxml) && /class="gallery__ph-img" src="\{\{galleryPlaceholder\}\}"/.test(itemDetailWxml) && />暂无图片</.test(itemDetailWxml));
+check('详情 wxml 图片加载失败也走同款插画占位（不再只有文字）', /wx:else class="gallery__ph">\s*<image class="gallery__ph-img"/.test(itemDetailWxml) && itemDetailWxml.indexOf('gallery__empty') === -1);
 check('详情 wxss 占位插画 172rpx（520 的约 1/3）+ 50% 透明 + 22rpx 小字', /gallery__ph-img\s*\{[^}]*width: 172rpx;[^}]*opacity: 0\.5;/.test(itemDetailWxss) && /gallery__ph-cap\s*\{[^}]*font-size: 22rpx;/.test(itemDetailWxss));
 
 console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');

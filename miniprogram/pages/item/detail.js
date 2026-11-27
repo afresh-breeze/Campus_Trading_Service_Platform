@@ -119,11 +119,9 @@ function mapDetail(raw) {
   return {
     item,
     images,
-    // 无图时轮播区的占位插画（11-27 对齐代取详情页：插画缩至约 1/3 居中 +
-    // 50% 透明 + 下方「暂无图片」小字；有图时此值为空走正常轮播）
-    galleryPlaceholder: !images.length && item.itemId
-      ? placeholder.pick(item.itemId)
-      : '',
+    // 无图占位插画（11-27 对齐代取详情页：约 1/3 居中 + 50% 透明 + 「暂无图片」）。
+    // 有实拍图时也生成备用值：图片加载失败降级分支同样画占位图，不能再只留文字。
+    galleryPlaceholder: placeholder.pick(item.itemId),
     seller: {
       name: sellerName,
       initial: sellerName.slice(0, 1) || '卖',
