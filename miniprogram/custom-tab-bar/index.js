@@ -5,20 +5,19 @@
  * 两套状态：
  *   - selected：只负责胶囊位置（点击时滑动，切页同步时无动画）；
  *   - activeIndex：只负责图标/文字的选中配色，与 selected 同帧切换。
- * 切换策略（11-28 二次调整）：点击后一次 setData 同帧点亮目标项，胶囊先滑
- * 260ms（与 wxss 过渡时长一致），滑到位后再 switchTab；连点用 clearTimeout
- * 打断上一次未跳页的滑动，直接改道滑向新目标。
- * 旧实现之一「胶囊先滑 + activeIndex=-1 全灰中间态」会频闪，已废弃；
- * 中间态只允许「旧项亮 → 新项亮」的配色切换，绝不允许全灰。
+ * 切换策略（11-28 三次调整）：点击后同帧落最终态并**立即 switchTab**。
+ * 不再等胶囊滑完再切页：真机上缓存页会先画上一次的高亮帧，延迟期间旧页的
+ * 胶囊已经滑到新项，切页瞬间缓存帧又把高亮画回旧项，表现为「高亮闪回」。
+ * 连点由「目标项已选中」直接拦截；页面切换交给微信，胶囊动画只做视觉。
  * 新页面实例 attached 时用 globalData.tabIndex 直接渲染最终态，无中间帧。
  *
- * 缓存旧帧根治（11-26 三修，真机仍现「全灰→点亮→跳页」后定位）：
- * 目标页是缓存页时，微信会先画它上一次的渲染帧。之前只有发起点击的实例知道
- * 选中态变了，其余缓存页实例全停在旧值——切回去时旧帧先上屏（胶囊错位/全灰），
- * onShow 的 syncSelected 才修正，真机上这一帧肉眼可见，连续切换就反复闪。
- * 对策：点击瞬间把最终选中态广播给 badgeTargets 注册表里所有实例；隐藏实例
- * 的 setData 属离屏渲染（用户看不见），等它再上屏时缓存帧已是最终态。
- * 滑动动画只在发起实例上播，节奏（260ms 滑到位再跳页）不变。
+ * 缓存旧帧（11-26/11-28 多轮真机定位）：
+ * 目标页是缓存页时，微信会先画它上一次的渲染帧。对策两层：
+ *   1) 点击瞬间把最终选中态广播给 badgeTargets 注册表里所有实例；
+ *   2) 目标页 onShow 的 syncSelected 不再早退，强制 setData 一次，
+ *      保证缓存帧即使短暂显示旧高亮，也会在页面显示时立即拉回当前 tab。
+ * 配合「立即 switchTab」，不再给旧页的胶囊留出先滑到新项、再被缓存帧
+ * 拉回旧项的时间窗。
  *
  * 红点防闪断（11-28）：真机/模拟器上偶现「切到“我的”后红点先消失再出现」，
  * 30fps 录屏取证看不到断点（QQ20261126-164651.mp4 全程 203 帧红点恒在），
@@ -56,8 +55,6 @@ const TAB_LIST = [
 // 模块级变量：同一小程序内所有 tabBar 实例共享，用于新实例出生时直接定位
 let lastIndex = 0;
 
-// 跳页延迟：与 wxss 里胶囊过渡 0.26s 对齐，滑到位后再切页面
-const SLIDE_WAIT_MS = 260;
 // 红点清零确认窗：0 值到达后等这么久才真的隐藏（防亚帧竞态闪断）
 const BADGE_CLEAR_CONFIRM_MS = 400;
 
@@ -94,10 +91,6 @@ Component({
       if (this._badgeClearTimer) {
         clearTimeout(this._badgeClearTimer);
         this._badgeClearTimer = null;
-      }
-      if (this._switchTimer) {
-        clearTimeout(this._switchTimer);
-        this._switchTimer = null;
       }
       const app = getApp();
       if (app && typeof app.unregisterBadgeTarget === 'function') {
@@ -167,14 +160,20 @@ Component({
      * 广播放在最前：即使本实例已是最终态（早退），也兜底把隐藏缓存实例拉齐。
      */
     syncSelected(index) {
+      // 防旧页 onShow 抢写：只有当前页面栈顶确实是该 tab 时才同步选中态，
+      // 避免切页瞬间旧页生命周期把高亮写回旧 tab（真机闪回来源之一）。
+      const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+      const top = pages.length ? pages[pages.length - 1] : null;
+      const expected = TAB_LIST[index] && TAB_LIST[index].pagePath.replace(/^\//, '');
+      if (top && expected && top.route !== expected) return;
+
       const app = getApp();
       if (app && app.globalData) app.globalData.tabIndex = index;
       lastIndex = index;
       this.broadcastSelection(index);
 
-      if (this.data.selected === index && this.data.activeIndex === index && !this.data.animate) {
-        return;
-      }
+      // 不要在这里早退：缓存页的旧帧可能还停在旧高亮上，
+      // onShow 的这次 setData 必须真的触发一次渲染，把高亮拉回当前 tab。
       this.setData({ selected: index, activeIndex: index, animate: false });
     },
 
@@ -187,21 +186,12 @@ Component({
       if (app && app.globalData) app.globalData.tabIndex = index;
       lastIndex = index;
 
-      // 连点打断：上一次滑动还没跳页就点新目标 → 清掉旧定时器，胶囊改道滑向新项
-      if (this._switchTimer) {
-        clearTimeout(this._switchTimer);
-        this._switchTimer = null;
-      }
-
       // 先广播：所有隐藏缓存实例离屏同步到最终态，切过去时旧帧就是对的
       this.broadcastSelection(index);
-      // 目标项配色同帧点亮（绝不允许全灰中间态），胶囊开始滑动；
-      // 滑到位（260ms，与 wxss 过渡一致）后再切页面。
+      // 同帧点亮目标项并立即切页：不再等胶囊滑完，避免旧页高亮先到新项、
+      // 目标缓存页又把高亮画回旧项的「闪回」
       this.setData({ selected: index, activeIndex: index, animate: true });
-      this._switchTimer = setTimeout(() => {
-        this._switchTimer = null;
-        wx.switchTab({ url: path });
-      }, SLIDE_WAIT_MS);
+      wx.switchTab({ url: path });
     }
   }
 });
