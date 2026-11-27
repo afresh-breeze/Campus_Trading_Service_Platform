@@ -9,7 +9,7 @@
 
     <view class="field-wrap" bindtap="onOpenPlacePicker" hover-class="field--hover">
       <view class="field">
-        <view class="field-label">取件地点</view>
+        <view class="field-label">取件地点<text class="req">*</text></view>
         <view class="field-input {{errors.pickupArea || errors.pickupPlace ? 'field-input--error' : ''}}">
           {{pickupText || '选择片区 / 教学楼'}}
         </view>
@@ -21,7 +21,7 @@
 
     <view class="field-wrap">
       <view class="field field--top">
-        <view class="field-label">送达地点</view>
+        <view class="field-label">送达地点<text class="req">*</text></view>
         <input
           class="field-input"
           placeholder="如：1 号宿舍楼 302"
@@ -139,7 +139,7 @@
 
     <view class="field-wrap">
       <view class="field">
-        <view class="field-label">时间要求</view>
+        <view class="field-label">时间要求<text class="req">*</text></view>
         <radio-group class="radio-row" bindchange="onTimeTypeChange">
           <label wx:for="{{timeOptions}}" wx:key="value" class="radio-item">
             <radio value="{{item.value}}" checked="{{timeIndex === index}}" color="#79513D" />
@@ -181,7 +181,7 @@
 
     <view class="field-wrap">
       <view class="field">
-        <view class="field-label">报酬（元）</view>
+        <view class="field-label">报酬（元）<text class="req">*</text></view>
         <input
           class="field-input"
           type="digit"

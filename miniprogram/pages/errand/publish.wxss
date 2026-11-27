@@ -2,6 +2,11 @@
 .form-tip {
   margin: 8rpx 0 16rpx;
 }
+/* 必填项红星（11-27 对齐二手发布页 item/publish 的 .req 同名样式） */
+.req {
+  margin-left: 4rpx;
+  color: var(--color-danger);
+}
 
 .field--top {
   height: auto;
