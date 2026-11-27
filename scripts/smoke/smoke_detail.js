@@ -236,6 +236,14 @@ function check(name, cond, extra) {
     /\/uploads\/errand-real\.png$/.test(pImg.data.heroImage) && pImg.data.errandImages.length === 1,
     { hero: pImg.data.heroImage, images: pImg.data.errandImages });
 
+  // 无图占位缩小版（11-27 反馈）：插画约 1/3 居中 + 50% 透明 + 「暂无图片」小字
+  const srcPh = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
+  check('详情 hero：heroNoImage 标记占位态', /heroNoImage: !adapter\.toImageList\(order\)\[0\]/.test(srcPh));
+  check('详情 hero：无图走占位分支、有图满铺', /wx:if="\{\{heroNoImage\}\}" class="detail-hero__ph"/.test(wxmlD) && /wx:else class="detail-hero__img"/.test(wxmlD));
+  check('详情 hero：占位插画 200rpx（614 的约 1/3）+ 50% 透明', /detail-hero__ph-img\s*\{[^}]*width: 200rpx;[^}]*opacity: 0\.5;/.test(wxssD));
+  check('详情 hero：下方「暂无图片」小字', />暂无图片</.test(wxmlD) && /detail-hero__ph-cap\s*\{[^}]*font-size: 22rpx;/.test(wxssD));
+  check('详情 hero：占位不影响预览点击（容器 bindtap 不变）', /class="card detail-hero receipt__sec" data-index="0" bindtap="onPreviewErrandImage"/.test(wxmlD));
+
   check('公共层 errand.js 走占位模块，7 张线条图案齐备', (function () {
     const u = fsD.readFileSync(path.join(REPO, 'utils', 'errand.js'), 'utf8');
     if (!(/placeholder\.pick/.test(u) && /categoryIcon/.test(u))) return false;

@@ -82,7 +82,9 @@ function toCard(order) {
     timeText: shortTime(order),
     rewardText: util.formatPrice(order.reward),
     itemDesc: order.itemDesc || '',
-    // 有实拍图就用第一张做卡片缩略图，否则退回品类插画
+    // 有实拍图就用第一张做卡片缩略图，否则退回品类插画；thumbNoImage 标记占位态：
+    // 无图时插画缩到约 1/3 居中 + 50% 透明度 + 下方「暂无图片」小字（11-27 反馈）
+    thumbNoImage: !adapter.toImageList(order)[0],
     categoryIcon: adapter.toImageList(order)[0] || errandUtil.categoryIcon(order),
     publisherNickname: nickname,
     publisherInitial: nickname.slice(0, 1),

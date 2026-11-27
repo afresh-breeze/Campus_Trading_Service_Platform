@@ -286,8 +286,11 @@ Page({
       errorDesc: '',
       order,
       sizeText: SIZE_TEXT[order.itemSize] || order.itemSize || '未填写',
-      // 顶部大图优先用发布时上传的物品图；没传图时退回与大厅卡片同一套品类插画
+      // 顶部大图优先用发布时上传的物品图；没传图时退回与大厅卡片同一套品类插画。
+      // heroNoImage 标记占位态：插画缩到约 1/3 居中 + 50% 透明度 + 下方「暂无图片」
+      // 小字（11-27 反馈），有实拍图时仍满铺 aspectFill。
       heroImage: adapter.toImageList(order)[0] || errandUtil.categoryIcon(order),
+      heroNoImage: !adapter.toImageList(order)[0],
       errandImages: adapter.toImageList(order),
       // 11-25 用户反馈：详情页取件地点「地标在上、片区在下」两行，不许截断——
       // 列表卡可以 ellipsis，详情页出现「南区教学区 · …」显示不全是大忌

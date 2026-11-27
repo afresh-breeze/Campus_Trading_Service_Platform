@@ -128,6 +128,25 @@
   width: 100%;
   height: 100%;
 }
+/* 无图占位态（11-27 反馈）：插画缩到约 1/3（200rpx）居中、50% 透明、下方「暂无图片」小字 */
+.detail-hero__ph {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.detail-hero__ph-img {
+  width: 200rpx;
+  height: 200rpx;
+  opacity: 0.5;
+}
+.detail-hero__ph-cap {
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  line-height: 1.2;
+  color: var(--color-text-3, #A89888);
+}
 .detail-hero--hover {
   opacity: 0.92;
 }

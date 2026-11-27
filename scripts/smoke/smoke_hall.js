@@ -317,6 +317,15 @@ function order(id, extra) {
   await tick();
   check('同一订单跨请求稳定同图（列表/详情/刷新不跳变）', JSON.stringify(icons10) === JSON.stringify(p9b.data.list.map((o) => o.categoryIcon)), { a: icons10, b: p9b.data.list.map((o) => o.categoryIcon) });
   check('占位图资源齐备（7 张全部存在）', [1, 2, 3, 4, 5, 6, 7].every((n) => require('fs').existsSync(path.join(MP, 'assets/placeholder/ph-' + n + '.png'))));
+  // 无图占位缩小版（11-27 反馈）：插画约 1/3 居中 + 50% 透明 + 「暂无图片」小字
+  const hallFs11 = require('fs');
+  const hallWxml11 = hallFs11.readFileSync(path.join(MP, 'pages/errand/hall.wxml'), 'utf8');
+  const hallWxss11 = hallFs11.readFileSync(path.join(MP, 'pages/errand/hall.wxss'), 'utf8');
+  check('大厅卡片：thumbNoImage 标记占位态', /thumbNoImage: !adapter\.toImageList\(order\)\[0\]/.test(hallFs11.readFileSync(path.join(MP, 'pages/errand/hall.js'), 'utf8')));
+  check('大厅卡片：无图走占位分支、有图满铺', /wx:if="\{\{!item\.thumbNoImage\}\}" class="order__thumb"/.test(hallWxml11) && /wx:else class="order__thumb order__thumb--ph"/.test(hallWxml11));
+  check('大厅卡片：占位插画 66rpx（200 的 1/3）+ 50% 透明', /\.order__thumb__ph-img\s*\{[^}]*width: 66rpx;[^}]*opacity: 0\.5;/.test(hallWxss11));
+  check('大厅卡片：下方「暂无图片」小字', />暂无图片</.test(hallWxml11) && /\.order__thumb__ph-cap\s*\{[^}]*font-size: 18rpx;/.test(hallWxss11));
+  check('大厅卡片：占位容器尺寸不变（200rpx 布局不跳）', /\.order__thumb--ph\s*\{[^}]*align-items: center/.test(hallWxss11) && /\.order__thumb\s*\{[^}]*width: 200rpx;[^}]*height: 200rpx;/.test(hallWxss11));
 
   console.log('\n[11] 标题与胶囊齐平、滚动全程冻结（无任何动画）');
   const p10 = makePage();
