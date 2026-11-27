@@ -7,22 +7,23 @@
   <view class="card cd-fatal">
     <text class="t-title">{{fatalError}}</text>
     <text class="t-sub cd-fatal__desc">{{fatalDesc}}</text>
-    <button wx:if="{{canRetry}}" class="btn btn-primary btn-block" bindtap="onRetryInit">重试</button>
-    <button wx:else class="btn btn-ghost btn-block" bindtap="onBack">返回</button>
+    <button wx:if="{{canRetry}}" hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetryInit">重试</button>
+    <button wx:else hover-class="btn--press" class="btn btn-ghost btn-block" bindtap="onBack">返回</button>
   </view>
 </view>
 
 <view wx:elif="{{loading}}" class="page page-body">
   <nav-top back />
-  <view class="sk-card">
-    <view class="sk-line sk-line--lg"></view>
-    <view class="sk-line sk-line--md"></view>
-    <view class="sk-line sk-line--sm"></view>
+  <view class="cd-loading">
+    <loading-eyes />
   </view>
 </view>
 
 <block wx:else>
-  <view class="cd-page">
+  <!-- 11-26：键盘弹起时 cd-page--kb 置零安全区底 padding——键盘实高不含
+       home-indicator 安全区，页面再垫一次会双重抬升（输入条与键盘之间
+       隔出约 34px 空隙，真机反馈要求贴近） -->
+  <view class="cd-page {{keyboardHeight ? 'cd-page--kb' : ''}}">
     <nav-top back title="{{pageTitle}}" />
     <!-- 业务卡片：点击进商品/代取详情；动作仍在详情页做 -->
     <view wx:if="{{bizCard}}" class="cd-biz" bindtap="onBizTap" hover-class="cd-biz--hover">
@@ -41,7 +42,10 @@
       <text class="cd-biz-sub__text">{{bizTitleText}}</text>
     </view>
 
-    <!-- 消息区：scroll-into-view 锚点滚底；只在新消息且在底部时滚 -->
+    <!-- 消息区：scroll-into-view 锚点滚底；只在新消息且在底部时滚。
+         bindtap 主动收键盘（11-27 真机反馈）：hold-keyboard 让点空白不自动收起，
+         点消息区空白/气泡时气泡的 tap 事件冒泡到 scroll-view 统一 hideKeyboard；
+         图片预览用 catchtap 不冒泡，但预览时键盘是否收起无感知差异，不处理 -->
     <scroll-view
       class="cd-scroll"
       scroll-y
@@ -49,6 +53,7 @@
       scroll-with-animation
       bindscrolltoupper="onScrollToUpper"
       bindscrolltolower="onScrollToLower"
+      bindtap="onTapHideKb"
     >
       <view wx:if="{{!messages.length}}" class="cd-empty">
         <text class="cd-empty__text">还没有消息，打个招呼吧</text>
@@ -68,7 +73,27 @@
             data-temp="{{item.tempId}}"
             bindtap="{{item.failed ? 'onTapFailed' : ''}}"
           >
-            <image wx:if="{{item.isImage}}" class="cd-bubble__img" src="{{item.imageUrl}}" mode="aspectFill" />
+            <!-- 11-26：binderror 兜底——真机加载不到 src 时不再留空白泡，
+                 降级为「点击重试」占位（详见 onImgRetry：临时图回退 / 破缓存重试） -->
+            <image
+              wx:if="{{item.isImage && !item.imgError}}"
+              class="cd-bubble__img"
+              src="{{item.imageUrl}}"
+              mode="aspectFill"
+              data-url="{{item.imageUrl}}"
+              data-key="{{item.key}}"
+              binderror="onImgError"
+              catchtap="{{item.failed ? '' : 'onPreviewImage'}}"
+            />
+            <view
+              wx:elif="{{item.isImage}}"
+              class="cd-bubble__img cd-bubble__img--fallback"
+              data-key="{{item.key}}"
+              bindtap="onImgRetry"
+            >
+              <text>图片加载失败</text>
+              <text>点击重试</text>
+            </view>
             <text wx:else class="cd-bubble__text">{{item.content}}</text>
             <view wx:if="{{item.pending}}" class="cd-bubble__status">发送中…</view>
             <view wx:elif="{{item.failed}}" class="cd-bubble__status cd-bubble__status--fail">发送失败，点击重发</view>
@@ -79,14 +104,30 @@
       <view id="anchor-bottom" class="cd-anchor"></view>
     </scroll-view>
 
-    <!-- 发送框 -->
-    <view class="cd-inputbar">
-      <input
+    <!-- 发送框：11-26 键盘不再顶飞页面——adjust-position 关掉（整页上推会把
+         nav-top 推出屏），改为监听键盘高度给输入条垫底，导航与消息区纹丝不动 -->
+    <view
+      class="cd-inputbar"
+      style="{{keyboardHeight ? 'padding-bottom:' + keyboardHeight + 'px' : ''}}"
+    >
+      <!-- 选图入口：相册/拍照 → 上传 → msgType=image（用例 27，11-24 补齐） -->
+      <view
+        class="cd-inputbar__pick"
+        hover-class="cd-inputbar__pick--hover"
+        bindtap="onPickImage"
+        aria-label="发送图片"
+      >＋</view>
+      <!-- 多行输入：auto-height 随内容自动换行增高，键盘右下角「发送」仍可发消息 -->
+      <textarea
         class="cd-inputbar__input"
         value="{{input}}"
         maxlength="500"
+        auto-height="{{true}}"
+        show-confirm-bar="{{false}}"
         confirm-type="send"
-        adjust-position="{{true}}"
+        adjust-position="{{false}}"
+        hold-keyboard="{{true}}"
+        bindkeyboardheightchange="onKbHeight"
         placeholder="输入消息…"
         placeholder-class="cd-inputbar__placeholder"
         bindinput="onInput"
@@ -98,6 +139,7 @@
       <button
         class="cd-inputbar__send {{input ? 'cd-inputbar__send--on' : ''}}"
         style="width: 100rpx; min-width: 0; padding: 0;"
+        hover-class="btn--press"
         bindtap="onSend"
       >发送</button>
     </view>

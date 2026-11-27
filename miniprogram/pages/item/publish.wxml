@@ -8,17 +8,19 @@
       class="mode-switch__item {{mode === 'normal' ? 'mode-switch__item--on' : ''}}"
       data-mode="normal"
       bindtap="onModeChange"
+      hover-class="mode-switch__item--hover"
     >普通商品</view>
     <view
       class="mode-switch__item {{mode === 'book' ? 'mode-switch__item--on' : ''}}"
       data-mode="book"
       bindtap="onModeChange"
+      hover-class="mode-switch__item--hover"
     >书籍</view>
   </view>
 
   <!-- 书籍信息 -->
   <view wx:if="{{mode === 'book'}}" class="card" id="field-book">
-    <view class="t-title">书籍信息</view>
+    <view class="t-section">书籍信息</view>
     <view class="t-sub form-tip">书籍商品必须关联书目；找不到时可手动新建</view>
 
     <block wx:if="{{bookSelected}}">
@@ -29,8 +31,7 @@
           <view wx:if="{{bookSelected.isbnText}}" class="book-selected__isbn">{{bookSelected.isbnText}}</view>
         </view>
         <view class="book-selected__actions">
-          <view class="book-selected__action" bindtap="onChangeBook">更换</view>
-          <view class="book-selected__action book-selected__action--muted" bindtap="onClearBookSelection">取消</view>
+          <view class="book-selected__action book-selected__action--muted" bindtap="onClearBookSelection" hover-class="book-selected__action--hover">取消</view>
         </view>
       </view>
     </block>
@@ -80,7 +81,7 @@
         </view>
       </view>
 
-      <view wx:if="{{!bookManualOpen}}" class="book-manual-link" bindtap="onOpenManualBook">
+      <view wx:if="{{!bookManualOpen}}" class="book-manual-link" bindtap="onOpenManualBook" hover-class="book-link--hover">
         找不到？手动新建书目 ›
       </view>
 
@@ -151,14 +152,14 @@
           <text wx:if="{{errors.manualPublisher}}" class="field-error">{{errors.manualPublisher}}</text>
         </view>
 
-        <view class="book-manual-cancel" bindtap="onCloseManualBook">取消手动新建</view>
+        <view class="book-manual-cancel" bindtap="onCloseManualBook" hover-class="book-link--hover">取消手动新建</view>
       </view>
     </block>
   </view>
 
   <!-- 商品图片 -->
   <view class="card" id="field-images">
-    <view class="t-title">商品图片</view>
+    <view class="t-section">商品图片</view>
     <view class="t-sub form-tip">选填，最多 3 张；第一张作为列表封面</view>
     <view class="img-grid">
       <view
@@ -174,7 +175,7 @@
           <view>上传失败</view>
           <view>点击重试</view>
         </view>
-        <view class="img-item__del" data-id="{{item.id}}" catchtap="onDeleteImage">×</view>
+        <view class="img-item__del" data-id="{{item.id}}" catchtap="onDeleteImage" hover-class="img-item__del--hover">×</view>
       </view>
       <view
         wx:if="{{images.length < maxImages}}"
@@ -191,7 +192,7 @@
 
   <!-- 基本信息 -->
   <view class="card">
-    <view class="t-title">基本信息</view>
+    <view class="t-section">基本信息</view>
 
     <view class="field-wrap" id="field-title">
       <view class="field">
@@ -228,7 +229,7 @@
 
   <!-- 价格与成色 -->
   <view class="card">
-    <view class="t-title">价格与成色</view>
+    <view class="t-section">价格与成色</view>
 
     <view class="field-wrap" id="field-price">
       <view class="field">
@@ -290,7 +291,7 @@
 
   <!-- 分类与地点 -->
   <view class="card">
-    <view class="t-title">分类与地点</view>
+    <view class="t-section">分类与地点</view>
 
     <view class="field-wrap" id="field-category">
       <picker
@@ -336,6 +337,7 @@
         class="place-chip {{placeSelected[item] ? 'place-chip--on' : ''}}"
         data-place="{{item}}"
         bindtap="onPlaceChip"
+        hover-class="place-chip--hover"
       >{{item}}</view>
     </view>
     <view class="place-tip">可多选，选中项自动用「，」连接</view>
@@ -347,6 +349,7 @@
     <button
       class="btn btn-primary btn-block"
       disabled="{{submitting || imageUploading}}"
+      hover-class="btn--press"
       bindtap="onSubmit"
     >{{submitting ? '发布中…' : '发布'}}</button>
   </view>

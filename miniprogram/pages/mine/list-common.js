@@ -64,11 +64,8 @@ function loadFirst(page) {
     page: 1,
     hasMore: true
   });
-  try {
-    wx.pageScrollTo({ scrollTop: 0, duration: 0, fail: () => {} });
-  } catch (e) {
-    // 页面还没就绪时滚动失败，不影响列表请求
-  }
+  // 回顶改走 scroll-view 的 scroll-top（11-25 下拉刷新改 refresher 后页级滚动失效）
+  page.setData({ svTop: (page.data.svTop || 0) > 0 ? 0 : 0.1 });
 
   let request;
   try {

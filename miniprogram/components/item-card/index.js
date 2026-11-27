@@ -8,6 +8,7 @@
 // 枚举严格对齐 database/schema.sql：items.condition_level ENUM('new','like_new','good','fair')
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const placeholder = require('../../utils/placeholder');
 
 const CONDITION_TEXT = {
   new: '全新',
@@ -29,6 +30,8 @@ Component({
 
   data: {
     cover: '',
+    // 无封面时的占位图（11-26 用户定稿：7 张线条图案按 itemId 稳定随机）
+    placeholder: '',
     priceText: '',
     originText: '',
     conditionText: '',
@@ -47,6 +50,8 @@ Component({
 
       this.setData({
         cover: item.coverUrl || '',
+        // 没有封面 → 线条图案占位（同一商品永远同一张，见 utils/placeholder.js）
+        placeholder: item.coverUrl ? '' : placeholder.pick(item.itemId),
         priceText: price ? price.toFixed(price % 1 === 0 ? 0 : 2) : '面议',
         // 原价只在明显高于现价时显示，避免出现原价等于现价的噪声
         originText: origin > price ? '¥' + origin.toFixed(origin % 1 === 0 ? 0 : 2) : '',

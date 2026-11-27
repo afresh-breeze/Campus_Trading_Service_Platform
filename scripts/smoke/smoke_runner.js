@@ -424,6 +424,48 @@ function todayStr() {
   check('loading 期间不发请求', calls.length === 0, calls.map((c) => c.url));
   p5.setData({ loading: false });
 
+  console.log('\n[10] 具体地标悬浮卡片（11-24 改版：勾教学区弹卡多选，背景模糊，确定提交）');
+  const p7 = makePage();
+  p7.onLoad({});
+  p7.onAreasChange(ev(['北区教学区']));
+  check('勾教学区自动弹卡', p7.data.placeCard.visible === true && p7.data.placeCard.zone === '北区教学区', p7.data.placeCard.zone);
+  check('卡片列出全部 27 个地标', p7.data.placeCard.list.length === 27, p7.data.placeCard.list.length);
+  p7.onPlaceCardChange(ev(['第1教学楼', '第2教学楼']));
+  check('卡片内多选计数', p7.data.placeCard.count === 2, p7.data.placeCard.count);
+  p7.onPlaceCardConfirm();
+  check('确定后写入 servicePlaces', JSON.stringify(p7.data.servicePlaces) === '["第1教学楼","第2教学楼"]', p7.data.servicePlaces);
+  check('确定后卡片关闭', p7.data.placeCard.visible === false);
+  const northGroup = p7.data.zoneGroups
+    .filter((g) => g.category === '教学区')[0];
+  const northZone = northGroup.zones.filter((z) => z.name === '北区教学区')[0];
+  check('片区下方出现 chip 摘要', northZone.chips.length === 2 && northZone.more === 0, northZone);
+  p7.onZoneChipsTap({ currentTarget: { dataset: { zone: '北区教学区' } } });
+  check('重开卡片回显已选', p7.data.placeCard.visible === true && p7.data.placeCard.count === 2, p7.data.placeCard.count);
+  p7.onPlaceCardAll();
+  check('全选 27 个', p7.data.placeCard.count === 27 && p7.data.placeCard.all === true, p7.data.placeCard.count);
+  p7.onPlaceCardConfirm();
+  check('全选提交 27 个地标', p7.data.servicePlaces.length === 27, p7.data.servicePlaces.length);
+  p7.onAreasChange(ev(['桃园']));
+  check('取消勾选片区清空其地标', p7.data.servicePlaces.length === 0 && p7.data.serviceAreas.length === 1, p7.data.servicePlaces.length);
+  p7.onAreasChange(ev(['桃园', '南区教学区']));
+  check('新勾南区教学区弹卡', p7.data.placeCard.visible === true && p7.data.placeCard.zone === '南区教学区');
+  p7.onPlaceCardCancel();
+  check('放弃后回退为未勾选', p7.data.serviceAreas.indexOf('南区教学区') < 0 && p7.data.placeCard.visible === false, p7.data.serviceAreas);
+  p7.onAreasChange(ev(['桃园', '南区教学区']));
+  p7.onPlaceCardChange(ev(['第30教学楼']));
+  p7.onPlaceCardConfirm();
+  p7.onAreasChange(ev(['桃园', '南区教学区']));
+  p7.onPlaceCardCancel();
+  check('已保存过的片区放弃不回退勾选', p7.data.serviceAreas.indexOf('南区教学区') > -1 && JSON.stringify(p7.data.servicePlaces) === '["第30教学楼"]', p7.data.servicePlaces);
+
+  console.log('\n[12] 备注 textarea 自动换行（11-26 真机反馈）');
+  const fs12 = require('fs');
+  const runnerWxml12 = fs12.readFileSync(path.join(process.cwd(), 'miniprogram/pages/mine/runner.wxml'), 'utf8');
+  const runnerWxss12 = fs12.readFileSync(path.join(process.cwd(), 'miniprogram/pages/mine/runner.wxss'), 'utf8');
+  check('备注字段已换 textarea 且 auto-height', /class="field-input field-textarea"[\s\S]{0,300}auto-height="\{\{true\}\}"/.test(runnerWxml12));
+  check('备注行放宽为 min-height 自适应', /\.field--multiline\s*\{[^}]*height: auto;[^}]*min-height: 96rpx;/.test(runnerWxss12));
+  check('textarea 本体给最小行高', /\.field--multiline \.field-textarea\s*\{[^}]*min-height: 44rpx;/.test(runnerWxss12));
+
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => {

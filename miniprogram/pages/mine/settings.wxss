@@ -11,10 +11,11 @@
 }
 
 .st-row {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   min-height: 108rpx;
-  padding: 0 var(--space);
+  padding: 0 var(--space-page);
   border-bottom: 1rpx solid var(--color-divider);
 }
 .st-row:last-child {

@@ -31,12 +31,14 @@ function getNavMetrics() {
 
 Page({
   data: {
+    parallax: false,
     stickyTop: 24, // 状态栏占位 = 胶囊顶部 y，让标题与胶囊齐平
     barHead: 32, // 标题行高 = 胶囊高度，与胶囊完全同排
     isLogin: true,
     firstLoading: true,
     loadingMore: false,
     refreshing: false,
+    pulling: false,
     error: '',
     list: [],
     total: 0,
@@ -56,15 +58,40 @@ Page({
   },
 
   onShow() {
+    // 先记下是否带着视差态回页（从详情返回），复位后按路径分流刷新时机
+    const wasParallax = this.data.parallax;
+    if (wasParallax) this.setData({ parallax: false });
     const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (bar && typeof bar.syncSelected === 'function') {
       bar.syncSelected(TAB_INDEX);
     }
-    this.refresh();
+    if (wasParallax) {
+      // 视差回弹（220ms）结束后再拉数据：复位、diff、图片重排不同帧（11-25 方案主因 2）
+      if (this._showRefreshTimer) clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = setTimeout(() => {
+        this._showRefreshTimer = null;
+        this.refresh();
+      }, 260);
+    } else {
+      this.refresh();
+    }
   },
 
-  onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+  onUnload() {
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
+    if (this._showRefreshTimer) {
+      clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = null;
+    }
+  },
+
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh().then(done, done);
   },
 
   onReachBottom() {
@@ -215,7 +242,7 @@ Page({
         patch
       )
     );
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetch(1);
   },
 
@@ -256,10 +283,18 @@ Page({
   onTapItem(e) {
     const id = e.detail && e.detail.itemId;
     if (!id) return;
-    wx.navigateTo({
-      url: '/pages/item/detail?id=' + id,
-      fail: () => util.toast('详情页打开失败')
-    });
+    // 连点防抖：导航中再点不重复入栈
+    if (this._navTimer) return;
+    // 视差：先让左移起步 100ms 再导航——setData 与 navigateTo 同 tick 会抢时序，
+    // 位移时有时无（11-25 方案主因 1）
+    this.setData({ parallax: true });
+    this._navTimer = setTimeout(() => {
+      this._navTimer = null;
+      wx.navigateTo({
+        url: '/pages/item/detail?id=' + id,
+        fail: () => util.toast('详情页打开失败')
+      });
+    }, 100);
   },
 
   onPublish() {

@@ -16,6 +16,7 @@
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 const adapter = require('../../utils/adapter');
+const campus = require('../../utils/campus');
 
 const POLL_INTERVAL = 3000;
 const FIRST_LIMIT = 20; // 首屏条数（后端默认 20，最大 50）
@@ -94,7 +95,10 @@ Page({
     input: '',
     sending: false,
     scrollAnchor: '',
-    isAtBottom: true
+    isAtBottom: true,
+    // 11-26：键盘实高（px）。adjust-position 关掉后，输入条用它垫底，
+    // 页面整体不再被键盘顶飞，nav-top 与消息区保持原位
+    keyboardHeight: 0
   },
 
   onLoad(options) {
@@ -188,7 +192,7 @@ Page({
     if (code === 403) {
       this.setData({
         loading: false,
-        // 透出后端原因（如「私单只能由发布者发起会话」），比通用文案更有用
+        // 透出后端原因（如订单/商品校验文案），比通用文案更有用
         fatalError: '无法打开会话',
         fatalDesc: (err && err.message) || '只有会话参与者才能查看消息',
         canRetry: false
@@ -244,10 +248,8 @@ Page({
             subText: ''
           };
         } else if (ctx.bizType === 'errand' && s) {
-          const place =
-            s.pickupPlace && s.pickupPlace !== s.pickupArea
-              ? s.pickupArea + ' · ' + s.pickupPlace
-              : s.pickupArea || '';
+          // 11-25 口径同大厅卡片：卡片摘要空间最紧，优先出具体地标
+          const place = campus.shortPlace(s.pickupArea, s.pickupPlace);
           card = {
             jumpUrl: '/pages/errand/detail?id=' + s.orderId,
             title: '代取订单 #' + s.orderId,
@@ -422,7 +424,7 @@ Page({
     return Date.now() - (last._ts || 0) > TIME_GAP;
   },
 
-  requestSend(tempId, content) {
+  requestSend(tempId, content, msgType) {
     const id = this.data.conversationId;
     if (!id || this.data.sending) {
       this.markPending(tempId, false, '发送失败');
@@ -430,7 +432,7 @@ Page({
     }
     this.setData({ sending: true });
     http
-      .post('/api/conversations/' + id + '/messages', { content }, { silent: true })
+      .post('/api/conversations/' + id + '/messages', { content, msgType: msgType || 'text' }, { silent: true })
       .then((res) => {
         this.setData({ sending: false });
         this.resolvePending(tempId, res || {});
@@ -441,7 +443,7 @@ Page({
       });
   },
 
-  /** 乐观气泡替换为真实消息 */
+  /** 乐观气泡替换为真实消息（msgType 跟随气泡：文本/图片） */
   resolvePending(tempId, res) {
     const list = this.data.messages.map((m) => {
       if (m.tempId !== tempId) return m;
@@ -449,7 +451,7 @@ Page({
         {
           messageId: res.messageId,
           senderId: wxMe(),
-          msgType: 'text',
+          msgType: m.isImage ? 'image' : 'text',
           content: m.content,
           createdAt: res.createdAt,
           isMine: true
@@ -482,7 +484,160 @@ Page({
         m.tempId === tempId ? Object.assign({}, m, { pending: true, failed: false }) : m
       )
     });
+    if (target.isImage) {
+      // 图片消息重发：已上传成功的直接重发 URL，没传完的从本地临时文件重新上传
+      if (target._uploadedUrl) this.requestSend(tempId, target._uploadedUrl, 'image');
+      else this.uploadImage(tempId, target._tempPath);
+      return;
+    }
     this.requestSend(tempId, target.content);
+  },
+
+  /** 图片气泡点击 → 全屏预览（用例 27；失败态不预览，走重发） */
+  onPreviewImage(e) {
+    const url = e.currentTarget.dataset.url;
+    if (!url) return;
+    wx.previewImage({
+      current: url,
+      urls: [url],
+      fail: () => util.toast('图片预览失败')
+    });
+  },
+
+  // ---- 图片加载兜底（11-26）----
+  // 真机上 src 不可达（回环地址 / 网络切换 / 服务未启动）时，<image> 只会留
+  // 一块 240rpx 的空白泡。binderror 触发后降级为「点击重试」占位：
+  //   1) 刚发的图优先回退本地临时文件（一定还能显示）；
+  //   2) 服务端图加时间戳破缓存原地重试，避开失败结果的磁盘缓存。
+
+  /** <image> binderror：按气泡 key 标记降级 */
+  onImgError(e) {
+    const key = e.currentTarget.dataset.key;
+    if (!key) return;
+    const list = this.data.messages;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].key === key && !list[i].imgError) {
+        this.setData({ ['messages[' + i + '].imgError']: true });
+        return;
+      }
+    }
+  },
+
+  /** 占位点击重试 */
+  onImgRetry(e) {
+    const key = e.currentTarget.dataset.key;
+    const list = this.data.messages;
+    const idx = list.findIndex((m) => m.key === key);
+    if (idx < 0 || !list[idx].isImage) return;
+    const m = list[idx];
+    if (m._tempPath && m.imageUrl !== m._tempPath) {
+      this.setData({
+        ['messages[' + idx + '].imageUrl']: m._tempPath,
+        ['messages[' + idx + '].imgError']: false
+      });
+      return;
+    }
+    const src = m.imageUrl || '';
+    if (!src) {
+      util.toast('图片地址为空，无法加载');
+      return;
+    }
+    const bust = src + (src.indexOf('?') > -1 ? '&' : '?') + 'r=' + Date.now();
+    this.setData({
+      ['messages[' + idx + '].imgError']: false,
+      ['messages[' + idx + '].imageUrl']: bust
+    });
+  },
+
+  // ---- 键盘（11-26）：页面不再整体上推，输入条按键盘实高垫底 ----
+
+  onKbHeight(e) {
+    const h = (e.detail && e.detail.height) || 0;
+    if (h === this.data.keyboardHeight) return;
+    this.setData({ keyboardHeight: h });
+  },
+
+  /** 点消息区空白处收起键盘（11-27 真机反馈）。
+   *  输入框 hold-keyboard=true（连发消息时点「发送」不收键盘），副作用是点页面
+   *  空白处键盘也不会自动收起；在消息区 scroll-view 上挂 bindtap 主动收起。
+   *  发送按钮/选图入口不在 scroll-view 内，不冒泡到这里，连发节奏不受影响。 */
+  onTapHideKb() {
+    if (!this.data.keyboardHeight) return;
+    if (wx.hideKeyboard) wx.hideKeyboard();
+  },
+
+  // ---- 图片消息（11-24 补齐用例 27：选图 → 上传 → 发送） ----
+
+  onPickImage() {
+    if (this.data.sending) return;
+    if (!this.data.conversationId) return;
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
+      success: (res) => {
+        const filePath = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath;
+        if (filePath) this.sendImage(filePath);
+      }
+    });
+  },
+
+  /** 图片消息乐观气泡：先显示本地临时图，上传成功后换服务端 URL */
+  sendImage(filePath) {
+    const tempId = 'tmp' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    const bubble = {
+      key: tempId,
+      tempId: tempId,
+      messageId: 0,
+      isMine: true,
+      content: '',
+      isImage: true,
+      imageUrl: filePath,
+      timeText: dividerTime(new Date()),
+      showTime: this.needDivider(),
+      pending: true,
+      failed: false,
+      _ts: Date.now(),
+      _tempPath: filePath,
+      _uploadedUrl: ''
+    };
+    this.setData({
+      messages: this.data.messages.concat([bubble]),
+      scrollAnchor: bubble.key,
+      isAtBottom: true
+    });
+    this.uploadImage(tempId, filePath);
+  },
+
+  /** 上传图片 → /uploads/ 相对路径 → 发送 msgType=image */
+  uploadImage(tempId, filePath) {
+    const id = this.data.conversationId;
+    if (!id || this.data.sending) {
+      this.markPending(tempId, false, '发送失败');
+      return;
+    }
+    this.setData({ sending: true });
+    http
+      .upload(filePath)
+      .then((res) => {
+        const url = res && res.url;
+        if (!url) throw { message: '上传失败' };
+        // 记录已上传 URL：发送阶段失败重发时不用重新上传
+        this.setData({
+          sending: false,
+          messages: this.data.messages.map((m) =>
+            m.tempId === tempId
+              ? Object.assign({}, m, { content: url, imageUrl: adapter.fullUrl(url), _uploadedUrl: url })
+              : m
+          )
+        });
+        this.requestSend(tempId, url, 'image');
+      })
+      .catch((err) => {
+        this.setData({ sending: false });
+        this.markPending(tempId, false, (err && err.message) || '上传失败');
+      });
   },
 
   onLongPressMsg(e) {

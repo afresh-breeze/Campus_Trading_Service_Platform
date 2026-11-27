@@ -15,32 +15,68 @@ const { APP_VERSION } = require('../../utils/version');
 // 版本号单一来源见 utils/version.js（11-17 走查：三个页面各写一份会漂移）
 const TAB_INDEX = 3;
 
-// 四项统计的口径必须写进标签，否则并列展示时用户会把「完成」理解成
-// 「我发布的已完成」，而它实际只统计「我接的单已完成」（P1-4）。
-const STAT_ITEMS = [
-  { key: 'items', label: '发布', url: '/pages/mine/items' },
-  { key: 'favorites', label: '收藏', url: '/pages/mine/favorites' },
-  // 我发布的代取（role=publisher，全部状态）
-  { key: 'errands', label: '我发布的', url: '/pages/mine/errands?role=publisher' },
-  // 我接并已完成的代取（role=runner + status=completed）
+/** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
+function getNavMetrics() {
+  try {
+    const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+    if (menu && menu.top && menu.height) return { top: menu.top, height: menu.height };
+    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    return { top: (win.statusBarHeight || 20) + 4, height: 32 };
+  } catch (e) {
+    return { top: 24, height: 32 };
+  }
+}
+
+// 11-25 用户反馈二次演进：统计条拆组仍不够直观 → 上下两块插画卡（二手市场 / 代取）：
+// 行级入口 + 数量（上卡数量在右、下卡在左，「接单设置」不显示数量留白），插画占满卡高。
+// 素材：assets/mine/trade.png（二手交接）、rider.png（代取骑车），黑线稿透明底 512²。
+// STAT 口径不变（见 fetchStats 注释）：0 items / 1 favorites / 2 errands(publisher) / 3 errands(runner,completed)
+const MARKET_CARDS = [
   {
-    key: 'completed',
-    label: '我完成的',
-    url: '/pages/mine/errands?role=runner&status=completed'
+    key: 'shop',
+    title: '二手市场',
+    art: '/assets/mine/trade.png',
+    rows: [
+      { key: 'items', text: '我的发布', url: '/pages/mine/items', auth: true, statIndex: 0 },
+      { key: 'favorites', text: '我的收藏', url: '/pages/mine/favorites', auth: true, statIndex: 1 }
+    ]
+  },
+  {
+    key: 'errand',
+    title: '代取',
+    art: '/assets/mine/rider.png',
+    rows: [
+      { key: 'errands', text: '我发布的', url: '/pages/mine/errands?role=publisher', auth: true, statIndex: 2 },
+      { key: 'completed', text: '我完成的', url: '/pages/mine/errands?role=runner&status=completed', auth: true, statIndex: 3 },
+      // 接单设置是功能入口不是计数，statIndex -1 = 数量留白
+      { key: 'runner', text: '接单设置', url: '/pages/mine/runner', auth: true, statIndex: -1 }
+    ]
   }
 ];
 
+function buildMarket(nums) {
+  return MARKET_CARDS.map((c) => ({
+    key: c.key,
+    title: c.title,
+    art: c.art,
+    rows: c.rows.map((r) => ({
+      key: r.key,
+      text: r.text,
+      url: r.url,
+      auth: r.auth,
+      value: r.statIndex < 0
+        ? ''
+        : (nums[r.statIndex] === null || nums[r.statIndex] === undefined ? '—' : String(nums[r.statIndex]))
+    }))
+  }));
+}
+
+function emptyMarket() {
+  return buildMarket([null, null, null, null]);
+}
+
+// 「我的内容」组已并入上方合并插画卡（11-25 v4 用户确认），GROUPS 只剩「其他」
 const GROUPS = [
-  {
-    key: 'content',
-    title: '我的内容',
-    cells: [
-      { key: 'items', text: '我的发布', url: '/pages/mine/items', auth: true },
-      { key: 'favorites', text: '我的收藏', url: '/pages/mine/favorites', auth: true },
-      { key: 'errands', text: '我的代取', url: '/pages/mine/errands', auth: true },
-      { key: 'runner', text: '接单设置', url: '/pages/mine/runner', auth: true }
-    ]
-  },
   {
     key: 'other',
     title: '其他',
@@ -53,25 +89,11 @@ const GROUPS = [
   }
 ];
 
-/** 统计占位：value 用字符串，避免 setData 时被当成 0 */
-function emptyStats() {
-  return STAT_ITEMS.map((s) => ({ key: s.key, label: s.label, url: s.url, value: '—' }));
-}
-
-function buildStats(nums) {
-  return STAT_ITEMS.map((s, i) => {
-    const v = nums[i];
-    return {
-      key: s.key,
-      label: s.label,
-      url: s.url,
-      value: v === null || v === undefined ? '—' : String(v)
-    };
-  });
-}
 
 Page({
   data: {
+    stickyTop: 24,
+    barHead: 32,
     ready: false,
     isLogin: false,
     user: null,
@@ -79,9 +101,14 @@ Page({
     initial: '校',
     nickname: '点击登录',
     subText: '登录后可发布、收藏与接单',
-    stats: emptyStats(),
+    marketCards: emptyMarket(),
     groups: GROUPS,
     version: APP_VERSION
+  },
+
+  onLoad() {
+    const nav = getNavMetrics();
+    this.setData({ stickyTop: nav.top, barHead: nav.height });
   },
 
   onShow() {
@@ -93,8 +120,10 @@ Page({
     this.refresh();
   },
 
-  onPullDownRefresh() {
-    this.refresh(true).then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh(true).then(done, done);
   },
 
   /**
@@ -138,7 +167,7 @@ Page({
       initial: '校',
       nickname: '点击登录',
       subText: '登录后可发布、收藏与接单',
-      stats: emptyStats()
+      marketCards: emptyMarket()
     });
   },
 
@@ -178,7 +207,7 @@ Page({
         p.then((d) => (d && d.total !== undefined ? adapter.num(d.total, null) : null)).catch(() => null)
       )
     ).then((nums) => {
-      this.setData({ stats: buildStats(nums) });
+      this.setData({ marketCards: buildMarket(nums) });
       return nums;
     });
   },

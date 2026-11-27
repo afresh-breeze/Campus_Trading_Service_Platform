@@ -25,7 +25,7 @@
 .rp-order__reward {
   font-size: var(--font-lg, 32rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
   margin-right: 16rpx;
 }
 .rp-order__time {
@@ -44,6 +44,10 @@
 }
 .rp-filter__btn {
   margin-top: 24rpx;
+}
+/* 无匹配时的发布入口：与「重新匹配」同卡片内，用描边按钮做颜色区分 */
+.rp-filter__publish {
+  margin-top: 16rpx;
 }
 
 /* ---- 结果头 ---- */
@@ -75,7 +79,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-primary-soft, #efe4d8);
-  color: var(--color-primary, #79513d);
+  color: var(--color-primary-dark);
   font-size: var(--font-lg, 32rpx);
   font-weight: 600;
 }
@@ -115,7 +119,7 @@
   display: block;
   font-size: var(--font-lg, 32rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
 }
 .rp-card__price-label {
   font-size: var(--font-xs, 22rpx);
@@ -153,16 +157,17 @@
   color: var(--color-text-3, #9a8c7d);
 }
 .rp-contact {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   margin: 0;
   padding: 0 32rpx;
   font-size: var(--font-sm, 26rpx);
   line-height: 2.2;
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
   border-radius: 999rpx;
 }
 .rp-contact--hover {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 /* ---- 状态区 ---- */
@@ -171,6 +176,12 @@
 }
 .rp-state__card {
   text-align: center;
+}
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，去掉 sk-card 底框） */
+.rp-state--loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
 }
 .rp-state__desc {
   display: block;
@@ -181,6 +192,19 @@
   text-align: center;
   display: block;
 }
+.rp-state__go-hall {
+  margin-top: 20rpx;
+}
+
+/* 有匹配时页面底部的发布入口 */
+.rp-publish {
+  margin-top: 24rpx;
+}
+.rp-publish__tip {
+  display: block;
+  margin-top: 12rpx;
+  text-align: center;
+}
 
 /* ---- 加载更多 ---- */
 .rp-more {
@@ -190,4 +214,9 @@
 .rp-more__text {
   font-size: var(--font-xs, 22rpx);
   color: var(--color-text-4, #b3a695);
+}
+
+/* 地点选择入口行按压反馈（wxml 已引用，此前无定义） */
+.field--hover {
+  background-color: var(--color-surface-2);
 }

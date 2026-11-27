@@ -1,8 +1,9 @@
 {
   "navigationBarTitleText": "代取大厅",
-  "enablePullDownRefresh": true,
+  "enablePullDownRefresh": false,
   "backgroundTextStyle": "dark",
   "usingComponents": {
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "loading-eyes": "/components/loading-eyes/index"
   }
 }

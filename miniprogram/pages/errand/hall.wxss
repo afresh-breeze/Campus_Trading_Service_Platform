@@ -11,7 +11,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 0 var(--space) 10rpx;
+  padding: 0 var(--space-page) 10rpx;
   background-color: var(--color-bg);
 }
 /* 状态栏 + 胶囊占位：不渲染任何内容，只撑高把标题顶到与胶囊齐平 */
@@ -25,7 +25,9 @@
 }
 .hall-bar__title {
   font-size: var(--font-2xl);
-  font-weight: 700;
+  /* 宋体的 700 视觉偏细（衬线细横画），标题级提到 900 + 细描边补粗（11-25 用户反馈） */
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
   color: var(--color-text);
   letter-spacing: 2rpx;
   line-height: 1;
@@ -47,6 +49,7 @@
 /* 入口用浅底 + 深字：主色 #E6A874 上不放白字（对比度红线）。
    高度与 chip 一致（52rpx），保证「我要接单」顶部与规格行 chip 顶部齐平（11-16 反馈） */
 .hall-bar__entry {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   flex: none;
@@ -56,7 +59,7 @@
   background-color: var(--color-primary-light);
 }
 .hall-bar__entry--hover {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .hall-bar__entry-text {
   font-size: var(--font-sm);
@@ -103,8 +106,9 @@
   row-gap: 10rpx;
 }
 .chip {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   flex: none;
-  height: 52rpx;
+  height: 56rpx;
   display: flex;
   align-items: center;
   padding: 0 22rpx;
@@ -129,6 +133,7 @@
   margin-left: var(--space-sm);
 }
 .sort-btn {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   font-size: 24rpx;
   color: var(--color-text-2);
   padding: 4rpx 10rpx;
@@ -147,6 +152,12 @@
 /* ---------------- 状态区（空 / 错 / 未登录） ---------------- */
 .hall-state {
   padding: var(--space-xl) var(--space);
+}
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，同 rp-state--loading 方案） */
+.hall-state--loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
 }
 .hall-state__card {
   text-align: center;
@@ -169,7 +180,9 @@
   height: 24rpx;
   border-radius: var(--radius-sm);
   background-color: var(--color-divider);
-  animation: sk-pulse 1.2s ease-in-out infinite;
+  background: linear-gradient(90deg, #efe6d8 25%, #faf6ee 37%, #efe6d8 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
 }
 .sk-line + .sk-line {
   margin-top: 18rpx;
@@ -196,14 +209,20 @@
 
 /* ---------------- 订单卡片 ---------------- */
 .order {
-  margin: var(--space-sm) var(--space) 0;
-  padding: var(--space);
+  margin: 20rpx var(--space-page) 0;
+  padding: 28rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease-out;
 }
 .order--hover {
-  background-color: var(--color-bg);
+  /* 全站口径：只压暗不缩放（scale 引发宋体重栅格化字抖，11-25 方案二） */
+  opacity: 0.94;
+  box-shadow: var(--shadow-card-hover);
 }
 /* 卡片主体：左缩略图 + 右内容 */
 .order__main {
@@ -217,6 +236,24 @@
   margin-right: 20rpx;
   border-radius: 12rpx;
   background-color: var(--color-divider);
+}
+/* 无图占位态（11-27 反馈）：插画缩到约 1/3（66rpx）居中、50% 透明、下方「暂无图片」小字 */
+.order__thumb--ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.order__thumb__ph-img {
+  width: 66rpx;
+  height: 66rpx;
+  opacity: 0.5;
+}
+.order__thumb__ph-cap {
+  margin-top: 8rpx;
+  font-size: 18rpx;
+  line-height: 1.2;
+  color: var(--color-text-3, #A89888);
 }
 .order__body {
   flex: 1;
@@ -236,9 +273,9 @@
   align-items: center;
 }
 .order__line + .order__line {
-  margin-top: 12rpx;
+  margin-top: 10rpx;
 }
-/* 起终点用形状 + 位置区分，不只靠颜色 */
+/* 起终点用形状 + 位置区分，不只靠颜色；起点（主信息）圆点略大，与 36rpx 标题配重 */
 .order__dot {
   flex: none;
   width: 14rpx;
@@ -247,6 +284,8 @@
   border-radius: 50%;
 }
 .order__dot--from {
+  width: 16rpx;
+  height: 16rpx;
   background-color: var(--color-primary-dark);
 }
 .order__dot--to {
@@ -257,26 +296,44 @@
 .order__place {
   flex: 1;
   min-width: 0;
-  font-size: var(--font-base);
+}
+/* 主：取件地点 —— 18px/700 近黑墨。比送达地点大 10rpx、重 300 档，眼睛先落在「去哪取」（11-25 层级优化） */
+.order__place--from {
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.5rpx;
   color: var(--color-text);
+}
+/* 次：送达地点 —— 13px/400 中棕，只作路线补充 */
+.order__place--to {
+  font-size: 26rpx;
+  line-height: 1.3;
+  color: var(--color-text-2);
 }
 .order__reward {
   flex: none;
   text-align: right;
-  padding-left: var(--space-sm);
-  border-left: 1rpx solid var(--color-divider);
+  /* UI 优化 6.7：浅主色底胶囊；11-25 去掉「报酬」标签，胶囊收紧 */
+  margin-left: var(--space-sm);
+  padding: 10rpx 14rpx;
+  border-radius: 12rpx;
+  background: rgba(230, 168, 116, 0.18);
 }
 .order__price {
   display: block;
-  font-size: var(--font-xl);
+  font-size: 40rpx;
   font-weight: 700;
   color: var(--color-price);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
-.order__reward-label {
-  display: block;
-  margin-top: 2rpx;
-  font-size: var(--font-xs);
-  color: var(--color-text-3);
+
+/* 路线连接虚线（方案 6.7） */
+.order__connector {
+  height: 12rpx;
+  margin-left: 7rpx;
+  border-left: 2rpx dashed var(--color-border);
 }
 
 .order__meta {
@@ -287,13 +344,16 @@
 }
 .order__tag {
   flex: none;
-  margin-right: var(--space-xs);
+  margin-right: 12rpx;
 }
+/* 次：物品描述 —— 左侧引线把「送什么」与上方路线分开，2 行截断 */
 .order__desc {
   display: -webkit-box;
   margin-top: 12rpx;
-  font-size: var(--font-sm);
-  line-height: 1.45;
+  padding-left: 12rpx;
+  border-left: 2rpx solid var(--color-border);
+  font-size: 26rpx;
+  line-height: 1.5;
   color: var(--color-text-2);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -310,8 +370,8 @@
 }
 .order__avatar {
   flex: none;
-  width: 40rpx;
-  height: 40rpx;
+  width: 36rpx;
+  height: 36rpx;
   margin-right: 12rpx;
   border-radius: 50%;
   background-color: var(--color-divider);
@@ -335,7 +395,7 @@
   flex: none;
   margin-left: var(--space-sm);
   font-size: var(--font-xs);
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
 }
 
 /* ---------------- 底部加载提示 ---------------- */
@@ -356,5 +416,5 @@
   background-color: var(--color-surface-2);
 }
 .sort-btn--hover {
-  opacity: 0.6;
+  opacity: 0.7;
 }

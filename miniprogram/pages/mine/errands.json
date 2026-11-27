@@ -1,10 +1,11 @@
 {
   "navigationBarTitleText": "我的代取",
-  "enablePullDownRefresh": true,
+  "enablePullDownRefresh": false,
   "backgroundTextStyle": "dark",
   "usingComponents": {
     "nav-top": "/components/nav-top/index",
     "empty-state": "/components/empty-state/index",
-    "status-tag": "/components/status-tag/index"
+    "status-tag": "/components/status-tag/index",
+    "loading-eyes": "/components/loading-eyes/index"
   }
 }

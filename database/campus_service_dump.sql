@@ -97,12 +97,14 @@ CREATE TABLE `conversations` (
   `biz_id` bigint NOT NULL DEFAULT '0',
   `last_message` varchar(255) DEFAULT NULL,
   `last_time` datetime DEFAULT NULL,
+  `is_pinned` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`conversation_id`),
   UNIQUE KEY `uk_conversations_pair_biz` (`user_a_id`,`user_b_id`,`biz_type`,`biz_id`),
   KEY `fk_conversations_user_b` (`user_b_id`),
   CONSTRAINT `fk_conversations_user_a` FOREIGN KEY (`user_a_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_conversations_user_b` FOREIGN KEY (`user_b_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `chk_conversations_user_order` CHECK ((`user_a_id` < `user_b_id`))
+  CONSTRAINT `chk_conversations_user_order` CHECK ((`user_a_id` < `user_b_id`)),
+  CONSTRAINT `chk_conversations_is_pinned` CHECK ((`is_pinned` in (0,1)))
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -112,7 +114,7 @@ CREATE TABLE `conversations` (
 
 LOCK TABLES `conversations` WRITE;
 /*!40000 ALTER TABLE `conversations` DISABLE KEYS */;
-INSERT INTO `conversations` VALUES (4,2,6,'item',89,NULL,NULL),(5,2,7,'item',87,'小宝贝','2026-11-16 20:42:05'),(7,2,6,'item',70,NULL,NULL),(8,2,7,'item',94,NULL,NULL);
+INSERT INTO `conversations` (`conversation_id`,`user_a_id`,`user_b_id`,`biz_type`,`biz_id`,`last_message`,`last_time`,`is_pinned`) VALUES (4,2,6,'item',89,NULL,NULL,0),(5,2,7,'item',87,'小宝贝','2026-11-16 20:42:05',0),(7,2,6,'item',70,NULL,NULL,0),(8,2,7,'item',94,NULL,NULL,0);
 /*!40000 ALTER TABLE `conversations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -142,6 +144,7 @@ CREATE TABLE `errand_orders` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `taken_at` datetime DEFAULT NULL,
   `completed_at` datetime DEFAULT NULL,
+  `images` json DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   KEY `idx_errands_status_created` (`status`,`created_at`),
   KEY `idx_errands_publisher_status` (`publisher_id`,`status`),
@@ -149,7 +152,8 @@ CREATE TABLE `errand_orders` (
   CONSTRAINT `fk_errands_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_errands_runner` FOREIGN KEY (`runner_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_errands_reward` CHECK ((`reward` >= 0)),
-  CONSTRAINT `chk_errands_time` CHECK ((((`time_type` = _utf8mb4'asap') and (`time_start` is null) and (`deadline` is null)) or ((`time_type` = _utf8mb4'deadline') and (`time_start` is null) and (`deadline` is not null)) or ((`time_type` = _utf8mb4'range') and (`time_start` is not null) and (`deadline` is not null) and (`time_start` < `deadline`))))
+  CONSTRAINT `chk_errands_time` CHECK ((((`time_type` = _utf8mb4'asap') and (`time_start` is null) and (`deadline` is null)) or ((`time_type` = _utf8mb4'deadline') and (`time_start` is null) and (`deadline` is not null)) or ((`time_type` = _utf8mb4'range') and (`time_start` is not null) and (`deadline` is not null) and (`time_start` < `deadline`)))),
+  CONSTRAINT `chk_errands_images` CHECK (((`images` is null) or ((json_type(`images`) = _utf8mb4'ARRAY') and (json_length(`images`) <= 3))))
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

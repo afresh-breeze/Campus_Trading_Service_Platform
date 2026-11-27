@@ -1,5 +1,18 @@
 <!-- 二手市场（A 成员，11-14）：列表、分类、排序、下拉刷新、上拉加载 -->
-<view class="page home">
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
+<view class="page page--tab home parallax-wrap {{parallax ? 'parallax-left' : ''}}">
   <!-- 整块吸附：块从屏幕最顶(top:0)开始覆盖且背景不透明，列表从它下方滚过。
        标题行与右上角胶囊齐平（安全区占位到胶囊顶、行高=胶囊高），滚动全程冻结不动。 -->
   <view class="home-bar">
@@ -25,6 +38,7 @@
           class="home-cat {{categoryId === item.categoryId ? 'home-cat--active' : ''}}"
           data-id="{{item.categoryId}}"
           bindtap="onCategoryTap"
+          hover-class="home-cat--hover"
         >{{item.name}}</view>
       </scroll-view>
 
@@ -34,6 +48,7 @@
           <view
             class="home-sort__item {{sort === 'latest' ? 'home-sort__item--active' : ''}}"
             bindtap="onSortLatest"
+            hover-class="home-sort__item--hover"
           >
             <text>最新</text>
           </view>
@@ -41,6 +56,7 @@
           <view
             class="home-sort__item home-sort__item--price {{(sort === 'price_asc' || sort === 'price_desc') ? 'home-sort__item--active' : ''}}"
             bindtap="onSortPrice"
+            hover-class="home-sort__item--hover"
           >
             <text>价格</text>
             <text class="home-sort__arrow">{{sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}}</text>
@@ -62,13 +78,9 @@
 
   <!-- 首屏骨架：只用占位块，不编假数据 -->
   <block wx:elif="{{firstLoading}}">
-    <view class="home-sk" wx:for="{{[1,2,3]}}" wx:key="*this">
-      <view class="home-sk__cover"></view>
-      <view class="home-sk__body">
-        <view class="home-sk__line home-sk__line--lg"></view>
-        <view class="home-sk__line home-sk__line--md"></view>
-        <view class="home-sk__line home-sk__line--sm"></view>
-      </view>
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
+    <view class="home-state home-state--loading">
+      <loading-eyes />
     </view>
   </block>
 
@@ -77,7 +89,7 @@
     <view class="card home-state__card">
       <text class="t-title">加载失败</text>
       <text class="t-sub home-state__desc">{{error}}</text>
-      <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+      <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">重新加载</button>
     </view>
   </view>
 
@@ -101,19 +113,27 @@
 
   <block wx:else>
     <view class="home-list">
-      <view class="home-list__item" wx:for="{{list}}" wx:key="itemId">
+      <view
+        class="home-list__item {{index < 6 ? 'u-enter' : ''}}"
+        style="animation-delay: {{index < 6 ? index * 40 : 0}}ms"
+        wx:for="{{list}}"
+        wx:key="itemId"
+      >
         <item-card mode="list" item="{{item}}" show-time="{{true}}" bind:tap="onTapItem" />
       </view>
     </view>
 
     <!-- 上拉加载：三态文案，避免「到底了还在转圈」 -->
     <view class="home-more">
-      <text wx:if="{{loadingMore}}" class="home-more__text">加载中…</text>
+      <loading-eyes mini wx:if="{{loadingMore}}" />
       <text wx:elif="{{hasMore}}" class="home-more__text">上拉加载更多</text>
       <text wx:else class="home-more__text">没有更多了</text>
     </view>
   </block>
 
   <!-- 我要卖：登录后才显示 FAB -->
-  <view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover" aria-label="我要卖">＋</view>
 </view>
+</scroll-view>
+
+<!-- FAB 必须在 scroll-view 外：fixed 在其内会被 transform 破坏（11-25） -->
+<view wx:if="{{isLogin}}" class="fab" bindtap="onPublish" hover-class="fab--hover" aria-label="我要卖">＋</view>

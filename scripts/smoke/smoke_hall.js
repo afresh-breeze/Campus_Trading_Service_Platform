@@ -90,6 +90,8 @@ function flushNext(ok, payload) {
 
 /** 等两轮微任务，让 then/catch 跑完 */
 const tick = () => new Promise((r) => setTimeout(r, 0));
+/** 等指定毫秒（视差 100ms 延迟导航的时序断言用） */
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function order(id, extra) {
   return Object.assign(
@@ -244,7 +246,13 @@ function order(id, extra) {
   navs.length = 0;
   const p7 = makePage();
   p7.onTapOrder({ currentTarget: { dataset: { id: 2001 } } });
-  check('点卡片进详情', navs[0] === '/pages/errand/detail?id=2001', navs);
+  check('点击立即置视差', p7.data.parallax === true);
+  check('视差先起步，100ms 内不导航（11-25 方案主因 1）', navs.length === 0, navs);
+  p7.onTapOrder({ currentTarget: { dataset: { id: 2001 } } });
+  check('导航中连点防抖不重复入栈', navs.length === 0 && p7._navTimer !== null);
+  await wait(120);
+  check('100ms 后进详情', navs[0] === '/pages/errand/detail?id=2001', navs);
+  check('导航后防抖释放（可再次点击）', p7._navTimer === null);
   p7.onTapOrder({ currentTarget: { dataset: {} } });
   check('无 id 不跳转', navs.length === 1);
   appState.login = false;
@@ -287,26 +295,37 @@ function order(id, extra) {
   p8.onFilterTap({ currentTarget: { dataset: { type: 'itemSize', value: 'small' } } });
   check('重复点同一筛选不发请求', calls[calls.length - 1].query.timeType === 'asap' && calls[calls.length - 1].query.page === 1);
 
-  console.log('\n[10] 品类缩略图派生（toCard 内的 guessCategory）');
+  console.log('\n[10] 无图占位：7 张线条图案按 orderId 稳定随机（11-26 定稿）');
+  const phRe10 = /^\/assets\/placeholder\/ph-[1-7]\.png$/;
+  const phList = [
+    order(1, { itemDesc: '帮我带一份外卖' }),
+    order(2, { itemDesc: '', remark: '菜鸟驿站取件' }),
+    order(3, { itemDesc: '打印资料' }),
+    order(4, { itemDesc: '帮拿药' }),
+    order(5, { itemDesc: '' })
+  ];
   const p9 = makePage();
   calls.length = 0;
   p9.fetch(1);
-  flushNext(true, {
-    list: [
-      order(1, { itemDesc: '帮我带一份外卖' }),
-      order(2, { itemDesc: '', remark: '菜鸟驿站取件' }),
-      order(3, { itemDesc: '打印资料' }),
-      order(4, { itemDesc: '帮拿药' }),
-      order(5, { itemDesc: '' })
-    ],
-    total: 5
-  });
+  flushNext(true, { list: JSON.parse(JSON.stringify(phList)), total: 5 });
   await tick();
-  check('外卖→food', p9.data.list[0].categoryIcon === '/assets/errand/food.png', p9.data.list[0].categoryIcon);
-  check('驿站取件→express', p9.data.list[1].categoryIcon === '/assets/errand/express.png', p9.data.list[1].categoryIcon);
-  check('打印资料→doc', p9.data.list[2].categoryIcon === '/assets/errand/doc.png', p9.data.list[2].categoryIcon);
-  check('帮拿药→daily', p9.data.list[3].categoryIcon === '/assets/errand/daily.png', p9.data.list[3].categoryIcon);
-  check('空描述→other 兜底', p9.data.list[4].categoryIcon === '/assets/errand/other.png', p9.data.list[4].categoryIcon);
+  const icons10 = p9.data.list.map((o) => o.categoryIcon);
+  check('5 张卡片全部落在 7 张占位图内', icons10.every((u) => phRe10.test(u)), icons10);
+  const p9b = makePage();
+  p9b.fetch(1);
+  flushNext(true, { list: JSON.parse(JSON.stringify(phList)), total: 5 });
+  await tick();
+  check('同一订单跨请求稳定同图（列表/详情/刷新不跳变）', JSON.stringify(icons10) === JSON.stringify(p9b.data.list.map((o) => o.categoryIcon)), { a: icons10, b: p9b.data.list.map((o) => o.categoryIcon) });
+  check('占位图资源齐备（7 张全部存在）', [1, 2, 3, 4, 5, 6, 7].every((n) => require('fs').existsSync(path.join(MP, 'assets/placeholder/ph-' + n + '.png'))));
+  // 无图占位缩小版（11-27 反馈）：插画约 1/3 居中 + 50% 透明 + 「暂无图片」小字
+  const hallFs11 = require('fs');
+  const hallWxml11 = hallFs11.readFileSync(path.join(MP, 'pages/errand/hall.wxml'), 'utf8');
+  const hallWxss11 = hallFs11.readFileSync(path.join(MP, 'pages/errand/hall.wxss'), 'utf8');
+  check('大厅卡片：thumbNoImage 标记占位态', /thumbNoImage: !adapter\.toImageList\(order\)\[0\]/.test(hallFs11.readFileSync(path.join(MP, 'pages/errand/hall.js'), 'utf8')));
+  check('大厅卡片：无图走占位分支、有图满铺', /wx:if="\{\{!item\.thumbNoImage\}\}" class="order__thumb"/.test(hallWxml11) && /wx:else class="order__thumb order__thumb--ph"/.test(hallWxml11));
+  check('大厅卡片：占位插画 66rpx（200 的 1/3）+ 50% 透明', /\.order__thumb__ph-img\s*\{[^}]*width: 66rpx;[^}]*opacity: 0\.5;/.test(hallWxss11));
+  check('大厅卡片：下方「暂无图片」小字', />暂无图片</.test(hallWxml11) && /\.order__thumb__ph-cap\s*\{[^}]*font-size: 18rpx;/.test(hallWxss11));
+  check('大厅卡片：占位容器尺寸不变（200rpx 布局不跳）', /\.order__thumb--ph\s*\{[^}]*align-items: center/.test(hallWxss11) && /\.order__thumb\s*\{[^}]*width: 200rpx;[^}]*height: 200rpx;/.test(hallWxss11));
 
   console.log('\n[11] 标题与胶囊齐平、滚动全程冻结（无任何动画）');
   const p10 = makePage();
@@ -326,6 +345,59 @@ function order(id, extra) {
     stickyTop: p10b.data.stickyTop,
     barHead: p10b.data.barHead
   });
+
+  console.log('\n[12] 卡片视觉层级（11-25：主/次/辅三档）');
+  const fs = require('fs');
+  const wxml = fs.readFileSync(path.join(MP, 'pages/errand/hall.wxml'), 'utf8');
+  const wxss = fs.readFileSync(path.join(MP, 'pages/errand/hall.wxss'), 'utf8');
+  check('起终点用不同的层级 class', /order__place--from/.test(wxml) && /order__place--to/.test(wxml), 'wxml 未分层');
+  check('主级（取件地点）36rpx/700', /\.order__place--from\s*\{[\s\S]*?font-size: 36rpx[\s\S]*?font-weight: 700/.test(wxss), '主级样式不符');
+  check('次级（送达地点）26rpx/400 且用 text-2', /\.order__place--to\s*\{[\s\S]*?font-size: 26rpx[\s\S]*?color: var\(--color-text-2\)/.test(wxss), '次级样式不符');
+  check('报酬去掉「报酬」二字', !/order__reward-label/.test(wxml), 'wxml 仍渲染报酬标签');
+  check('报酬样式不再残留 label 规则', !/\.order__reward-label/.test(wxss), 'wxss 仍有死规则');
+  check('报酬 40rpx/700', /\.order__price\s*\{[\s\S]*?font-size: 40rpx[\s\S]*?font-weight: 700/.test(wxss), '报酬字号不符');
+  check('规格与时间都压成中性灰胶囊', /tag tag-gray order__tag/.test(wxml) && !/tag-warning order__tag/.test(wxml), '时间胶囊仍用 warning 色');
+  check('物品描述 26rpx + 左引线', /\.order__desc\s*\{[\s\S]*?border-left: 2rpx solid var\(--color-border\)[\s\S]*?font-size: 26rpx/.test(wxss), '描述样式不符');
+  check('按压反馈只压暗不缩放（11-25 方案二：scale 违规已移除）',
+    /\.order--hover\s*\{[^}]*opacity:\s*0\.94/.test(wxss) && !/\.order--hover\s*\{[^}]*scale\(/.test(wxss), '按压口径不符');
+
+  console.log('\n[13] 取件地点短文案：优先地标（11-25 用户反馈）');
+  const campusUtil = require(path.join(MP, 'utils/campus.js'));
+  const p11 = makePage();
+  calls.length = 0;
+  p11.fetch(1);
+  flushNext(true, {
+    list: [
+      order(1, { pickupArea: '南区教学区', pickupPlace: '第30教学楼' }),
+      order(2, { pickupArea: '桃园', pickupPlace: '桃园' }),
+      order(3, { pickupArea: '北区教学区', pickupPlace: '不在白名单的旧地标' })
+    ],
+    total: 3
+  });
+  await tick();
+  check('选了地标 → 只出地标不带片区前缀', p11.data.list[0].fromText === '第30教学楼', p11.data.list[0].fromText);
+  check('无地标片区 → 退回片区名', p11.data.list[1].fromText === '桃园', p11.data.list[1].fromText);
+  check('历史脏数据（地标不在白名单）也能显示', p11.data.list[2].fromText === '不在白名单的旧地标', p11.data.list[2].fromText);
+  check('shortPlace：地标优先', campusUtil.shortPlace('北区教学区', '第30教学楼') === '第30教学楼');
+  check('shortPlace：place=片区名 → 片区名', campusUtil.shortPlace('桃园', '桃园') === '桃园');
+  check('shortPlace：空值兜底', campusUtil.shortPlace('', '') === '');
+  check('52 个地标全校无重名（单独展示不歧义的前提）', (() => {
+    const seen = {};
+    let dup = false;
+    campusUtil.LANDMARKS.forEach((l) => {
+      if (seen[l.name] && seen[l.name] !== l.zone) dup = true;
+      seen[l.name] = l.zone;
+    });
+    return campusUtil.LANDMARKS.length === 52 && !dup;
+  })());
+
+  console.log('\n[14] 筛选切换列表平滑出场（11-25 用户反馈，对齐二手首页）');
+  check('卡片外包动画壳且前 6 张挂 u-enter', /class="order-anim \{\{index < 6 \? 'u-enter' : ''\}\}"/.test(wxml), 'wxml 未见动画壳');
+  check('动画壳带 40ms 递增延迟', /animation-delay: \{\{index < 6 \? index \* 40 : 0\}\}ms/.test(wxml), 'wxml 未见延迟');
+  check('wx:for 只在外壳上（内卡不得重复迭代）', (wxml.match(/wx:for="\{\{list\}\}"/g) || []).length === 1, 'wx:for 数量异常');
+  check('按压 hover 仍在卡片本体节点', /class="order"\s*\n\s*data-id="\{\{item.orderId\}\}"/.test(wxml), 'hover 位置不对');
+  const appWxss = fs.readFileSync(path.join(MP, 'app.wxss'), 'utf8');
+  check('全局 .u-enter 存在（fill-mode both，外壳依赖）', /\.u-enter\s*\{[\s\S]*?animation: u-fade-up/.test(appWxss), 'app.wxss 缺 .u-enter');
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);

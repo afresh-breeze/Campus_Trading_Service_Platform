@@ -1,70 +1,442 @@
-.login-page {
-  min-height: 100vh;
-  padding: 0 48rpx;
-  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-bg) 42%);
+/* ==================================================================
+   登录页（B 成员）—— 主页面底色 + 眼睛条开场 + 深棕水波纹登录转场
+   ------------------------------------------------------------------
+   1) 整页底色与主页面同源 var(--color-bg)（原黄屏底色按用户定稿移除）；
+   2) 开场编排 2600ms：裸眼放大悬在屏幕正中（左→右→中→下扫视）→
+      内容层从下方平滑入场，眼睛条带轻微果冻上升到导航下方插槽；
+      落定后眼睛条用 loading-eyes 同款 eyes-move/eyes-blink 待机；
+   3) 输密码：bindfocus/bindblur 切 .closed —— 眼白淡出，只剩两条
+      瞳孔同色的圆头粗线（左 > 右 <，基础画法尖角朝左即 <，> 取镜像）；
+   4) 编排动画全部挂 .intro，播完由 js 摘类回最终态
+      （同 detail-page-enter 口径）；内容层 66% 才起步，避免标题
+      在眼睛经过标题区时追上来造成重合；
+   5) 登录成功转场：按钮果冻回弹 → 按钮位置深棕圆放大铺满 →
+      水波纹式淡出 → 进主界面（js 分 expand/ripple 两段驱动）。
+   ================================================================== */
+
+/* 底色层：与主页面 .page / app.wxss page 同源，进主界面时背景无缝 */
+page {
+  background-color: var(--color-bg);
 }
 
+.login-page {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  padding: 0 48rpx 60rpx;
+  background: transparent;
+}
+
+/* ---------------- 内容层（入场动画载体） ---------------- */
+.login-body {
+  /* 满屏高：login-rise 的 translateY(100%) 才能移出整屏，
+     否则流式内容高度不足、开场时标题从屏幕底边穿帮（真机 11-25 反馈） */
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* ---------------- 标题 ---------------- */
 .hero {
-  padding: 120rpx 0 72rpx;
+  padding: 200rpx 0 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.logo {
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: 32rpx;
-  background-color: var(--color-primary-dark);
-  color: #fff;
-  font-size: 64rpx;
-  font-weight: 700;
-  text-align: center;
-  line-height: 128rpx;
-  box-shadow: var(--shadow-float);
-}
 .hero-title {
-  margin-top: 28rpx;
-  font-size: var(--font-2xl);
-  font-weight: 700;
-  letter-spacing: 2rpx;
-}
-.hero-sub {
-  margin-top: 10rpx;
-  font-size: var(--font-sm);
-  color: var(--color-text-3);
+  font-size: 74rpx;
+  /* 全站宋体（衬线）下大标题统一 900 + 细描边（.home-bar__title 口径） */
+  font-weight: 900;
+  -webkit-text-stroke: 0.8rpx currentColor;
+  letter-spacing: 8rpx;
+  /* 字距会在尾部多出一份，等量缩进抵消保持视觉居中 */
+  text-indent: 8rpx;
+  line-height: 1.25;
+  color: var(--color-text);
 }
 
-.form-wrap {
+/* ---------------- 表单卡 ---------------- */
+.form-card {
+  margin-top: 140rpx;
+  border-radius: 32rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 16rpx 56rpx rgba(121, 81, 61, 0.18);
   overflow: hidden;
 }
-.form-wrap .field:last-of-type {
+.form-card .field {
+  height: 112rpx;
+}
+.form-card .field:last-child {
   border-bottom: none;
 }
-.submit {
-  margin: 40rpx 24rpx 0;
-  width: calc(100% - 48rpx);
-}
-.extra {
-  padding: 24rpx 32rpx 36rpx;
+.form-card .field-label {
+  /* 全局 150rpx 为长标签留的，登录页只有两个字，收窄让输入区更靠左 */
+  width: 96rpx;
+  font-weight: 500;
+  color: var(--color-text-2);
 }
 
+/* ---------------- 登录按钮：独立成行，主行动层级 ---------------- */
+.submit {
+  margin-top: 120rpx;
+  height: 96rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  letter-spacing: 8rpx;
+  text-indent: 8rpx;
+}
+/* 果冻回弹（用户 11-25 定稿）：压扁 → 拉长 → 回弹。
+   注意这是用户点名的主动效，不等同于全站「按压只压暗不缩放」的 hover 口径——
+   列表/卡片的 hover 依旧禁 scale（宋体逐帧重栅格化字抖），只此按钮例外 */
+.submit--jelly {
+  animation: btn-jelly 460ms var(--ease-spring, cubic-bezier(0.34, 1.3, 0.64, 1));
+}
+@keyframes btn-jelly {
+  0% {
+    transform: scale(1, 1);
+  }
+  28% {
+    transform: scale(1.05, 0.9);
+  }
+  52% {
+    transform: scale(0.94, 1.08);
+  }
+  74% {
+    transform: scale(1.03, 0.96);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+
+/* ---------------- 底部链接与协议：底色与主页面一致，直接用令牌 ---------------- */
+.extra {
+  padding: 44rpx 8rpx 0;
+}
+.extra-link {
+  color: var(--color-text-2);
+  font-weight: 600;
+}
 .agreement {
-  margin-top: 48rpx;
+  margin-top: 84rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: var(--color-text-4);
+  color: var(--color-text-3);
 }
-/* 协议可点：用下划线 + 强调色提示可交互，不依赖颜色单独传达 */
+/* 协议可点：下划线 + 强调色，不依赖颜色单独传达 */
 .agreement__link {
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
+  font-weight: 700;
   text-decoration: underline;
 }
 .tip {
-  margin-top: 20rpx;
+  margin-top: 16rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: var(--color-warning);
+  color: var(--color-text-3);
+}
+
+/* ==================================================================
+   眼睛条：几何沿用 loading-eyes 组件（eye 64 / pupil 40 / travel ±20 /
+   gap 12，单位 rpx），底色上裸眼不加白色胶囊底
+   ================================================================== */
+.eyes-bar {
+  position: absolute;
+  left: 50%;
+  width: 400rpx;
+  height: 92rpx;
+  margin-left: -200rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.eye {
+  position: relative;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background-color: var(--color-bg-white);
+  box-shadow: 0 2rpx 6rpx rgba(121, 81, 61, 0.16);
+  overflow: hidden;
+  animation: eyes-blink var(--dur, 10000ms) infinite;
+}
+.eye + .eye {
+  margin-left: 12rpx;
+}
+.pupil {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40rpx;
+  height: 40rpx;
+  margin: -20rpx 0 0 -20rpx;
+  border-radius: 50%;
+  background-color: var(--color-primary-dark);
+  transition: opacity 120ms ease;
+  /* 待机扫视挂在基础态：js 摘掉 .intro 后依然运行（真机 11-25 反馈「一直只看向前方」）。
+     开场由 .intro .pupil 的链式动画接管，2600ms 后 eyes-move 重新起步，衔接无缝 */
+  animation: eyes-move var(--dur, 10000ms) linear infinite;
+}
+
+/* 待机扫视：与 loading-eyes 完全同拍（中→左→右→下→回中，循环无缝） */
+@keyframes eyes-move {
+  0% {
+    transform: translate(0, 0);
+  }
+  4%, 40% {
+    transform: translate(-20rpx, 0);
+  }
+  43%, 70% {
+    transform: translate(20rpx, 0);
+  }
+  73%, 90% {
+    transform: translate(0, 20rpx);
+  }
+  93%, 100% {
+    transform: translate(0, 0);
+  }
+}
+/* 眨眼：与 loading-eyes 同拍（每次转向前眯一下） */
+@keyframes eyes-blink {
+  0%, 2%, 10%, 12%, 20%, 22%, 40%, 42%, 60%, 62%, 70%, 72%, 90%, 92%, 98%, 100% {
+    height: 64rpx;
+  }
+  1%, 11%, 21%, 41%, 61%, 71%, 91%, 99% {
+    height: 24rpx;
+  }
+}
+
+/* ==================================================================
+   开场编排（2600ms，js 在 2800ms 摘 .intro）
+   ================================================================== */
+
+/* —— 眼睛条：屏中放大 → 上升（轻微果冻）→ 插槽落定 —— */
+.intro .eyes-bar {
+  animation: bar-journey 2600ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+}
+/* --bar-from 由 js 计算：屏高正中 − 插槽位，保证开场落在全屏正中央 */
+@keyframes bar-journey {
+  0% {
+    transform: translateY(var(--bar-from, 300px)) scale(2.2);
+  }
+  6%, 46% {
+    transform: translateY(var(--bar-from, 300px)) scale(2.2);
+  }
+  62% {
+    transform: translateY(240rpx) scale(1.18);
+  }
+  72% {
+    transform: translateY(-24rpx) scale(0.97);
+  }
+  80% {
+    transform: translateY(8rpx) scale(1.02);
+  }
+  88%, 100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* —— 开场扫视：左 → 右 → 中 → 下（下望的同时条上升）→ 回中交接给待机 —— */
+.intro .pupil {
+  animation: splash-look 2600ms cubic-bezier(0.45, 0.05, 0.55, 0.95) both,
+    eyes-move var(--dur, 10000ms) linear 2600ms infinite;
+}
+@keyframes splash-look {
+  0%, 6% {
+    transform: translate(0, 0);
+  }
+  14%, 24% {
+    transform: translate(-20rpx, 0);
+  }
+  32%, 42% {
+    transform: translate(20rpx, 0);
+  }
+  48%, 54% {
+    transform: translate(0, 0);
+  }
+  60%, 72% {
+    transform: translate(0, 20rpx);
+  }
+  80%, 100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* —— 内容层：66% 才起步，眼睛先落定（88% 前），标题 92% 才到位 —— */
+.intro .login-body {
+  animation: login-rise 2600ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+@keyframes login-rise {
+  0%, 66% {
+    transform: translateY(100%);
+  }
+  92% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* ---------------- 输密码：> < 眯眼 ---------------- */
+/* 圆头短棒两段、不对称角度拼出 > <，尾部略长，模仿手笔柔和收尾 */
+.sq {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36rpx;
+  height: 36rpx;
+  margin: -18rpx 0 0 -18rpx;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.sq .seg {
+  position: absolute;
+  left: 0;
+  top: 13rpx;
+  width: 34rpx;
+  height: 10rpx;
+  border-radius: 10rpx;
+  background-color: var(--color-primary-dark);
+  transform-origin: left center;
+}
+.sq .seg--up {
+  transform: rotate(-33deg);
+}
+.sq .seg--dn {
+  transform: rotate(41deg);
+}
+/* 基础画法：尖角在左、开口朝右，即 <；左眼要 >，整组水平镜像成尖角朝右 */
+.sq--gt {
+  transform: scaleX(-1);
+}
+.eyes-bar.closed .eye {
+  background-color: transparent;
+  box-shadow: none;
+}
+.eyes-bar.closed .sq {
+  opacity: 1;
+}
+.eyes-bar.closed .pupil {
+  opacity: 0;
+}
+
+/* ==================================================================
+   登录成功转场：按钮位置深棕圆放大铺满 → 水波纹式消失 → 进主界面
+   js 分两段驱动：expand（grow 480ms）→ ripple（fade 420ms + 双圈涟漪，
+   涟漪开始 260ms 后发起跳转）。--tx/--ty/--tr 由 js 按按钮 rect 与
+   四角最远距离计算后内联传入。
+   ================================================================== */
+.transit {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
+  visibility: hidden;
+}
+.transit.expand,
+.transit.ripple {
+  visibility: visible;
+  /* 盖住整页，防转场期间再点击 */
+  pointer-events: all;
+}
+.transit__fill {
+  position: absolute;
+  left: calc(var(--tx, 50vw) - var(--tr, 100vw));
+  top: calc(var(--ty, 50vh) - var(--tr, 100vw));
+  width: calc(var(--tr, 100vw) * 2);
+  height: calc(var(--tr, 100vw) * 2);
+  border-radius: 50%;
+  background-color: var(--color-primary-dark);
+  transform: scale(0);
+}
+.transit.expand .transit__fill {
+  animation: transit-grow 480ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+@keyframes transit-grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+/* 水波纹式消失：棕色圆整体淡出，露出与主页面同源的底色；
+   transform 必须锁 scale(1)——基态是 scale(0)，不锁会瞬间消失 */
+.transit.ripple .transit__fill {
+  animation: transit-fade 420ms ease both;
+}
+@keyframes transit-fade {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+/* 双圈涟漪：从小圈扩到大圈外淡出，第二圈延迟 90ms 错拍 */
+.transit__ring {
+  position: absolute;
+  left: calc(var(--tx, 50vw) - var(--tr, 100vw));
+  top: calc(var(--ty, 50vh) - var(--tr, 100vw));
+  width: calc(var(--tr, 100vw) * 2);
+  height: calc(var(--tr, 100vw) * 2);
+  border-radius: 50%;
+  border: 4rpx solid var(--color-primary-dark);
+  opacity: 0;
+}
+.transit.ripple .transit__ring {
+  animation: transit-ring 480ms ease-out both;
+}
+.transit.ripple .transit__ring--2 {
+  animation-delay: 90ms;
+}
+@keyframes transit-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+/* 系统开启「减弱动态效果」时跳过编排，直接给最终态 */
+@media (prefers-reduced-motion: reduce) {
+  .intro .eyes-bar,
+  .intro .pupil,
+  .intro .login-body {
+    animation: none;
+    transform: none;
+  }
+  .intro .pupil {
+    opacity: 1;
+  }
+  .eye {
+    animation: none;
+  }
+  /* 转场降级：深棕直接铺满（无放大无涟漪），淡出保留 */
+  .submit--jelly,
+  .transit.ripple .transit__ring {
+    animation: none;
+  }
+  .transit.expand .transit__fill {
+    animation: none;
+    transform: scale(1);
+  }
+  .transit.ripple .transit__fill {
+    animation: none;
+    transform: scale(1);
+    transition: opacity 420ms ease;
+    opacity: 0;
+  }
 }

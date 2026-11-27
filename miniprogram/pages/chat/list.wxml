@@ -1,19 +1,37 @@
 <!-- 消息列表（B 成员，11-14，tab 3）：会话卡片 + 未读红点 -->
-<nav-top />
-<view class="page page--tab page-body">
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
+<view class="page page--tab cl-page">
+  <!-- 顶部整块吸附：占位到胶囊顶，标题行与胶囊同排，位置与二手/代取大厅一致 -->
+  <view class="cl-bar">
+    <view class="cl-bar__safe" style="height: {{stickyTop}}px"></view>
+    <view class="cl-bar__head" style="height: {{barHead}}px">
+      <text class="cl-bar__title">消息</text>
+    </view>
+  </view>
 
+  <view class="cl-content">
   <!-- 登录门 -->
   <view wx:if="{{!isLogin}}" class="cl-state">
     <empty-state title="登录后查看消息" desc="与同学的聊天记录都在这里" action-text="去登录" bind:action="onLogin" />
   </view>
 
   <block wx:else>
-    <!-- 首屏骨架 -->
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
     <block wx:if="{{firstLoading}}">
-      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-        <view class="sk-line sk-line--lg"></view>
-        <view class="sk-line sk-line--md"></view>
-        <view class="sk-line sk-line--sm"></view>
+      <view class="cl-state cl-state--loading">
+        <loading-eyes />
       </view>
     </block>
 
@@ -22,7 +40,7 @@
       <view class="card cl-state__card">
         <text class="t-title">加载失败</text>
         <text class="t-sub cl-state__desc">{{error}}</text>
-        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+        <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">重新加载</button>
       </view>
     </view>
 
@@ -39,40 +57,79 @@
     <block wx:else>
       <view
         wx:for="{{list}}"
-        wx:key="conversationId"
-        class="cl-conv"
+        wx:key="rowKey"
+        class="cl-swipe {{item.flipActive ? 'cl-swipe--flip-active' : ''}} {{item.swipeX < 0 ? 'cl-swipe--open' : ''}}"
+        animation="{{item.animData || ''}}"
         data-id="{{item.conversationId}}"
-        data-peer="{{item.peerId}}"
-        data-biztype="{{item.bizType}}"
-        data-bizid="{{item.bizId}}"
-        bindtap="onTapConv"
-        hover-class="cl-conv--hover"
       >
-        <!-- 头像 + 未读红点（角标叠在头像右上） -->
-        <view class="cl-conv__avatar-wrap">
-          <image wx:if="{{item.avatarUrl}}" class="cl-conv__avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
-          <view wx:else class="cl-conv__avatar cl-conv__avatar--text">{{item.initial}}</view>
-          <view wx:if="{{item.hasUnread}}" class="cl-conv__badge">{{item.unreadText}}</view>
+        <!-- 操作区只在左滑露出时创建：闭合时不渲染，按钮底色就不会从圆角缝透出 -->
+        <view wx:if="{{item.swipeX < 0}}" class="cl-swipe__actions">
+          <view
+            class="cl-swipe__action cl-swipe__action--pin"
+            data-id="{{item.conversationId}}"
+            data-pinned="{{item.isPinned}}"
+            catchtap="onTogglePin"
+          >{{item.isPinned ? '取消置顶' : '置顶'}}</view>
+          <view
+            class="cl-swipe__action cl-swipe__action--unread"
+            data-id="{{item.conversationId}}"
+            catchtap="onMarkUnread"
+          >标为未读</view>
+          <view
+            class="cl-swipe__action cl-swipe__action--delete"
+            data-id="{{item.conversationId}}"
+            catchtap="onDeleteConv"
+          >删除</view>
         </view>
 
-        <view class="cl-conv__body">
-          <view class="cl-conv__top">
-            <text class="cl-conv__name ellipsis">{{item.peerNickname}}</text>
-            <text wx:if="{{item.timeText}}" class="cl-conv__time">{{item.timeText}}</text>
+        <view
+          class="cl-conv {{item.swiping ? 'cl-conv--swiping' : ''}} {{item.showPinned ? 'cl-conv--pinned' : ''}} {{item.colorAnimating ? 'cl-conv--color-anim' : ''}}"
+          style="transform: translateX({{item.swipeX}}px)"
+          data-id="{{item.conversationId}}"
+          data-peer="{{item.peerId}}"
+          data-biztype="{{item.bizType}}"
+          data-bizid="{{item.bizId}}"
+          bindtouchstart="onSwipeStart"
+          bindtouchmove="onSwipeMove"
+          bindtouchend="onSwipeEnd"
+          bindtouchcancel="onSwipeEnd"
+          bindtap="onTapConv"
+          hover-class="cl-conv--hover"
+        >
+          <!-- 头像 + 未读红点（角标叠在头像右上） -->
+          <view class="cl-conv__avatar-wrap">
+            <image wx:if="{{item.avatarUrl}}" class="cl-conv__avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <view wx:else class="cl-conv__avatar cl-conv__avatar--text">{{item.initial}}</view>
+            <view wx:if="{{item.hasUnread}}" class="cl-conv__badge">{{item.unreadText}}</view>
           </view>
-          <view class="cl-conv__bottom">
-            <text class="cl-conv__last ellipsis">{{item.lastMessage}}</text>
+
+          <view class="cl-conv__body">
+            <view class="cl-conv__top">
+              <text class="cl-conv__name ellipsis">{{item.peerNickname}}</text>
+              <text wx:if="{{item.timeText}}" class="cl-conv__time">{{item.timeText}}</text>
+            </view>
+            <view class="cl-conv__bottom">
+              <text class="cl-conv__last ellipsis">{{item.lastMessage}}</text>
+            </view>
           </view>
+          <!-- 置顶小箭头：常驻渲染只切状态类，才有上滑渐显 / 下滑渐隐的过渡 -->
+          <image
+            class="cl-conv__pin-icon {{item.showPinned ? 'cl-conv__pin-icon--show' : ''}}"
+            src="/assets/icons/direction-up.png"
+            mode="aspectFit"
+          />
         </view>
       </view>
 
       <view class="cl-more">
-        <text wx:if="{{loadingMore}}" class="cl-more__text">加载中…</text>
+        <loading-eyes mini wx:if="{{loadingMore}}" />
         <text wx:elif="{{hasMore}}" class="cl-more__text">上拉加载更多</text>
         <text wx:else class="cl-more__text">没有更多了</text>
       </view>
     </block>
   </block>
+  </view>
 
   <view class="safe-bottom"></view>
 </view>
+</scroll-view>

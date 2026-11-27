@@ -32,6 +32,10 @@ const fakeRequest = {
   put(url, data) {
     calls.push({ method: 'PUT', url, data });
     return respond('PUT', url);
+  },
+  upload(filePath) {
+    calls.push({ method: 'UPLOAD', filePath });
+    return Promise.resolve({ url: '/uploads/errand-smoke.png' });
   }
 };
 function respond(method, url) {
@@ -64,13 +68,16 @@ global.getCurrentPages = () => [{}, {}];
 const redirects = [];
 const navBacks = [];
 const toasts = [];
+let chooseFiles = [];
 global.wx = {
   redirectTo: (o) => redirects.push(o.url),
   navigateBack: () => navBacks.push(1),
   switchTab: () => {},
   showToast: (o) => toasts.push(o.title),
   showModal: () => {},
-  setClipboardData: () => {}
+  setClipboardData: () => {},
+  chooseMedia: (o) => o.success({ tempFiles: chooseFiles }),
+  previewImage: () => {}
 };
 
 require(path.join(process.cwd(), 'miniprogram/pages/errand/publish.js'));
@@ -133,8 +140,8 @@ const ev = (value) => ({ detail: { value: value } });
   console.log('\n[3] buildPayload：timeType 三态');
   p.onLoad({});
   p.onPlaceConfirm({ detail: { zone: '北区教学区', place: '第1教学楼' } });
-  p.onSizeChange(ev('1'));
-  p.onTimeTypeChange(ev('0')); // asap
+  p.onSizeChange(ev('medium'));
+  p.onTimeTypeChange(ev('asap')); // asap
   p.setData({ form: { deliveryLocation: '李园 3 栋', itemDesc: '', remark: '', reward: '5' } });
   let payload = p.buildPayload();
   check('asap 不携带任何时间字段', payload.timeStart === undefined && payload.deadline === undefined, payload);
@@ -144,7 +151,7 @@ const ev = (value) => ({ detail: { value: value } });
     payload
   );
 
-  p.onTimeTypeChange(ev('1')); // deadline
+  p.onTimeTypeChange(ev('deadline')); // deadline
   p.onDeadlineDateChange(ev(p.data.minDate));
   p.onDeadlineTimeChange(ev('23:30'));
   payload = p.buildPayload();
@@ -154,7 +161,7 @@ const ev = (value) => ({ detail: { value: value } });
     payload
   );
 
-  p.onTimeTypeChange(ev('2')); // range
+  p.onTimeTypeChange(ev('range')); // range
   p.onStartDateChange(ev(p.data.minDate));
   p.onStartTimeChange(ev('10:00'));
   p.onDeadlineDateChange(ev(p.data.minDate));
@@ -167,7 +174,7 @@ const ev = (value) => ({ detail: { value: value } });
   );
 
   console.log('\n[4] validate');
-  p.onTimeTypeChange(ev('1'));
+  p.onTimeTypeChange(ev('deadline'));
   p.setData({ deadlineDate: '', deadlineTime: '' });
   p.setData({ form: { deliveryLocation: '', itemDesc: '', remark: '', reward: '' } });
   let errors = p.validate(p.buildPayload());
@@ -202,8 +209,8 @@ const ev = (value) => ({ detail: { value: value } });
   const p2 = makePage();
   p2.onLoad({});
   p2.onPlaceConfirm({ detail: { zone: '桃园', place: '' } }); // 默认桃园（无下级地标，pickupPlace=桃园）
-  p2.onSizeChange(ev('0'));
-  p2.onTimeTypeChange(ev('0'));
+  p2.onSizeChange(ev('small'));
+  p2.onTimeTypeChange(ev('asap'));
   p2.setData({ form: { deliveryLocation: '李园 3 栋 101', itemDesc: '', remark: '', reward: '3.5' } });
   responses = { 'POST /api/errands': { orderId: 3002, visibility: 'private' } };
   p2.onTapPrivate();
@@ -272,14 +279,90 @@ const ev = (value) => ({ detail: { value: value } });
   const p5 = makePage();
   p5.onLoad({});
   p5.onPlaceConfirm({ detail: { zone: '桃园', place: '' } });
-  p5.onSizeChange(ev('0'));
-  p5.onTimeTypeChange(ev('0'));
+  p5.onSizeChange(ev('small'));
+  p5.onTimeTypeChange(ev('asap'));
   p5.setData({ form: { deliveryLocation: '李园 3 栋', itemDesc: '', remark: '', reward: '5' } });
   responses = { 'POST /api/errands': { __fail: true, code: 400, message: '取件片区不在可选范围内' } };
   p5.onTapSubmit();
   await wait(50);
   check('后端片区文案落到 pickupArea', p5.data.errors.pickupArea === '取件片区不在可选范围内', p5.data.errors);
   check('失败后按钮解锁', p5.data.submitting === false);
+
+  console.log('\n[10] 规格与时间类型 radio（F-13：e.detail.value 是字符串，按 value 反查索引）');
+  const p6 = makePage();
+  p6.onLoad({});
+  p6.onSizeChange(ev('large'));
+  check('选大件 sizeIndex=2（不再弹回小件）', p6.data.sizeIndex === 2, p6.data.sizeIndex);
+  p6.onSizeChange(ev('medium'));
+  check('选中件 sizeIndex=1', p6.data.sizeIndex === 1, p6.data.sizeIndex);
+  p6.onTimeTypeChange(ev('range'));
+  check('选时间段 timeIndex=2', p6.data.timeIndex === 2, p6.data.timeIndex);
+  p6.setData({
+    pickupArea: '桃园',
+    pickupPlace: '桃园',
+    startDate: '2026-12-01',
+    startTime: '08:00',
+    deadlineDate: '2026-12-02',
+    deadlineTime: '18:00',
+    form: { deliveryLocation: '李园 3 栋', itemDesc: '', remark: '', reward: '5' }
+  });
+  const plRange = p6.buildPayload();
+  check('payload itemSize=medium（此前恒为 small）', plRange.itemSize === 'medium', plRange.itemSize);
+  check('range 带起止时间字段', plRange.timeType === 'range' && !!plRange.timeStart && !!plRange.deadline, plRange);
+  p6.onTimeTypeChange(ev('asap'));
+  const plAsap = p6.buildPayload();
+  check('asap 不携带任何时间字段（后端硬约束）', plAsap.timeType === 'asap' && plAsap.timeStart === undefined && plAsap.deadline === undefined, plAsap);
+
+  console.log('\n[11] 物品图片：选择 → 上传 → 入 payload → 失败拦截');
+  const p7 = makePage();
+  p7.onLoad({});
+  chooseFiles = [{ tempFilePath: '/tmp/errand-a.png' }];
+  p7.onChooseImages();
+  await wait(50);
+  const up = calls.filter((c) => c.method === 'UPLOAD').pop();
+  check('选图后调用上传接口', !!up && up.filePath === '/tmp/errand-a.png', up);
+  check('上传成功状态 done', p7.data.images.length === 1 && p7.data.images[0].status === 'done', p7.data.images);
+  check('上传完成释放提交按钮', p7.data.imageUploading === false, p7.data.imageUploading);
+  const imagePayload = p7.buildPayload();
+  check('payload 只带已上传的 /uploads/ 图片',
+    imagePayload.images.length === 1 && imagePayload.images[0].url === '/uploads/errand-smoke.png' && imagePayload.images[0].sortNo === 1,
+    imagePayload.images);
+  p7.patchImage(p7.data.images[0].id, { status: 'failed' });
+  check('上传失败时阻止提交', !!p7.validate(p7.buildPayload()).images, p7.data.errors);
+  p7.onDeleteImage({ currentTarget: { dataset: { id: p7.data.images[0].id } } });
+  check('删除图片后列表清空', p7.data.images.length === 0, p7.data.images);
+
+  console.log('\n[12] 编辑模式回填已有图片');
+  const p8 = makePage();
+  responses = {
+    'GET /api/errands/:id': {
+      orderId: 2004,
+      canEdit: true,
+      pickupArea: '李园',
+      pickupPlace: '李园',
+      deliveryLocation: '5 号宿舍楼 108',
+      itemSize: 'small',
+      itemDesc: '箱子',
+      images: [{ url: '/uploads/e1.png', sortNo: 1 }],
+      reward: 6,
+      timeType: 'asap'
+    }
+  };
+  p8.onLoad({ id: '2004' });
+  await wait(50);
+  check('编辑回填图片为 done 状态', p8.data.images.length === 1 && p8.data.images[0].status === 'done', p8.data.images);
+  check('编辑回填图片展示完整 URL', /\/uploads\/e1\.png$/.test(p8.data.images[0].displayUrl), p8.data.images[0].displayUrl);
+
+  console.log('\n[13] 返回按钮随滚动固定（11-26 真机反馈）');
+  const fs13 = require('fs');
+  const publishWxml13 = fs13.readFileSync(path.join(process.cwd(), 'miniprogram/pages/errand/publish.wxml'), 'utf8');
+  check('nav-top 挂 fixed（长页面滚动返回键不消失）', /<nav-top back title="\{\{pageTitle\}\}" fixed \/>/.test(publishWxml13));
+
+  console.log('\n[14] 必填项红星（11-27 对齐二手发布页 .req）');
+  const publishWxss14 = fs13.readFileSync(path.join(process.cwd(), 'miniprogram/pages/errand/publish.wxss'), 'utf8');
+  check('四个必填项标签都带红星', ['取件地点', '送达地点', '时间要求', '报酬/元'].every((t) => new RegExp('>' + t + '<text class="req">\\*</text>').test(publishWxml13)));
+  check('选填项不带红星（物品规格/描述/图片/备注）', ['物品规格', '物品描述', '物品图片', '备注'].every((t) => publishWxml13.indexOf('>' + t + '<text class="req">') === -1));
+  check('wxss .req 红星样式与二手发布页同口径', /\.req\s*\{[^}]*margin-left: 4rpx;[^}]*color: var\(--color-danger\)/.test(publishWxss14));
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);

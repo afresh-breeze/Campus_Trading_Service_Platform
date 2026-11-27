@@ -3,17 +3,15 @@
 
 <view class="page page-body pf">
   <!-- 加载态：骨架屏（不用「加载中…」纯文字，避免布局跳动） -->
-  <view wx:if="{{loading}}" class="sk-card">
-    <view class="sk-line sk-line--lg"></view>
-    <view class="sk-line sk-line--md"></view>
-    <view class="sk-line sk-line--sm"></view>
+  <view wx:if="{{loading}}" class="pf-state">
+    <loading-eyes />
   </view>
 
   <!-- 错误态：区分「未登录」与「网络失败」，给对应出路 -->
   <view wx:elif="{{error}}" class="card pf-state">
     <text class="t-title">{{error}}</text>
     <text class="t-sub pf-state__desc">{{errorDesc}}</text>
-    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重试'}}</button>
+    <button hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重试'}}</button>
   </view>
 
   <block wx:else>
@@ -90,7 +88,7 @@
     </view>
 
     <button
-      class="btn btn-primary btn-block pf-save"
+      hover-class="btn--press" class="btn btn-primary btn-block pf-save"
       loading="{{saving}}"
       disabled="{{saving}}"
       bindtap="onSave"

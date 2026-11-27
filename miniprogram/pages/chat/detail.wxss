@@ -21,6 +21,11 @@
 .cd-page .nav-top {
   flex-shrink: 0;
 }
+/* 键盘弹起：置零页面底部安全区 padding，输入条 padding-bottom=键盘实高
+   刚好贴住键盘顶沿（11-26 真机反馈：间距太大） */
+.cd-page--kb {
+  padding-bottom: 0;
+}
 
 /* ---- 业务卡片 ---- */
 .cd-biz {
@@ -29,11 +34,18 @@
   margin: 16rpx 20rpx;
   padding: 16rpx 20rpx;
   background: var(--color-surface, #ffffff);
-  border-radius: 16rpx;
+  border-radius: 20rpx;
+  box-shadow: var(--shadow-card);
   flex-shrink: 0;
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease-out;
 }
 .cd-biz--hover {
-  opacity: 0.9;
+  /* 全站口径：只压暗不缩放（11-25 方案二） */
+  opacity: 0.94;
+  box-shadow: var(--shadow-card-hover);
 }
 .cd-biz__cover {
   width: 76rpx;
@@ -47,7 +59,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-primary-soft, #efe4d8);
-  color: var(--color-primary, #79513d);
+  color: var(--color-primary-dark);
   font-size: var(--font-md, 28rpx);
   font-weight: 600;
 }
@@ -77,7 +89,7 @@
   margin-left: 16rpx;
   font-size: var(--font-md, 28rpx);
   font-weight: 700;
-  color: var(--color-primary, #79513d);
+  color: var(--color-price);
 }
 .cd-biz-sub {
   margin: 16rpx 20rpx 0;
@@ -98,6 +110,12 @@
 .cd-empty {
   text-align: center;
   padding: 80rpx 0;
+}
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，去掉 sk-card 底框） */
+.cd-loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
 }
 .cd-empty__text {
   font-size: var(--font-sm, 26rpx);
@@ -122,12 +140,17 @@
 .cd-bubble {
   max-width: 70%;
   padding: 16rpx 20rpx;
-  border-radius: 16rpx;
+  /* 单角收口：对方左下收口 */
+  border-radius: 20rpx 20rpx 20rpx 6rpx;
   background: var(--color-surface, #ffffff);
+  border: 1rpx solid var(--color-border, #E9DFD0);
   position: relative;
 }
 .cd-bubble--mine {
-  background: var(--color-primary, #79513d);
+  /* 我方右下收口 */
+  border-radius: 20rpx 20rpx 6rpx 20rpx;
+  border: none;
+  background: var(--color-primary-dark);
 }
 .cd-bubble--mine .cd-bubble__text {
   color: #ffffff;
@@ -146,6 +169,20 @@
   border-radius: 8rpx;
   display: block;
 }
+/* 加载失败占位（11-26）：src 不可达时不再留空白泡，点击可重试 */
+.cd-bubble__img--fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  box-sizing: border-box;
+  border: 1rpx dashed var(--color-border, #e8ddcc);
+  background: var(--color-surface-2, #f4f1e7);
+  color: var(--color-text-3, #9a8c7d);
+  font-size: var(--font-xs, 22rpx);
+  text-align: center;
+}
 .cd-bubble__status {
   margin-top: 6rpx;
   font-size: var(--font-xs, 22rpx);
@@ -161,19 +198,45 @@
 /* ---- 输入条 ---- */
 .cd-inputbar {
   display: flex;
-  align-items: center;
+  /* 输入框增高时，「＋」和发送按钮贴底对齐，不跟着垂直居中飘 */
+  align-items: flex-end;
   padding: 16rpx 20rpx;
-  background: var(--color-surface, #ffffff);
+  background: #ffffff;
   border-top: 1rpx solid var(--color-border, #eee6d8);
+  box-shadow: var(--shadow-bar);
   flex-shrink: 0;
+}
+/* 选图入口（11-24 用例 27）：方形浅底 ＋，与输入框同高 */
+.cd-inputbar__pick {
+  flex: none;
+  width: 64rpx;
+  height: 64rpx;
+  margin-right: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid var(--color-border, #e8ddcc);
+  border-radius: var(--radius, 12rpx);
+  background: var(--color-surface-2, #f4f1e7);
+  font-size: 40rpx;
+  line-height: 1;
+  color: var(--color-text-2, #6b5b4d);
+  transition: opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cd-inputbar__pick--hover {
+  opacity: 0.7;
 }
 .cd-inputbar__input {
   flex: 1;
   min-height: 64rpx;
-  padding: 0 20rpx;
+  /* max-height 只兜底极端长文本；日常增高交给 textarea 的 auto-height */
+  max-height: 240rpx;
+  box-sizing: border-box;
+  padding: 10rpx 20rpx;
   background: var(--color-surface-2, #f4f1e7);
-  border-radius: 999rpx;
+  border-radius: 20rpx;
   font-size: var(--font-md, 28rpx);
+  line-height: 44rpx;
 }
 .cd-inputbar__placeholder {
   color: var(--color-text-4, #b3a695);
@@ -201,6 +264,6 @@
   border-radius: 999rpx;
 }
 .cd-inputbar__send--on {
-  background: var(--color-primary, #79513d);
+  background: var(--color-primary-dark);
   color: #ffffff;
 }

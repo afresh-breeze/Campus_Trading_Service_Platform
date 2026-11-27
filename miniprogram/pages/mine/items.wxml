@@ -1,9 +1,25 @@
 <!-- 我的发布（A 成员，11-18）：四状态分类 + item-card 只读列表；状态操作只在详情页 -->
 <nav-top back title="我的发布" fixed />
 
-<view class="page page-body mi-page">
+<view class="sv-flex" style="height: calc(100vh - {{stickyTop}}px)">
+<scroll-view
+  class="page-scroll page-scroll--fill"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
+<view class="page page-body mi-page parallax-wrap {{parallax ? 'parallax-left' : ''}}">
   <!-- 吸顶状态条：复用首页分类的横滑椭圆条，滚动时返回键与状态条都常驻 -->
-  <view class="mi-cats-wrap" style="top: {{stickyTop}}px">
+  <!-- 吸顶条 top 归零：滚动容器已是 scroll-view（11-25 refresher 改造），
+       不再需要 nav 高度偏移，否则会悬在内容中间 -->
+  <view class="mi-cats-wrap" style="top: 0">
     <scroll-view class="mi-cats" scroll-x show-scrollbar="{{false}}">
       <view
         wx:for="{{tabs}}"
@@ -18,13 +34,8 @@
 
   <!-- 首屏骨架 -->
   <block wx:if="{{loading}}">
-    <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="card mi-sk">
-      <view class="mi-sk__cover"></view>
-      <view class="mi-sk__body">
-        <view class="mi-sk__line mi-sk__line--lg"></view>
-        <view class="mi-sk__line mi-sk__line--md"></view>
-        <view class="mi-sk__line mi-sk__line--sm"></view>
-      </view>
+    <view class="mi-state">
+      <loading-eyes />
     </view>
   </block>
 
@@ -32,7 +43,7 @@
   <view wx:elif="{{error}}" class="card mi-state">
     <text class="t-title">{{error === '请先登录' ? '请先登录' : '加载失败'}}</text>
     <text class="t-sub mi-state__desc">{{error === '请先登录' ? '登录后查看你发布的商品' : error}}</text>
-    <button class="btn btn-primary btn-block" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重新加载'}}</button>
+    <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">{{error === '请先登录' ? '去登录' : '重新加载'}}</button>
   </view>
 
   <!-- 当前 tab 真空态 -->
@@ -60,7 +71,9 @@
       />
     </view>
 
-    <view wx:if="{{loadingMore}}" class="mi-foot">加载中…</view>
+    <view wx:if="{{loadingMore}}" class="mi-foot"><loading-eyes mini /></view>
     <view wx:elif="{{!hasMore}}" class="mi-foot">没有更多了</view>
   </block>
+</view>
+</scroll-view>
 </view>

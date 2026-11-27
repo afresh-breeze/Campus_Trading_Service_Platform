@@ -1,5 +1,19 @@
 <!-- 搜索结果（A 成员，11-16）：书目区 + 商品区 -->
-<view class="page search-page">
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+  bindscroll="onPageScroll"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
+<view class="page search-page parallax-wrap {{parallax ? 'parallax-left' : ''}}">
   <!-- 顶部整块吸附：安全区到胶囊顶，返回键与胶囊同排，搜索框常驻 -->
   <view class="search-bar">
     <view class="search-bar__safe" style="height: {{stickyTop}}px"></view>
@@ -30,7 +44,7 @@
     </view>
 
     <!-- 输入时的书目联想：首行固定「搜索 xxx」，下面最多 5 本匹配书目 -->
-    <view wx:if="{{showSuggest && suggestKeyword}}" class="search-suggest">
+    <view wx:if="{{showSuggest && suggestKeyword}}" class="search-suggest u-enter">
       <view
         class="search-suggest__row search-suggest__row--action"
         data-keyword="{{suggestKeyword}}"
@@ -129,7 +143,7 @@
         <block wx:for="{{books}}" wx:key="bookId">
           <view
             wx:if="{{booksExpanded || index < bookPreview}}"
-            class="book-card {{activeBook && activeBook.bookId === item.bookId ? 'book-card--active' : ''}}"
+            class="book-card u-press {{activeBook && activeBook.bookId === item.bookId ? 'book-card--active' : ''}}"
             data-id="{{item.bookId}}"
             data-title="{{item.title}}"
             bindtap="onBookTap"
@@ -160,13 +174,14 @@
     <view class="search-sort">
       <text class="search-sort__count">{{countReady ? '共 ' + total + ' 件在售' : '搜索中…'}}</text>
       <view class="search-sort__ops">
-        <view class="search-sort__item {{sort === 'latest' ? 'search-sort__item--active' : ''}}" bindtap="onSortLatest">
+        <view class="search-sort__item {{sort === 'latest' ? 'search-sort__item--active' : ''}}" bindtap="onSortLatest" hover-class="search-sort__item--hover">
           <text>最新</text>
         </view>
         <view class="search-sort__divider"></view>
         <view
           class="search-sort__item search-sort__item--price {{(sort === 'price_asc' || sort === 'price_desc') ? 'search-sort__item--active' : ''}}"
           bindtap="onSortPrice"
+          hover-class="search-sort__item--hover"
         >
           <text>价格</text>
           <text class="search-sort__arrow">{{sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}}</text>
@@ -174,15 +189,10 @@
       </view>
     </view>
 
-    <!-- 首屏骨架：只用占位块，不编假数据 -->
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
     <block wx:if="{{firstLoading}}">
-      <view class="search-sk" wx:for="{{[1,2,3]}}" wx:key="*this">
-        <view class="search-sk__cover"></view>
-        <view class="search-sk__body">
-          <view class="search-sk__line search-sk__line--lg"></view>
-          <view class="search-sk__line search-sk__line--md"></view>
-          <view class="search-sk__line search-sk__line--sm"></view>
-        </view>
+      <view class="search-state search-state--loading">
+        <loading-eyes />
       </view>
     </block>
 
@@ -191,7 +201,7 @@
       <view class="card search-state__card">
         <text class="t-title">加载失败</text>
         <text class="t-sub search-state__desc">{{error}}</text>
-        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+        <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">重新加载</button>
       </view>
     </view>
 
@@ -215,16 +225,22 @@
 
     <block wx:else>
       <view class="search-items">
-        <view class="search-items__item" wx:for="{{items}}" wx:key="itemId">
+        <view
+          class="search-items__item {{index < 6 ? 'u-enter' : ''}}"
+          style="animation-delay: {{index < 6 ? index * 40 : 0}}ms"
+          wx:for="{{items}}"
+          wx:key="itemId"
+        >
           <item-card mode="list" item="{{item}}" show-time="{{true}}" bind:tap="onTapItem" />
         </view>
       </view>
 
       <view class="search-more">
-        <text wx:if="{{loadingMore}}" class="search-more__text">加载中…</text>
+        <loading-eyes mini wx:if="{{loadingMore}}" />
         <text wx:elif="{{hasMore}}" class="search-more__text">上拉加载更多</text>
         <text wx:else class="search-more__text">没有更多了</text>
       </view>
     </block>
   </block>
 </view>
+</scroll-view>

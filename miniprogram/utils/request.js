@@ -214,6 +214,7 @@ const http = {
   get: (url, data, extra) => request(Object.assign({ url, method: 'GET', data }, extra)),
   post: (url, data, extra) => request(Object.assign({ url, method: 'POST', data }, extra)),
   put: (url, data, extra) => request(Object.assign({ url, method: 'PUT', data }, extra)),
+  patch: (url, data, extra) => request(Object.assign({ url, method: 'PATCH', data }, extra)),
   del: (url, data, extra) => request(Object.assign({ url, method: 'DELETE', data }, extra)),
   request
 };
@@ -264,6 +265,7 @@ module.exports = {
   get: http.get,
   post: http.post,
   put: http.put,
+  patch: http.patch,
   del: http.del,
   upload
 };

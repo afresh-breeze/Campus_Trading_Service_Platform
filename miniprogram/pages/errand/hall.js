@@ -14,6 +14,9 @@
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 const adapter = require('../../utils/adapter');
+const campus = require('../../utils/campus');
+// 品类插画派生（11-25 抽到公共层：详情页顶部预览图与列表缩略图必须同一张）
+const errandUtil = require('../../utils/errand');
 
 const TAB_INDEX = 1;
 const PAGE_SIZE = 10;
@@ -33,22 +36,7 @@ const TIME_CHIPS = [
   { value: 'range', label: '时段' }
 ];
 
-// 品类缩略图：表里没有图片字段，用 itemDesc/remark 关键词猜品类配本地插画。
-// 真图片要 A 给 errand_orders 加字段（已列需求清单），这里先解决「看不出是什么」。
-const CATEGORY_RULES = [
-  { key: 'food', words: ['外卖', '奶茶', '咖啡', '饭', '餐', '早餐', '午餐', '晚餐', '宵夜', '水果', '零食', '饮'] },
-  { key: 'doc', words: ['文件', '打印', '资料', '书', '论文', '证件', '作业'] },
-  { key: 'daily', words: ['药', '超市', '日用品', '纸巾', '水', '生活'] },
-  { key: 'express', words: ['快递', '包裹', '菜鸟', '驿站', '取件'] }
-];
-function guessCategory(order) {
-  const text = ((order.itemDesc || '') + ' ' + (order.remark || '')).toLowerCase();
-  for (let i = 0; i < CATEGORY_RULES.length; i += 1) {
-    const rule = CATEGORY_RULES[i];
-    if (rule.words.some((w) => text.indexOf(w) > -1)) return rule.key;
-  }
-  return 'other';
-}
+// 品类缩略图规则已抽到 utils/errand.js（详情页预览图共用），这里只调用
 
 /** 标题行与右上角胶囊齐平：占位到胶囊顶，标题行高 = 胶囊高 */
 function getNavMetrics() {
@@ -82,10 +70,9 @@ function shortTime(order) {
 
 /** 列表项 → 纯展示结构：wxml 不做计算，也不做字段映射 */
 function toCard(order) {
-  const place =
-    order.pickupPlace && order.pickupPlace !== order.pickupArea
-      ? order.pickupArea + ' · ' + order.pickupPlace
-      : order.pickupArea || '';
+  // 11-25 用户反馈：主标题优先展示具体地标（30教）而非片区（南区教学楼）——
+  // 片区名长，36rpx 主级下被截成「南区教学…」；地标全校唯一，单独展示不歧义。
+  const place = campus.shortPlace(order.pickupArea, order.pickupPlace);
   const nickname = order.publisherNickname || '同学';
   return {
     orderId: order.orderId,
@@ -95,7 +82,10 @@ function toCard(order) {
     timeText: shortTime(order),
     rewardText: util.formatPrice(order.reward),
     itemDesc: order.itemDesc || '',
-    categoryIcon: '/assets/errand/' + guessCategory(order) + '.png',
+    // 有实拍图就用第一张做卡片缩略图，否则退回品类插画；thumbNoImage 标记占位态：
+    // 无图时插画缩到约 1/3 居中 + 50% 透明度 + 下方「暂无图片」小字（11-27 反馈）
+    thumbNoImage: !adapter.toImageList(order)[0],
+    categoryIcon: adapter.toImageList(order)[0] || errandUtil.categoryIcon(order),
     publisherNickname: nickname,
     publisherInitial: nickname.slice(0, 1),
     publisherAvatarUrl: adapter.fullUrl(order.publisherAvatar),
@@ -105,6 +95,7 @@ function toCard(order) {
 
 Page({
   data: {
+    parallax: false,
     stickyTop: 24, // 状态栏占位 = 胶囊顶部 y，让标题与胶囊齐平
     barHead: 32, // 标题行高 = 胶囊高度，与胶囊完全同排
     list: [],
@@ -133,16 +124,42 @@ Page({
   // 整块吸顶后标题区完全冻结，不做任何滚动响应动画（用户 11-15 定稿口径）
 
   onShow() {
+    // 先记下是否带着视差态回页（从详情返回），复位后按路径分流刷新时机
+    const wasParallax = this.data.parallax;
+    if (wasParallax) this.setData({ parallax: false });
     const bar = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
     if (bar && typeof bar.syncSelected === 'function') {
       bar.syncSelected(TAB_INDEX);
     }
-    // 从详情页回来必须刷新：刚接走的单要从列表消失
-    this.refresh();
+    if (wasParallax) {
+      // 视差回弹（220ms）结束后再刷新：刚接走的单也要从列表消失，但晚 260ms 不影响正确性
+      // （复位、diff、图片重排不同帧，11-25 方案主因 2）
+      if (this._showRefreshTimer) clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = setTimeout(() => {
+        this._showRefreshTimer = null;
+        this.refresh();
+      }, 260);
+    } else {
+      // 从详情页回来必须刷新：刚接走的单要从列表消失
+      this.refresh();
+    }
   },
 
-  onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+  onUnload() {
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
+    if (this._showRefreshTimer) {
+      clearTimeout(this._showRefreshTimer);
+      this._showRefreshTimer = null;
+    }
+  },
+
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.refresh().then(done, done);
   },
 
   onReachBottom() {
@@ -165,8 +182,8 @@ Page({
         patch
       )
     );
-    // 老基础库可能没有 pageScrollTo，缺函数时跳过回顶
-    if (wx.pageScrollTo) wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    // 回顶改走 scroll-view 的 scroll-top（11-25 下拉刷新改 refresher 后页级滚动失效）
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetch(1);
   },
 
@@ -283,10 +300,17 @@ Page({
   onTapOrder(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return;
-    wx.navigateTo({
-      url: '/pages/errand/detail?id=' + id,
-      fail: () => util.toast('详情页打开失败')
-    });
+    // 连点防抖：导航中再点不重复入栈
+    if (this._navTimer) return;
+    // 视差：先让左移起步 100ms 再导航（11-25 方案主因 1）
+    this.setData({ parallax: true });
+    this._navTimer = setTimeout(() => {
+      this._navTimer = null;
+      wx.navigateTo({
+        url: '/pages/errand/detail?id=' + id,
+        fail: () => util.toast('详情页打开失败')
+      });
+    }, 100);
   },
 
   onPublish() {

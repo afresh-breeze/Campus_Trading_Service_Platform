@@ -1,27 +1,161 @@
 /* 消息列表（B 成员，11-14） */
 
+/* ---------- 顶部吸顶标题（与二手市场 / 代取大厅同位置） ---------- */
+.cl-page {
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+.cl-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 var(--space-page) 10rpx;
+  background-color: var(--color-bg);
+}
+.cl-bar__safe {
+  overflow: hidden;
+}
+.cl-bar__head {
+  display: flex;
+  align-items: center;
+}
+.cl-bar__title {
+  font-size: var(--font-2xl);
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
+  color: var(--color-text);
+  letter-spacing: 2rpx;
+  line-height: 1;
+}
+.cl-content {
+  padding: 0 var(--space-page);
+}
+
 .cl-state {
   padding: 40rpx 0;
 }
 .cl-state__card {
   text-align: center;
 }
+
+/* 首屏加载：眼睛无白卡直接居中（11-25，去掉 sk-card 底框） */
+.cl-state--loading {
+  text-align: center;
+  padding: 160rpx 0 40rpx;
+}
 .cl-state__desc {
   display: block;
   margin: 12rpx 0 24rpx;
 }
 
-/* ---- 会话卡片 ---- */
-.cl-conv {
+/* ---- 会话卡片：左滑露出操作 ---- */
+.cl-swipe {
+  position: relative;
+  margin-bottom: 20rpx;
+  border-radius: var(--radius-card, 24rpx);
+  overflow: hidden;
+  /* 不再常驻深棕底色：闭合时卡片应完全不透明，任何底色都会在圆角缝透出细线。
+     底色改由左滑时才创建的 .cl-swipe__actions 自身提供。 */
+  background: transparent;
+}
+/* 正在重排的卡片浮在上层，滑过其他条目时不被遮挡 */
+.cl-swipe--flip-active {
+  z-index: 3;
+}
+/* 左滑态才补深棕底色：卡片滑开后左/右圆角与尖角交界处的缺口由它填满；
+   闭合态保持 transparent，避免底色从卡片圆角缝透出细线。 */
+.cl-swipe--open {
+  background: var(--color-primary-dark, #79513D);
+}
+.cl-swipe__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  /* 三个按钮靠右，与原来 right:0/450rpx 的位置一致；
+     底色铺满整个容器，卡片右圆角处的三角缺口也被补满 */
+  justify-content: flex-end;
+  background: var(--color-primary-dark, #79513D);
+}
+.cl-swipe__action {
   display: flex;
   align-items: center;
-  padding: 24rpx 20rpx;
-  margin-bottom: 16rpx;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 150rpx;
+  color: #ffffff;
+  font-size: var(--font-sm, 26rpx);
+  font-weight: 600;
+  text-align: center;
+}
+/* 三档暖色令牌：深棕 → 焦糖 → 危险红，与小程序主色同源，不使用外部蓝/土黄 */
+.cl-swipe__action--pin {
+  /* 与 .cl-swipe__actions 底色同色：圆角缺口 + 尖角一起补齐 */
+  background: var(--color-primary-dark, #79513D);
+}
+.cl-swipe__action--unread {
+  background: var(--color-accent, #A7724F);
+}
+.cl-swipe__action--delete {
+  background: var(--color-danger, #C62828);
+}
+
+.cl-conv {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
   background: var(--color-surface, #ffffff);
-  border-radius: 16rpx;
+  border-radius: var(--radius-card, 24rpx);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease-out;
 }
 .cl-conv--hover {
-  opacity: 0.9;
+  /* 会话卡下方压着左滑操作区：不能用 opacity 压暗（半透明会透出按钮文字），
+     改为只压暗背景色 + 阴影，卡片始终不透明 */
+  background: var(--color-surface-2, #f1eae0);
+  box-shadow: var(--shadow-card-hover);
+}
+/* 重排动画期间，让底色跟着位移一起 320ms 平滑变化，避免换代时颜色生切 */
+.cl-conv--color-anim {
+  transition:
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 320ms ease-out,
+    box-shadow 200ms ease-out;
+}
+/* 置顶会话：底色略微加深，与未置顶卡片区分；不透明，避免透出左滑按钮 */
+.cl-conv--pinned {
+  background: var(--color-surface-pinned, #f6efe6);
+}
+/* 给右下角小箭头留出空间，避免压住最后一条消息 */
+.cl-conv--pinned .cl-conv__bottom {
+  padding-right: 40rpx;
+}
+/* 手指跟随期间关掉过渡，松手再吸到位 */
+.cl-conv--swiping {
+  transition: none;
+}
+/* 置顶小箭头：贴在卡片右下角；常驻渲染只切状态类，过渡才能播放 */
+.cl-conv__pin-icon {
+  position: absolute;
+  right: 20rpx;
+  bottom: 14rpx;
+  width: 28rpx;
+  height: 28rpx;
+  /* 隐藏态位于展示位下方：置顶时上滑渐显，取消置顶时下滑渐隐 */
+  opacity: 0;
+  transform: translateY(14rpx);
+  transition: opacity 320ms ease-out, transform 320ms ease-out;
+}
+.cl-conv__pin-icon--show {
+  opacity: 0.5;
+  transform: translateY(0);
 }
 .cl-conv__avatar-wrap {
   position: relative;
@@ -29,8 +163,8 @@
   margin-right: 20rpx;
 }
 .cl-conv__avatar {
-  width: 92rpx;
-  height: 92rpx;
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 50%;
 }
 .cl-conv__avatar--text {
@@ -38,7 +172,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-primary-soft, #efe4d8);
-  color: var(--color-primary, #79513d);
+  color: var(--color-primary-dark);
   font-size: var(--font-lg, 32rpx);
   font-weight: 600;
 }
@@ -56,6 +190,8 @@
   line-height: 32rpx;
   text-align: center;
   box-sizing: border-box;
+  /* 2rpx 白描边，避免压头像糊（方案 6.9） */
+  border: 2rpx solid #ffffff;
 }
 .cl-conv__body {
   flex: 1;
@@ -67,9 +203,9 @@
   align-items: center;
 }
 .cl-conv__name {
-  font-size: var(--font-md, 28rpx);
+  font-size: 30rpx;
   font-weight: 600;
-  color: var(--color-text-1, #3b2f26);
+  color: var(--color-text-1, #2E2119);
   min-width: 0;
   flex: 1;
 }
@@ -81,6 +217,8 @@
 }
 .cl-conv__bottom {
   margin-top: 8rpx;
+  /* 置顶态预留的箭头右边距随动画同步过渡，避免取消置顶时文字生切 */
+  transition: padding-right 320ms ease-out;
 }
 .cl-conv__last {
   font-size: var(--font-sm, 26rpx);

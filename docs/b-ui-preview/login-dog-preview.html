@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录页 · 腊肠犬密码 + 光晕居中修正 预览</title>
+<style>
+  :root {
+    --primary: #E6A874;
+    --primary-light: #FCDBA9;
+    --primary-dark: #79513D;
+    --bg: #F4F1E7;
+    --text: #2E2119;
+    --ink: #2E2119;
+    --tongue: #E2655E;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --jelly: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #26221E;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 22px 0;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+  }
+  .hint { color: #8A8072; font-size: 13px; text-align: center; }
+  .hint b { color: #C9BFB2; font-weight: 600; }
+  .btnbar { display: flex; gap: 10px; }
+  .btnbar button {
+    background: #3A332C; color: #E8DFD2; border: 1px solid #4A4238;
+    border-radius: 999px; padding: 6px 18px; font-size: 13px; cursor: pointer;
+  }
+  .btnbar button:hover { background: #4A4238; }
+
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 44px; border: 6px solid #17130F;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+    background: var(--bg);
+  }
+
+  /* ============ 弥散背景 ============ */
+  .mesh { position: absolute; inset: 0; overflow: hidden; background: var(--bg);
+    background-image: linear-gradient(180deg, var(--primary-light) 0%, var(--bg) 46%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(56px); }
+  .b1 { width: 320px; height: 320px; left: -90px;  top: -110px; background: #FCDBA9; }
+  .b2 { width: 280px; height: 280px; right: -110px; top: 150px; background: #E6A874; opacity: .75; }
+  .b3 { width: 300px; height: 300px; left: -60px;  top: 470px; background: #F3CFA0; opacity: .85; }
+  .b4 { width: 240px; height: 240px; right: -40px; bottom: -80px; background: rgba(121,81,61,.14); }
+
+  .status { position: absolute; top: 14px; left: 0; right: 0; display: flex;
+    justify-content: space-between; padding: 0 28px; font-size: 14px; font-weight: 600; color: #4A3A2C; }
+  .capsule { position: absolute; top: 48px; right: 12px; width: 86px; height: 30px;
+    background: rgba(255,255,255,.55); border: 1px solid rgba(0,0,0,.06); border-radius: 999px;
+    display: flex; align-items: center; justify-content: space-evenly; font-size: 13px; color: #3D2E24; }
+
+  /* ============ 标题区 ============ */
+  .hero { position: relative; padding: 118px 0 0; display: flex; flex-direction: column; align-items: center; }
+  .halo { position: absolute; left: 50%; top: 50%; width: 220px; height: 220px;
+    transform: translate(-50%,-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(230,168,116,.4) 0%, rgba(230,168,116,0) 68%); }
+  .title { position: relative; font-size: 30px; font-weight: 800; letter-spacing: 3px; color: var(--text); }
+
+  /* ============ 表单卡：学号 / 腊肠犬 / 密码 ============ */
+  .card { position: absolute; left: 24px; right: 24px; top: 258px;
+    background: #FFF; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 6px 24px rgba(122,93,64,.10); }
+  .field { display: flex; align-items: center; height: 56px; padding: 0 18px; }
+  .field + .field, .dog-row + .field { border-top: 1px solid #F0EAE0; }
+  .field:first-child { border-bottom: 1px solid #F0EAE0; }
+  .label { width: 42px; font-size: 15px; font-weight: 600; color: #594A3B; flex: none; }
+  .card input {
+    flex: 1; border: none; outline: none; font-size: 14px; color: var(--text);
+    background: transparent; letter-spacing: 2px;
+  }
+  .card input::placeholder { color: #C9BFB2; letter-spacing: 0; }
+
+  /* ============ 腊肠犬（纯 CSS divs，头固定、身体向右长） ============ */
+  .dog-row { position: relative; height: 96px; }
+  .dog { position: absolute; left: 22px; bottom: 20px; width: 300px; height: 58px; }
+
+  .dog__head { position: absolute; left: 0; bottom: 14px; width: 60px; height: 42px; }
+  .dog__head-shape { position: absolute; inset: 0; border: 3px solid var(--ink);
+    border-radius: 46% 54% 58% 42% / 58% 66% 46% 38%; }
+  .dog__nose { position: absolute; left: -4px; top: 16px; width: 7px; height: 7px;
+    background: var(--ink); border-radius: 50%; }
+  .dog__tongue { position: absolute; left: 12px; top: 34px; width: 8px; height: 15px;
+    background: var(--tongue); border: 2.5px solid var(--ink); border-top: none;
+    border-radius: 0 0 7px 7px; transform-origin: top center;
+    animation: tongue-sway 1.6s ease-in-out infinite alternate; }
+  .dog__eye { position: absolute; right: 20px; top: 11px; width: 5px; height: 5px;
+    background: var(--ink); border-radius: 50%;
+    animation: eye-blink 4.2s ease-in-out infinite; }
+  .dog__ear { position: absolute; right: -2px; top: 4px; width: 17px; height: 26px;
+    border: 3px solid var(--ink); border-radius: 50% 50% 50% 50% / 62% 62% 44% 44%;
+    transform: rotate(-10deg); background: transparent; }
+
+  .dog__body { position: absolute; left: 54px; bottom: 14px; height: 30px; width: 40px;
+    border: 3px solid var(--ink); border-left: none;
+    border-radius: 0 16px 16px 0;
+    transform-origin: left center;
+    transition: width 420ms var(--jelly); }
+  .dog__body.wobble-a { animation: jelly-wobble 380ms var(--ease-out); }
+  .dog__body.wobble-b { animation: jelly-wobble 380ms var(--ease-out); }
+  .dog__leg { position: absolute; width: 8px; height: 13px;
+    border: 3px solid var(--ink); border-top: none;
+    border-radius: 0 0 5px 5px; bottom: -13px; background: #FFF; }
+  .dog__leg.fl { left: 9px; }
+  .dog__leg.fr { left: 22px; }
+  .dog__leg.bl { right: 22px; }
+  .dog__leg.br { right: 9px; }
+  .dog__tail { position: absolute; right: -3px; top: -11px; width: 15px; height: 15px;
+    border: 3px solid var(--ink); border-radius: 50%;
+    border-left-color: transparent; border-bottom-color: transparent;
+    transform: rotate(8deg); }
+
+  .pw-err { color: #C62828; font-size: 12px; padding: 0 18px 10px 60px; display: none; }
+  .card.error .pw-err { display: block; }
+  .card.error .field--pw { box-shadow: inset 0 0 0 2px #C62828; }
+
+  /* ============ 按钮与底部 ============ */
+  .btn-login { position: absolute; left: 24px; right: 24px; top: 610px;
+    height: 48px; border: none; border-radius: 24px;
+    background: linear-gradient(180deg, #8A5F47, var(--primary-dark));
+    color: #FFF; font-size: 17px; font-weight: 600; letter-spacing: 6px;
+    box-shadow: 0 8px 20px rgba(121,81,61,.28); cursor: pointer; }
+  .links { position: absolute; left: 24px; right: 24px; top: 674px;
+    display: flex; justify-content: space-between; font-size: 13px; color: #8C8275; }
+  .agreement { position: absolute; left: 0; right: 0; top: 716px;
+    text-align: center; font-size: 11px; color: #B0A697; }
+  .agreement b { color: var(--primary-dark); font-weight: 500; text-decoration: underline; }
+  .tip { position: absolute; left: 0; right: 0; top: 740px;
+    text-align: center; font-size: 11px; color: #B45309; }
+
+  /* ============ 开场：光晕落到全屏正中央再弹开 ============ */
+  .glow, .ring {
+    position: absolute; left: calc(50% - 13px); top: calc(50% - 13px);
+    width: 26px; height: 26px; border-radius: 50%; pointer-events: none;
+    opacity: 0;
+  }
+  .glow { z-index: 5;
+    background: radial-gradient(circle, #FFF3DC 0%, rgba(230,168,116,.95) 42%, rgba(230,168,116,0) 72%);
+    box-shadow: 0 0 24px 6px rgba(230,168,116,.55); }
+  .ring { z-index: 5; border: 2px solid rgba(230,168,116,.65);
+    box-shadow: 0 0 18px 2px rgba(230,168,116,.35); }
+
+  body.anim .glow { opacity: 0; transform: translate(-190px, -240px) scale(.55);
+    animation: glow-journey 2.2s cubic-bezier(.45,.05,.55,.95) 1 both; }
+  @keyframes glow-journey {
+    0%   { opacity: 0; transform: translate(-190px, -240px) scale(.55); }
+    5%   { opacity: 1; }
+    15%  { transform: translate(-84px, -120px) scale(.85, 1.1); }
+    21%  { transform: translate(0, -6px)  scale(1.14, .84); }
+    26%  { transform: translate(0, -30px) scale(.94, 1.08); }
+    31%  { transform: translate(0, 0)     scale(1.06, .94); }
+    35%  { transform: translate(0, -9px)  scale(.98, 1.02); }
+    39%  { transform: translate(0, 0)     scale(1); }
+    50%  { opacity: 1; transform: translate(0, 0) scale(18); }
+    62%  { opacity: 0; transform: translate(0, 0) scale(26); }
+    100% { opacity: 0; transform: translate(0, 0) scale(26); }
+  }
+  body.anim .ring { opacity: 0; animation: ring-spread 2.2s var(--ease-out) 1 both; }
+  @keyframes ring-spread {
+    0%, 38% { opacity: 0; transform: scale(1); }
+    44%     { opacity: .9; }
+    62%     { opacity: 0; transform: scale(14); }
+    100%    { opacity: 0; transform: scale(14); }
+  }
+  body.anim .blob { opacity: 0; animation: bloom 2.2s var(--ease-out) 1 both; }
+  .b1 { --o: 1;  } .b2 { --o: .75; } .b3 { --o: .85; } .b4 { --o: 1; }
+  .b2, .b3, .b4 { animation-delay: .1s; }
+  @keyframes bloom {
+    0%, 38% { opacity: 0; transform: scale(.72); }
+    58%     { opacity: var(--o); transform: scale(1); }
+    100%    { opacity: var(--o); transform: scale(1); }
+  }
+  body.anim .hero, body.anim .card, body.anim .btn-login,
+  body.anim .links, body.anim .agreement, body.anim .tip {
+    opacity: 0; animation: fade-up 2.2s var(--ease-out) 1 both;
+  }
+  body.anim .card { animation-delay: .08s; }
+  body.anim .btn-login { animation-delay: .16s; }
+  body.anim .links { animation-delay: .24s; }
+  body.anim .agreement, body.anim .tip { animation-delay: .3s; }
+  @keyframes fade-up {
+    0%, 54% { opacity: 0; transform: translateY(22px); }
+    74%     { opacity: 1; transform: translateY(0); }
+    100%    { opacity: 1; transform: translateY(0); }
+  }
+  body.anim .status, body.anim .capsule, body.anim .mesh { animation: none !important; opacity: 1 !important; }
+
+  @keyframes tongue-sway { from { transform: rotate(-6deg); } to { transform: rotate(7deg); } }
+  @keyframes eye-blink { 0%, 91%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.12); } }
+  @keyframes jelly-wobble {
+    0% { transform: scaleY(1); }
+    35% { transform: scaleY(.86); }
+    68% { transform: scaleY(1.07); }
+    100% { transform: scaleY(1); }
+  }
+</style>
+</head>
+<body class="anim">
+  <div class="hint"><b>可交互预览</b> · 在密码框里输入/删除，狗身体跟着伸缩（果冻回弹）；光晕已改为落到全屏正中央再弹开</div>
+  <div class="btnbar">
+    <button onclick="replay()">↺ 重播开场</button>
+    <button id="demo" onclick="demo()">▶ 自动演示</button>
+  </div>
+
+  <div class="phone">
+    <div class="mesh">
+      <div class="blob b1"></div><div class="blob b2"></div>
+      <div class="blob b3"></div><div class="blob b4"></div>
+    </div>
+    <div class="status"><span>19:09</span><span>▮▮ 🔋</span></div>
+    <div class="capsule"><span>•••</span><span>◉</span></div>
+
+    <div class="hero"><div class="halo"></div><div class="title">校园易站</div></div>
+
+    <div class="card" id="card">
+      <div class="field"><span class="label">学号</span><input placeholder="请输入学号（6-20 位数字）"></div>
+      <div class="dog-row">
+        <div class="dog">
+          <div class="dog__body" id="body">
+            <div class="dog__leg fl"></div><div class="dog__leg fr"></div>
+            <div class="dog__leg bl"></div><div class="dog__leg br"></div>
+            <div class="dog__tail"></div>
+          </div>
+          <div class="dog__head">
+            <div class="dog__head-shape"></div>
+            <div class="dog__nose"></div>
+            <div class="dog__tongue"></div>
+            <div class="dog__eye"></div>
+            <div class="dog__ear"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field field--pw"><span class="label">密码</span>
+        <input id="pw" type="password" maxlength="20" placeholder="请输入密码（6-20 位）"></div>
+      <div class="pw-err">密码需 6-20 位</div>
+    </div>
+
+    <button class="btn-login">登录</button>
+    <div class="links"><span>还没有账号？去注册</span><span>忘记密码</span></div>
+    <div class="agreement">登录即表示同意 <b>《用户协议》</b> 与 <b>《隐私政策》</b></div>
+    <div class="tip">当前为本地模拟数据模式（config.js 中 MOCK = true）</div>
+
+    <div class="ring"></div>
+    <div class="glow"></div>
+  </div>
+
+<script>
+  var BASE = 40, PER = 9, MAXLEN = 20;
+  var bodyEl = document.getElementById('body');
+  var pwEl = document.getElementById('pw');
+  var cardEl = document.getElementById('card');
+  var flip = false;
+
+  function apply(len) {
+    bodyEl.style.width = (BASE + Math.max(0, len) * PER) + 'px';
+    flip = !flip;
+    bodyEl.classList.remove('wobble-a', 'wobble-b');
+    void bodyEl.offsetWidth;               // 强制 reflow 重启果冻
+    bodyEl.classList.add(flip ? 'wobble-a' : 'wobble-b');
+    cardEl.classList.toggle('error', len > 0 && len < 6);
+  }
+  pwEl.addEventListener('input', function () { apply(pwEl.value.length); });
+
+  function replay() {
+    document.body.classList.remove('anim');
+    void document.body.offsetWidth;
+    document.body.classList.add('anim');
+  }
+
+  var demoTimer = null;
+  function demo() {
+    if (demoTimer) { clearInterval(demoTimer); demoTimer = null; return; }
+    var seq = 'campus2026';
+    var i = 0, phase = 'type';
+    replay();
+    demoTimer = setInterval(function () {
+      if (phase === 'type') {
+        i++;
+        pwEl.value = seq.slice(0, i);
+        apply(i);
+        if (i >= seq.length) { phase = 'trim'; i = seq.length; }
+      } else {
+        i--;
+        pwEl.value = seq.slice(0, i);
+        apply(i);
+        if (i <= 4) { clearInterval(demoTimer); demoTimer = null; }
+      }
+    }, 170);
+  }
+
+  if (location.hash.indexOf('final') >= 0) document.body.classList.remove('anim');
+  // #final-len8：无头截图用，直接呈现密码 8 位的形态
+  var m = location.hash.match(/len(\d+)/);
+  if (m) {
+    pwEl.value = 'x'.repeat(+m[1]);
+    bodyEl.style.width = (BASE + (+m[1]) * PER) + 'px';
+    cardEl.classList.toggle('error', +m[1] < 6 && +m[1] > 0);
+  }
+</script>
+</body>
+</html>

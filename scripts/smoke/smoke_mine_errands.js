@@ -3,6 +3,7 @@
  * 运行：node smoke_mine_errands.js   （cwd 必须在仓库根）
  */
 const path = require('path');
+const fs = require('fs');
 const Module = require('module');
 const REPO = process.cwd();
 const MP = path.join(REPO, 'miniprogram');
@@ -307,6 +308,22 @@ function order(id, extra) {
   await tick();
   check('total>50 → truncated', p4.data.truncated === true, p4.data.truncated);
   check('分组只含 pending', p4.data.sections.length === 1 && p4.data.sections[0].status === 'pending');
+
+  console.log('[11] 视差时序与按压口径（11-25 方案第一批）');
+  navs.length = 0;
+  const p9 = makePage();
+  p9.onTapOrder({ currentTarget: { dataset: { id: 2301 } } });
+  check('点击立即置视差', p9.data.parallax === true);
+  check('视差先起步，100ms 内不导航', navs.length === 0, navs);
+  await tick(120);
+  check('100ms 后进代取详情', navs[0] === '/pages/errand/detail?id=2301', navs);
+  check('导航后防抖释放', p9._navTimer === null);
+
+  const meWxss = fs.readFileSync(path.join(MP, 'pages/mine/errands.wxss'), 'utf8');
+  const meWxml = fs.readFileSync(path.join(MP, 'pages/mine/errands.wxml'), 'utf8');
+  check('me-order 按压只压暗不缩放', /\.me-order--hover\s*\{[^}]*opacity:\s*0\.94/.test(meWxss) && !/\.me-order--hover\s*\{[^}]*scale\(/.test(meWxss), '按压口径不符');
+  check('me-act 快捷按钮补了按压态', meWxml.indexOf('hover-class="me-act--hover"') >= 0 && /\.me-act--hover\s*\{[^}]*opacity/.test(meWxss));
+  check('重试按钮补了按压态', /class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry"/.test(meWxml));
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);

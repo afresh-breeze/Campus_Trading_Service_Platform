@@ -1,11 +1,25 @@
 <!-- 代取详情（B 成员，11-12）：展示 + 状态机操作，按钮全部由后端 can* 决定 -->
 <!-- 11-16 反馈：返回按钮 fixed 固定在顶部，不随内容滚动消失（nav-top 组件 11-15 已支持 fixed） -->
-<nav-top back fixed />
+<nav-top back fixed custom-back bind:back="onNavBack" />
 
+<view class="sv-flex {{anim === 'enter' ? 'detail-page-enter' : (anim === 'exit' ? 'detail-page-exit' : '')}}" style="height: calc(100vh - {{stickyTop}}px)">
+<scroll-view
+  class="page-scroll page-scroll--fill"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="detail {{actions.length ? 'detail--bar' : ''}}">
-  <!-- 加载中 / 加载失败互斥；404 说明无权可见，单独给「回大厅」出路 -->
+  <!-- 等待 / 加载失败互斥；404 说明无权可见，单独给「回大厅」出路 -->
   <view wx:if="{{loading}}" class="detail-state">
-    <text class="t-sub">加载中…</text>
+    <loading-eyes />
   </view>
   <view wx:elif="{{error}}" class="detail-state">
     <!-- 404 / 网络失败共用这个卡片，文案由 js 决定 -->
@@ -13,120 +27,190 @@
       <text class="t-title">{{error}}</text>
       <text class="t-sub detail-state__desc">{{errorDesc}}</text>
       <!-- 临时失败先给「重试」，404 只给「回大厅」（P1-2） -->
-      <button wx:if="{{canRetry}}" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
+      <button wx:if="{{canRetry}}" hover-class="btn--press" class="btn btn-primary btn-block detail-state__btn" bindtap="onRetry">重试</button>
       <button
-        class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn"
+        hover-class="btn--press" class="btn {{canRetry ? 'btn-ghost' : 'btn-primary'}} btn-block detail-state__btn"
         bindtap="onBackHall"
       >回代取大厅</button>
     </view>
   </view>
   <block wx:else>
-    <!-- ① 头部：状态 / 报酬 / 时间 -->
-    <view class="card detail-head">
-      <view class="detail-head__tags">
-        <view class="detail-head__tag">
-          <status-tag domain="errand" status="{{order.status}}" plain="{{false}}" />
-        </view>
-        <view wx:if="{{order.visibility === 'private'}}" class="detail-head__tag">
-          <text class="tag tag-gray">私单 · 未进大厅</text>
-        </view>
-        <view wx:if="{{isPublisher}}" class="detail-head__tag">
-          <text class="tag tag-primary">我发布的</text>
-        </view>
-        <view wx:elif="{{isRunner}}" class="detail-head__tag">
-          <text class="tag tag-primary">我接的单</text>
-        </view>
+    <!-- 小票外壳（11-25 用户预览确认「细锯齿」版）：纸面 #FFFDF7，
+         上下各一条齿距 26rpx / 齿高 16rpx 的锯齿边，内部四张卡片连成一张票
+         （卡片之间的 20rpx 间距换成虚线撕线）。齿条是纯 CSS 三角，不用图片 -->
+    <view class="receipt">
+      <view class="receipt__saw receipt__saw--top">
+        <view wx:for="{{sawTeeth}}" wx:key="*this" class="receipt__tooth receipt__tooth--top"></view>
       </view>
 
-      <view class="detail-head__reward">
-        <text class="detail-head__price">¥{{rewardText}}</text>
-        <text class="detail-head__label">跑腿报酬</text>
-      </view>
-      <text class="detail-head__time">{{timeText}}</text>
-    </view>
-
-    <!-- ② 路线：取件 → 送达 -->
-    <view class="card detail-route">
-      <view class="detail-route__line">
-        <view class="detail-route__dot detail-route__dot--from"></view>
-        <view class="flex-1 detail-route__body">
-          <text class="detail-route__label">取件</text>
-          <text class="detail-route__value">{{areaText}}</text>
-          <text wx:if="{{order.remark}}" class="detail-route__remark">备注：{{order.remark}}</text>
-        </view>
-      </view>
-
-      <view class="detail-route__dash"></view>
-
-      <view class="detail-route__line">
-        <view class="detail-route__dot detail-route__dot--to"></view>
-        <view class="flex-1 detail-route__body">
-          <text class="detail-route__label">送达</text>
-          <text class="detail-route__value">{{order.deliveryLocation}}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- ③ 物品与订单信息 -->
-    <view class="card detail-info">
-      <view class="detail-info__row">
-        <text class="detail-info__k">物品规格</text>
-        <text class="detail-info__v">{{sizeText}}</text>
-      </view>
-      <view class="detail-info__row">
-        <text class="detail-info__k">物品描述</text>
-        <text class="detail-info__v">{{order.itemDesc || '未填写'}}</text>
-      </view>
-      <view class="detail-info__row" bindtap="onCopyOrderId" hover-class="detail-info__row--hover">
-        <text class="detail-info__k">订单编号</text>
-        <text class="detail-info__v">#{{order.orderId}}<text class="detail-info__copy">复制</text></text>
-      </view>
-      <view class="detail-info__row">
-        <text class="detail-info__k">发布时间</text>
-        <text class="detail-info__v">{{createdText}}</text>
-      </view>
-      <!-- 已完成订单要能看到完成时间（P1-6） -->
-      <view wx:if="{{completedText}}" class="detail-info__row">
-        <text class="detail-info__k">完成时间</text>
-        <text class="detail-info__v">{{completedText}}</text>
-      </view>
-    </view>
-
-    <!-- ④ 发布人 / 接单人 -->
-    <view class="card detail-people">
-      <view class="detail-people__row">
-        <image wx:if="{{publisherAvatarUrl}}" class="detail-people__avatar" src="{{publisherAvatarUrl}}" mode="aspectFill" />
-        <view wx:else class="detail-people__avatar detail-people__avatar--text">{{publisherInitial}}</view>
-        <view class="flex-1 detail-people__info">
-          <text class="detail-people__name ellipsis">{{order.publisherNickname || '发布者'}}</text>
-          <text class="detail-people__sub">信用分 {{order.publisherCreditScore || '暂无'}}</text>
-        </view>
-        <text class="detail-people__role">发布人</text>
-      </view>
-
-      <block wx:if="{{order.runnerId}}">
-        <view class="divider"></view>
-        <view class="detail-people__row">
-          <image wx:if="{{runnerAvatarUrl}}" class="detail-people__avatar" src="{{runnerAvatarUrl}}" mode="aspectFill" />
-          <view wx:else class="detail-people__avatar detail-people__avatar--text">{{runnerInitial}}</view>
-          <view class="flex-1 detail-people__info">
-            <text class="detail-people__name ellipsis">{{order.runnerNickname || '跑腿同学'}}</text>
-            <text class="detail-people__sub">{{takenText}}</text>
+      <view class="receipt__body">
+        <!-- ⓪ 顶部预览图：发布时上传了物品图就显示第一张（可点开预览），
+             没有图片时退回与大厅卡片同一套品类插画 -->
+        <view class="card detail-hero receipt__sec" data-index="0" bindtap="onPreviewErrandImage" hover-class="detail-hero--hover">
+          <!-- 无图时插画缩到约 1/3 居中、50% 透明、下方「暂无图片」小字；有实拍图满铺（11-27 反馈） -->
+          <view wx:if="{{heroNoImage}}" class="detail-hero__ph">
+            <image class="detail-hero__ph-img" src="{{heroImage}}" mode="aspectFit" />
+            <text class="detail-hero__ph-cap">暂无图片</text>
           </view>
-          <text class="detail-people__role">接单人</text>
+          <image wx:else class="detail-hero__img" src="{{heroImage}}" mode="aspectFill" />
         </view>
-      </block>
 
-      <!-- 联系入口已并入底部操作栏（11-16 反馈）：卡片里只留发布人/接单人信息 -->
+        <!-- ① 头部：状态 / 报酬 / 时间 -->
+        <view class="card detail-head receipt__sec">
+          <view class="detail-head__tags">
+            <view class="detail-head__tag">
+              <status-tag domain="errand" status="{{order.status}}" plain="{{false}}" />
+            </view>
+            <view wx:if="{{order.visibility === 'private'}}" class="detail-head__tag">
+              <text class="tag tag-gray">私单 · 未进大厅</text>
+            </view>
+            <view wx:if="{{isPublisher}}" class="detail-head__tag">
+              <text class="tag tag-primary">我发布的</text>
+            </view>
+            <view wx:elif="{{isRunner}}" class="detail-head__tag">
+              <text class="tag tag-primary">我接的单</text>
+            </view>
+          </view>
+
+          <view class="detail-head__reward">
+            <text class="detail-head__price">¥{{rewardText}}</text>
+            <text class="detail-head__label">跑腿报酬</text>
+          </view>
+          <text class="detail-head__time">{{timeText}}</text>
+        </view>
+
+        <!-- ② 路线：登机牌式横向布局（11-25 用户预览确认 + 同日两处修正）
+             取件左（地标在上、片区小字在下）/ 送达右（不截断），中间跑步小人 + 整圈粒子环
+             （顶部色最重、向两侧渐浅，四档全取自既有令牌）；备注移到虚线下 -->
+        <view class="card detail-route receipt__sec">
+          <view class="detail-route__top">
+            <view class="detail-route__col">
+              <view class="detail-route__line">
+                <view class="detail-route__dot detail-route__dot--from"></view>
+                <text class="detail-route__label">取件</text>
+              </view>
+              <text class="detail-route__value">{{routeFromMain}}</text>
+              <text wx:if="{{routeFromSub}}" class="detail-route__value-sub">{{routeFromSub}}</text>
+            </view>
+
+            <view class="detail-route__mid">
+              <view class="detail-route__ring">
+                <view
+                  wx:for="{{routeDots}}"
+                  wx:key="k"
+                  class="detail-route__ring-dot detail-route__ring-dot--{{item.c}}"
+                  style="left: {{item.x}}%; top: {{item.y}}%"
+                ></view>
+              </view>
+              <image class="detail-route__runner" src="/assets/icons/runner.png" mode="aspectFit" />
+            </view>
+
+            <view class="detail-route__col detail-route__col--to">
+              <view class="detail-route__line">
+                <text class="detail-route__label">送达</text>
+                <view class="detail-route__dot detail-route__dot--to"></view>
+              </view>
+              <text class="detail-route__value">{{order.deliveryLocation}}</text>
+            </view>
+          </view>
+
+          <view wx:if="{{order.remark}}" class="detail-route__foot">
+            <text class="detail-route__remark-label">备注</text>
+            <text class="detail-route__remark">{{order.remark}}</text>
+          </view>
+        </view>
+
+        <!-- ③ 物品与订单信息（11-25 层级优化：主 = 规格+描述，辅 = 编号/时间）
+             接单人进来要回答「带不带得动」（规格）和「搬什么」（描述）——这两条是主；
+             编号与时间只是存档信息，压灰 + 分割线隔开 -->
+        <view class="card detail-info receipt__sec">
+          <view class="detail-info__spec">
+            <text class="detail-info__label">物品规格</text>
+            <text class="detail-info__size-chip">{{sizeText}}</text>
+          </view>
+          <view class="detail-info__desc-block">
+            <text class="detail-info__label">物品描述</text>
+            <text class="detail-info__desc {{order.itemDesc ? '' : 'detail-info__desc--empty'}}">{{order.itemDesc || '未填写'}}</text>
+            <view wx:if="{{errandImages.length}}" class="detail-info__images">
+              <image
+                wx:for="{{errandImages}}"
+                wx:key="*this"
+                class="detail-info__image"
+                src="{{item}}"
+                mode="aspectFill"
+                data-index="{{index}}"
+                bindtap="onPreviewErrandImage"
+                hover-class="detail-info__image--hover"
+              />
+            </view>
+          </view>
+          <view class="detail-info__meta">
+            <view class="detail-info__row detail-info__row--meta" bindtap="onCopyOrderId" hover-class="detail-info__row--hover">
+              <text class="detail-info__k">订单编号</text>
+              <text class="detail-info__v">#{{order.orderId}}<text class="detail-info__copy">复制</text></text>
+            </view>
+            <view class="detail-info__row detail-info__row--meta">
+              <text class="detail-info__k">发布时间</text>
+              <text class="detail-info__v">{{createdText}}</text>
+            </view>
+            <!-- 已完成订单要能看到完成时间（P1-6） -->
+            <view wx:if="{{completedText}}" class="detail-info__row detail-info__row--meta">
+              <text class="detail-info__k">完成时间</text>
+              <text class="detail-info__v">{{completedText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- ④ 发布人 / 接单人 -->
+        <view class="card detail-people receipt__sec">
+          <view class="detail-people__row">
+            <image wx:if="{{publisherAvatarUrl}}" class="detail-people__avatar" src="{{publisherAvatarUrl}}" mode="aspectFill" />
+            <view wx:else class="detail-people__avatar detail-people__avatar--text">{{publisherInitial}}</view>
+            <view class="flex-1 detail-people__info">
+              <text class="detail-people__name ellipsis">{{order.publisherNickname || '发布者'}}</text>
+              <text class="detail-people__sub">信用分 {{order.publisherCreditScore || '暂无'}}</text>
+            </view>
+            <text class="detail-people__role">发布人</text>
+          </view>
+
+          <block wx:if="{{order.runnerId}}">
+            <view class="divider"></view>
+            <view class="detail-people__row">
+              <image wx:if="{{runnerAvatarUrl}}" class="detail-people__avatar" src="{{runnerAvatarUrl}}" mode="aspectFill" />
+              <view wx:else class="detail-people__avatar detail-people__avatar--text">{{runnerInitial}}</view>
+              <view class="flex-1 detail-people__info">
+                <text class="detail-people__name ellipsis">{{order.runnerNickname || '跑腿同学'}}</text>
+                <text class="detail-people__sub">{{takenText}}</text>
+              </view>
+              <text class="detail-people__role">接单人</text>
+            </view>
+          </block>
+
+          <!-- 联系入口已并入底部操作栏（11-16 反馈）：卡片里只留发布人/接单人信息 -->
+        </view>
+
+        <!-- ⑤ 小票落款（11-25）：发布者下方的装饰图案 + 当日日期 + 随机短句。
+             短句 10 条随机一条（utils/motto.js，onLoad 抽取开页定死防闪变），
+             替换掉原来的时间行；图案为随机线条图（assets/receipt/） -->
+        <view class="receipt__sec receipt-doodle">
+          <image class="receipt-doodle__img" src="{{receiptImage}}" mode="aspectFit" />
+          <text class="receipt-doodle__date">{{receiptDate}}</text>
+          <text class="receipt-doodle__motto">{{receiptMotto}}</text>
+        </view>
+      </view>
+
+      <view class="receipt__saw receipt__saw--bottom">
+        <view wx:for="{{sawTeeth}}" wx:key="*this" class="receipt__tooth receipt__tooth--bottom"></view>
+      </view>
     </view>
 
-    <!-- ⑤ 固定出路：从 redirectTo / 分享 / 外部链接进来时页面栈只有 1 层，
+    <!-- ⑥ 固定出路：从 redirectTo / 分享 / 外部链接进来时页面栈只有 1 层，
          nav-top 不显示返回键，正常态必须自带一条回大厅的入口（P1-7） -->
     <view class="detail-backhall" bindtap="onBackHall" hover-class="detail-backhall--hover">
       <text class="detail-backhall__text">回代取大厅</text>
     </view>
 
-    <!-- ⑥ 状态说明：订单已无可用操作时告诉用户为什么 -->
+    <!-- ⑦ 状态说明：订单已无可用操作时告诉用户为什么 -->
     <view wx:if="{{!actions.length}}" class="detail-hint">
       <text wx:if="{{order.status === 'completed'}}">订单已完成，如需沟通请点「联系 TA」。</text>
       <text wx:elif="{{order.status === 'cancelled'}}">订单已取消，不会再出现在大厅。</text>
@@ -135,19 +219,23 @@
     </view>
   </block>
 </view>
+</scroll-view>
 
-<!-- 底部操作栏：聊天入口与订单动作并排（11-16 反馈），按钮全部来自 js 的 actions -->
-<view wx:if="{{actions.length}}" class="detail-bar">
+<!-- 底部操作栏：聊天入口与订单动作并排（11-16 反馈），按钮全部来自 js 的 actions。
+     必须放在 scroll-view 外：fixed 在 scroll-view 内会被内部 transform 破坏、跟随内容滚动（11-25 错位根因） -->
+<view wx:if="{{actions.length}}" class="detail-bar {{anim === 'enter' ? 'detail-page-enter' : (anim === 'exit' ? 'detail-page-exit' : '')}}">
   <text wx:if="{{chatTip}}" class="detail-bar__tip">{{chatTip}}</text>
   <view class="detail-bar__row">
     <button
       wx:for="{{actions}}"
       wx:key="key"
       class="btn detail-bar__btn {{item.primary ? 'btn-primary' : (item.danger ? 'btn-danger' : 'btn-ghost')}}"
+      hover-class="btn--press"
       data-key="{{item.key}}"
       disabled="{{submitting}}"
       loading="{{submitting && actionKey === item.key}}"
       bindtap="onAction"
     >{{item.text}}</button>
   </view>
+</view>
 </view>

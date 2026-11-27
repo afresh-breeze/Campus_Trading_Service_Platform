@@ -1,7 +1,35 @@
 /* 我的（B 成员：个人中心，tab 4）——只引用 app.wxss 变量，不写魔法色值 */
 .mine {
-  /* 注意：padding 简写会覆盖 .page 的 padding-bottom，这里必须显式补回悬浮 tabBar 的避让高度 */
-  padding: 24rpx 24rpx calc(150rpx + env(safe-area-inset-bottom));
+  /* 顶部交给吸顶标题栏，这里只补回悬浮 tabBar 的避让高度 */
+  padding: 0 0 calc(150rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部吸顶标题（与二手市场 / 代取大厅同位置） ---------- */
+.mine-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 var(--space-page) 10rpx;
+  background-color: var(--color-bg);
+}
+.mine-bar__safe {
+  overflow: hidden;
+}
+.mine-bar__head {
+  display: flex;
+  align-items: center;
+}
+.mine-bar__title {
+  font-size: var(--font-2xl);
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
+  color: var(--color-text);
+  letter-spacing: 2rpx;
+  line-height: 1;
+}
+.mine-content {
+  padding: 24rpx;
 }
 
 /* ---------- 用户卡 ---------- */
@@ -9,13 +37,29 @@
   display: flex;
   align-items: center;
   padding: 32rpx 28rpx;
-  background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
+  /* UI 优化 6.6：暖色渐变用户卡 + 右上柔光圆 */
+  background: linear-gradient(135deg, #FCE7C8 0%, #FFFFFF 70%);
+  border-radius: 28rpx;
   box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mine-hero::before {
+  content: '';
+  position: absolute;
+  right: -40rpx;
+  top: -50rpx;
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 168, 116, 0.22), transparent 70%);
+  pointer-events: none;
 }
 
 .mine-hero--hover {
-  background-color: var(--color-divider);
+  /* 全站口径：只压暗不缩放（11-25 方案二） */
+  opacity: 0.94;
 }
 
 .mine-hero__avatar {
@@ -23,6 +67,10 @@
   height: 112rpx;
   flex-shrink: 0;
   border-radius: 50%;
+  /* 4rpx 页面底色描边，头像更「立」（方案 6.6） */
+  border: 4rpx solid var(--color-bg);
+  box-sizing: content-box;
+  margin-left: 4rpx;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -56,7 +104,7 @@
 }
 
 .mine-hero__name {
-  font-size: 34rpx;
+  font-size: 36rpx;
   font-weight: 600;
   color: var(--color-text);
   max-width: 320rpx;
@@ -79,62 +127,98 @@
 }
 
 /* ---------- 四项统计 ---------- */
-.mine-stats {
+/* ---------- 二手市场 / 代取 合并插画卡（11-25 v4，先预览后落地） ---------- */
+.mkt-card {
   margin-top: 20rpx;
-  display: flex;
-  align-items: stretch;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-
-.mine-stats__item {
-  flex: 1;
-  padding: 24rpx 0 22rpx;
+.mkt-card__divider {
+  border-top: 1rpx dashed var(--color-divider);
+  margin: 0 28rpx;
+}
+.mkt-sec {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-  position: relative;
+  align-items: stretch;
 }
-
-/* 分隔线用伪元素，避免每格都加 border 造成首尾多一条 */
-.mine-stats__item::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 30rpx;
-  bottom: 30rpx;
-  width: 1px;
-  background-color: var(--color-divider);
+.mkt-sec__inner {
+  flex: 1;
+  min-width: 0;
+  padding: 28rpx 28rpx 16rpx;
 }
-
-.mine-stats__item:last-child::after {
-  display: none;
-}
-
-.mine-stats__item--hover {
-  background-color: var(--color-divider);
-}
-
-.mine-stats__num {
-  font-size: 34rpx;
-  font-weight: 600;
+.mkt-sec__title {
+  font-size: 54rpx;
+  line-height: 1.25;
+  font-weight: 700;
   color: var(--color-text);
-  line-height: 1.1;
 }
-
-.mine-stats__label {
-  font-size: 22rpx;
-  color: var(--color-text-3);
+/* 行：名称左 / 数量右 / 箭头最右；按压背景平滑变化（压暗不缩放，A 侧口径防字抖） */
+.mkt-card__row {
+  display: flex;
+  align-items: center;
+  margin: 0 -12rpx;
+  padding: 26rpx 20rpx 24rpx;
+  border-radius: 20rpx;
+  border-bottom: 1rpx dashed var(--color-divider);
+  transition: background-color 150ms ease;
+}
+.mkt-card__row:last-child {
+  border-bottom: none;
+}
+.mkt-card__row--press {
+  background-color: var(--color-surface-2);
+}
+.mkt-card__name {
+  flex: 1;
+  /* 与底部「设置 / 帮助与反馈 / 关于」入口文字同号（11-28 用户要求） */
+  font-size: 30rpx;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+/* 数量是次级信息：深棕加粗、固定宽右对齐（接单设置留白占位） */
+.mkt-card__num {
+  flex: none;
+  width: 60rpx;
+  text-align: right;
+  /* 数量与名称同号，并与底部入口文字一致 */
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-variant-numeric: tabular-nums;
+}
+.mkt-card__arrow {
+  flex: none;
+  margin-left: 16rpx;
+  font-size: 34rpx;
+  line-height: 1;
+  color: var(--color-text-4);
+}
+.mkt-sec__art {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 16rpx 20rpx 0;
+}
+/* 代取区不再镜像（11-25 用户反馈）：文字区左与二手市场对齐、插画在右，标题左上 */
+.mkt-card__img--shop {
+  height: 236rpx;
+  width: 236rpx;
+  opacity: 0.55;
+}
+.mkt-card__img--errand {
+  height: 236rpx;
+  width: 236rpx;
+  opacity: 0.55;
 }
 
 /* ---------- 入口分组 ---------- */
 .mine-group {
   margin-top: 20rpx;
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
@@ -143,15 +227,16 @@
   padding: 22rpx 28rpx 10rpx;
   font-size: 22rpx;
   color: var(--color-text-3);
-  letter-spacing: 1rpx;
+  letter-spacing: 2rpx;
 }
 
 .mine-cell {
   display: flex;
   align-items: center;
-  height: 96rpx;
+  height: 100rpx;
   padding: 0 28rpx;
   position: relative;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mine-cell::after {
@@ -169,7 +254,7 @@
 }
 
 .mine-cell--hover {
-  background-color: var(--color-divider);
+  background-color: var(--color-surface-2);
 }
 
 .mine-cell__text {
@@ -188,6 +273,7 @@
 .mine-logout {
   margin-top: 20rpx;
   height: 96rpx;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   justify-content: center;

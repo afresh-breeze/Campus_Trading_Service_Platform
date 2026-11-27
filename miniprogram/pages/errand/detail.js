@@ -21,8 +21,50 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const campus = require('../../utils/campus');
+// 品类插画派生（11-25 抽到公共层，与大厅列表缩略图同一张图、同一套规则）
+const errandUtil = require('../../utils/errand');
+// 小票落款随机短句（11-25：替换「打印时间」行，与随机图案同一批在 onLoad 抽取）
+const mottoUtil = require('../../utils/motto');
 
 const SIZE_TEXT = { small: '小件', medium: '中件', large: '大件' };
+
+// 粒子环（11-25 用户反馈）：跑步小人整圈环绕，顶部色最重、向两侧渐浅。
+// 四档色全部取自既有令牌（wxss 里定义 --0..--3 变体），js 只算位置与档位。
+const RING_STEPS = 16;
+const routeDots = [];
+for (let i = 0; i < RING_STEPS; i++) {
+  const deg = (i * 360) / RING_STEPS;
+  const rad = (deg * Math.PI) / 180;
+  const eff = Math.min(deg, 360 - deg); // 距顶部的角度 0..180
+  routeDots.push({
+    k: i,
+    x: +(50 + 50 * Math.sin(rad)).toFixed(2),
+    y: +(50 - 50 * Math.cos(rad)).toFixed(2),
+    c: eff <= 22.5 ? 0 : eff <= 67.5 ? 1 : eff <= 112.5 ? 2 : 3
+  });
+}
+
+/* ---------------- 小票装饰（11-25 用户预览确认「细锯齿」版） ----------------
+   SAW_TEETH 是固定数据、只算一次，页面里用 wx:for 铺出来，不占运行时开销：
+   纸面在 rpx 下恒为 686rpx（750 - 两侧 32rpx），齿距 26rpx → 26.4 齿，
+   取 27 齿（702rpx）由 .receipt__saw 的 overflow 裁掉末齿。 */
+const SAW_TEETH = [];
+for (let i = 0; i < 27; i++) SAW_TEETH.push(i);
+
+/* 小票落款图案（11-25 用户定稿）：原为 view 拼条形码，用户反馈像真的码
+   会引起误会（扫码/支付联想）→ 换成卡通线条图案随机展示。
+   图源 E:\Qin\photo\ui线条图案（512×512 黑线条透明底），按内容语义命名入库
+   assets/receipt/（cat 睡猫 / mouse 老鼠 / cake 蛋糕 / umbrella 雨中撑伞 / trees 树丛；
+   狗图按用户要求已删），每次打开详情页随机抽一张；刷新/回跳保持同一张，不闪变。
+   用户加新图：拷进 assets/receipt/ 按语义命名，再往清单追加一行即可。 */
+const DOODLE_IMAGES = [
+  '/assets/receipt/cat.png',
+  '/assets/receipt/mouse.png',
+  '/assets/receipt/cake.png',
+  '/assets/receipt/umbrella.png',
+  '/assets/receipt/trees.png'
+];
 
 /** 时间口径：asap 无时间字段；deadline 只有截止；range 有起止 */
 function timeText(order) {
@@ -73,6 +115,7 @@ function buildActions(order) {
 
 Page({
   data: {
+    anim: 'enter',
     id: 0,
     loading: true,
     error: '',
@@ -80,7 +123,16 @@ Page({
     order: null,
     // 展示层派生字段（wxml 不做计算，全部在 js 里算好）
     sizeText: '',
-    areaText: '',
+    heroImage: '',
+    errandImages: [],
+    routeFromMain: '',
+    routeFromSub: '',
+    routeDots: [],
+    // 小票装饰：齿数固定；落款图案在 onLoad 里随机抽，进页面时定死
+    sawTeeth: SAW_TEETH,
+    receiptImage: DOODLE_IMAGES[0],
+    receiptDate: '',
+    receiptMotto: '',
     rewardText: '0.00',
     timeText: '',
     createdText: '',
@@ -103,6 +155,13 @@ Page({
   },
 
   onLoad(options) {
+    // 11-25 下拉刷新改 scroll-view refresher（Mode A）：容器高度 = 视口 − 导航高度
+    try {
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+      this.setData({ stickyTop: menu && menu.bottom ? menu.bottom + 6 : 64 });
+    } catch (e) {
+      this.setData({ stickyTop: 64 });
+    }
     const id = Number((options && options.id) || 0);
     if (!id) {
       util.toast('缺少订单号');
@@ -110,9 +169,35 @@ Page({
       return;
     }
     this.setData({ id });
+    // 落款图案随机抽一张：只在打开页面时定，之后的 fetch/回跳不重抽（避免图案闪变）
+    this.setData({
+      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)],
+      // 短句与图案同批抽取：开页定死，fetch/回跳/刷新不重抽（防闪变）
+      receiptMotto: mottoUtil.randomMotto()
+    });
   },
 
   // 从聊天页返回时必须看到最新状态（可能刚被接单/完成），所以每次 onShow 都重拉
+  onReady() {
+    // 入场动画播完移除动画类：transform 常驻会改变后代 fixed 的包含块（detail-bar 错位的老坑）
+    this._enterTimer = setTimeout(() => {
+      if (this.data.anim === 'enter') this.setData({ anim: '' });
+    }, 220);
+  },
+
+  onNavBack() {
+    // 退场：先播右移离场动画（先慢后快）再返回；系统手势返回走原生转场（拦截不到）
+    if (this.data.anim === 'exit') return;
+    clearTimeout(this._enterTimer);
+    this.setData({ anim: 'exit' });
+    this._exitTimer = setTimeout(() => wx.navigateBack(), 250);
+  },
+
+  onUnload() {
+    clearTimeout(this._enterTimer);
+    clearTimeout(this._exitTimer);
+  },
+
   onShow() {
     if (!this.data.id) return;
     const app = getApp();
@@ -123,8 +208,10 @@ Page({
     this.fetch();
   },
 
-  onPullDownRefresh() {
-    this.fetch().then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.fetch().then(done, done);
   },
 
   fetch() {
@@ -173,6 +260,8 @@ Page({
     const isPublisher = !!myId && Number(order.publisherId) === myId;
     const isRunner = !!order.runnerId && Number(order.runnerId) === myId;
     const publisherNick = order.publisherNickname || '发布者';
+    // 小票落款只取一次「此刻」，避免两次 new Date() 跨分钟导致日期与时间不一致
+    const printAt = new Date();
 
     // 联系谁：我是发布者找接单人；其他人（接单者 / 聊过私单的跑腿 / 大厅单的潜在跑腿）找发布者
     let chatPeerId = 0;
@@ -197,11 +286,23 @@ Page({
       errorDesc: '',
       order,
       sizeText: SIZE_TEXT[order.itemSize] || order.itemSize || '未填写',
-      // 地标与片区同名时只显示一次，避免「桃园 · 桃园」
-      areaText:
-        order.pickupPlace && order.pickupPlace !== order.pickupArea
-          ? order.pickupArea + ' · ' + order.pickupPlace
-          : order.pickupArea || '未填写',
+      // 顶部大图优先用发布时上传的物品图；没传图时退回与大厅卡片同一套品类插画。
+      // heroNoImage 标记占位态：插画缩到约 1/3 居中 + 50% 透明度 + 下方「暂无图片」
+      // 小字（11-27 反馈），有实拍图时仍满铺 aspectFill。
+      heroImage: adapter.toImageList(order)[0] || errandUtil.categoryIcon(order),
+      heroNoImage: !adapter.toImageList(order)[0],
+      errandImages: adapter.toImageList(order),
+      // 11-25 用户反馈：详情页取件地点「地标在上、片区在下」两行，不许截断——
+      // 列表卡可以 ellipsis，详情页出现「南区教学区 · …」显示不全是大忌
+      routeFromMain: campus.shortPlace(order.pickupArea, order.pickupPlace) || '未填写',
+      routeFromSub:
+        campus.shortPlace(order.pickupArea, order.pickupPlace) &&
+        campus.shortPlace(order.pickupArea, order.pickupPlace) !== order.pickupArea
+          ? order.pickupArea
+          : '',
+      routeDots,
+      // 小票落款（11-25）：日期取此刻；「打印时间」行已换成随机短句（开页时已定）
+      receiptDate: util.formatTime(printAt, false),
       rewardText: util.formatPrice(order.reward),
       timeText: timeText(order),
       createdText: util.fromNow(order.createdAt),
@@ -408,6 +509,16 @@ Page({
     const order = this.data.order;
     if (!order) return;
     util.copy(String(order.orderId), '订单号已复制');
+  },
+
+  onPreviewErrandImage(e) {
+    const urls = this.data.errandImages || [];
+    if (!urls.length) return;
+    const index = Number((e.currentTarget.dataset && e.currentTarget.dataset.index) || 0);
+    wx.previewImage({
+      current: urls[index] || urls[0],
+      urls
+    });
   },
 
   onBackHall() {

@@ -59,12 +59,20 @@ function check(name, cond, extra) {
   const p2003 = makePage();
   p2003.apply(await mock.run('/api/errands/2003', 'GET', {}));
   check('range 时间文案含起止', /2026-11-12 16:00 至 2026-11-12 18:00/.test(p2003.data.timeText), p2003.data.timeText);
-  check('地标=片区时只显示一次', p2003.data.areaText === '李园', p2003.data.areaText);
+  check('无地标片区：主级=片区名且无片区小字', p2003.data.routeFromMain === '李园' && p2003.data.routeFromSub === '', {
+    main: p2003.data.routeFromMain,
+    sub: p2003.data.routeFromSub
+  });
 
   const p2006 = makePage();
   p2006.apply(await mock.run('/api/errands/2006', 'GET', {}));
   check('asap/deadline 时间文案', p2006.data.timeText.indexOf('前送达') > 0, p2006.data.timeText);
   check('报酬两位小数', p2006.data.rewardText === '5.00', p2006.data.rewardText);
+  check('有地标片区：主级=地标、小字=片区（11-25 用户反馈）', p2006.data.routeFromMain === '第16教学楼' && p2006.data.routeFromSub === '北区教学区', {
+    main: p2006.data.routeFromMain,
+    sub: p2006.data.routeFromSub
+  });
+  check('粒子环 16 点已生成', p2006.data.routeDots.length === 16 && p2006.data.routeDots[0].c === 0, p2006.data.routeDots.length);
   check('我是发布者 isPublisher=true', p2006.data.isPublisher === true);
   check('联系对象=接单人 8', p2006.data.chatPeerId === 8, p2006.data.chatPeerId);
 
@@ -122,6 +130,187 @@ function check(name, cond, extra) {
       navs[0].indexOf('itemSize=small') > -1,
     navs
   );
+
+  console.log('\n[12] 物品信息卡视觉层级（11-25：主 = 规格+描述，辅 = 编号/时间）');
+  const fsD = require('fs');
+  const wxmlD = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.wxml'), 'utf8');
+  const wxssD = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.wxss'), 'utf8');
+  check('规格独立成主级行 + 胶囊节点', /detail-info__spec/.test(wxmlD) && /detail-info__size-chip/.test(wxmlD), 'wxml 未见规格胶囊');
+  check('描述独立成块（左对齐整块排版）', /detail-info__desc-block/.test(wxmlD) && /detail-info__desc /.test(wxmlD), 'wxml 未见描述块');
+  check('未填写走弱化变体', /detail-info__desc--empty/.test(wxmlD), 'wxml 未见空描述变体');
+  check('编号/时间收进辅组 meta', /detail-info__meta/.test(wxmlD) && (wxmlD.match(/detail-info__row--meta/g) || []).length >= 2, '辅组结构不符');
+  check('主级字号 32rpx（--font-lg）', /\.detail-info__desc\s*\{[\s\S]*?font-size: var\(--font-lg\)/.test(wxssD) && /\.detail-info__size-chip\s*\{[\s\S]*?font-size: var\(--font-lg\)/.test(wxssD), '主级字号不符');
+  check('主级加粗 700（描述按用户反馈加粗）', /\.detail-info__desc\s*\{[\s\S]*?font-weight: 700/.test(wxssD), '描述未加粗');
+  check('辅级 24rpx 灰阶（--font-sm + text-2/3）', /\.detail-info__v\s*\{[\s\S]*?font-size: var\(--font-sm\)[\s\S]*?color: var\(--color-text-2\)/.test(wxssD), '辅级样式不符');
+  check('辅组有分割线隔开主辅', /border-top: 1rpx solid var\(--color-divider\)/.test(wxssD), '未见分割线');
+  check('复制交互保留在编号行', /bindtap="onCopyOrderId"/.test(wxmlD), '复制交互丢失');
+
+  console.log('\n[13] 路线卡登机牌式布局（11-25 用户预览确认：横向 + 跑步小人 + 粒子弧 + 备注下移）');
+  check('横向三段结构（top / col / mid）', /detail-route__top/.test(wxmlD) && /detail-route__col/.test(wxmlD) && /detail-route__mid/.test(wxmlD), 'wxml 未见三段结构');
+  check('送达列右对齐 class', /detail-route__col--to/.test(wxmlD), 'wxml 未见右对齐列');
+  check('跑步图标引用本地资源', /src="\/assets\/icons\/runner\.png"/.test(wxmlD), 'wxml 未见 runner 图标');
+  check('runner.png 已入库', fsD.existsSync(path.join(REPO, 'assets', 'icons', 'runner.png')), '图标文件缺失');
+  check('粒子环结构（ring + wx:for routeDots）', /detail-route__ring"/.test(wxmlD) && /wx:for="\{\{routeDots\}\}"/.test(wxmlD), '环结构不符');
+  check('粒子环四档色全用令牌（无新配色）', ['0', '1', '2', '3'].every((n) => new RegExp('detail-route__ring-dot--' + n + '\\s*\\{[\\s\\S]*?background-color: var\\(--color-[a-z-]+\\)').test(wxssD)), '环色变体不符');
+  check('js 预生成 16 个粒子且只算位置档位', (function () { const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8'); return /const RING_STEPS = 16/.test(src) && /routeDots\.push/.test(src); })(), 'js 粒子数据缺失');
+  check('取件地点两行：地标主级 + 片区小字', /routeFromMain/.test(wxmlD) && /detail-route__value-sub/.test(wxmlD) && /routeFromSub/.test(wxmlD), '两行结构不符');
+  check('送达地点不再截断（无 ellipsis）', !/detail-route__value ellipsis/.test(wxmlD), '地点仍被截断');
+  check('备注移到虚线下（label+内容，wx:if 保留）', /detail-route__foot/.test(wxmlD) && /detail-route__remark-label/.test(wxmlD) && /wx:if="\{\{order\.remark\}\}"/.test(wxmlD), '备注行结构不符');
+  check('粒子环色全用令牌、旧弧样式已删', !/detail-route__arc\s*\{/.test(wxssD) && /detail-route__ring\s*\{/.test(wxssD), '旧弧样式残留');
+  check('中段是定位父级（小人 absolute 的锚点，v0.31 错位回归闸）', /\.detail-route__mid\s*\{[\s\S]*?position: relative/.test(wxssD), 'mid 丢失 relative');
+  check('环与小人共用同一居中方案', /\.detail-route__ring\s*\{[\s\S]*?width: 84rpx/.test(wxssD) && /\.detail-route__runner\s*\{[\s\S]*?top: 50%/.test(wxssD), '居中方案不符');
+  check('虚线用既有 border 色', /border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '分割虚线色不符');
+  check('起终点圆点配色未变', /\.detail-route__dot--from\s*\{[\s\S]*?background-color: var\(--color-primary-dark\)/.test(wxssD) && /\.detail-route__dot--to\s*\{[\s\S]*?background-color: var\(--color-accent\)/.test(wxssD), '圆点配色被改');
+  check('地点值仍是主级 32rpx 加粗', /\.detail-route__value\s*\{[\s\S]*?font-size: var\(--font-lg\)[\s\S]*?font-weight: 700/.test(wxssD), '地点字号被改');
+
+  console.log('\n[14] 小票外壳 + 条形码落款（11-25 用户预览确认「细锯齿」版）');
+  const fsApp = require('fs');
+  const wxmlReceipt = /class="receipt"/.test(wxmlD)
+    && /receipt__saw receipt__saw--top/.test(wxmlD)
+    && /receipt__saw receipt__saw--bottom/.test(wxmlD)
+    && /class="receipt__body"/.test(wxmlD);
+  check('小票外壳结构（receipt + 上下齿条 + 纸面 body）', wxmlReceipt, '结构不符');
+  check('五段（预览图 + 四卡）都挂 receipt__sec', (wxmlD.match(/card detail-\w+ receipt__sec/g) || []).length === 5, '分段挂载不符');
+  check('齿条上下各一条 wx:for（sawTeeth × 2）', (wxmlD.match(/wx:for="\{\{sawTeeth\}\}"/g) || []).length === 2, '齿条数量不符');
+  check('落款图案结构（image + 随机 receiptImage + 日期 + 随机短句）', /receipt-doodle__img/.test(wxmlD) && /src="\{\{receiptImage\}\}"/.test(wxmlD)
+    && /receipt-doodle__date/.test(wxmlD) && /\{\{receiptMotto\}\}/.test(wxmlD)
+    && !/receipt-doodle__print/.test(wxmlD) && !/打印时间/.test(wxmlD), '落款区结构不符');
+  check('条码拼条已移除（防误会：不残留 bars/bar 节点与样式）', !/receipt-code/.test(wxmlD) && !/receipt-code/.test(wxssD) && !/barBars/.test(wxmlD), '条码残留');
+  check('纸面走 --color-paper 令牌（wxss 不写死 #FFFDF7）', /background-color: var\(--color-paper\)/.test(wxssD) && !/#FFFDF7/i.test(wxssD), '纸面色不符');
+  check('app.wxss 已定义 --color-paper', /--color-paper:\s*#FFFDF7/i.test(fsApp.readFileSync(path.join(REPO, 'app.wxss'), 'utf8')), '令牌缺失');
+  check('齿：26rpx 齿距 + 16rpx 齿高', /width: 26rpx/.test(wxssD) && /height: 16rpx/.test(wxssD) && /border-left: 13rpx solid transparent/.test(wxssD), '齿几何不符');
+  check('齿自带 box-sizing: border-box（回归闸：content-box 下会被 16rpx 齿条整条裁没）', /\.receipt__tooth\s*\{[\s\S]*?box-sizing: border-box/.test(wxssD), '缺 box-sizing');
+  check('齿条 overflow hidden（裁掉第 27 齿）', /\.receipt__saw\s*\{[\s\S]*?overflow: hidden/.test(wxssD), '齿条未裁边');
+  check('小票内卡片去浮层（透明 + 无阴影 + 无内边距）', /\.receipt__body \.card\s*\{[\s\S]*?padding: 0[\s\S]*?background-color: transparent[\s\S]*?box-shadow: none/.test(wxssD), '卡片覆盖不符');
+  check('分段之间是虚线撕线', /\.receipt__body \.receipt__sec \+ \.receipt__sec\s*\{[\s\S]*?border-top: 3rpx dashed var\(--color-border\)/.test(wxssD), '撕线不符');
+  check('5 张落款图案已入库（语义命名，dog 与旧 doodle-* 均已删）', ['cat', 'mouse', 'cake', 'umbrella', 'trees'].every(function (n) {
+      return fsD.existsSync(path.join(REPO, 'assets', 'receipt', n + '.png'));
+    }) && !fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'dog.png'))
+      && !fsD.existsSync(path.join(REPO, 'assets', 'receipt', 'doodle-1.png')), '图案文件不符');
+  check('js：27 齿 + 图案清单 + 随机抽取 + 日期/随机短句（打印时间已移除）', (function () {
+    const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
+    const onLoadBody = (src.match(/onLoad\(options\) \{[\s\S]*?\n  \},/) || [''])[0];
+    return /i < 27/.test(src)
+      && /const DOODLE_IMAGES = \[/.test(src)
+      && /cat\.png/.test(src) && /trees\.png/.test(src) && !/dog\.png/.test(src)
+      && /Math\.random\(\) \* DOODLE_IMAGES\.length/.test(onLoadBody)
+      && /receiptDate: util\.formatTime\(printAt, false\)/.test(src)
+      && !/receiptPrintTime/.test(src)
+      && /receiptMotto: mottoUtil\.randomMotto\(\)/.test(onLoadBody);
+  })(), 'js 数据缺失');
+  check('短句清单公用（utils/motto.js 10 条 + 两详情页都接入）', (function () {
+    const m = fsD.readFileSync(path.join(REPO, 'utils', 'motto.js'), 'utf8');
+    const itemJs = fsD.readFileSync(path.join(REPO, 'pages', 'item', 'detail.js'), 'utf8');
+    const itemWxml = fsD.readFileSync(path.join(REPO, 'pages', 'item', 'detail.wxml'), 'utf8');
+    const itemOnLoad = (itemJs.match(/onLoad\(options\) \{[\s\S]*?\n  \},/) || [''])[0];
+    const ten = (m.match(/'/g) || []).length >= 20; // 10 条引号短语 = 20 个单引号
+    return /function randomMotto/.test(m) && ten
+      && /Good things loading…/.test(m) && /˶ • × • ˶/.test(m)
+      && /receiptMotto: mottoUtil\.randomMotto\(\)/.test(itemOnLoad)
+      && /\{\{receiptMotto\}\}/.test(itemWxml)
+      && !/receiptPrintTime/.test(itemJs);
+  })(), '短句公用接入不符');
+
+  console.log('\n[15] 顶部预览图（11-25 对齐二手详情页：预览在上、详情在下）');
+  check('预览图在小票内第一段（hero 结构，无角标——用户要求删「示意图」）', /detail-hero receipt__sec/.test(wxmlD)
+    && /detail-hero__img/.test(wxmlD) && /src="\{\{heroImage\}\}"/.test(wxmlD)
+    && !/detail-hero__badge/.test(wxmlD) && !/示意图/.test(wxmlD), 'hero 结构不符');
+  check('预览图位于头部卡之前（wxml 中 hero 在 detail-head 前面）', wxmlD.indexOf('detail-hero') < wxmlD.indexOf('detail-head'), '顺序不符');
+  check('预览块等宽正方形（614rpx）+ 满铺 aspectFill + 防溢出裁切', /\.detail-hero\s*\{[\s\S]*?height: 614rpx[\s\S]*?overflow: hidden/.test(wxssD)
+    && /detail-hero__img\s*\{[\s\S]*?width: 100%[\s\S]*?height: 100%/.test(wxssD) && /mode="aspectFill"/.test(wxmlD), 'hero 样式不符');
+  check('js 预览图优先实拍图、无图时回退品类插画', (function () {
+    const src = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
+    return /require\('\.\.\/\.\.\/utils\/errand'\)/.test(src)
+      && /heroImage: adapter\.toImageList\(order\)\[0\] \|\| errandUtil\.categoryIcon\(order\)/.test(src)
+      && /heroImage: ''/.test(src)
+      && /errandImages: adapter\.toImageList\(order\)/.test(src);
+  })(), 'js 派生不符');
+  check('物品描述下方挂图片预览网格', /detail-info__images/.test(wxmlD)
+    && /wx:for="\{\{errandImages\}\}"/.test(wxmlD)
+    && /onPreviewErrandImage/.test(wxmlD), '图片网格结构不符');
+  const pImg = makePage();
+  pImg.apply(Object.assign({}, await mock.run('/api/errands/2004', 'GET', {}), {
+    images: [{ url: '/uploads/errand-real.png', sortNo: 1 }]
+  }));
+  check('订单有实拍图时 hero 与预览列表用它',
+    /\/uploads\/errand-real\.png$/.test(pImg.data.heroImage) && pImg.data.errandImages.length === 1,
+    { hero: pImg.data.heroImage, images: pImg.data.errandImages });
+
+  // 无图占位缩小版（11-27 反馈）：插画约 1/3 居中 + 50% 透明 + 「暂无图片」小字
+  const srcPh = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
+  check('详情 hero：heroNoImage 标记占位态', /heroNoImage: !adapter\.toImageList\(order\)\[0\]/.test(srcPh));
+  check('详情 hero：无图走占位分支、有图满铺', /wx:if="\{\{heroNoImage\}\}" class="detail-hero__ph"/.test(wxmlD) && /wx:else class="detail-hero__img"/.test(wxmlD));
+  check('详情 hero：占位插画 200rpx（614 的约 1/3）+ 50% 透明', /detail-hero__ph-img\s*\{[^}]*width: 200rpx;[^}]*opacity: 0\.5;/.test(wxssD));
+  check('详情 hero：下方「暂无图片」小字', />暂无图片</.test(wxmlD) && /detail-hero__ph-cap\s*\{[^}]*font-size: 22rpx;/.test(wxssD));
+  check('详情 hero：占位不影响预览点击（容器 bindtap 不变）', /class="card detail-hero receipt__sec" data-index="0" bindtap="onPreviewErrandImage"/.test(wxmlD));
+
+  check('公共层 errand.js 走占位模块，7 张线条图案齐备', (function () {
+    const u = fsD.readFileSync(path.join(REPO, 'utils', 'errand.js'), 'utf8');
+    if (!(/placeholder\.pick/.test(u) && /categoryIcon/.test(u))) return false;
+    // 11-26 定稿：占位图统一 assets/placeholder/（7 张），品类插画已弃用
+    return [1, 2, 3, 4, 5, 6, 7].every(function (n) {
+      const p2 = path.join(REPO, 'assets', 'placeholder', 'ph-' + n + '.png');
+      if (!fsD.existsSync(p2)) return false;
+      return fsD.readFileSync(p2).length > 0;
+    });
+  })(), '公共层或占位图缺失');
+  check('hall.js 已切换到公共层（本地 guessCategory 无残留）', (function () {
+    const h = fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'hall.js'), 'utf8');
+    return /errandUtil\.categoryIcon\(order\)/.test(h) && !/function guessCategory/.test(h);
+  })(), 'hall 切换不符');
+
+  console.log('\n[16] 眼睛 loading 组件（11-25 移植 loading-ui WanderingEyes，MIT）');
+  const compDir = path.join(REPO, 'components', 'loading-eyes');
+  check('组件四件套齐备', ['index.js', 'index.json', 'index.wxml', 'index.wxss'].every(function (f) {
+    return fsD.existsSync(path.join(compDir, f));
+  }), '组件文件缺失');
+  const compWxss = fsD.readFileSync(path.join(compDir, 'index.wxss'), 'utf8');
+  const compWxml = fsD.readFileSync(path.join(compDir, 'index.wxml'), 'utf8');
+  const compJs = fsD.readFileSync(path.join(compDir, 'index.js'), 'utf8');
+  check('扫视 + 眨眼两组 keyframes（节奏与原版一致）', /@keyframes eyes-move/.test(compWxss)
+    && /@keyframes eyes-blink/.test(compWxss)
+    && /translate\(-20rpx, 0\)/.test(compWxss) && /translate\(20rpx, 0\)/.test(compWxss)
+    && /translate\(0, 20rpx\)/.test(compWxss), 'keyframes 不符');
+  check('眨眼收缩到 24rpx（64 × 0.375，与原版 blinkScale 一致）', /height: 24rpx/.test(compWxss), '眨眼参数不符');
+  check('配色走令牌（眼白 bg-white + 瞳孔 primary-dark，不照抄黑/白）', /background-color: var\(--color-bg-white\)/.test(compWxss)
+    && /background-color: var\(--color-primary-dark\)/.test(compWxss)
+    && !/#000/.test(compWxss) && !/#fff[^d]/i.test(compWxss), '配色不符');
+  check('瞳孔占比对齐原版（直径 40rpx = 眼白 × 0.64，负 margin 居中锚点）', /margin: -20rpx 0 0 -20rpx/.test(compWxss)
+    && /width: 40rpx/.test(compWxss) && /left: 50%/.test(compWxss), '瞳孔定位不符');
+  check('周期可配（duration 属性 → --dur）', /duration: \{ type: Number/.test(compJs) && /--dur: \{\{duration\}\}ms/.test(compWxml), '周期配置不符');
+  check('短句随动画周期轮换（bindanimationiteration → onCycle，不用计时器防漂移）', /bindanimationiteration="onCycle"/.test(compWxml)
+    && /onCycle\(\)/.test(compJs) && /mottoUtil\.randomMotto\(\)/.test(compJs), '短句轮换不符');
+  check('mini 紧凑模式（footer 缩放）+ 短句可关', /mini: \{ type: Boolean/.test(compJs) && /wrap--mini/.test(compWxml) && /motto: \{ type: Boolean/.test(compJs), '模式参数不符');
+  check('详情页已注册并接入（loading 态只挂组件，无旧「加载中」文字）', (function () {
+    const pj = JSON.parse(fsD.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.json'), 'utf8'));
+    return pj.usingComponents['loading-eyes'] === '/components/loading-eyes/index'
+      && /<loading-eyes \/>/.test(wxmlD) && !/加载中/.test(wxmlD);
+    })(), '页面接入不符');
+  check('全站接入（13 个加载点：7 骨架 + 6 footer，均为页面注册 + wxml 使用）', (function () {
+    const pages = ['errand/hall', 'errand/runners', 'errand/detail', 'index/index', 'item/detail',
+      'chat/detail', 'chat/list', 'mine/errands', 'mine/favorites', 'mine/items',
+      'mine/profile', 'mine/runner', 'search/result'];
+    return pages.every(function (pg) {
+      const w = fsD.readFileSync(path.join(REPO, 'pages', pg + '.wxml'), 'utf8');
+      const j = JSON.parse(fsD.readFileSync(path.join(REPO, 'pages', pg + '.json'), 'utf8'));
+      return (w.match(/<loading-eyes/g) || []).length >= 1
+        && j.usingComponents['loading-eyes'] === '/components/loading-eyes/index';
+    });
+  })(), '全站接入不符');
+  check('旧「加载中」文字全站无残留（被短句取代）', (function () {
+    let bad = 0;
+    const glob = fsD.readdirSync(path.join(REPO, 'pages'));
+    glob.forEach(function (dir) {
+      const dirP = path.join(REPO, 'pages', dir);
+      if (!fsD.statSync(dirP).isDirectory()) return;
+      fsD.readdirSync(dirP).forEach(function (f) {
+        if (!/\.wxml$/.test(f)) return;
+        const w = fsD.readFileSync(path.join(dirP, f), 'utf8');
+        if (/>加载中…</.test(w)) bad += 1;
+      });
+    });
+    return bad === 0;
+  })(), '加载中残留');
 
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail === 0 ? 0 : 1);

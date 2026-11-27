@@ -33,6 +33,10 @@ const fakeRequest = {
   put(url, data) {
     calls.push({ method: 'PUT', url, data });
     return new Promise((resolve, reject) => pending.push({ resolve, reject }));
+  },
+  upload(filePath) {
+    calls.push({ method: 'UPLOAD', url: '/api/upload', filePath });
+    return new Promise((resolve, reject) => pending.push({ resolve, reject }));
   }
 };
 const origLoad = Module._load;
@@ -71,8 +75,28 @@ require(path.join(MP, 'pages/chat/detail.js'));
 function makePage() {
   const inst = Object.assign({}, pageCfg);
   inst.data = JSON.parse(JSON.stringify(pageCfg.data));
+  // 11-26：setData 支持路径键（'messages[0].imgError'）——与真机 setData 语义对齐，
+  // 之前裸 Object.assign 会把路径键当普通字段挂在 data 顶层
   inst.setData = function (patch) {
-    Object.assign(this.data, patch);
+    Object.keys(patch).forEach((k) => {
+      if (k.indexOf('[') < 0 && k.indexOf('.') < 0) {
+        this.data[k] = patch[k];
+        return;
+      }
+      const segs = [];
+      const re = /([^\[\].]+)|\[(\d+)\]/g;
+      let m2;
+      while ((m2 = re.exec(k))) segs.push(m2[1] !== undefined ? m2[1] : Number(m2[2]));
+      let cur = this.data;
+      for (let i = 0; i < segs.length - 1; i++) {
+        const nxt = segs[i + 1];
+        if (cur[segs[i]] === undefined || cur[segs[i]] === null) {
+          cur[segs[i]] = typeof nxt === 'number' ? [] : {};
+        }
+        cur = cur[segs[i]];
+      }
+      cur[segs[segs.length - 1]] = patch[k];
+    });
   };
   return inst;
 }
@@ -250,12 +274,110 @@ const msg = (id, senderId, content, extra) =>
   check('卡片价格', p4.data.bizCard.mainText === '¥4.00', p4.data.bizCard.mainText);
   p4.onUnload();
 
+  console.log('[11b] 代取卡片取件地优先地标（11-25 用户反馈）');
+  resetCalls();
+  const p4b = makePage();
+  p4b.onLoad({ conversationId: '3003', peerId: '5', bizType: 'errand', bizId: '2003' });
+  flushNext(true, { conversationId: 3003, peerId: 5, peerNickname: '赵同学', peerAvatar: '' });
+  await tick();
+  flushNext(true, { bizType: 'errand', bizId: 2003, bizSummary: { orderId: 2003, itemSize: 'large', pickupArea: '南区教学区', pickupPlace: '第30教学楼', reward: 12, status: 'pending' } });
+  flushNext(true, { list: [msg(20, 5, '好的')] });
+  await tick();
+  await tick();
+  check('副标题只出地标不带片区', p4b.data.bizCard && p4b.data.bizCard.subText.indexOf('第30教学楼') > -1 && p4b.data.bizCard.subText.indexOf('南区教学区') === -1, p4b.data.bizCard && p4b.data.bizCard.subText);
+  p4b.onUnload();
+
   console.log('[12] 业务卡片跳转');
   navs.length = 0;
   p.onBizTap();
   check('点击卡片跳商品详情', navs.indexOf('/pages/item/detail?id=1001') > -1, navs);
 
   p.onUnload();
+
+  console.log('[13] 图片消息：选图入口 / 上传发送 / 预览 / 失败重发（11-24 用例 27）');
+  resetCalls();
+  const fs = require('fs');
+  const wxmlText = fs.readFileSync(path.join(MP, 'pages/chat/detail.wxml'), 'utf8');
+  check('WXML 有选图入口（onPickImage）', wxmlText.indexOf('onPickImage') > -1);
+  check('WXML 图片气泡绑定预览（onPreviewImage）', wxmlText.indexOf('onPreviewImage') > -1);
+
+  const mediaOpts = [];
+  const previews = [];
+  global.wx.chooseMedia = (o) => {
+    mediaOpts.push(o);
+    o.success({ tempFiles: [{ tempFilePath: 'wxfile://tmp/img1.jpg' }] });
+  };
+  global.wx.previewImage = (o) => previews.push(o);
+
+  const q = makePage();
+  q.data.conversationId = 7;
+  q.data.sending = false;
+  q.data.messages = [];
+
+  q.onPickImage();
+  check('chooseMedia 参数：count=1 + mediaType=image', mediaOpts.length === 1 && mediaOpts[0].count === 1 && mediaOpts[0].mediaType[0] === 'image', mediaOpts[0]);
+  check('乐观图片气泡（本地临时图）', q.data.messages.length === 1 && q.data.messages[0].isImage === true && q.data.messages[0].imageUrl === 'wxfile://tmp/img1.jpg', q.data.messages[0]);
+
+  flushNext(true, { url: '/uploads/abc.png' });
+  await tick();
+  const upPost = calls.filter((c) => c.method === 'POST' && c.url === '/api/conversations/7/messages')[0];
+  check('上传后 POST 消息带 msgType=image + /uploads/ 路径', upPost && upPost.data.msgType === 'image' && upPost.data.content === '/uploads/abc.png', upPost && upPost.data);
+  check('气泡换服务端 URL（fullUrl）', q.data.messages[0]._uploadedUrl === '/uploads/abc.png' && q.data.messages[0].imageUrl.indexOf('/uploads/abc.png') > -1, q.data.messages[0]);
+
+  flushNext(true, { messageId: 9, createdAt: now() });
+  await tick();
+  check('发送完成后气泡就绪', q.data.messages[0].pending === false && q.data.messages[0].failed === false && q.data.messages[0].content === '/uploads/abc.png', q.data.messages[0]);
+
+  q.onPreviewImage({ currentTarget: { dataset: { url: 'full:/uploads/abc.png' } } });
+  check('点击图片气泡全屏预览', previews.length === 1 && previews[0].urls[0] === 'full:/uploads/abc.png', previews[0]);
+
+  // 失败重发：发送阶段失败 → 已上传过 URL 的重发不重新上传
+  resetCalls();
+  q.onPickImage();
+  flushNext(true, { url: '/uploads/def.png' });
+  await tick();
+  flushNext(false, { message: '网络开小差' });
+  await tick();
+  check('发送失败标红', q.data.messages[1].failed === true, q.data.messages[1]);
+  resetCalls();
+  q.onTapFailed({ currentTarget: { dataset: { temp: q.data.messages[1].tempId } } });
+  await tick();
+  const retryPost = calls.filter((c) => c.method === 'POST' && c.url === '/api/conversations/7/messages')[0];
+  const retryUpload = calls.filter((c) => c.method === 'UPLOAD')[0];
+  check('重发只走 POST 不重新上传', retryPost && !retryUpload, { posts: calls.length });
+  check('重发带 msgType=image + 已上传 URL', retryPost && retryPost.data.msgType === 'image' && retryPost.data.content === '/uploads/def.png', retryPost && retryPost.data);
+
+  // 11-26 图片加载兜底：真机 src 不可达时不再留空白泡
+  q.onImgError({ currentTarget: { dataset: { key: q.data.messages[0].key } } });
+  check('binderror 标记 imgError 降级占位', q.data.messages[0].imgError === true, q.data.messages[0]);
+  const srcBefore = q.data.messages[0].imageUrl;
+  q.onImgRetry({ currentTarget: { dataset: { key: q.data.messages[0].key } } });
+  check('重试加时间戳破缓存', q.data.messages[0].imgError === false && q.data.messages[0].imageUrl !== srcBefore && q.data.messages[0].imageUrl.indexOf('r=') > -1, q.data.messages[0]);
+  q.data.messages[0]._tempPath = 'wxfile://tmp/img1.jpg';
+  q.onImgRetry({ currentTarget: { dataset: { key: q.data.messages[0].key } } });
+  check('有本地临时图优先回退临时图', q.data.messages[0].imageUrl === 'wxfile://tmp/img1.jpg' && q.data.messages[0].imgError === false, q.data.messages[0]);
+
+  // 11-26 键盘不再顶飞页面：adjust-position 关闭 + 输入条按键盘实高垫底
+  q.onKbHeight({ detail: { height: 300 } });
+  check('键盘高度同步（输入条垫底）', q.data.keyboardHeight === 300, q.data.keyboardHeight);
+  q.onKbHeight({ detail: { height: 300 } });
+  check('同高重复回调不重复 setData（幂等）', q.data.keyboardHeight === 300, q.data.keyboardHeight);
+  q.onKbHeight({ detail: { height: 0 } });
+  check('键盘收起归零', q.data.keyboardHeight === 0, q.data.keyboardHeight);
+
+  const wxss13 = fs.readFileSync(path.join(MP, 'pages/chat/detail.wxss'), 'utf8');
+  check('WXML 图片 binderror 兜底分支 + 点击重试', wxmlText.indexOf('binderror="onImgError"') > -1 && wxmlText.indexOf('onImgRetry') > -1 && wxmlText.indexOf('cd-bubble__img--fallback') > -1);
+  check('WXML 关闭 adjust-position（页面不被顶飞）', /adjust-position="\{\{false\}\}"/.test(wxmlText) && wxmlText.indexOf('bindkeyboardheightchange="onKbHeight"') > -1);
+  check('WXML 输入条按键盘高度垫底', /padding-bottom:' \+ keyboardHeight \+ 'px'/.test(wxmlText));
+  check('键盘弹起时置零页面安全区 padding（贴住键盘）', /cd-page \{\{keyboardHeight \? 'cd-page--kb' : ''\}\}/.test(wxmlText) && /\.cd-page--kb\s*\{[^}]*padding-bottom: 0;/.test(wxss13));
+  check('WXSS 加载失败占位样式', /\.cd-bubble__img--fallback\s*\{/.test(wxss13));
+
+  // 11-27 真机反馈：hold-keyboard 导致点空白处键盘收不起来 → 消息区 bindtap 主动收起
+  check('WXML hold-keyboard 保留（连发语义不变）', /hold-keyboard="\{\{true\}\}"/.test(wxmlText));
+  check('WXML 消息区 bindtap 收键盘', /bindscrolltolower="onScrollToLower"\s*bindtap="onTapHideKb"/.test(wxmlText));
+  check('JS onTapHideKb：键盘收起态直接返回，弹出时调 wx.hideKeyboard', /onTapHideKb\(\) \{\s*if \(!this\.data\.keyboardHeight\) return;\s*if \(wx\.hideKeyboard\) wx\.hideKeyboard\(\);/.test(fs.readFileSync(path.join(MP, 'pages/chat/detail.js'), 'utf8')));
+
+  q.onUnload();
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);
 })().catch((e) => {

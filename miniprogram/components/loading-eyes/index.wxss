@@ -1,0 +1,123 @@
+/**
+ * 游走的眼睛 loading（移植自 loading-ui WanderingEyes，MIT；配色改奶茶色系）
+ * 几何固定（eye 64 / pupil 40 / travel 20 / blink 24 / gap 12，单位 rpx），
+ * 周期由页面经 --dur 传入；想整体放大时在外层套 transform: scale() 即可。
+ */
+:host {
+  display: inline-flex;
+}
+
+/* 纵排容器：眼睛在上、短句在下；mini 模式只缩放眼睛（短句保持原字号可读），用于上拉加载 footer 等小空间 */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wrap--mini .eyes {
+  transform: scale(0.55);
+  margin: -6rpx 0;
+}
+.wrap--mini .eyes__motto {
+  margin-top: 8rpx;
+}
+
+.eyes {
+  display: flex;
+  align-items: center;
+}
+
+/* 眼白：暖白圆 + 暖棕柔影（rgba 与 --shadow-card 同源色，压小到 64rpx 圆上） */
+.eye {
+  position: relative;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background-color: var(--color-bg-white);
+  box-shadow: 0 2rpx 6rpx rgba(121, 81, 61, 0.16);
+  overflow: hidden;
+  animation: eyes-blink var(--dur, 10000ms) infinite;
+}
+
+.eye + .eye {
+  margin-left: 12rpx;
+}
+
+/* 瞳孔：品牌深棕，居中锚点用负 margin，动画只动 transform（位移便宜且顺滑）。
+   直径 40rpx = 眼白 × 0.64（原版 pupilScale 0.32 是半径比例，11-25 用户反馈按原版占比放大）；
+   扫视 20rpx 时瞳孔边缘会探出眼白被裁掉——原版就是这个「探头」效果 */
+.eye__pupil {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40rpx;
+  height: 40rpx;
+  margin: -20rpx 0 0 -20rpx;
+  border-radius: 50%;
+  background-color: var(--color-primary-dark);
+  animation: eyes-move var(--dur, 10000ms) infinite;
+}
+
+/* 扫视节奏（节拍与原版一致，开场重排）：0% 居中 → 4% 内快速扫向左——
+   开场有「从中间过渡到看向一边」的移动过程才算动态（11-25 用户反馈二次修正）：
+   中（开场）→ 左 → 右 → 下 → 回中（与 0% 衔接，循环无缝） */
+@keyframes eyes-move {
+  0% {
+    transform: translate(0, 0);
+  }
+  4%,
+  40% {
+    transform: translate(-20rpx, 0);
+  }
+  43%,
+  70% {
+    transform: translate(20rpx, 0);
+  }
+  73%,
+  90% {
+    transform: translate(0, 20rpx);
+  }
+  93%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* 眨眼节奏（与原版一致，开场加一次）：每次转向前眯一下——eye 高度收缩，overflow 裁掉瞳孔。
+   开场 1% 眨眼与 0→4% 的「中→左」扫视同拍，加载第一眼就是「眨眼+转头」的动态帧 */
+@keyframes eyes-blink {
+  0%,
+  2%,
+  10%,
+  12%,
+  20%,
+  22%,
+  40%,
+  42%,
+  60%,
+  62%,
+  70%,
+  72%,
+  90%,
+  92%,
+  98%,
+  100% {
+    height: 64rpx;
+  }
+  1%,
+  11%,
+  21%,
+  41%,
+  61%,
+  71%,
+  91%,
+  99% {
+    height: 24rpx;
+  }
+}
+
+/* 短句：每轮动画结束换一条（onCycle），样式与落款短句同档 */
+.eyes__motto {
+  margin-top: 20rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}

@@ -21,13 +21,18 @@ page {
 
   /* 中性色（暖奶茶调） */
   --color-text: #2E2119;
-  --color-text-2: #6B5B4D;
-  --color-text-3: #9A8875;
+  /* 11-25 全站宋体后次/辅级视觉对比度变浅（衬线笔画细），两档中性色同步加深：
+     text-2 #6B5B4D→#594A3B、text-3 #9A8875→#7E6C5A，仍为暖棕调；
+     白底对比度分别约 5.5:1→7.4:1、3.5:1→4.9:1 */
+  --color-text-2: #594A3B;
+  --color-text-3: #7E6C5A;
   --color-text-4: #C7B9A8;
   --color-border: #E9DFD0;
   --color-divider: #F1EAE0;
   --color-bg: #F4F1E7;
   --color-bg-white: #FFFFFF;
+  /* 小票纸面（11-25）：比纯白偏暖一点点，压在 --color-bg 上才有「一张纸」的层次 */
+  --color-paper: #FFFDF7;
   /* 按压反馈面（hover-class）：与 divider 同色。
      11-18 A 复查：此前 hall/profile/settings/help 用了它但这里没定义，hover 反馈实际不生效 */
   --color-surface-2: #F1EAE0;
@@ -53,11 +58,44 @@ page {
   --font-xl: 36rpx;
   --font-2xl: 44rpx;
 
+  /* ---- UI 优化方案 4.1（11-22）：节奏 / 动效 / 阴影令牌 ---- */
+  --space-page: 32rpx;
+  --space-section: 48rpx;
+  --radius-card: 24rpx;
+  --radius-inner: 16rpx;
+
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* 覆盖原 --shadow-card：两层柔影，贴近的 2rpx + 扩散 12rpx，避免黑色重影 */
+  --shadow-card:
+    0 2rpx 4rpx rgba(121, 81, 61, 0.04),
+    0 12rpx 32rpx rgba(121, 81, 61, 0.08);
+  --shadow-card-hover:
+    0 4rpx 12rpx rgba(121, 81, 61, 0.06),
+    0 20rpx 48rpx rgba(121, 81, 61, 0.12);
+  --shadow-bar: 0 -8rpx 32rpx rgba(121, 81, 61, 0.08);
+
+  /* 兼容别名：B 的旧页面止血（方案 4.1），后续 P2 再逐页替换为正式令牌 */
+  --color-surface: var(--color-bg-white);
+  --color-primary-soft: var(--color-primary-light);
+  --color-text-1: var(--color-text);
+  --color-primary-strong: var(--color-primary-dark);
+  --font-md: var(--font-base);
+
   background-color: var(--color-bg);
   color: var(--color-text);
   font-size: var(--font-base);
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  /* 11-25 用户定稿：全站宋体（衬线）。
+     iOS 用系统 Songti SC；macOS STSong；部分 Android 有 Noto Serif CJK；
+     Windows 微软雅黑栈里没有宋体，兜底 FangSong/SimSun。
+     Android 无宋体的机型会静默回退黑体——如需全端一致，
+     后续可用开源思源宋体（OFL 协议）wx.loadFontFace 内嵌子集（宋体 SC/SimSun 有版权不可内嵌） */
+  font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'FangSong', 'SimSun', serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -69,6 +107,15 @@ textarea,
 button,
 scroll-view {
   box-sizing: border-box;
+}
+
+/* 11-25 全站宋体后：44rpx 页面大标题 700 视觉偏细，统一提 900 + 0.6rpx 细描边。
+   此规则覆盖 A 页面（二手市场 .home-bar__title）与 B 页面（代取大厅，B 页内已同步）——
+   公共层统一改标题字重，需在群里同步告知 A */
+.home-bar__title,
+.hall-bar__title {
+  font-weight: 900;
+  -webkit-text-stroke: 0.6rpx currentColor;
 }
 
 /* ---------------- 布局 ---------------- */
@@ -100,22 +147,50 @@ scroll-view {
   min-height: 100vh;
   background-color: var(--color-bg);
 }
+
+/* 自定义下拉刷新（11-25）：原生三点条样式换不了，改 scroll-view refresher 放眼睛 */
+.page-scroll {
+  height: 100vh;
+  box-sizing: border-box;
+}
+/* fixed 导航页（Mode A）：滚动容器在导航占位之下，flex 撑满剩余高度（高度由页面按 stickyTop 内联给定） */
+.sv-flex {
+  display: flex;
+  flex-direction: column;
+}
+.page-scroll--fill {
+  flex: 1;
+  min-height: 0;
+}
+/* refresher 区：眼睛居中。
+   width:100% 是关键：refresher 容器疑似 flex 布局，不撑满会被收缩成内容宽、整体靠左，
+   内部任何居中都看不出来（11-25 三次反馈根因）；flex + text-align 双保险，
+   宿主无论 inline 还是块化都能居中 */
+.pull-eyes {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20rpx 0;
+}
 /* B-2：底部避让只属于 tab 页（悬浮胶囊 tabBar 会遮挡内容），
    非 tab 页（详情/发布等）不再多出一条底部留白 */
 .page--tab {
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 .page-body {
-  padding: var(--space);
+  padding: var(--space-page);
 }
 .card {
   background-color: var(--color-bg-white);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
-  padding: var(--space);
+  padding: 28rpx;
 }
 .card + .card {
-  margin-top: var(--space-sm);
+  margin-top: 20rpx;
 }
 
 /* ---------------- 文字 ---------------- */
@@ -171,6 +246,14 @@ scroll-view {
   background-color: var(--color-bg-white);
   color: var(--color-text);
   border: none;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) ease-out;
+}
+.btn--press {
+  /* 对齐 A 侧口径：按压只压暗不缩放——scale 会让文字逐帧重新栅格化，出现「字抖动」 */
+  opacity: 0.92;
 }
 .btn::after {
   border: none;
@@ -274,6 +357,7 @@ scroll-view {
 
 /* ---------------- 悬浮加号按钮（列表页右下角） ---------------- */
 .fab {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   position: fixed;
   right: 32rpx;
   /* 上移避开悬浮胶囊 tabBar */
@@ -297,4 +381,123 @@ scroll-view {
 }
 .safe-bottom {
   height: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------------- UI 优化方案 4.3：全局工具类（11-22） ---------------- */
+/* 按压反馈：只动 transform / opacity，避免重排 */
+.u-press {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.u-press--hover {
+  /* 对齐 A 侧口径：opacity 压暗（scale 会引起文字重栅格化抖动，11-23 反馈） */
+  opacity: 0.94;
+}
+
+/* 首屏入场：最多 6 个，延迟由页面内联 style 控制 */
+@keyframes u-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.u-enter {
+  animation: u-fade-up var(--dur-slow) var(--ease-out) both;
+}
+
+/* 骨架 shimmer：替代各页面的 opacity pulse */
+@keyframes sk-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+.sk-block {
+  background: linear-gradient(90deg, #efe6d8 25%, #faf6ee 37%, #efe6d8 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+
+/* 骨架卡片通用结构：此前只有大厅页定义过，聊天列表/详情两页引用了却无样式（漏定义），现全局化 */
+.sk-card {
+  margin: 20rpx var(--space-page) 0;
+  padding: 28rpx;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.sk-line {
+  height: 28rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #efe6d8 25%, #faf6ee 37%, #efe6d8 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+.sk-line--lg {
+  height: 32rpx;
+  width: 55%;
+}
+.sk-line--md {
+  height: 26rpx;
+  width: 80%;
+}
+.sk-line--sm {
+  height: 24rpx;
+  width: 40%;
+}
+.sk-line + .sk-line {
+  margin-top: 16rpx;
+}
+
+/* 分组标题：左侧短竖条，给详情/表单页建立节奏 */
+.t-section {
+  display: flex;
+  align-items: center;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.t-section::before {
+  content: '';
+  width: 6rpx;
+  height: 26rpx;
+  margin-right: 12rpx;
+  border-radius: 3rpx;
+  background: var(--color-primary);
+}
+
+/* ---------- 页面转场增强（11-25）：webview 下原生转场不可定制，详情页做补充动画 ---------- */
+/* 详情页入场：从右侧缓动滑入（先快后慢）。动画类只加在内容节点上——transform 会改变
+   后代 fixed 的包含块（detail-bar 错位的老坑），不可套在含 fixed 子元素的整页容器外 */
+/* 11-25 三次调参：内容首帧出现时原生转场已过大半（页面创建有延迟），大幅位移只会
+   加重「主界面已动、详情页才进场」的滞后感——改为 20% 快速收拢 + 淡入 180ms，
+   内容一出现立即就位 */
+.detail-page-enter {
+  animation: detail-page-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes detail-page-in {
+  from { transform: translateX(20%); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
+}
+/* 详情页退场：向右离场（先慢后快，ease-in）；点页面内返回按钮时触发，手势返回走原生转场 */
+.detail-page-exit {
+  animation: detail-page-out 240ms cubic-bezier(0.42, 0, 1, 1) both;
+}
+@keyframes detail-page-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+/* 原页面视差：跳详情前内容左移 20px，返回 onShow 回弹归位 */
+.parallax-wrap {
+  transition: transform 220ms ease-out;
+}
+.parallax-left {
+  transform: translateX(-20px);
 }

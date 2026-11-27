@@ -4,7 +4,8 @@
 //   · pickupPlace 必填；片区没有下级地标时直接传片区名（后端「片区即地标」语义）；
 //   · timeType=asap **不允许携带任何时间字段**（后端字符串非空即报「时间参数不完整」）；
 //   · reward 前端收紧到 0 < r ≤ 200、最多两位小数（手册 §6.8，比后端 99999999.99 更严）；
-//   · deadline / timeStart 必须晚于当前时间（后端不校验早晚，前端必须把关）。
+//   · deadline / timeStart 必须晚于当前时间（后端不校验早晚，前端必须把关）；
+//   · images 最多 3 张，选完立即上传，提交时只带已上传的 /uploads/ 地址。
 // 两种入口：
 //   · 无参 = 发布大厅单（visibility=hall），成功 wx.redirectTo 详情（防止返回到空表单）；
 //   · ?id= = 编辑未发布私单（后端 canEdit=true 才允许），PUT 成功后 navigateBack 回详情。
@@ -13,6 +14,7 @@
 const http = require('../../utils/request');
 const util = require('../../utils/util');
 const campus = require('../../utils/campus');
+const adapter = require('../../utils/adapter');
 
 const SIZE_OPTIONS = [
   { value: 'small', label: '小件' },
@@ -25,6 +27,26 @@ const TIME_OPTIONS = [
   { value: 'range', label: '指定时间段' }
 ];
 const MAX_REWARD = 200;
+const MAX_IMAGES = 3;
+
+/** 后端 images / itemImages → 页面图片项（编辑回填用） */
+function normalizeImages(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((image, index) => {
+      const url = typeof image === 'string' ? image : image && image.url;
+      if (!url) return null;
+      return {
+        id: 'img-loaded-' + Date.now() + '-' + index,
+        tempPath: url,
+        url,
+        displayUrl: adapter.fullUrl(url),
+        status: 'done',
+        error: ''
+      };
+    })
+    .filter(Boolean);
+}
 
 function pad(n) {
   return n < 10 ? '0' + n : '' + n;
@@ -96,11 +118,16 @@ Page({
     },
     descCount: 0,
     remarkCount: 0,
+    maxImages: MAX_IMAGES,
+    images: [],
+    imageUploading: false,
     errors: {},
     errorToast: ''
   },
 
   onLoad(options) {
+    this._uploadSeq = 0;
+    this._uploadChain = Promise.resolve();
     const id = Number((options && options.id) || 0);
     if (id) {
       this.setData({ isEdit: true, orderId: id, pageTitle: '编辑代取' });
@@ -145,7 +172,10 @@ Page({
             reward: order.reward === null || order.reward === undefined ? '' : String(order.reward)
           },
           descCount: (order.itemDesc || '').length,
-          remarkCount: (order.remark || '').length
+          remarkCount: (order.remark || '').length,
+          images: normalizeImages(order.images || order.itemImages),
+          imageUploading: false,
+          'errors.images': ''
         });
       })
       .catch((err) => {
@@ -169,8 +199,11 @@ Page({
     const zone = (e.detail && e.detail.zone) || '';
     const place = (e.detail && e.detail.place) || '';
     if (!zone) return;
-    // 有下级地标的片区必须选到楼（组件已拦，这里兜底防直接调）
-    if (!place && campus.placesOfZone(zone).length) return;
+    // 有下级地标的片区必须选到楼（组件 place-required 已拦，这里兜底给提示，不静默吞）
+    if (!place && campus.placesOfZone(zone).length) {
+      wx.showToast({ title: '该片区需选择具体教学楼', icon: 'none' });
+      return;
+    }
     this.setData({
       placePickerVisible: false,
       pickupArea: zone,
@@ -182,15 +215,22 @@ Page({
   },
 
   onSizeChange(e) {
+    // radio 的 e.detail.value 是 value 字符串（'small'/'medium'/'large'），不是索引——
+    // 此前 Number('medium') 为 NaN 恒落 0，选中闪烁后弹回小件且提交值也错（F-13，11-24 用户录屏反馈）
+    const value = e.detail.value;
+    const idx = this.data.sizeOptions.map((o) => o.value).indexOf(value);
     this.setData({
-      sizeIndex: Number(e.detail.value) || 0,
+      sizeIndex: Math.max(0, idx),
       'errors.itemSize': ''
     });
   },
 
   onTimeTypeChange(e) {
+    // 同 F-13：value 是 'asap'/'deadline'/'range' 字符串，按 value 反查索引
+    const value = e.detail.value;
+    const idx = this.data.timeOptions.map((o) => o.value).indexOf(value);
     this.setData({
-      timeIndex: Number(e.detail.value) || 0,
+      timeIndex: Math.max(0, idx),
       'errors.timeType': '',
       'errors.time': ''
     });
@@ -220,6 +260,127 @@ Page({
     const v = e.detail.value || '';
     this.setData({ 'form.remark': v, remarkCount: v.length, 'errors.remark': '' });
   },
+
+  // ---------------- 物品图片 ----------------
+  onChooseImages() {
+    if (this.data.submitting) return;
+    const remain = MAX_IMAGES - this.data.images.length;
+    if (remain <= 0) {
+      util.toast('最多上传 3 张图片');
+      return;
+    }
+    if (typeof wx.chooseMedia !== 'function') {
+      util.toast('当前微信版本不支持选择图片');
+      return;
+    }
+    wx.chooseMedia({
+      count: remain,
+      mediaType: ['image'],
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const files = ((res && res.tempFiles) || []).slice(0, remain);
+        const next = files
+          .map((file) => {
+            const path = file.tempFilePath || file.path || '';
+            this._uploadSeq += 1;
+            return {
+              id: 'img-' + Date.now() + '-' + this._uploadSeq,
+              tempPath: path,
+              url: '',
+              displayUrl: path,
+              status: 'uploading',
+              error: ''
+            };
+          })
+          .filter((item) => item.tempPath);
+        if (!next.length) return;
+        this.setData({ images: this.data.images.concat(next), 'errors.images': '' });
+        this.enqueueUploads(next);
+      },
+      fail: (err) => {
+        if (!/cancel/i.test((err && err.errMsg) || '')) {
+          util.toast('选择图片失败，请重试');
+        }
+      }
+    });
+  },
+
+  enqueueUploads(items) {
+    this.setData({ imageUploading: true });
+    items.forEach((item) => {
+      this._uploadChain = this._uploadChain
+        .then(() => this.uploadImage(item.id))
+        .catch(() => {});
+    });
+    this._uploadChain.then(() => this.syncUploading());
+  },
+
+  uploadImage(id) {
+    const image = this.data.images.find((item) => item.id === id);
+    if (!image || image.status === 'done') return Promise.resolve();
+    this.patchImage(id, { status: 'uploading', error: '' });
+    return http
+      .upload(image.tempPath)
+      .then((res) => {
+        const url = res && res.url ? res.url : '';
+        if (!url) throw new Error('上传失败');
+        this.patchImage(id, {
+          status: 'done',
+          url,
+          displayUrl: adapter.fullUrl(url)
+        });
+        this.setData({ 'errors.images': '' });
+      })
+      .catch((err) => {
+        this.patchImage(id, {
+          status: 'failed',
+          error: (err && err.message) || '上传失败'
+        });
+      });
+  },
+
+  patchImage(id, patch) {
+    const images = this.data.images.map((item) =>
+      item.id === id ? Object.assign({}, item, patch) : item
+    );
+    this.setData({ images });
+  },
+
+  syncUploading() {
+    const uploading = this.data.images.some((item) => item.status === 'uploading');
+    if (uploading !== this.data.imageUploading) {
+      this.setData({ imageUploading: uploading });
+    }
+  },
+
+  onImageTap(e) {
+    const id = e.currentTarget.dataset.id;
+    const image = this.data.images.find((item) => item.id === id);
+    if (!image) return;
+    if (image.status === 'failed') {
+      this.setData({ imageUploading: true });
+      this.uploadImage(id).then(() => this.syncUploading());
+      return;
+    }
+    if (image.status !== 'done' || !image.url) return;
+    const done = this.data.images.filter((item) => item.status === 'done' && item.url);
+    wx.previewImage({
+      current: adapter.fullUrl(image.url),
+      urls: done.map((item) => adapter.fullUrl(item.url))
+    });
+  },
+
+  onDeleteImage(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    this.setData({
+      images: this.data.images.filter((item) => item.id !== id),
+      'errors.images': ''
+    });
+    this.syncUploading();
+  },
+
   onRewardInput(e) {
     this.setData({ 'form.reward': filterReward(e.detail.value), 'errors.reward': '' });
   },
@@ -236,6 +397,12 @@ Page({
 
     if (payload.itemDesc && payload.itemDesc.length > 500) errors.itemDesc = '物品描述不能超过 500 字';
     if (payload.remark && payload.remark.length > 255) errors.remark = '备注不能超过 255 字';
+
+    if (this.data.images.some((image) => image.status === 'uploading')) {
+      errors.images = '图片上传中，请稍候';
+    } else if (this.data.images.some((image) => image.status === 'failed')) {
+      errors.images = '有图片上传失败，请重试或删除后再提交';
+    }
 
     const reward = Number(payload.reward);
     if (payload.reward === '' || payload.reward === null || payload.reward === undefined) {
@@ -275,6 +442,9 @@ Page({
       deliveryLocation: form.deliveryLocation.trim(),
       itemSize: this.data.sizeOptions[this.data.sizeIndex].value,
       itemDesc: form.itemDesc.trim(),
+      images: this.data.images
+        .filter((image) => image.status === 'done' && image.url)
+        .map((image, index) => ({ url: image.url, sortNo: index + 1 })),
       remark: form.remark.trim(),
       reward: form.reward,
       timeType: timeType
@@ -291,6 +461,10 @@ Page({
   /** 统一提交入口：mode=hall 大厅单 / private 私单；编辑模式走 PUT */
   submit(visibility) {
     if (this.data.submitting || this.data.loading) return;
+    if (this.data.imageUploading) {
+      util.toast('图片上传中，请稍候');
+      return;
+    }
     const payload = this.buildPayload();
     const errors = this.validate(payload);
     if (Object.keys(errors).length) {
@@ -358,6 +532,7 @@ Page({
         else if (message.indexOf('送达') > -1) errors.deliveryLocation = message;
         else if (message.indexOf('规格') > -1) errors.itemSize = message;
         else if (message.indexOf('描述') > -1) errors.itemDesc = message;
+        else if (message.indexOf('图片') > -1) errors.images = message;
         else if (message.indexOf('备注') > -1) errors.remark = message;
         else if (message.indexOf('报酬') > -1) errors.reward = message;
         else if (message.indexOf('时间') > -1) errors.time = message;

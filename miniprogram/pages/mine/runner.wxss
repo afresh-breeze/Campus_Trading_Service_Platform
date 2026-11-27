@@ -3,6 +3,22 @@
   margin: 8rpx 0 16rpx;
 }
 
+/* 11-26：备注 textarea 多行自适应——.field 定高 96rpx 放宽为 min-height，
+   auto-height 增高时不裁剪；textarea 本体给最小行高与基线对齐 */
+.field--multiline {
+  height: auto;
+  min-height: 96rpx;
+  padding-top: 16rpx;
+  padding-bottom: 16rpx;
+}
+.field--multiline .field-textarea {
+  flex: 1;
+  min-height: 44rpx;
+  line-height: 1.5;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+
 /* ---------------- 顶部状态条 ---------------- */
 .status-bar {
   display: flex;
@@ -59,12 +75,14 @@
   overflow: hidden;
 }
 .area-search__item {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   align-items: center;
   padding: 18rpx 20rpx;
   background-color: var(--color-bg-white);
 }
 .area-search__item + .area-search__item {
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms cubic-bezier(0.22, 1, 0.36, 1);
   border-top: 1rpx solid var(--color-divider);
 }
 .area-search__item--hover {
@@ -298,5 +316,141 @@
 
 /* 11-17 走查：计划条上的「编辑/删除」是纯文字，按下要有反馈 */
 .slot-op--hover {
-  opacity: 0.55;
+  opacity: 0.7;
+}
+
+/* ---------------- 具体地标悬浮卡片（11-24 改版，用户预览确认） ---------------- */
+/* 已选地标 chip 摘要：显示在对应片区勾选行下方，替代原底部长列表 */
+.zone-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin: 0 0 12rpx 44rpx;
+}
+.zone-chips__zone {
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+  margin-right: 4rpx;
+}
+.zone-chips__chip {
+  font-size: 22rpx;
+  background: var(--color-surface-2);
+  color: var(--color-primary-dark);
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-full);
+}
+.zone-chips__more {
+  font-size: 22rpx;
+  color: var(--color-text-4);
+}
+
+/* 悬浮卡片：遮罩模糊压暗（rgba 即实色兜底），卡片居中带入场动画 */
+.rpc-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  background-color: rgba(43, 30, 20, 0.35);
+  backdrop-filter: blur(2px);
+  animation: rpc-fade 200ms ease-out;
+}
+.rpc-card {
+  width: 100%;
+  max-width: 620rpx;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-white);
+  border-radius: var(--radius-lg, 24rpx);
+  padding: 28rpx;
+  animation: rpc-up 320ms var(--ease-out) both;
+}
+.rpc-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  margin-bottom: 16rpx;
+}
+.rpc-title {
+  font-size: var(--font-md, 30rpx);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.rpc-sub {
+  font-size: var(--font-xs);
+  color: var(--color-text-4);
+}
+.rpc-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 50vh;
+}
+.rpc-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.rpc-item {
+  width: 50%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 8rpx;
+  font-size: var(--font-sm, 26rpx);
+  color: var(--color-text-2);
+}
+.rpc-item__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rpc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--color-divider);
+}
+.rpc-count {
+  font-size: var(--font-xs);
+  color: var(--color-text-3);
+}
+.rpc-ops {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.rpc-all {
+  font-size: var(--font-sm);
+  color: var(--color-primary-dark);
+  padding: 8rpx 12rpx;
+}
+@keyframes rpc-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rpc-up {
+  from {
+    opacity: 0;
+    transform: translateY(24rpx) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.zone-chips--hover {
+  background-color: var(--color-surface-2);
+  border-radius: 8rpx;
+}
+.zone-chips__edit {
+  font-size: 22rpx;
+  color: var(--color-primary-dark);
 }

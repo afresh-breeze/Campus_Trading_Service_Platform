@@ -161,8 +161,10 @@ Page({
     this.fetch(1);
   },
 
-  onPullDownRefresh() {
-    this.fetch(1).then(() => wx.stopPullDownRefresh());
+  onRefresh() {
+    this.setData({ pulling: true });
+    const done = () => this.setData({ pulling: false });
+    this.fetch(1).then(done, done);
   },
 
   onReachBottom() {
@@ -176,10 +178,8 @@ Page({
       .get('/api/errands/' + orderId, {}, { silent: true })
       .then((order) => {
         if (!order) return;
-        const place =
-          order.pickupPlace && order.pickupPlace !== order.pickupArea
-            ? order.pickupArea + ' · ' + order.pickupPlace
-            : order.pickupArea || '';
+        // 11-25 口径同大厅卡片：摘要里优先出具体地标，片区前缀留给详情页
+        const place = campus.shortPlace(order.pickupArea, order.pickupPlace);
         let timeText = '';
         if (order.timeType === 'asap') timeText = '尽快送达';
         else if (order.timeType === 'deadline') timeText = (util.formatTime(order.deadline) || '') + ' 前';
@@ -226,8 +226,10 @@ Page({
   },
 
   onTimeChange(e) {
-    const idx = Number(e.detail.value) || 0;
-    this.setData({ timeIndex: idx });
+    // radio-group 的 e.detail.value 是 value 字符串（'asap'/'deadline'/'range'），不是索引
+    // ——同 F-13，Number('deadline') 为 NaN 恒落 0，时间筛选永远停在「尽快」（11-24 修）
+    const idx = this.data.timeOptions.map((o) => o.value).indexOf(e.detail.value);
+    this.setData({ timeIndex: Math.max(0, idx) });
   },
 
   onSizeChange(e) {

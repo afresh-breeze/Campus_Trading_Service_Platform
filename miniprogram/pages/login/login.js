@@ -17,6 +17,14 @@ const TAB_PAGES = [
   '/pages/mine/index'
 ];
 const MAX_FAIL = 5;
+// 开场眼睛条编排时长（与 login.wxss 里 2600ms 对齐）+ 200ms 余量
+const INTRO_HOLD_MS = 2800;
+// 登录转场时序（均与 login.wxss 对齐，smoke_login 有断言锁定）
+const JELLY_MS = 460; // 按钮果冻回弹时长
+const TRANSIT_GROW_MS = 480; // 深棕圆放大铺满
+const TRANSIT_RIPPLE_MS = 420; // 水波纹淡出
+const GOTO_AT_MS = 260; // 涟漪开始后多久发起跳转（涟漪还没播完就换页，遮住跳转延迟）
+
 const AGREEMENT = {
   user:
     '《用户协议》摘要：\n1. 本平台仅限本校学生使用，账号与学号一一对应；\n' +
@@ -59,11 +67,80 @@ Page({
     submitting: false,
     failCount: 0,
     redirect: '',
-    isMock: config.MOCK
+    isMock: config.MOCK,
+    // 开场眼睛条编排：只在本次进页播一次，播完摘类回到最终态
+    intro: true,
+    // 输密码时 > < 眯眼（bindfocus/bindblur 切换）
+    eyesClosed: false,
+    // 眼睛条几何：top = 导航下方插槽；--bar-from = 开场起点（全屏正中）
+    eyesTop: 20,
+    barFrom: 300,
+    // 登录按钮果冻回弹（onSubmit 触发，播完摘类）
+    btnJelly: false,
+    // 登录成功转场：'' → 'expand'（深棕圆放大铺满）→ 'ripple'（水波纹淡出）
+    transit: '',
+    // 转场几何：按钮中心与覆盖四角所需半径，内联传给 .transit 的 CSS 变量
+    tapX: 0,
+    tapY: 0,
+    tapR: 0
+  },
+
+  onReady() {
+    // 2600ms 编排 + 200ms 余量；摘类后基础样式即最终态（同 detail-page-enter 口径）
+    this._introTimer = setTimeout(() => {
+      this._introTimer = null;
+      this.setData({ intro: false });
+    }, INTRO_HOLD_MS);
+  },
+
+  onUnload() {
+    [
+      '_introTimer',
+      '_jellyTimer',
+      '_transitGrowTimer',
+      '_transitGotoTimer'
+    ].forEach((key) => {
+      if (this[key]) {
+        clearTimeout(this[key]);
+        this[key] = null;
+      }
+    });
+  },
+
+  onPwFocus() {
+    this.setData({ eyesClosed: true });
+  },
+
+  onPwBlur() {
+    this.setData({ eyesClosed: false });
+  },
+
+  // 眼睛条几何：插槽在胶囊下方 10px；开场起点 = 屏高正中 − 插槽中心，
+  // 保证放大裸眼落在全屏正中央（keyframes 里经 --bar-from 引用）
+  _calcEyesGeometry() {
+    let eyesTop = 20;
+    let barFrom = 300;
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+      const navH = win.statusBarHeight + 44; // nav-top 非 fixed 占位高度（状态栏 + bar）
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+      if (menu && menu.bottom) {
+        eyesTop = Math.max(8, Math.round(menu.bottom + 10 - navH));
+      }
+      const barHalf = 23; // eyes-bar 高 46px 的一半
+      barFrom = Math.max(0, Math.round(win.windowHeight / 2 - (navH + eyesTop + barHalf)));
+    } catch (e) {
+      // 取不到系统信息时用兜底值，不影响登录主流程
+    }
+    return { eyesTop, barFrom };
   },
 
   onLoad(options) {
-    this.setData({ redirect: (options && options.redirect) || '' });
+    this.setData({
+      redirect: (options && options.redirect) || '',
+      // 眼睛条几何要在首帧渲染前定好，开场才不会跳位
+      ...this._calcEyesGeometry()
+    });
     // 已登录直接回目标页（可能是 tabBar 页）
     const app = getApp();
     if (app && typeof app.isLogin === 'function' && app.isLogin()) {
@@ -82,6 +159,9 @@ Page({
   async onSubmit() {
     // 入口锁：bindconfirm 与按钮点击可能在同一帧触发（P2-4）
     if (this.data.submitting) return;
+
+    // 果冻回弹：校验失败也给按压反馈（校验拦截本身不需要动效以外的处理）
+    this._playJelly();
 
     const studentNo = (this.data.studentNo || '').trim();
     const password = this.data.password || '';
@@ -107,8 +187,8 @@ Page({
       const app = getApp();
       app.setSession(data.token, data.userInfo);
       util.toast('登录成功', 'success');
-      // 跳转期间保持 disabled，避免 400ms 窗口内重复提交
-      setTimeout(() => this.goAfterLogin(), 400);
+      // 果冻回弹之后起转场：深棕铺满 → 水波纹 → 进主界面
+      setTimeout(() => this._startTransit(), 250);
     } catch (err) {
       const times = this.data.failCount + 1;
       const base = (err && err.message) || '登录失败，请重试';
@@ -124,6 +204,74 @@ Page({
   goAfterLogin() {
     const redirect = this.data.redirect ? decodeURIComponent(this.data.redirect) : '';
     goto(redirect);
+  },
+
+  /** 按钮果冻回弹：460ms 播完摘类（时长与 wxss btn-jelly 对齐） */
+  _playJelly() {
+    if (this.data.btnJelly) return;
+    this.setData({ btnJelly: true });
+    if (this._jellyTimer) clearTimeout(this._jellyTimer);
+    this._jellyTimer = setTimeout(() => {
+      this._jellyTimer = null;
+      this.setData({ btnJelly: false });
+    }, JELLY_MS);
+  },
+
+  /**
+   * 登录成功转场：
+   *  1) 取按钮 rect，圆心 = 按钮中心，半径 = 到屏幕四角的最远距离（+2px 容差）；
+   *  2) expand：深棕圆 scale 0→1 铺满（480ms）；
+   *  3) ripple：水波纹淡出（420ms），开始 260ms 后发起跳转——
+   *     涟漪还没播完页面就切换，正好遮住 switchTab/redirectTo 的加载延迟。
+   */
+  _startTransit() {
+    const win = (() => {
+      try {
+        return wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+      } catch (e) {
+        return null;
+      }
+    })();
+    const W = (win && win.windowWidth) || 375;
+    const H = (win && win.windowHeight) || 667;
+
+    const apply = (cx, cy, R) => {
+      this.setData({ tapX: Math.round(cx), tapY: Math.round(cy), tapR: Math.ceil(R) + 2, transit: 'expand' });
+      this._transitGrowTimer = setTimeout(() => {
+        this._transitGrowTimer = null;
+        this.setData({ transit: 'ripple' });
+        this._transitGotoTimer = setTimeout(() => {
+          this._transitGotoTimer = null;
+          this.goAfterLogin();
+        }, GOTO_AT_MS);
+      }, TRANSIT_GROW_MS);
+    };
+
+    try {
+      wx.createSelectorQuery()
+        .in(this)
+        .select('.submit')
+        .boundingClientRect((rect) => {
+          if (rect) {
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const R = Math.max(
+              Math.hypot(cx, cy),
+              Math.hypot(W - cx, cy),
+              Math.hypot(cx, H - cy),
+              Math.hypot(W - cx, H - cy)
+            );
+            apply(cx, cy, R);
+          } else {
+            // 取不到 rect：退化为屏幕中心整屏半径
+            apply(W / 2, H / 2, Math.hypot(W / 2, H / 2));
+          }
+        })
+        .exec();
+    } catch (e) {
+      // SelectorQuery 不可用：直接跳转，保住登录主流程
+      this.goAfterLogin();
+    }
   },
 
   onGoRegister() {

@@ -49,6 +49,7 @@ function mapBook(raw) {
 
 Page({
   data: {
+    parallax: false,
     stickyTop: 24,
     barHead: 32,
     isLogin: true,
@@ -108,6 +109,7 @@ Page({
   },
 
   onShow() {
+    if (this.data.parallax) this.setData({ parallax: false });
     const app = getApp();
     const isLogin = !!(app && typeof app.isLogin === 'function' && app.isLogin());
     if (isLogin !== this.data.isLogin) {
@@ -119,20 +121,25 @@ Page({
   onUnload() {
     this.cancelSuggestTimers();
     this._suggestSeq = (this._suggestSeq || 0) + 1;
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
   },
 
   onPageScroll() {
     if (this.data.showSuggest) this.setData({ showSuggest: false });
   },
 
-  onPullDownRefresh() {
+  onRefresh() {
     if (!this.data.submittedKeyword) {
-      wx.stopPullDownRefresh();
+      this.setData({ pulling: false });
       return;
     }
+    this.setData({ pulling: true });
     const jobs = [this.fetchItems(1)];
     if (!this.data.activeBook) jobs.push(this.fetchBooks(this.data.submittedKeyword));
-    Promise.all(jobs).then(() => wx.stopPullDownRefresh());
+    Promise.all(jobs).then(() => this.setData({ pulling: false }), () => this.setData({ pulling: false }));
   },
 
   onReachBottom() {
@@ -346,7 +353,7 @@ Page({
       suggestLoading: false
     });
     this.saveHistory(keyword);
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchBooks(keyword);
     this.fetchItems(1);
   },
@@ -436,7 +443,7 @@ Page({
       loadingMore: false,
       error: ''
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchItems(1);
   },
 
@@ -453,7 +460,7 @@ Page({
       loadingMore: false,
       error: ''
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchItems(1);
   },
 
@@ -565,17 +572,24 @@ Page({
       loadingMore: false,
       error: ''
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 200, fail: () => {} });
+    this.setData({ svTop: (this.data.svTop || 0) > 0 ? 0 : 0.1 });
     this.fetchItems(1);
   },
 
   onTapItem(e) {
     const id = e.detail && e.detail.itemId;
     if (!id) return;
-    wx.navigateTo({
-      url: '/pages/item/detail?id=' + id,
-      fail: () => util.toast('详情页打开失败')
-    });
+    // 连点防抖：导航中再点不重复入栈
+    if (this._navTimer) return;
+    // 视差：先让左移起步 100ms 再导航（11-25 方案主因 1）
+    this.setData({ parallax: true });
+    this._navTimer = setTimeout(() => {
+      this._navTimer = null;
+      wx.navigateTo({
+        url: '/pages/item/detail?id=' + id,
+        fail: () => util.toast('详情页打开失败')
+      });
+    }, 100);
   },
 
   // ---------------- 登录与返回 ----------------

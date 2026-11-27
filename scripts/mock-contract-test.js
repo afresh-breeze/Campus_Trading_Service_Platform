@@ -10,7 +10,7 @@
  * 维护约定：后端新增/改动接口时，先改 mock.js，再在这里补一条断言。
  * 变更：2026-11-12 按 A 的全面排查补 [3] 私单全流程、[4] 代取校验等价、
  *       [7] 商品/书目/用户校验等价，并修正「登录学号 5 位 → 400」这条**错误契约**。
- *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权）、[10] 大厅筛选
+ *       2026-11-13 补 [9] 私单会话发起权限（P0-4 越权，11-28 放宽为发布者或接单者）、[10] 大厅筛选
  *       （area/itemSize/timeType/sort，同维度 OR + 跨维度 AND + 筛选后 total）。
  *       2026-11-15 A 的实现（f3d44dc）推送后，[10] 的 400 改为**逐字断言文案**，
  *       并澄清 timeType 合法筛选项含 range（与订单类型一致）、参数支持字符串数组。
@@ -65,10 +65,14 @@ const OK_ERRAND = {
   console.log('\n[0] 路由覆盖');
   const keys = mock.routeKeys();
   console.log('  已登记路由 ' + keys.length + ' 条');
-  // 服务端 40 条 = 39 条 router.* + GET /api/health；mock 39 条 = 40 − POST /api/upload（真机文件上传不适合 mock）
-  check('路由数 = 39（服务端 40 − upload）', keys.length === 39, keys.length);
+  // 服务端 43 条 = 42 条 router.* + GET /api/health；mock 42 条 = 43 − POST /api/upload（真机文件上传不适合 mock）
+  // 11-26 新增会话操作 3 条：PATCH /:id/pin、PUT /:id/unread、DELETE /:id
+  check('路由数 = 42（服务端 43 − upload）', keys.length === 42, keys.length);
   check('has() 命中 PUT /api/errands/:id', mock.has('/api/errands/2001', 'PUT') === true);
   check('has() 命中 POST /api/errands/:id/publish', mock.has('/api/errands/2001/publish', 'POST') === true);
+  check('has() 命中 PATCH /api/conversations/:id/pin', mock.has('/api/conversations/3001/pin', 'PATCH') === true);
+  check('has() 命中 PUT /api/conversations/:id/unread', mock.has('/api/conversations/3001/unread', 'PUT') === true);
+  check('has() 命中 DELETE /api/conversations/:id', mock.has('/api/conversations/3001', 'DELETE') === true);
   check('自检无告警', mock.selfCheck().length === 0, mock.selfCheck());
 
   console.log('\n[1] 代取大厅 / 我的代取：可见性与身份过滤');
@@ -161,6 +165,22 @@ const OK_ERRAND = {
   await expectFailMsg('送达地点 101 字 → 400', '/api/errands', 'POST',
     Object.assign({}, OK_ERRAND, { deliveryLocation: 'x'.repeat(101) }), '送达地点不能超过 100 字');
 
+  console.log('\n[4b] 代取物品图片：与 errands.js readImages 等价');
+  const withImages = await mock.run('/api/errands', 'POST', Object.assign({}, OK_ERRAND, {
+    visibility: 'private',
+    images: [{ url: '/uploads/e-second.png', sortNo: 2 }, { url: '/uploads/e-first.png', sortNo: 1 }]
+  }));
+  const imgDetail = await mock.run('/api/errands/' + withImages.orderId, 'GET', {});
+  check('代取图片按 sortNo 排序回显',
+    JSON.stringify((imgDetail.images || []).map((x) => x.url)) === '["/uploads/e-first.png","/uploads/e-second.png"]',
+    imgDetail.images);
+  await expectFailMsg('代取图片超过 3 张 → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { images: [
+      { url: '/uploads/a.png' }, { url: '/uploads/b.png' }, { url: '/uploads/c.png' }, { url: '/uploads/d.png' }
+    ] }), '最多上传 3 张图片');
+  await expectFailMsg('代取图片非 /uploads/ → 400', '/api/errands', 'POST',
+    Object.assign({}, OK_ERRAND, { images: [{ url: '/tmp/a.png' }] }), '图片地址不合法');
+
   console.log('\n[5] 跑腿匹配：place 属于片区 + 在线/计划过滤');
   await expectFail('缺 area 400', '/api/runners', 'GET', { timeType: 'asap' }, 400);
   await expectFail('place 不属于该片区 400', '/api/runners', 'GET', { area: '桃园', place: '第30教学楼', timeType: 'asap' }, 400);
@@ -197,6 +217,28 @@ const OK_ERRAND = {
   await expectFail('创建会话缺 peerId 400', '/api/conversations', 'POST', { bizType: 'item', bizId: 1001 }, 400);
   const createdConv = await mock.run('/api/conversations', 'POST', { peerId: 3, bizType: 'item', bizId: 1002 });
   check('创建会话返回 conversationId + 对方昵称', !!createdConv.conversationId && createdConv.peerNickname === '王同学', createdConv);
+
+  console.log('\n[6b] 会话操作：置顶 / 标为未读 / 删除（11-26 左滑操作）');
+  const pinned = await mock.run('/api/conversations/3003/pin', 'PATCH', { pinned: true });
+  check('置顶返回 {pinned:true}', pinned.pinned === true, pinned);
+  const convAfterPin = await mock.run('/api/conversations', 'GET', { page: 1, pageSize: 20 });
+  check('置顶会话排到第一', (convAfterPin.list || [])[0] && convAfterPin.list[0].conversationId === 3003, (convAfterPin.list || []).map((c) => c.conversationId));
+  check('列表带 isPinned 字段', (convAfterPin.list || [])[0] && convAfterPin.list[0].isPinned === true, (convAfterPin.list || [])[0]);
+  const unpinned = await mock.run('/api/conversations/3003/pin', 'PATCH', { pinned: false });
+  check('取消置顶返回 {pinned:false}', unpinned.pinned === false, unpinned);
+  await expectFail('置顶参数非布尔 → 400', '/api/conversations/3003/pin', 'PATCH', { pinned: 'yes' }, 400);
+  await expectFail('置顶不存在的会话 → 404', '/api/conversations/9999/pin', 'PATCH', { pinned: true }, 404);
+
+  await mock.run('/api/conversations/3002/read', 'PUT', {});
+  const markUnread = await mock.run('/api/conversations/3002/unread', 'PUT', {});
+  check('标为未读返回 unreadCount>=1', markUnread.unreadCount >= 1, markUnread);
+  const totalAfterUnread = await mock.run('/api/conversations/unread-count', 'GET', {});
+  check('全局未读随标未读增加', totalAfterUnread.count >= 1, totalAfterUnread);
+  await expectFail('标未读不存在的会话 → 404', '/api/conversations/9999/unread', 'PUT', {}, 404);
+
+  const deleted = await mock.run('/api/conversations/' + createdConv.conversationId, 'DELETE', {});
+  check('删除会话返回 {deleted:true}', deleted.deleted === true, deleted);
+  await expectFail('删除后会话不存在 → 404', '/api/conversations/' + createdConv.conversationId, 'PATCH', { pinned: true }, 404);
 
   console.log('\n[7] 商品 / 书目 / 用户：校验与字段等价');
   const itemNoCond = await mock.run('/api/items', 'POST', {
@@ -261,7 +303,7 @@ const OK_ERRAND = {
   await expectFail('注册昵称 13 字 400', '/api/auth/register', 'POST', { studentNo: '202321010100010', nickname: '一二三四五六七八九十一二三', password: '123456' }, 400);
   await expectFail('注册学号 5 位 400', '/api/auth/register', 'POST', { studentNo: '12345', nickname: '五六', password: '123456' }, 400);
 
-  console.log('\n[9] 会话发起权限：私单只允许发布者（P0-4）');
+  console.log('\n[9] 会话发起权限：任何登录用户可就任意订单发起会话（11-26 定稿，取消私单限制）');
   // 2004 = 当前用户（1）发布的未发布私单
   const convOwnPrivate = await mock.run('/api/conversations', 'POST', {
     peerId: 6,
@@ -269,15 +311,24 @@ const OK_ERRAND = {
     bizId: 2004
   });
   check('自己发布的私单可以发起会话', !!convOwnPrivate.conversationId, convOwnPrivate);
-  // 2008 = 别人（5）的私单：不拦的话，知道 publisherId + orderId 就能先插会话，
-  // 再靠 isErrandChatPeer 拿到查看/接单授权（越权）
-  await expectFailMsg(
-    '别人的私单发起会话 → 403',
-    '/api/conversations',
-    'POST',
-    { peerId: 5, bizType: 'errand', bizId: 2008 },
-    '私单只能由发布者发起会话'
-  );
+  // 2008 = 别人（5）的私单，[4] 里当前用户已接单（runnerId=1）→ 接单者也可以发起会话，
+  // 幂等复用已有会话 3003；接单者删了会话也能凭 runnerId 重新联系发布者
+  const convAsRunner = await mock.run('/api/conversations', 'POST', {
+    peerId: 5,
+    bizType: 'errand',
+    bizId: 2008
+  });
+  check('接了私单的同学可以发起会话（复用 3003）', convAsRunner.conversationId === 3003, convAsRunner);
+  // 11-26 用户定稿：释放接单后，当前用户既非发布者也非接单者，也能发起会话
+  //（先聊后接）。连带影响：errands.js 详情 canTake 依赖 isErrandChatPeer，
+  // 私单对知道 orderId 的人开放；**此口径需要群里同步 A**。
+  await mock.run('/api/errands/2008/release', 'POST', {});
+  const convAnyUser = await mock.run('/api/conversations', 'POST', {
+    peerId: 5,
+    bizType: 'errand',
+    bizId: 2008
+  });
+  check('非发布者/接单者也能就私单发起会话（复用 3003）', convAnyUser.conversationId === 3003, convAnyUser);
   // 2001 = 大厅单：任何登录用户都能就它发起咨询
   const convHall = await mock.run('/api/conversations', 'POST', {
     peerId: 5,
@@ -551,6 +602,18 @@ const OK_ERRAND = {
   check('favorites status=reserved 含刚转的收藏', (v010FavReserved.list || []).some((i) => i.itemId === v010Id), v010FavReserved.total);
   check('favorites status=on_sale 不含已 reserved 的', !(v010FavOnSale.list || []).some((i) => i.itemId === v010Id), v010FavOnSale.total);
 
+  // 2.5) GET /api/items/mine：status 过滤（11-27 修复：此前忽略 status，
+  // 四个状态 tab 拉到同一批商品，卡片状态标签与所选 tab 自相矛盾）
+  await expectFailMsg('mine status 非法 → 400', '/api/items/mine', 'GET', { status: 'purchased' }, '商品状态不合法');
+  await expectFailMsg('mine status 传数字 → 400', '/api/items/mine', 'GET', { status: 1 }, '商品状态不合法');
+  const v010MineAll = await mock.run('/api/items/mine', 'GET', {});
+  const v010MineReserved = await mock.run('/api/items/mine', 'GET', { status: 'reserved' });
+  const v010MineOnSale = await mock.run('/api/items/mine', 'GET', { status: 'on_sale' });
+  check('mine 默认全量含刚发布的品', (v010MineAll.list || []).some((i) => i.itemId === v010Id), v010MineAll.total);
+  check('mine status=reserved 含刚转的品', (v010MineReserved.list || []).some((i) => i.itemId === v010Id), v010MineReserved.total);
+  check('mine status=on_sale 不含已 reserved 的', !(v010MineOnSale.list || []).some((i) => i.itemId === v010Id), v010MineOnSale.total);
+  check('mine reserved 与 on_sale 结果无交集', !(v010MineReserved.list || []).some((i) => v010MineOnSale.list.some((j) => j.itemId === i.itemId)), { reserved: v010MineReserved.total, onSale: v010MineOnSale.total });
+
   // 3) GET /api/items/:id：view=0 不增加 viewCount
   const v010ViewBase = (await mock.run('/api/items/' + v010Id, 'GET', {})).viewCount;
   const v010ViewKeep = (await mock.run('/api/items/' + v010Id, 'GET', { view: 0 })).viewCount;
@@ -580,6 +643,50 @@ const OK_ERRAND = {
     { pickupArea: '桃园', pickupPlace: '桃园', deliveryLocation: '教学楼A', itemSize: 'small', itemDesc: '书本', reward: 3, timeType: 'asap', visibility: true },
     '可见性不合法'
   );
+
+  console.log('\n[13] 图片消息：msgType=image 上传 URL 校验 / 非法类型 / 文本长度（11-24 用例 27）');
+
+  // 1) 图片消息合法：/uploads/ 开头 → 成功（响应只回 { messageId, createdAt }，对齐 chat.js）
+  const v013Img = await mock.run('/api/conversations/3001/messages', 'POST', {
+    content: '/uploads/1795256941029-test.png',
+    msgType: 'image'
+  });
+  check('图片消息发送成功（messageId + createdAt）', v013Img && v013Img.messageId > 0 && !!v013Img.createdAt, v013Img);
+
+  // 2) 落库侧 msgType=image / content 为 /uploads/ 相对路径
+  const v013Msgs = (await mock.run('/api/conversations/3001/messages', 'GET', { afterId: 0 })).list;
+  const v013Last = v013Msgs[v013Msgs.length - 1];
+  check('落库 msgType=image', v013Last && v013Last.msgType === 'image', v013Last);
+  check('content 为 /uploads/ 相对路径', v013Last && v013Last.content.indexOf('/uploads/') === 0, v013Last);
+
+  // 3) 触发器口径：图片消息后会话预览变 [图片]
+  const v013Conv = (await mock.run('/api/conversations', 'GET', { page: 1, pageSize: 50 })).list.filter(
+    (c) => c.conversationId === 3001
+  )[0];
+  check('会话预览变 [图片]', v013Conv && v013Conv.lastMessage === '[图片]', v013Conv && v013Conv.lastMessage);
+
+  // 4) 图片地址不以 /uploads/ 开头 → 400
+  await expectFailMsg(
+    '图片消息非 /uploads/ → 400',
+    '/api/conversations/3001/messages',
+    'POST',
+    { content: 'https://cdn.example.com/a.png', msgType: 'image' },
+    '图片地址不合法'
+  );
+
+  // 5) msgType 非法 → 400
+  await expectFailMsg(
+    'msgType=banner → 400',
+    '/api/conversations/3001/messages',
+    'POST',
+    { content: 'hello', msgType: 'banner' },
+    '消息类型不合法'
+  );
+
+  // 6) 省略 msgType 默认 text（与 A 路由口径一致）
+  const v013Text = await mock.run('/api/conversations/3001/messages', 'POST', { content: '省略类型默认文本' });
+  const v013TextMsg = (await mock.run('/api/conversations/3001/messages', 'GET', { afterId: 0 })).list.pop();
+  check('省略 msgType 默认 text', v013Text && v013Text.messageId > 0 && v013TextMsg.msgType === 'text', v013TextMsg);
 
   console.log('\n========== 结果：' + pass + ' 通过 / ' + failCount + ' 失败 ==========');
   process.exit(failCount === 0 ? 0 : 1);

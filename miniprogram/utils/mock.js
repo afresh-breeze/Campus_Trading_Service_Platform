@@ -839,10 +839,10 @@ function validateRunnerTimeSlots(raw, availabilityType, now) {
 
 // 会话：表结构 userAId / userBId，接口层再按当前用户取「对方」信息（对齐 chat.js peerOf）
 const conversations = [
-  { conversationId: 3001, userAId: 1, userBId: 2, bizType: 'item', bizId: 1001, lastMessage: '好的，那我们五点在图书馆门口见', lastTime: '2026-11-08 15:31:00' },
-  { conversationId: 3002, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2001, lastMessage: '取件码发你了，麻烦快点哦', lastTime: '2026-11-08 14:58:00' },
+  { conversationId: 3001, userAId: 1, userBId: 2, bizType: 'item', bizId: 1001, lastMessage: '好的，那我们五点在图书馆门口见', lastTime: '2026-11-08 15:31:00', isPinned: false },
+  { conversationId: 3002, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2001, lastMessage: '取件码发你了，麻烦快点哦', lastTime: '2026-11-08 14:58:00', isPinned: false },
   // 私单会话：当前用户（跑腿）与发布者就 2008 这张私单聊过 → 详情 canTake = true
-  { conversationId: 3003, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2008, lastMessage: '这单我接了，马上到', lastTime: '2026-11-11 19:05:00' }
+  { conversationId: 3003, userAId: 1, userBId: 5, bizType: 'errand', bizId: 2008, lastMessage: '这单我接了，马上到', lastTime: '2026-11-11 19:05:00', isPinned: false }
 ];
 
 // 消息：字段对齐 chat.js（message_id / sender_id / msg_type / content / is_read / created_at）
@@ -1084,6 +1084,10 @@ function parseErrandPayload(body) {
   const remark = readOptionalText(body.remark, 255, '备注');
   if (remark.error) return { error: remark.error };
 
+  // 对齐 errands.js readImages：最多 3 张、/uploads/ 相对路径
+  const images = parseImages(body.images);
+  if (images.error) return { error: images.error };
+
   if (body.reward === undefined || body.reward === null || body.reward === '') {
     return { error: '报酬不能为空' };
   }
@@ -1123,6 +1127,7 @@ function parseErrandPayload(body) {
       deliveryLocation: deliveryLocation,
       itemSize: itemSize,
       itemDesc: itemDesc.value,
+      images: images.images,
       remark: remark.value,
       reward: reward,
       timeType: timeType,
@@ -1509,9 +1514,20 @@ const routes = {
   'GET /api/items/mine': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
-    const mine = items
-      .filter((i) => Number(i.sellerId) === CURRENT_USER_ID)
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.itemId - a.itemId));
+    // 状态过滤与 server /mine、GET /api/favorites 同口径：
+    // 传了 status 就按状态筛，非法值 400「商品状态不合法」。
+    // （11-27 修复：此前忽略 status，四个状态 tab 全显示同一批商品，
+    //  卡片右下角状态标签与所选 tab 自相矛盾）
+    let status = '';
+    if (data.status !== undefined && data.status !== '') {
+      if (typeof data.status !== 'string') return fail(400, '商品状态不合法');
+      status = data.status.trim();
+      if (ITEM_STATUSES.indexOf(status) < 0) return fail(400, '商品状态不合法');
+    }
+    let mine = items
+      .filter((i) => Number(i.sellerId) === CURRENT_USER_ID);
+    if (status) mine = mine.filter((i) => i.status === status);
+    mine.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.itemId - a.itemId));
     return delay({
       list: pageOf(mine, pg).map(itemCard),
       total: mine.length,
@@ -1856,6 +1872,7 @@ const routes = {
       deliveryLocation: d.deliveryLocation,
       itemSize: d.itemSize,
       itemDesc: d.itemDesc,
+      images: d.images,
       remark: d.remark,
       reward: d.reward,
       timeType: d.timeType,
@@ -1931,6 +1948,7 @@ const routes = {
       deliveryLocation: d.deliveryLocation,
       itemSize: d.itemSize,
       itemDesc: d.itemDesc,
+      images: d.images,
       remark: d.remark,
       reward: d.reward,
       timeType: d.timeType,
@@ -2125,11 +2143,9 @@ const routes = {
     if (bizType === 'errand' && bizId > 0) {
       const order = errands.filter((e) => Number(e.orderId) === Number(bizId))[0];
       if (!order) return fail(404, '订单不存在');
-      // P0-4：私单只允许发布者发起会话。私单的查看/接单授权依赖「存在该单会话」，
-      // 若这里不拦，任何知道 publisherId + orderId 的人都能先插会话再查看/接走私单。
-      if (order.visibility === 'private' && Number(order.publisherId) !== CURRENT_USER_ID) {
-        return fail(403, '私单只能由发布者发起会话');
-      }
+      // 11-26 用户定稿：取消「私单只能由发布者发起会话」限制（与 server chat.js
+      // 同步）。任何登录用户都能就任何订单发起会话，先聊后接；只保留订单存在性
+      // 检查。连带影响：详情 canTake 依赖 isChatPeer，私单对知道 orderId 的人开放。
     }
 
     let conv = conversations.find(
@@ -2164,6 +2180,8 @@ const routes = {
     if (!pg) return fail(400, '页码或每页条数不合法');
     const mine = conversations.filter((c) => isParticipant(c, CURRENT_USER_ID));
     mine.sort((a, b) => {
+      // 置顶优先，其余按最后消息时间倒序（与 chat.js 的 ORDER BY 同口径）
+      if (!!a.isPinned !== !!b.isPinned) return a.isPinned ? -1 : 1;
       if (!a.lastTime && !b.lastTime) return b.conversationId - a.conversationId;
       if (!a.lastTime) return 1;
       if (!b.lastTime) return -1;
@@ -2179,11 +2197,55 @@ const routes = {
         lastMessage: c.lastMessage,
         lastTime: c.lastTime,
         unreadCount: unreadOf(c.conversationId, CURRENT_USER_ID),
+        isPinned: !!c.isPinned,
         bizType: c.bizType,
         bizId: c.bizId
       };
     });
     return delay({ list: list, total: mine.length, page: pg.page, pageSize: pg.pageSize });
+  },
+
+  /** 置顶 / 取消置顶：对齐 PATCH /api/conversations/:id/pin */
+  'PATCH /api/conversations/:id/pin': (data) => {
+    const conversationId = parsePositiveInt(data.id);
+    if (!conversationId) return fail(400, '会话 ID 不合法');
+    const conv = findConversation(conversationId);
+    if (!conv) return fail(404, '会话不存在');
+    if (!isParticipant(conv, CURRENT_USER_ID)) return fail(403, '无权操作该会话');
+    if (typeof data.pinned !== 'boolean') return fail(400, 'pinned 必须是布尔值');
+    conv.isPinned = data.pinned;
+    return delay({ pinned: conv.isPinned });
+  },
+
+  /** 标为未读：把对方发的最后一条消息置回未读 */
+  'PUT /api/conversations/:id/unread': (data) => {
+    const conversationId = parsePositiveInt(data.id);
+    if (!conversationId) return fail(400, '会话 ID 不合法');
+    const conv = findConversation(conversationId);
+    if (!conv) return fail(404, '会话不存在');
+    if (!isParticipant(conv, CURRENT_USER_ID)) return fail(403, '无权操作该会话');
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.conversationId !== conversationId) continue;
+      if (Number(m.senderId) === CURRENT_USER_ID) continue;
+      m.isRead = 0;
+      break;
+    }
+    return delay({ unreadCount: unreadOf(conversationId, CURRENT_USER_ID) });
+  },
+
+  /** 删除会话：messages 随会话一并移除 */
+  'DELETE /api/conversations/:id': (data) => {
+    const conversationId = parsePositiveInt(data.id);
+    if (!conversationId) return fail(400, '会话 ID 不合法');
+    const index = conversations.findIndex((c) => c.conversationId === conversationId);
+    if (index < 0) return fail(404, '会话不存在');
+    if (!isParticipant(conversations[index], CURRENT_USER_ID)) return fail(403, '无权操作该会话');
+    conversations.splice(index, 1);
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].conversationId === conversationId) messages.splice(i, 1);
+    }
+    return delay({ deleted: true });
   },
 
   'GET /api/conversations/:id/context': (data) => {

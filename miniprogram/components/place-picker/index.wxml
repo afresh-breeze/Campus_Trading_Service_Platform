@@ -39,42 +39,49 @@
       </block>
 
       <block wx:else>
-        <!-- 分类横滑 -->
-        <scroll-view scroll-x class="pp-cats" show-scrollbar="{{false}}">
+        <!-- 分类换行平铺：7 个分类一屏放不下，横滑截断曾致「一级菜单未显示完整」（11-24 反馈） -->
+        <view class="pp-cats">
           <view
             wx:for="{{categories}}"
             wx:key="*this"
             class="pp-cat {{cat === item ? 'pp-cat--active' : ''}}"
+            hover-class="pp-cat--hover"
             data-cat="{{item}}"
             bindtap="onCatTap"
           >{{item}}</view>
-        </scroll-view>
+        </view>
 
-        <!-- 片区网格 -->
+        <!-- 片区网格：级联入场，zTick 交替触发重放（点分类只有本行入场） -->
         <view class="pp-grid">
           <view
             wx:for="{{zoneList}}"
             wx:key="*this"
-            class="pp-zone {{zone === item ? 'pp-zone--active' : ''}}"
+            class="pp-zone {{zone === item ? 'pp-zone--active' : ''}} pp-anim-{{zTick % 2}}"
+            style="animation-delay: {{index * 40}}ms"
             data-zone="{{item}}"
+            hover-class="pp-chip--hover"
             bindtap="onZoneTap"
           >{{item}}</view>
         </view>
 
-        <!-- 具体地标：只读提示型片区（无下级地标）不出现 -->
-        <block wx:if="{{zone && places.length}}">
+        <!-- 具体地标：高度过渡展开/收起（max-height），避免面板长度跳变；无下级地标片区出提示条 -->
+        <view class="pp-sec {{zone && places.length ? 'pp-sec--open' : ''}}">
           <view class="pp-places-title">{{placeRequired ? '具体地标（发布必须选到楼）' : '具体地标（不选 = 整个片区都算）'}}</view>
           <view class="pp-grid">
             <view
               wx:for="{{places}}"
               wx:key="*this"
-              class="pp-place {{place === item ? 'pp-place--active' : ''}}"
+              class="pp-place {{place === item ? 'pp-place--active' : ''}} pp-anim-{{pTick % 2}}"
+              style="animation-delay: {{index * 40}}ms"
               data-place="{{item}}"
+              hover-class="pp-chip--hover"
               bindtap="onPlaceTap"
             >{{item}}</view>
           </view>
-        </block>
-        <view wx:elif="{{zone && !places.length}}" class="pp-places-tip">该片区无细分地标，选中片区即定位到全区</view>
+        </view>
+        <view class="pp-sec {{zone && !places.length ? 'pp-sec--open' : ''}}">
+          <view class="pp-places-tip">该片区无细分地标，选中片区即定位到全区</view>
+        </view>
       </block>
     </scroll-view>
 
@@ -82,6 +89,7 @@
       <text class="pp-preview ellipsis">{{previewText || '请选择片区'}}</text>
       <button
         class="pp-confirm {{canConfirm ? '' : 'pp-confirm--disabled'}}"
+        hover-class="pp-confirm-hover"
         disabled="{{!canConfirm}}"
         bindtap="onConfirm"
       >确定</button>

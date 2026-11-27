@@ -199,12 +199,14 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
   const chatWxml = fs.readFileSync(path.join(REPO, 'pages', 'chat', 'detail.wxml'), 'utf8');
   check('输入框 maxlength=500 前端就拦', chatWxml.indexOf('maxlength="500"') > -1, null);
 
-  // ============ [8] 打开别人的订单详情（越权）→ 403 友好提示 ============
-  console.log('\n[8] 越权 403 → 友好提示不空白');
-  let e8 = null;
-  await mock.run('/api/conversations', 'POST', { peerId: 5, bizType: 'errand', bizId: 2008 }).catch((e) => { e8 = e; });
-  check('别人私单建会话 403', e8 && e8.code === 403, e8);
-  check('文案可读（非技术报错）', e8 && e8.message === '私单只能由发布者发起会话', e8);
+  // ============ [8] 私单建会话（11-26 定稿：取消限制，先聊后接） ============
+  console.log('\n[8] 私单建会话不再 403');
+  let c8 = null;
+  await mock
+    .run('/api/conversations', 'POST', { peerId: 5, bizType: 'errand', bizId: 2008 })
+    .then((r) => { c8 = r; })
+    .catch(() => {});
+  check('非发布者/接单者也能就私单建会话（幂等复用 3003）', c8 && c8.conversationId === 3003, c8);
   const detailSrc = fs.readFileSync(path.join(REPO, 'pages', 'errand', 'detail.js'), 'utf8');
   check('详情页 403 透出后端原因而非空白', detailSrc.indexOf('err.message') > -1 || detailSrc.indexOf('err && err.message') > -1, null);
 
@@ -248,9 +250,41 @@ const flush = (ms) => new Promise((r) => setTimeout(r, ms || 400));
   console.log('\n[11] 长文本省略');
   const hallWxml2 = fs.readFileSync(path.join(REPO, 'pages', 'errand', 'hall.wxml'), 'utf8');
   const appWxss = fs.readFileSync(path.join(REPO, 'app.wxss'), 'utf8');
-  check('昵称/地点用 ellipsis', hallWxml2.indexOf('order__who ellipsis') > -1 && hallWxml2.indexOf('order__place ellipsis') > -1, null);
+  // 11-25 层级优化后起终点各有独立 class，两者都必须保留 ellipsis（长地名不许撑破卡片）
+  check(
+    '昵称/地点用 ellipsis',
+    hallWxml2.indexOf('order__who ellipsis') > -1 &&
+      /order__place order__place--from ellipsis/.test(hallWxml2) &&
+      /order__place order__place--to ellipsis/.test(hallWxml2),
+    null
+  );
   check('描述用两行省略', hallWxml2.indexOf('ellipsis-2') > -1, null);
   check('全局 .ellipsis 定义了 overflow hidden', /\.ellipsis\s*\{[^}]*overflow:\s*hidden/.test(appWxss), null);
+  // 11-25 全站宋体（page 级 font-family 一处生效；旧黑体栈不得残留）
+  check(
+    '全局字体栈为宋体（Songti SC 优先）',
+    /font-family:\s*'Songti SC'[\s\S]*?serif;/.test(appWxss) && appWxss.indexOf('PingFang SC') === -1,
+    null
+  );
+  // 11-25 宋体下 44rpx 标题 700 偏细：公共层统一提 900 + 细描边（覆盖 A/B 两页大标题）
+  check(
+    '页面大标题统一 900 + 细描边',
+    /\.home-bar__title,\s*\n\.hall-bar__title\s*\{[\s\S]*?font-weight: 900[\s\S]*?-webkit-text-stroke: 0\.6rpx currentColor/.test(appWxss),
+    null
+  );
+  // custom-tab-bar 是独立样式作用域，page 的宋体够不到——tab 根上必须自带同款字体栈
+  const tabWxss = fs.readFileSync(path.join(REPO, 'custom-tab-bar', 'index.wxss'), 'utf8');
+  check(
+    '自定义 tabBar 也用宋体栈',
+    /font-family:\s*'Songti SC'[\s\S]*?serif;/.test(tabWxss),
+    null
+  );
+  // 宋体笔画细，次/辅级令牌需保持加深后的对比度（回退旧值即失守）
+  check(
+    '次/辅级令牌为宋体加深版（text-2 #594A3B / text-3 #7E6C5A）',
+    /--color-text-2:\s*#594A3B/.test(appWxss) && /--color-text-3:\s*#7E6C5A/.test(appWxss),
+    null
+  );
 
   // ============ [12] 无数据新账号 → 空态不是报错 ============
   console.log('\n[12] 新账号空态');

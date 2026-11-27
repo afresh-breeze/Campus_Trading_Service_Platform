@@ -1,6 +1,19 @@
 <!-- 我的代取（B 成员，11-15）：两个 tab + 状态分组/筛选 + 快捷操作 -->
 <nav-top back title="{{pageTitle}}" />
-<view class="page page-body">
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
+<view class="page page-body parallax-wrap {{parallax ? 'parallax-left' : ''}}">
 
   <!-- 登录门 -->
   <view wx:if="{{!isLogin}}" class="me-state">
@@ -10,6 +23,8 @@
   <block wx:else>
     <!-- 角色切换：我发布的 / 我接的 -->
     <view class="me-tabs">
+      <!-- 滑动指示条：切 tab 时棕色胶囊平滑平移，不生切（11-25 用户反馈） -->
+      <view class="me-tabs__pill {{role === 'runner' ? 'me-tabs__pill--right' : ''}}"></view>
       <view
         wx:for="{{tabs}}"
         wx:key="key"
@@ -36,10 +51,8 @@
 
     <!-- 首屏加载 -->
     <block wx:if="{{loading}}">
-      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-        <view class="sk-line sk-line--lg"></view>
-        <view class="sk-line sk-line--md"></view>
-        <view class="sk-line sk-line--sm"></view>
+      <view class="me-state me-state--loading">
+        <loading-eyes />
       </view>
     </block>
 
@@ -48,7 +61,7 @@
       <view class="card me-state__card">
         <text class="t-title">加载失败</text>
         <text class="t-sub me-state__desc">{{error}}</text>
-        <button class="btn btn-primary btn-block" bindtap="onRetry">重新加载</button>
+        <button class="btn btn-primary btn-block" hover-class="btn--press" bindtap="onRetry">重新加载</button>
       </view>
     </view>
 
@@ -121,6 +134,7 @@
                 wx:for-item="act"
                 class="me-act {{act.key === 'cancel' ? 'me-act--danger' : (act.key === 'complete' ? 'me-act--primary' : '')}}"
                 size="mini"
+                hover-class="me-act--hover"
                 data-key="{{act.key}}"
                 data-id="{{card.orderId}}"
                 catchtap="onAction"
@@ -198,3 +212,4 @@
 
   <view class="safe-bottom"></view>
 </view>
+</scroll-view>

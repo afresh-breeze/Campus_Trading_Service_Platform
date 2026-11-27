@@ -1,5 +1,18 @@
 <!-- 找跑腿匹配页（B 成员，11-15）：私单已建好，这里只「展示 + 联系」，不改订单状态 -->
 <nav-top back title="{{pageTitle}}" />
+<scroll-view
+  class="page-scroll"
+  scroll-y
+  scroll-top="{{svTop}}"
+  refresher-enabled
+  refresher-default-style="none"
+  refresher-background="transparent"
+  refresher-triggered="{{pulling}}"
+  bindrefresherrefresh="onRefresh"
+  bindscrolltolower="onReachBottom"
+>
+  <view slot="refresher" class="pull-eyes"
+    style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20rpx 0;"><loading-eyes mini motto="{{false}}" /></view>
 <view class="page page-body">
 
   <!-- 登录门 -->
@@ -88,17 +101,25 @@
         </view>
       </picker>
 
-      <button class="btn btn-primary btn-block rp-filter__btn" disabled="{{refreshing}}" bindtap="onRequery">
+      <button hover-class="btn--press" class="btn btn-primary btn-block rp-filter__btn" disabled="{{refreshing}}" bindtap="onRequery">
         {{refreshing ? '匹配中…' : '重新匹配'}}
+      </button>
+      <!-- 没匹配到跑腿时，发布入口收进本卡片，紧挨「重新匹配」下方 -->
+      <button
+        wx:if="{{canPublish && !firstLoading && !error && !list.length}}"
+        hover-class="btn--press"
+        class="btn btn-ghost btn-block rp-filter__publish"
+        disabled="{{publishing}}"
+        bindtap="onPublishHall"
+      >
+        {{publishing ? '发布中…' : '把这单发布到大厅'}}
       </button>
     </view>
 
-    <!-- 首屏加载 -->
+    <!-- 首屏加载：眼睛 + 随机短句（全站统一加载态） -->
     <block wx:if="{{firstLoading}}">
-      <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-        <view class="sk-line sk-line--lg"></view>
-        <view class="sk-line sk-line--md"></view>
-        <view class="sk-line sk-line--sm"></view>
+      <view class="rp-state rp-state--loading">
+        <loading-eyes />
       </view>
     </block>
 
@@ -107,21 +128,18 @@
       <view class="card rp-state__card">
         <text class="t-title">匹配失败</text>
         <text class="t-sub rp-state__desc">{{error}}</text>
-        <button class="btn btn-primary btn-block" bindtap="onRetry">重试</button>
+        <button hover-class="btn--press" class="btn btn-primary btn-block" bindtap="onRetry">重试</button>
       </view>
     </view>
 
-    <!-- 空态：给出路 -->
+    <!-- 空态：给出路（发布按钮已上移到「匹配条件」卡片内） -->
     <view wx:elif="{{!list.length}}" class="rp-state">
       <empty-state
         title="当前没有符合条件的跑腿"
-        desc="试试放宽筛选条件，或把这一单发布到大厅"
+        desc="试试放宽筛选条件，或在上方把这一单发布到大厅"
       />
-      <button wx:if="{{canPublish}}" class="btn btn-primary btn-block" disabled="{{publishing}}" bindtap="onPublishHall">
-        {{publishing ? '发布中…' : '把这单发布到大厅'}}
-      </button>
-      <button wx:else class="btn btn-ghost btn-block" bindtap="onGoHall">去代取大厅看看</button>
-      <view class="t-sub rp-state__tip">也可以修改上方匹配条件后点「重新匹配」</view>
+      <view class="t-sub rp-state__tip">修改上方匹配条件后点「重新匹配」，也可以在上方直接发布到大厅</view>
+      <button wx:if="{{!canPublish}}" hover-class="btn--press" class="btn btn-ghost btn-block rp-state__go-hall" bindtap="onGoHall">去代取大厅看看</button>
     </view>
 
     <block wx:else>
@@ -169,9 +187,17 @@
       </view>
 
       <view class="rp-more">
-        <text wx:if="{{loadingMore}}" class="rp-more__text">加载中…</text>
+        <loading-eyes mini wx:if="{{loadingMore}}" />
         <text wx:elif="{{hasMore}}" class="rp-more__text">上拉加载更多</text>
         <text wx:else class="rp-more__text">没有更多了</text>
+      </view>
+
+      <!-- 匹配到跑腿时，发布到大厅入口放在列表最下方 -->
+      <view wx:if="{{canPublish}}" class="rp-publish">
+        <button hover-class="btn--press" class="btn btn-ghost btn-block" disabled="{{publishing}}" bindtap="onPublishHall">
+          {{publishing ? '发布中…' : '把这单发布到大厅'}}
+        </button>
+        <text class="t-sub rp-publish__tip">发布后所有人都能看到并接单</text>
       </view>
     </block>
   </block>
@@ -188,3 +214,4 @@
 
   <view class="safe-bottom"></view>
 </view>
+</scroll-view>

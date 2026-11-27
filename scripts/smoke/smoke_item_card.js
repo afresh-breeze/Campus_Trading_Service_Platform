@@ -128,6 +128,29 @@ check('时间节点带 list 模式判断', /wx:if="\{\{mode === 'list' && timeTe
 check('meta--empty 兼容仅有时间的情况', /conditionText \|\| placeText \|\| \(mode === 'list' && timeText\)/.test(wxml), 'meta--empty 条件未含 timeText');
 const wxss = fs.readFileSync(path.join(MP, 'components/item-card/index.wxss'), 'utf8');
 check('时间样式 22rpx + text-3', /\.card__time[\s\S]*?font-size: 22rpx[\s\S]*?color: var\(--color-text-3/.test(wxss), '样式不符');
+check('卡片按压只压暗不缩放（11-25 方案二：scale 与视差同帧最伤）',
+  /\.card--hover\s*\{[^}]*opacity:\s*0\.94/.test(wxss) && !/\.card--hover\s*\{[^}]*scale\(/.test(wxss), '按压口径不符');
+
+console.log('\n[ ] 无封面占位：线条图案稳定随机（11-26 定稿）');
+const phCompJs = fs.readFileSync(path.join(MP, 'components/item-card/index.js'), 'utf8');
+check('组件接 placeholder.pick（itemId 稳定随机）', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(phCompJs) && /placeholder\.pick\(item\.itemId\)/.test(phCompJs) && /placeholder: item\.coverUrl \? '' : placeholder\.pick/.test(phCompJs));
+check('wxml 无封面分支渲染占位图（不再「暂无图片」灰框）', wxml.indexOf('{{placeholder}}"') > -1 && wxml.indexOf('card__img--empty') < 0);
+check('占位图资源齐备（7 张全部存在）', [1, 2, 3, 4, 5, 6, 7].every((n) => fs.existsSync(path.join(MP, 'assets/placeholder/ph-' + n + '.png'))));
+// 占位缩小版（11-27 对齐代取侧）：插画约 1/3 居中 + 50% 透明 + 「暂无图片」小字
+check('wxml 无封面走占位分支（插画 + 小字，有封面仍满铺）', /wx:if="\{\{cover\}\}" class="card__img"/.test(wxml) && /wx:else class="card__ph"/.test(wxml) && /class="card__ph-img" src="\{\{placeholder\}\}"/.test(wxml) && />暂无图片</.test(wxml));
+check('wxss 占位插画 50% 透明 + 按模式 1/3 尺寸（grid 106 / list 66）', /card__ph-img\s*\{[^}]*opacity: 0\.5;/.test(wxss) && /card--grid \.card__ph-img\s*\{[^}]*width: 106rpx;/.test(wxss) && /card--list \.card__ph-img\s*\{[^}]*width: 66rpx;/.test(wxss));
+check('wxss 占位小字 18rpx + 居中容器', /card__ph\s*\{[^}]*align-items: center/.test(wxss) && /card__ph-cap\s*\{[^}]*font-size: 18rpx;/.test(wxss));
+
+// 二手商品详情页无图占位（11-27 对齐代取详情页：插画约 1/3 居中 + 50% 透明 + 小字）
+console.log('\n[ ] 二手详情页无图占位（对齐代取详情）');
+const itemDetailWxml = fs.readFileSync(path.join(MP, 'pages/item/detail.wxml'), 'utf8');
+const itemDetailWxss = fs.readFileSync(path.join(MP, 'pages/item/detail.wxss'), 'utf8');
+const itemDetailJs = fs.readFileSync(path.join(MP, 'pages/item/detail.js'), 'utf8');
+check('详情 js 引占位模块并始终生成 galleryPlaceholder（加载失败也复用）', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(itemDetailJs) && /galleryPlaceholder: placeholder\.pick\(item\.itemId\)/.test(itemDetailJs));
+check('详情 applyDetail 把 galleryPlaceholder 写进页面 data（关键：只算不写 wxml 拿不到）', /galleryPlaceholder: view\.galleryPlaceholder/.test(itemDetailJs) && /galleryPlaceholder: ''/.test(itemDetailJs));
+check('详情 wxml 无图走占位分支（插画 + 小字，有图走轮播）', /wx:if="\{\{images\.length\}\}"/.test(itemDetailWxml) && /wx:else class="gallery__ph"/.test(itemDetailWxml) && /class="gallery__ph-img" src="\{\{galleryPlaceholder\}\}"/.test(itemDetailWxml) && />暂无图片</.test(itemDetailWxml));
+check('详情 wxml 图片加载失败也走同款插画占位（不再只有文字）', /wx:else class="gallery__ph">\s*<image class="gallery__ph-img"/.test(itemDetailWxml) && itemDetailWxml.indexOf('gallery__empty') === -1);
+check('详情 wxss 占位插画 172rpx（520 的约 1/3）+ 50% 透明 + 22rpx 小字', /gallery__ph-img\s*\{[^}]*width: 172rpx;[^}]*opacity: 0\.5;/.test(itemDetailWxss) && /gallery__ph-cap\s*\{[^}]*font-size: 22rpx;/.test(itemDetailWxss));
 
 console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
 process.exit(fail ? 1 : 0);

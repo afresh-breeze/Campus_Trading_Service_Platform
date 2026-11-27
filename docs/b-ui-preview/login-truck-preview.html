@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录页 · 货车密码（车身随密码加长）+ 光晕居中 预览</title>
+<style>
+  :root {
+    --primary: #E6A874;
+    --primary-light: #FCDBA9;
+    --primary-dark: #79513D;
+    --bg: #F4F1E7;
+    --text: #2E2119;
+    --ink: #2E2119;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --jelly: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #26221E;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 22px 0;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+  }
+  .hint { color: #8A8072; font-size: 13px; text-align: center; }
+  .hint b { color: #C9BFB2; font-weight: 600; }
+  .btnbar { display: flex; gap: 10px; }
+  .btnbar button {
+    background: #3A332C; color: #E8DFD2; border: 1px solid #4A4238;
+    border-radius: 999px; padding: 6px 18px; font-size: 13px; cursor: pointer;
+  }
+  .btnbar button:hover { background: #4A4238; }
+
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 44px; border: 6px solid #17130F;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+    background: var(--bg);
+  }
+
+  /* ============ 弥散背景 ============ */
+  .mesh { position: absolute; inset: 0; overflow: hidden; background: var(--bg);
+    background-image: linear-gradient(180deg, var(--primary-light) 0%, var(--bg) 46%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(56px); }
+  .b1 { width: 320px; height: 320px; left: -90px;  top: -110px; background: #FCDBA9; }
+  .b2 { width: 280px; height: 280px; right: -110px; top: 150px; background: #E6A874; opacity: .75; }
+  .b3 { width: 300px; height: 300px; left: -60px;  top: 470px; background: #F3CFA0; opacity: .85; }
+  .b4 { width: 240px; height: 240px; right: -40px; bottom: -80px; background: rgba(121,81,61,.14); }
+
+  .status { position: absolute; top: 14px; left: 0; right: 0; display: flex;
+    justify-content: space-between; padding: 0 28px; font-size: 14px; font-weight: 600; color: #4A3A2C; }
+  .capsule { position: absolute; top: 48px; right: 12px; width: 86px; height: 30px;
+    background: rgba(255,255,255,.55); border: 1px solid rgba(0,0,0,.06); border-radius: 999px;
+    display: flex; align-items: center; justify-content: space-evenly; font-size: 13px; color: #3D2E24; }
+
+  /* ============ 标题区 ============ */
+  .hero { position: relative; padding: 112px 0 0; display: flex; flex-direction: column; align-items: center; }
+  .halo { position: absolute; left: 50%; top: 50%; width: 220px; height: 220px;
+    transform: translate(-50%,-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(230,168,116,.4) 0%, rgba(230,168,116,0) 68%); }
+  .title { position: relative; font-size: 30px; font-weight: 800; letter-spacing: 3px; color: var(--text); }
+
+  /* ============ 表单卡：学号 / 货车 / 密码 ============ */
+  .card { position: absolute; left: 24px; right: 24px; top: 252px;
+    background: #FFF; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 6px 24px rgba(122,93,64,.10); }
+  .field { display: flex; align-items: center; height: 56px; padding: 0 18px; }
+  .field:first-child { border-bottom: 1px solid #F0EAE0; }
+  .truck-row + .field { border-top: 1px solid #F0EAE0; }
+  .label { width: 42px; font-size: 15px; font-weight: 600; color: #594A3B; flex: none; }
+  .card input {
+    flex: 1; border: none; outline: none; font-size: 14px; color: var(--text);
+    background: transparent; letter-spacing: 2px;
+  }
+  .card input::placeholder { color: #C9BFB2; letter-spacing: 0; }
+
+  /* ================================================================
+     手绘货车（纯 CSS divs，蓝本：黑色线稿厢式货车）
+     驾驶室固定在左，货箱锚定左缘向右长（密码越长货箱越长）；
+     后轮 + 底盘随货箱后缘走；果冻回弹 = 宽度过冲曲线 + scaleY 抖动
+     ================================================================ */
+  .truck-row { position: relative; height: 108px; }
+  .truck { position: absolute; left: 20px; bottom: 26px; width: 300px; height: 82px; }
+
+  /* —— 货箱（生长主体） —— */
+  .truck__box {
+    position: absolute; left: 72px; bottom: 10px;
+    height: 56px; width: 40px;
+    border: 3px solid var(--ink); border-radius: 5px 7px 7px 5px;
+    transform-origin: left bottom;
+    transition: width 420ms var(--jelly);
+  }
+  .truck__box.wobble-a { animation: jelly-wobble 380ms var(--ease-out); }
+  .truck__box.wobble-b { animation: jelly-wobble 380ms var(--ease-out); }
+  /* 底盘深色条：从货箱向后延伸到车头下方 */
+  .truck__chassis {
+    position: absolute; left: -18px; right: -2px; bottom: -7px;
+    height: 8px; background: var(--ink); border-radius: 4px;
+  }
+  /* —— 车轮：实心黑 + 白色轮毂 —— */
+  .truck__wheel {
+    position: absolute; width: 27px; height: 27px;
+    background: var(--ink); border-radius: 50%; bottom: -16px;
+  }
+  .truck__wheel::after {
+    content: ''; position: absolute; left: 8px; top: 8px;
+    width: 11px; height: 11px; background: #FFF; border-radius: 50%;
+  }
+  .truck__wheel--rear { right: 12px; }   /* 随货箱后缘移动 */
+  /* —— 驾驶室（固定） —— */
+  .truck__cab {
+    position: absolute; left: 0; bottom: 10px;
+    width: 76px; height: 50px;
+    border: 3px solid var(--ink);
+    border-radius: 14px 4px 3px 3px;
+    background: #FFF;
+  }
+  .truck__win {
+    position: absolute; left: 9px; top: 7px;
+    width: 36px; height: 26px;
+    border: 3px solid var(--ink);
+    border-radius: 12px 16px 5px 8px;
+  }
+  .truck__mirror {
+    position: absolute; left: -11px; top: 14px;
+    width: 6px; height: 15px;
+    background: var(--ink); border-radius: 3px;
+  }
+  .truck__bumper {
+    position: absolute; left: -3px; bottom: -3px;
+    width: 13px; height: 11px;
+    background: var(--ink); border-radius: 3px 1px 1px 3px;
+  }
+  .truck__wheel--front { right: 10px; }
+
+  .pw-err { color: #C62828; font-size: 12px; padding: 0 18px 10px 60px; display: none; }
+  .card.error .pw-err { display: block; }
+  .card.error .field--pw { box-shadow: inset 0 0 0 2px #C62828; }
+
+  /* ============ 按钮与底部 ============ */
+  .btn-login { position: absolute; left: 24px; right: 24px; top: 618px;
+    height: 48px; border: none; border-radius: 24px;
+    background: linear-gradient(180deg, #8A5F47, var(--primary-dark));
+    color: #FFF; font-size: 17px; font-weight: 600; letter-spacing: 6px;
+    box-shadow: 0 8px 20px rgba(121,81,61,.28); cursor: pointer; }
+  .links { position: absolute; left: 24px; right: 24px; top: 682px;
+    display: flex; justify-content: space-between; font-size: 13px; color: #8C8275; }
+  .agreement { position: absolute; left: 0; right: 0; top: 724px;
+    text-align: center; font-size: 11px; color: #B0A697; }
+  .agreement b { color: var(--primary-dark); font-weight: 500; text-decoration: underline; }
+  .tip { position: absolute; left: 0; right: 0; top: 748px;
+    text-align: center; font-size: 11px; color: #B45309; }
+
+  /* ============ 开场：光晕落到全屏正中央再弹开 ============ */
+  .glow, .ring {
+    position: absolute; left: calc(50% - 13px); top: calc(50% - 13px);
+    width: 26px; height: 26px; border-radius: 50%; pointer-events: none;
+    opacity: 0;
+  }
+  .glow { z-index: 5;
+    background: radial-gradient(circle, #FFF3DC 0%, rgba(230,168,116,.95) 42%, rgba(230,168,116,0) 72%);
+    box-shadow: 0 0 24px 6px rgba(230,168,116,.55); }
+  .ring { z-index: 5; border: 2px solid rgba(230,168,116,.65);
+    box-shadow: 0 0 18px 2px rgba(230,168,116,.35); }
+
+  body.anim .glow { transform: translate(-190px, -240px) scale(.55);
+    animation: glow-journey 2.2s cubic-bezier(.45,.05,.55,.95) 1 both; }
+  @keyframes glow-journey {
+    0%   { opacity: 0; transform: translate(-190px, -240px) scale(.55); }
+    5%   { opacity: 1; }
+    15%  { transform: translate(-84px, -120px) scale(.85, 1.1); }
+    21%  { transform: translate(0, -6px)  scale(1.14, .84); }
+    26%  { transform: translate(0, -30px) scale(.94, 1.08); }
+    31%  { transform: translate(0, 0)     scale(1.06, .94); }
+    35%  { transform: translate(0, -9px)  scale(.98, 1.02); }
+    39%  { transform: translate(0, 0)     scale(1); }
+    50%  { opacity: 1; transform: translate(0, 0) scale(18); }
+    62%  { opacity: 0; transform: translate(0, 0) scale(26); }
+    100% { opacity: 0; transform: translate(0, 0) scale(26); }
+  }
+  body.anim .ring { animation: ring-spread 2.2s var(--ease-out) 1 both; }
+  @keyframes ring-spread {
+    0%, 38% { opacity: 0; transform: scale(1); }
+    44%     { opacity: .9; }
+    62%     { opacity: 0; transform: scale(14); }
+    100%    { opacity: 0; transform: scale(14); }
+  }
+  body.anim .blob { opacity: 0; animation: bloom 2.2s var(--ease-out) 1 both; }
+  .b1 { --o: 1;  } .b2 { --o: .75; } .b3 { --o: .85; } .b4 { --o: 1; }
+  .b2, .b3, .b4 { animation-delay: .1s; }
+  @keyframes bloom {
+    0%, 38% { opacity: 0; transform: scale(.72); }
+    58%     { opacity: var(--o); transform: scale(1); }
+    100%    { opacity: var(--o); transform: scale(1); }
+  }
+  body.anim .hero, body.anim .card, body.anim .btn-login,
+  body.anim .links, body.anim .agreement, body.anim .tip {
+    opacity: 0; animation: fade-up 2.2s var(--ease-out) 1 both;
+  }
+  body.anim .card { animation-delay: .08s; }
+  body.anim .btn-login { animation-delay: .16s; }
+  body.anim .links { animation-delay: .24s; }
+  body.anim .agreement, body.anim .tip { animation-delay: .3s; }
+  @keyframes fade-up {
+    0%, 54% { opacity: 0; transform: translateY(22px); }
+    74%     { opacity: 1; transform: translateY(0); }
+    100%    { opacity: 1; transform: translateY(0); }
+  }
+  body.anim .status, body.anim .capsule, body.anim .mesh { animation: none !important; opacity: 1 !important; }
+
+  @keyframes jelly-wobble {
+    0% { transform: scaleY(1); }
+    35% { transform: scaleY(.86); }
+    68% { transform: scaleY(1.07); }
+    100% { transform: scaleY(1); }
+  }
+</style>
+</head>
+<body class="anim">
+  <div class="hint"><b>可交互预览 v2（货车版）</b> · 密码越长货箱越长（果冻回弹）；光晕落到全屏正中央再弹开</div>
+  <div class="btnbar">
+    <button onclick="replay()">↺ 重播开场</button>
+    <button id="demo" onclick="demo()">▶ 自动演示</button>
+  </div>
+
+  <div class="phone">
+    <div class="mesh">
+      <div class="blob b1"></div><div class="blob b2"></div>
+      <div class="blob b3"></div><div class="blob b4"></div>
+    </div>
+    <div class="status"><span>19:36</span><span>▮▮ 🔋</span></div>
+    <div class="capsule"><span>•••</span><span>◉</span></div>
+
+    <div class="hero"><div class="halo"></div><div class="title">校园易站</div></div>
+
+    <div class="card" id="card">
+      <div class="field"><span class="label">学号</span><input placeholder="请输入学号（6-20 位数字）"></div>
+      <div class="truck-row">
+        <div class="truck">
+          <div class="truck__box" id="box">
+            <div class="truck__chassis"></div>
+            <div class="truck__wheel truck__wheel--rear"></div>
+          </div>
+          <div class="truck__cab">
+            <div class="truck__win"></div>
+            <div class="truck__mirror"></div>
+            <div class="truck__bumper"></div>
+            <div class="truck__wheel truck__wheel--front"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field field--pw"><span class="label">密码</span>
+        <input id="pw" type="password" maxlength="20" placeholder="请输入密码（6-20 位）"></div>
+      <div class="pw-err">密码需 6-20 位</div>
+    </div>
+
+    <button class="btn-login">登录</button>
+    <div class="links"><span>还没有账号？去注册</span><span>忘记密码</span></div>
+    <div class="agreement">登录即表示同意 <b>《用户协议》</b> 与 <b>《隐私政策》</b></div>
+    <div class="tip">当前为本地模拟数据模式（config.js 中 MOCK = true）</div>
+
+    <div class="ring"></div>
+    <div class="glow"></div>
+  </div>
+
+<script>
+  var BASE = 40, PER = 8, MAXLEN = 20;
+  var boxEl = document.getElementById('box');
+  var pwEl = document.getElementById('pw');
+  var cardEl = document.getElementById('card');
+  var flip = false;
+
+  function apply(len) {
+    boxEl.style.width = (BASE + Math.max(0, len) * PER) + 'px';
+    flip = !flip;
+    boxEl.classList.remove('wobble-a', 'wobble-b');
+    void boxEl.offsetWidth;               // 强制 reflow 重启果冻
+    boxEl.classList.add(flip ? 'wobble-a' : 'wobble-b');
+    cardEl.classList.toggle('error', len > 0 && len < 6);
+  }
+  pwEl.addEventListener('input', function () { apply(pwEl.value.length); });
+
+  function replay() {
+    document.body.classList.remove('anim');
+    void document.body.offsetWidth;
+    document.body.classList.add('anim');
+  }
+
+  var demoTimer = null;
+  function demo() {
+    if (demoTimer) { clearInterval(demoTimer); demoTimer = null; return; }
+    var seq = 'campus2026';
+    var i = 0, phase = 'type';
+    replay();
+    demoTimer = setInterval(function () {
+      if (phase === 'type') {
+        i++;
+        pwEl.value = seq.slice(0, i);
+        apply(i);
+        if (i >= seq.length) { phase = 'trim'; i = seq.length; }
+      } else {
+        i--;
+        pwEl.value = seq.slice(0, i);
+        apply(i);
+        if (i <= 4) { clearInterval(demoTimer); demoTimer = null; }
+      }
+    }, 170);
+  }
+
+  if (location.hash.indexOf('final') >= 0) document.body.classList.remove('anim');
+  // #final-len8：无头截图用，直接呈现密码 8 位的形态
+  var m = location.hash.match(/len(\d+)/);
+  if (m) {
+    pwEl.value = 'x'.repeat(+m[1]);
+    boxEl.style.width = (BASE + (+m[1]) * PER) + 'px';
+    cardEl.classList.toggle('error', +m[1] < 6 && +m[1] > 0);
+  }
+</script>
+</body>
+</html>

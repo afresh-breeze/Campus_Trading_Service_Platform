@@ -12,6 +12,9 @@
 const http = require('../../utils/request');
 const adapter = require('../../utils/adapter');
 const util = require('../../utils/util');
+const placeholder = require('../../utils/placeholder');
+// 小票落款随机短句（11-25 B 加：替换「打印时间」行，与代取详情页同一份清单 utils/motto.js）
+const mottoUtil = require('../../utils/motto');
 
 const CONDITION_TEXT = {
   new: '全新',
@@ -20,6 +23,19 @@ const CONDITION_TEXT = {
   fair: '有使用痕迹'
 };
 const DESC_COLLAPSE_LEN = 120;
+
+/* 小票锯齿：纸面 686rpx / 齿距 26rpx → 取 27 齿（702rpx），末齿由 overflow 裁掉 */
+const SAW_TEETH = [];
+for (let i = 0; i < 27; i++) SAW_TEETH.push(i);
+
+/* 小票落款图案：512×512 黑线条透明底 PNG，按内容语义命名 */
+const DOODLE_IMAGES = [
+  '/assets/receipt/cat.png',
+  '/assets/receipt/mouse.png',
+  '/assets/receipt/cake.png',
+  '/assets/receipt/umbrella.png',
+  '/assets/receipt/trees.png'
+];
 
 function formatPrice(v) {
   const n = Number(v);
@@ -103,6 +119,9 @@ function mapDetail(raw) {
   return {
     item,
     images,
+    // 无图占位插画（11-27 对齐代取详情页：约 1/3 居中 + 50% 透明 + 「暂无图片」）。
+    // 有实拍图时也生成备用值：图片加载失败降级分支同样画占位图，不能再只留文字。
+    galleryPlaceholder: placeholder.pick(item.itemId),
     seller: {
       name: sellerName,
       initial: sellerName.slice(0, 1) || '卖',
@@ -131,6 +150,7 @@ function mapDetail(raw) {
 
 Page({
   data: {
+    anim: 'enter',
     id: 0,
     loading: true,
     refreshing: false,
@@ -139,6 +159,8 @@ Page({
     canRetry: false,
     item: null,
     images: [],
+    // 无图/加载失败时的线条插画路径（applyDetail 由 mapDetail 回填）
+    galleryPlaceholder: '',
     imageIndex: 0,
     imageErrors: {},
     seller: { name: '', initial: '', avatarUrl: '', creditText: '' },
@@ -160,12 +182,21 @@ Page({
     showBar: false,
     favoriting: false,
     submitting: false,
-    actionKey: ''
+    actionKey: '',
+    sawTeeth: SAW_TEETH,
+    receiptImage: DOODLE_IMAGES[0],
+    receiptDate: '',
+    receiptMotto: ''
   },
 
   onLoad(options) {
     this._reqSeq = 0;
     this._viewCounted = false;
+    // 图案与短句只在打开页面时抽一次；之后的刷新/回跳不重抽，避免闪变
+    this.setData({
+      receiptImage: DOODLE_IMAGES[Math.floor(Math.random() * DOODLE_IMAGES.length)],
+      receiptMotto: mottoUtil.randomMotto()
+    });
     const id = Number(options && options.id || 0);
     if (!Number.isInteger(id) || id <= 0) {
       this.setData({
@@ -178,6 +209,27 @@ Page({
       return;
     }
     this.setData({ id });
+  },
+
+  onReady() {
+    // 入场动画播完移除动画类：transform 常驻会改变后代 fixed 的包含块（detail-bar 错位的老坑）
+    // 摘类对齐 180ms：动画 180ms、此前 220ms 多占 40ms 合成层（11-25 方案次级表）
+    this._enterTimer = setTimeout(() => {
+      if (this.data.anim === 'enter') this.setData({ anim: '' });
+    }, 180);
+  },
+
+  onNavBack() {
+    // 退场：先播右移离场动画（先慢后快）再返回；系统手势返回走原生转场（拦截不到）
+    if (this.data.anim === 'exit') return;
+    clearTimeout(this._enterTimer);
+    this.setData({ anim: 'exit' });
+    this._exitTimer = setTimeout(() => wx.navigateBack(), 250);
+  },
+
+  onUnload() {
+    clearTimeout(this._enterTimer);
+    clearTimeout(this._exitTimer);
   },
 
   onShow() {
@@ -223,6 +275,7 @@ Page({
 
   applyDetail(raw) {
     const view = mapDetail(raw);
+    const printAt = new Date();
     const hasItem = !!this.data.item;
     const nextIndex = view.images.length
       ? (hasItem ? Math.min(this.data.imageIndex, view.images.length - 1) : 0)
@@ -237,6 +290,9 @@ Page({
       canRetry: false,
       item: view.item,
       images: view.images,
+      // 无图/加载失败占位插画：mapDetail 算好后必须逐字段带进 data，
+      // 漏掉这里 wxml 的 src 一直是空串，只剩「暂无图片」文字（11-27 真机反馈）
+      galleryPlaceholder: view.galleryPlaceholder,
       imageIndex: nextIndex,
       imageErrors: {},
       seller: view.seller,
@@ -255,7 +311,8 @@ Page({
       descLong: view.descLong,
       descExpanded: nextDescExpanded,
       actions: view.actions,
-      showBar: view.showBar
+      showBar: view.showBar,
+      receiptDate: util.formatTime(printAt, false)
     });
   },
 

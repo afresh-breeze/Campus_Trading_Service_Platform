@@ -148,6 +148,21 @@ function runner(id, extra) {
   console.log('[3] 摘要与卡片派生');
   check('摘要显示私单', p.data.orderLoaded === true && p.data.order.visibility === 'private', p.data.orderLoaded);
   check('路线文案', p.data.routeText === '桃园 → 李园 3 栋', p.data.routeText);
+  p.loadOrder(3003);
+  flushNext(true, {
+    orderId: 3003,
+    pickupArea: '北区教学区',
+    pickupPlace: '第30教学楼',
+    deliveryLocation: '李园 3 栋',
+    reward: 3.5,
+    timeType: 'asap',
+    status: 'pending',
+    visibility: 'private',
+    canPublish: true
+  });
+  await tick();
+  await tick();
+  check('路线文案优先地标（11-25 用户反馈）', p.data.routeText === '第30教学楼 → 李园 3 栋', p.data.routeText);
   check('canPublish 透出', p.data.canPublish === true);
   check('卡片数 2', p.data.list.length === 2, p.data.list.length);
   const c0 = p.data.list[0];
@@ -164,14 +179,14 @@ function runner(id, extra) {
   console.log('[4] buildQuery 本地预检（文案与后端一致）');
   const p2 = makePage();
   p2.onLoad({});
-  p2.onTimeChange(ev('1')); // deadline
+  p2.onTimeChange(ev('deadline')); // deadline
   let built = p2.buildQuery(1);
   check('deadline 缺截止 → 时间参数不完整', built.error === '时间参数不完整', built);
   p2.onDeadlineDateChange(ev('2026-11-20'));
   p2.onDeadlineTimeChange(ev('18:00'));
   built = p2.buildQuery(1);
   check('deadline 补齐后带 deadline', !!built.query && built.query.deadline === '2026-11-20 18:00:00', built);
-  p2.onTimeChange(ev('2')); // range
+  p2.onTimeChange(ev('range')); // range
   built = p2.buildQuery(1);
   check('range 缺开始 → 时间参数不完整', built.error === '时间参数不完整', built);
   p2.onStartDateChange(ev('2026-11-20'));

@@ -214,6 +214,20 @@ function displayArea(zone, place) {
   return hasPlaces ? zone + ' · 全区' : zone;
 }
 
+/**
+ * 列表卡片用短地名（11-25 用户反馈）：
+ *   选了具体地标 → 只出地标（如「30教」），不再前缀片区。
+ *   52 个地标全校无重名，单独展示不歧义；片区名长（如「南区教学楼」6 字），
+ *   在 36rpx 主级标题下被省略号截成「南区教学…」，信息量为零。
+ *   无地标（pickupPlace=片区名本身）→ 退回片区名。
+ * 详情页仍用 displayArea 出全量「片区 · 地标」。
+ * 刻意不做 isValidPlace 校验：历史脏数据（地标不在白名单）也要能显示。
+ */
+function shortPlace(zone, place) {
+  if (place && place !== zone) return place;
+  return zone || '';
+}
+
 module.exports = {
   CATEGORIES: CATEGORIES,
   ZONES: ZONES,
@@ -224,5 +238,6 @@ module.exports = {
   isValidPlace: isValidPlace,
   zoneOfPlace: zoneOfPlace,
   searchLandmarks: searchLandmarks,
-  displayArea: displayArea
+  displayArea: displayArea,
+  shortPlace: shortPlace
 };

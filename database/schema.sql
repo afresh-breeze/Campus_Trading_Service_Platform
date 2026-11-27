@@ -217,6 +217,8 @@ CREATE TABLE errand_orders (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   taken_at DATETIME NULL,
   completed_at DATETIME NULL,
+  -- 物品图片整组读写（最多 3 张），不新增表：与 runner_profiles 的多值 JSON 同一取舍
+  images JSON NULL,
   CONSTRAINT fk_errands_publisher FOREIGN KEY (publisher_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_errands_runner FOREIGN KEY (runner_id) REFERENCES users(user_id)
@@ -226,6 +228,9 @@ CREATE TABLE errand_orders (
     (time_type = 'asap' AND time_start IS NULL AND deadline IS NULL)
     OR (time_type = 'deadline' AND time_start IS NULL AND deadline IS NOT NULL)
     OR (time_type = 'range' AND time_start IS NOT NULL AND deadline IS NOT NULL AND time_start < deadline)
+  ),
+  CONSTRAINT chk_errands_images CHECK (
+    images IS NULL OR (JSON_TYPE(images) = 'ARRAY' AND JSON_LENGTH(images) <= 3)
   ),
   KEY idx_errands_visibility_status_created (visibility, status, created_at),
   KEY idx_errands_publisher_status (publisher_id, status),
@@ -243,12 +248,15 @@ CREATE TABLE conversations (
   biz_id BIGINT NOT NULL DEFAULT 0,
   last_message VARCHAR(255) NULL,
   last_time DATETIME NULL,
+  -- 会话置顶：列表按 is_pinned DESC 排，置顶项始终在最前
+  is_pinned TINYINT(1) NOT NULL DEFAULT 0,
   -- user_id 自增且从不更新；这两列参与 CHECK，MySQL 不允许其外键带 ON UPDATE CASCADE
   CONSTRAINT fk_conversations_user_a FOREIGN KEY (user_a_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT fk_conversations_user_b FOREIGN KEY (user_b_id) REFERENCES users(user_id)
     ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT chk_conversations_user_order CHECK (user_a_id < user_b_id),
+  CONSTRAINT chk_conversations_is_pinned CHECK (is_pinned IN (0,1)),
   UNIQUE KEY uk_conversations_pair_biz (user_a_id, user_b_id, biz_type, biz_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

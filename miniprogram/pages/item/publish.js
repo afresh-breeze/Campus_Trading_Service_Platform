@@ -156,6 +156,7 @@ Page({
     this._bookTimer = null;
     this._bookBlurTimer = null;
     this._bookSeq = 0;
+    this._bookAutoTitle = '';
     this._manualBookId = 0;
     this._uploadSeq = 0;
     this._uploadChain = Promise.resolve();
@@ -319,6 +320,8 @@ Page({
     const patch = {};
     patch['form.' + field] = value;
     patch['errors.' + field] = '';
+    // 用户手动改过标题后，取消书目时不再把标题还原
+    if (field === 'title') this._bookAutoTitle = '';
     if (field === 'description') patch.descCount = value.length;
     if (field === 'location') patch.placeSelected = buildPlaceSelected(splitLocation(value));
     this.setData(patch);
@@ -662,29 +665,27 @@ Page({
       'errors.manualAuthor': '',
       'errors.manualPublisher': ''
     };
-    if (!trim(this.data.form.title)) {
+    // 只在标题为空、或仍是上一本书自动带出的标题时才覆盖；
+    // 用户自己输入过的标题不抢
+    const currentTitle = trim(this.data.form.title);
+    if (!currentTitle || currentTitle === this._bookAutoTitle) {
       patch['form.title'] = book.title;
+      this._bookAutoTitle = book.title;
+    } else {
+      this._bookAutoTitle = '';
     }
     this.setData(patch);
     this.markDirty();
     this.applyBookCategory();
   },
 
-  onChangeBook() {
-    this.clearBookSelection();
-    this.setData({ bookFocus: true });
-  },
-
   onClearBookSelection() {
     this.clearBookSelection();
   },
 
-  clearBookSelection() {
-    this.clearBookTimers();
-    this._bookSeq += 1;
-    this._manualBookId = 0;
-    this._pendingBookCategory = false;
-    this.setData({
+  /** 清空书目选择；标题只有在仍是自动带入值时才一起清空，避免覆盖用户手输 */
+  buildBookClearPatch() {
+    const patch = {
       bookSelected: null,
       bookKeyword: '',
       bookFocus: false,
@@ -693,7 +694,20 @@ Page({
       bookSuggestVisible: false,
       bookSuggestError: false,
       'errors.book': ''
-    });
+    };
+    if (this._bookAutoTitle && trim(this.data.form.title) === this._bookAutoTitle) {
+      patch['form.title'] = '';
+    }
+    this._bookAutoTitle = '';
+    return patch;
+  },
+
+  clearBookSelection() {
+    this.clearBookTimers();
+    this._bookSeq += 1;
+    this._manualBookId = 0;
+    this._pendingBookCategory = false;
+    this.setData(this.buildBookClearPatch());
   },
 
   onOpenManualBook() {
@@ -701,20 +715,14 @@ Page({
     this._bookSeq += 1;
     this._manualBookId = 0;
     this._pendingBookCategory = false;
-    this.setData({
-      bookSelected: null,
-      bookManualOpen: true,
-      bookSuggestions: [],
-      bookSuggestLoading: false,
-      bookSuggestVisible: false,
-      bookSuggestError: false,
-      manualBook: emptyManualBook(),
-      'errors.book': '',
-      'errors.manualTitle': '',
-      'errors.manualIsbn': '',
-      'errors.manualAuthor': '',
-      'errors.manualPublisher': ''
-    });
+    const patch = this.buildBookClearPatch();
+    patch.bookManualOpen = true;
+    patch.manualBook = emptyManualBook();
+    patch['errors.manualTitle'] = '';
+    patch['errors.manualIsbn'] = '';
+    patch['errors.manualAuthor'] = '';
+    patch['errors.manualPublisher'] = '';
+    this.setData(patch);
   },
 
   onCloseManualBook() {
