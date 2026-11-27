@@ -42,7 +42,10 @@
       <text class="cd-biz-sub__text">{{bizTitleText}}</text>
     </view>
 
-    <!-- 消息区：scroll-into-view 锚点滚底；只在新消息且在底部时滚 -->
+    <!-- 消息区：scroll-into-view 锚点滚底；只在新消息且在底部时滚。
+         bindtap 主动收键盘（11-27 真机反馈）：hold-keyboard 让点空白不自动收起，
+         点消息区空白/气泡时气泡的 tap 事件冒泡到 scroll-view 统一 hideKeyboard；
+         图片预览用 catchtap 不冒泡，但预览时键盘是否收起无感知差异，不处理 -->
     <scroll-view
       class="cd-scroll"
       scroll-y
@@ -50,6 +53,7 @@
       scroll-with-animation
       bindscrolltoupper="onScrollToUpper"
       bindscrolltolower="onScrollToLower"
+      bindtap="onTapHideKb"
     >
       <view wx:if="{{!messages.length}}" class="cd-empty">
         <text class="cd-empty__text">还没有消息，打个招呼吧</text>

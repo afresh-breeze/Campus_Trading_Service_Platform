@@ -372,6 +372,11 @@ const msg = (id, senderId, content, extra) =>
   check('键盘弹起时置零页面安全区 padding（贴住键盘）', /cd-page \{\{keyboardHeight \? 'cd-page--kb' : ''\}\}/.test(wxmlText) && /\.cd-page--kb\s*\{[^}]*padding-bottom: 0;/.test(wxss13));
   check('WXSS 加载失败占位样式', /\.cd-bubble__img--fallback\s*\{/.test(wxss13));
 
+  // 11-27 真机反馈：hold-keyboard 导致点空白处键盘收不起来 → 消息区 bindtap 主动收起
+  check('WXML hold-keyboard 保留（连发语义不变）', /hold-keyboard="\{\{true\}\}"/.test(wxmlText));
+  check('WXML 消息区 bindtap 收键盘', /bindscrolltolower="onScrollToLower"\s*bindtap="onTapHideKb"/.test(wxmlText));
+  check('JS onTapHideKb：键盘收起态直接返回，弹出时调 wx.hideKeyboard', /onTapHideKb\(\) \{\s*if \(!this\.data\.keyboardHeight\) return;\s*if \(wx\.hideKeyboard\) wx\.hideKeyboard\(\);/.test(fs.readFileSync(path.join(MP, 'pages/chat/detail.js'), 'utf8')));
+
   q.onUnload();
   console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
   process.exit(fail ? 1 : 0);

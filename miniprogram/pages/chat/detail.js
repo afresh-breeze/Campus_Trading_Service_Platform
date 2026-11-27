@@ -557,6 +557,15 @@ Page({
     this.setData({ keyboardHeight: h });
   },
 
+  /** 点消息区空白处收起键盘（11-27 真机反馈）。
+   *  输入框 hold-keyboard=true（连发消息时点「发送」不收键盘），副作用是点页面
+   *  空白处键盘也不会自动收起；在消息区 scroll-view 上挂 bindtap 主动收起。
+   *  发送按钮/选图入口不在 scroll-view 内，不冒泡到这里，连发节奏不受影响。 */
+  onTapHideKb() {
+    if (!this.data.keyboardHeight) return;
+    if (wx.hideKeyboard) wx.hideKeyboard();
+  },
+
   // ---- 图片消息（11-24 补齐用例 27：选图 → 上传 → 发送） ----
 
   onPickImage() {
