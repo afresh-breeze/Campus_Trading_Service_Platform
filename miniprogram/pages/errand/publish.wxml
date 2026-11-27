@@ -181,7 +181,7 @@
 
     <view class="field-wrap">
       <view class="field">
-        <view class="field-label">报酬（元）<text class="req">*</text></view>
+        <view class="field-label">报酬/元<text class="req">*</text></view>
         <input
           class="field-input"
           type="digit"

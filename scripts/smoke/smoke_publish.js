@@ -360,7 +360,7 @@ const ev = (value) => ({ detail: { value: value } });
 
   console.log('\n[14] 必填项红星（11-27 对齐二手发布页 .req）');
   const publishWxss14 = fs13.readFileSync(path.join(process.cwd(), 'miniprogram/pages/errand/publish.wxss'), 'utf8');
-  check('四个必填项标签都带红星', ['取件地点', '送达地点', '时间要求', '报酬（元）'].every((t) => new RegExp('>' + t + '<text class="req">\\*</text>').test(publishWxml13)));
+  check('四个必填项标签都带红星', ['取件地点', '送达地点', '时间要求', '报酬/元'].every((t) => new RegExp('>' + t + '<text class="req">\\*</text>').test(publishWxml13)));
   check('选填项不带红星（物品规格/描述/图片/备注）', ['物品规格', '物品描述', '物品图片', '备注'].every((t) => publishWxml13.indexOf('>' + t + '<text class="req">') === -1));
   check('wxss .req 红星样式与二手发布页同口径', /\.req\s*\{[^}]*margin-left: 4rpx;[^}]*color: var\(--color-danger\)/.test(publishWxss14));
 
