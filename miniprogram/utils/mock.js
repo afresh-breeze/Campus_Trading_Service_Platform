@@ -1514,9 +1514,20 @@ const routes = {
   'GET /api/items/mine': (data) => {
     const pg = parsePagination(data);
     if (!pg) return fail(400, '页码或每页条数不合法');
-    const mine = items
-      .filter((i) => Number(i.sellerId) === CURRENT_USER_ID)
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.itemId - a.itemId));
+    // 状态过滤与 server /mine、GET /api/favorites 同口径：
+    // 传了 status 就按状态筛，非法值 400「商品状态不合法」。
+    // （11-27 修复：此前忽略 status，四个状态 tab 全显示同一批商品，
+    //  卡片右下角状态标签与所选 tab 自相矛盾）
+    let status = '';
+    if (data.status !== undefined && data.status !== '') {
+      if (typeof data.status !== 'string') return fail(400, '商品状态不合法');
+      status = data.status.trim();
+      if (ITEM_STATUSES.indexOf(status) < 0) return fail(400, '商品状态不合法');
+    }
+    let mine = items
+      .filter((i) => Number(i.sellerId) === CURRENT_USER_ID);
+    if (status) mine = mine.filter((i) => i.status === status);
+    mine.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : b.itemId - a.itemId));
     return delay({
       list: pageOf(mine, pg).map(itemCard),
       total: mine.length,

@@ -602,6 +602,18 @@ const OK_ERRAND = {
   check('favorites status=reserved 含刚转的收藏', (v010FavReserved.list || []).some((i) => i.itemId === v010Id), v010FavReserved.total);
   check('favorites status=on_sale 不含已 reserved 的', !(v010FavOnSale.list || []).some((i) => i.itemId === v010Id), v010FavOnSale.total);
 
+  // 2.5) GET /api/items/mine：status 过滤（11-27 修复：此前忽略 status，
+  // 四个状态 tab 拉到同一批商品，卡片状态标签与所选 tab 自相矛盾）
+  await expectFailMsg('mine status 非法 → 400', '/api/items/mine', 'GET', { status: 'purchased' }, '商品状态不合法');
+  await expectFailMsg('mine status 传数字 → 400', '/api/items/mine', 'GET', { status: 1 }, '商品状态不合法');
+  const v010MineAll = await mock.run('/api/items/mine', 'GET', {});
+  const v010MineReserved = await mock.run('/api/items/mine', 'GET', { status: 'reserved' });
+  const v010MineOnSale = await mock.run('/api/items/mine', 'GET', { status: 'on_sale' });
+  check('mine 默认全量含刚发布的品', (v010MineAll.list || []).some((i) => i.itemId === v010Id), v010MineAll.total);
+  check('mine status=reserved 含刚转的品', (v010MineReserved.list || []).some((i) => i.itemId === v010Id), v010MineReserved.total);
+  check('mine status=on_sale 不含已 reserved 的', !(v010MineOnSale.list || []).some((i) => i.itemId === v010Id), v010MineOnSale.total);
+  check('mine reserved 与 on_sale 结果无交集', !(v010MineReserved.list || []).some((i) => v010MineOnSale.list.some((j) => j.itemId === i.itemId)), { reserved: v010MineReserved.total, onSale: v010MineOnSale.total });
+
   // 3) GET /api/items/:id：view=0 不增加 viewCount
   const v010ViewBase = (await mock.run('/api/items/' + v010Id, 'GET', {})).viewCount;
   const v010ViewKeep = (await mock.run('/api/items/' + v010Id, 'GET', { view: 0 })).viewCount;
