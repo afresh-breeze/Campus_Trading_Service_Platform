@@ -31,7 +31,6 @@
           <view wx:if="{{bookSelected.isbnText}}" class="book-selected__isbn">{{bookSelected.isbnText}}</view>
         </view>
         <view class="book-selected__actions">
-          <view class="book-selected__action" bindtap="onChangeBook" hover-class="book-selected__action--hover">更换</view>
           <view class="book-selected__action book-selected__action--muted" bindtap="onClearBookSelection" hover-class="book-selected__action--hover">取消</view>
         </view>
       </view>

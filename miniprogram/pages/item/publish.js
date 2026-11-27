@@ -670,11 +670,6 @@ Page({
     this.applyBookCategory();
   },
 
-  onChangeBook() {
-    this.clearBookSelection();
-    this.setData({ bookFocus: true });
-  },
-
   onClearBookSelection() {
     this.clearBookSelection();
   },
