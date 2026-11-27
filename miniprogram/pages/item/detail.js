@@ -159,6 +159,8 @@ Page({
     canRetry: false,
     item: null,
     images: [],
+    // 无图/加载失败时的线条插画路径（applyDetail 由 mapDetail 回填）
+    galleryPlaceholder: '',
     imageIndex: 0,
     imageErrors: {},
     seller: { name: '', initial: '', avatarUrl: '', creditText: '' },
@@ -288,6 +290,9 @@ Page({
       canRetry: false,
       item: view.item,
       images: view.images,
+      // 无图/加载失败占位插画：mapDetail 算好后必须逐字段带进 data，
+      // 漏掉这里 wxml 的 src 一直是空串，只剩「暂无图片」文字（11-27 真机反馈）
+      galleryPlaceholder: view.galleryPlaceholder,
       imageIndex: nextIndex,
       imageErrors: {},
       seller: view.seller,
