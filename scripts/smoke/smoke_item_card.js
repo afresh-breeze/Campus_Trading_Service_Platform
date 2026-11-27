@@ -136,6 +136,10 @@ const phCompJs = fs.readFileSync(path.join(MP, 'components/item-card/index.js'),
 check('组件接 placeholder.pick（itemId 稳定随机）', /require\('\.\.\/\.\.\/utils\/placeholder'\)/.test(phCompJs) && /placeholder\.pick\(item\.itemId\)/.test(phCompJs) && /placeholder: item\.coverUrl \? '' : placeholder\.pick/.test(phCompJs));
 check('wxml 无封面分支渲染占位图（不再「暂无图片」灰框）', wxml.indexOf('{{placeholder}}"') > -1 && wxml.indexOf('card__img--empty') < 0);
 check('占位图资源齐备（7 张全部存在）', [1, 2, 3, 4, 5, 6, 7].every((n) => fs.existsSync(path.join(MP, 'assets/placeholder/ph-' + n + '.png'))));
+// 占位缩小版（11-27 对齐代取侧）：插画约 1/3 居中 + 50% 透明 + 「暂无图片」小字
+check('wxml 无封面走占位分支（插画 + 小字，有封面仍满铺）', /wx:if="\{\{cover\}\}" class="card__img"/.test(wxml) && /wx:else class="card__ph"/.test(wxml) && /class="card__ph-img" src="\{\{placeholder\}\}"/.test(wxml) && />暂无图片</.test(wxml));
+check('wxss 占位插画 50% 透明 + 按模式 1/3 尺寸（grid 106 / list 66）', /card__ph-img\s*\{[^}]*opacity: 0\.5;/.test(wxss) && /card--grid \.card__ph-img\s*\{[^}]*width: 106rpx;/.test(wxss) && /card--list \.card__ph-img\s*\{[^}]*width: 66rpx;/.test(wxss));
+check('wxss 占位小字 18rpx + 居中容器', /card__ph\s*\{[^}]*align-items: center/.test(wxss) && /card__ph-cap\s*\{[^}]*font-size: 18rpx;/.test(wxss));
 
 console.log('\n========== ' + pass + ' 通过 / ' + fail + ' 失败 ==========');
 process.exit(fail ? 1 : 0);
