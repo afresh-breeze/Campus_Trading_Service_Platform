@@ -43,7 +43,7 @@ CREATE TABLE `books` (
   UNIQUE KEY `uk_books_isbn` (`isbn`),
   KEY `idx_books_title` (`title`(50)),
   CONSTRAINT `chk_books_price_ref` CHECK (((`price_ref` is null) or (`price_ref` >= 0)))
-) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=115 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,7 +69,7 @@ CREATE TABLE `categories` (
   `sort_no` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`category_id`),
   UNIQUE KEY `uk_categories_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -103,9 +103,9 @@ CREATE TABLE `conversations` (
   KEY `fk_conversations_user_b` (`user_b_id`),
   CONSTRAINT `fk_conversations_user_a` FOREIGN KEY (`user_a_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_conversations_user_b` FOREIGN KEY (`user_b_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `chk_conversations_user_order` CHECK ((`user_a_id` < `user_b_id`)),
-  CONSTRAINT `chk_conversations_is_pinned` CHECK ((`is_pinned` in (0,1)))
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `chk_conversations_is_pinned` CHECK ((`is_pinned` in (0,1))),
+  CONSTRAINT `chk_conversations_user_order` CHECK ((`user_a_id` < `user_b_id`))
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -114,7 +114,6 @@ CREATE TABLE `conversations` (
 
 LOCK TABLES `conversations` WRITE;
 /*!40000 ALTER TABLE `conversations` DISABLE KEYS */;
-INSERT INTO `conversations` (`conversation_id`,`user_a_id`,`user_b_id`,`biz_type`,`biz_id`,`last_message`,`last_time`,`is_pinned`) VALUES (4,2,6,'item',89,NULL,NULL,0),(5,2,7,'item',87,'小宝贝','2026-11-16 20:42:05',0),(7,2,6,'item',70,NULL,NULL,0),(8,2,7,'item',94,NULL,NULL,0);
 /*!40000 ALTER TABLE `conversations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -151,10 +150,10 @@ CREATE TABLE `errand_orders` (
   KEY `idx_errands_runner_status` (`runner_id`,`status`),
   CONSTRAINT `fk_errands_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_errands_runner` FOREIGN KEY (`runner_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `chk_errands_images` CHECK (((`images` is null) or ((json_type(`images`) = _gbk'ARRAY') and (json_length(`images`) <= 3)))),
   CONSTRAINT `chk_errands_reward` CHECK ((`reward` >= 0)),
-  CONSTRAINT `chk_errands_time` CHECK ((((`time_type` = _utf8mb4'asap') and (`time_start` is null) and (`deadline` is null)) or ((`time_type` = _utf8mb4'deadline') and (`time_start` is null) and (`deadline` is not null)) or ((`time_type` = _utf8mb4'range') and (`time_start` is not null) and (`deadline` is not null) and (`time_start` < `deadline`)))),
-  CONSTRAINT `chk_errands_images` CHECK (((`images` is null) or ((json_type(`images`) = _utf8mb4'ARRAY') and (json_length(`images`) <= 3))))
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `chk_errands_time` CHECK ((((`time_type` = _utf8mb4'asap') and (`time_start` is null) and (`deadline` is null)) or ((`time_type` = _utf8mb4'deadline') and (`time_start` is null) and (`deadline` is not null)) or ((`time_type` = _utf8mb4'range') and (`time_start` is not null) and (`deadline` is not null) and (`time_start` < `deadline`))))
+) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163,7 +162,7 @@ CREATE TABLE `errand_orders` (
 
 LOCK TABLES `errand_orders` WRITE;
 /*!40000 ALTER TABLE `errand_orders` DISABLE KEYS */;
-INSERT INTO `errand_orders` VALUES (11,2,NULL,'桃园','桃园','李园 2 栋 305','small','一份外卖','桃园 3 栋楼下，到了打电话',5.00,'asap',NULL,NULL,'pending','hall','2026-11-15 14:33:20',NULL,NULL),(12,6,NULL,'北区教学区','第16教学楼','橘园 5 栋 212','medium','一箱教材','第16教学楼 301 门口',8.00,'deadline',NULL,'2026-11-16 15:03:20','pending','hall','2026-11-15 13:03:20',NULL,NULL),(13,7,2,'李园','李园','中心图书馆一楼大厅','small','两杯奶茶','李园 6 栋楼下奶茶店取',3.00,'range','2026-11-15 17:03:20','2026-11-15 20:03:20','taken','hall','2026-11-15 11:03:20','2026-11-15 15:27:49',NULL),(14,2,NULL,'南区教学区','第30教学楼','楠园 1 栋 101','large','一个 24 寸行李箱','第30教学楼一楼大厅',15.00,'asap',NULL,NULL,'cancelled','hall','2026-11-15 07:03:20',NULL,NULL),(15,6,NULL,'中心图书馆','中心图书馆','梅园 4 栋 410','small','两本借阅的书','图书馆自助借还机旁',4.00,'deadline',NULL,'2026-11-17 15:03:20','pending','hall','2026-11-15 03:03:20',NULL,NULL),(16,7,NULL,'第一运动场','第一运动场','竹园 6 栋 606','medium','羽毛球拍和球','运动场看台入口',6.00,'range','2026-11-16 15:03:20','2026-11-16 18:03:20','pending','hall','2026-11-14 19:03:20',NULL,NULL),(17,2,NULL,'一号门外/吾悦广场','一号门外/吾悦广场','杏园 2 栋 202','large','一个大件快递','吾悦广场负一楼快递柜',20.00,'asap',NULL,NULL,'pending','hall','2026-11-14 15:03:20',NULL,NULL),(18,6,NULL,'南区其他','文俊楼','南区校医院门口','medium','一个文件袋','文俊楼 205 办公室',10.00,'deadline',NULL,'2026-11-18 15:03:20','pending','hall','2026-11-14 09:03:20',NULL,NULL),(19,7,NULL,'北区图书馆','北区图书馆','茶园 1 栋 101','small','一把雨伞','北区图书馆二楼服务台',2.00,'asap',NULL,NULL,'pending','hall','2026-11-14 03:03:20',NULL,NULL),(20,2,NULL,'桃园','桃园','审计测试-请忽略','small',NULL,'审计测试用，测后取消',1.00,'asap',NULL,NULL,'cancelled','private','2026-11-19 19:51:57',NULL,NULL);
+INSERT INTO `errand_orders` VALUES (60,2,NULL,'桃园','桃园','李园 2 栋 305','small','一份外卖','桃园 3 栋楼下，到了打电话',5.00,'asap',NULL,NULL,'pending','hall','2026-11-28 15:16:14',NULL,NULL,NULL),(61,6,NULL,'北区教学区','第16教学楼','橘园 5 栋 212','medium','一箱教材','第16教学楼 301 门口',8.00,'deadline',NULL,'2026-11-29 15:46:14','pending','hall','2026-11-28 13:46:14',NULL,NULL,NULL),(62,7,NULL,'李园','李园','中心图书馆一楼大厅','small','两杯奶茶','李园 6 栋楼下奶茶店取',3.00,'range','2026-11-28 17:46:14','2026-11-28 20:46:14','pending','hall','2026-11-28 11:46:14',NULL,NULL,NULL),(63,2,NULL,'南区教学区','第30教学楼','楠园 1 栋 101','large','一个 24 寸行李箱','第30教学楼一楼大厅',15.00,'asap',NULL,NULL,'pending','hall','2026-11-28 07:46:14',NULL,NULL,NULL),(64,6,NULL,'中心图书馆','中心图书馆','梅园 4 栋 410','small','两本借阅的书','图书馆自助借还机旁',4.00,'deadline',NULL,'2026-11-30 15:46:14','pending','hall','2026-11-28 03:46:14',NULL,NULL,NULL),(65,7,NULL,'第一运动场','第一运动场','竹园 6 栋 606','medium','羽毛球拍和球','运动场看台入口',6.00,'range','2026-11-29 15:46:14','2026-11-29 18:46:14','pending','hall','2026-11-27 19:46:14',NULL,NULL,NULL),(66,2,NULL,'一号门外/吾悦广场','一号门外/吾悦广场','杏园 2 栋 202','large','一个大件快递','吾悦广场负一楼快递柜',20.00,'asap',NULL,NULL,'pending','hall','2026-11-27 15:46:14',NULL,NULL,NULL),(67,6,NULL,'南区其他','文俊楼','南区校医院门口','medium','一个文件袋','文俊楼 205 办公室',10.00,'deadline',NULL,'2026-12-01 15:46:14','pending','hall','2026-11-27 09:46:14',NULL,NULL,NULL),(68,7,NULL,'北区图书馆','北区图书馆','茶园 1 栋 101','small','一把雨伞','北区图书馆二楼服务台',2.00,'asap',NULL,NULL,'pending','hall','2026-11-27 03:46:14',NULL,NULL,NULL);
 /*!40000 ALTER TABLE `errand_orders` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -206,7 +205,7 @@ CREATE TABLE `errand_status_logs` (
   KEY `idx_errand_logs_order_time` (`order_id`,`changed_at`),
   CONSTRAINT `fk_errand_logs_order` FOREIGN KEY (`order_id`) REFERENCES `errand_orders` (`order_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_errand_logs_user` FOREIGN KEY (`changed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -215,7 +214,6 @@ CREATE TABLE `errand_status_logs` (
 
 LOCK TABLES `errand_status_logs` WRITE;
 /*!40000 ALTER TABLE `errand_status_logs` DISABLE KEYS */;
-INSERT INTO `errand_status_logs` VALUES (3,14,'pending','cancelled',2,'2026-11-15 15:27:36'),(4,13,'pending','taken',2,'2026-11-15 15:27:49'),(5,20,'pending','cancelled',2,'2026-11-19 19:51:57');
 /*!40000 ALTER TABLE `errand_status_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -243,7 +241,7 @@ CREATE TABLE `favorites` (
 
 LOCK TABLES `favorites` WRITE;
 /*!40000 ALTER TABLE `favorites` DISABLE KEYS */;
-INSERT INTO `favorites` VALUES (2,66,'2026-11-15 15:03:19'),(2,70,'2026-11-15 15:03:19'),(2,94,'2026-11-19 09:08:44');
+INSERT INTO `favorites` VALUES (2,1203,'2026-11-28 15:46:14'),(2,1207,'2026-11-28 15:46:14'),(2,1209,'2026-11-28 15:46:14');
 /*!40000 ALTER TABLE `favorites` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -300,7 +298,7 @@ CREATE TABLE `feedback` (
   PRIMARY KEY (`feedback_id`),
   KEY `idx_feedback_user_time` (`user_id`,`created_at`),
   CONSTRAINT `fk_feedback_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -327,7 +325,7 @@ CREATE TABLE `item_images` (
   PRIMARY KEY (`image_id`),
   KEY `idx_item_images_item_sort` (`item_id`,`sort_no`),
   CONSTRAINT `fk_item_images_item` FOREIGN KEY (`item_id`) REFERENCES `items` (`item_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=116 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -336,7 +334,7 @@ CREATE TABLE `item_images` (
 
 LOCK TABLES `item_images` WRITE;
 /*!40000 ALTER TABLE `item_images` DISABLE KEYS */;
-INSERT INTO `item_images` VALUES (79,66,'/demo/book-calculus.png',1),(80,66,'/demo/book-data-structure.png',2),(81,66,'/demo/book-network.png',3),(82,67,'/demo/book-calculus.png',1),(83,68,'/demo/book-data-structure.png',1),(84,69,'/demo/book-network.png',1),(85,70,'/demo/mouse.png',1),(86,71,'/demo/desk.png',1),(87,72,'/demo/lamp.png',1),(88,73,'/demo/backpack.png',1),(89,74,'/demo/yoga-mat.png',1),(90,75,'/demo/bottle.png',1),(91,76,'/demo/headphones.jpg',1),(92,77,'/demo/keyboard.jpg',1),(93,78,'/demo/mini-fan.jpg',1),(94,79,'/demo/kettle.jpg',1),(95,80,'/demo/basketball.jpg',1),(96,81,'/demo/badminton.jpg',1),(97,82,'/demo/hoodie.jpg',1),(98,83,'/demo/cet-books.jpg',1),(99,84,'/demo/storage-box.jpg',1),(100,85,'/demo/book-calculus.png',1),(101,86,'/demo/book-calculus.png',1),(102,87,'/demo/book-calculus.png',1),(103,88,'/demo/book-calculus.png',1),(104,89,'/demo/book-calculus.png',1),(105,90,'/demo/cet-books.jpg',1),(106,91,'/demo/cet-books.jpg',1),(107,92,'/demo/book-calculus.png',1),(108,93,'/demo/book-calculus.png',1),(109,94,'/demo/book-data-structure.png',1),(110,95,'/demo/book-data-structure.png',1),(111,96,'/demo/book-network.png',1),(112,97,'/demo/cet-books.jpg',1),(113,98,'/demo/book-network.png',1),(114,99,'/demo/book-network.png',1),(115,100,'/demo/book-data-structure.png',1);
+INSERT INTO `item_images` VALUES (195,1203,'/demo/book-calculus.png',1),(196,1203,'/demo/book-data-structure.png',2),(197,1203,'/demo/book-network.png',3),(198,1204,'/demo/book-calculus.png',1),(199,1205,'/demo/book-data-structure.png',1),(200,1206,'/demo/book-network.png',1),(201,1207,'/demo/mouse.png',1),(202,1208,'/demo/desk.png',1),(203,1209,'/demo/lamp.png',1),(204,1210,'/demo/backpack.png',1),(205,1211,'/demo/yoga-mat.png',1),(206,1212,'/demo/bottle.png',1),(207,1213,'/demo/headphones.jpg',1),(208,1214,'/demo/keyboard.jpg',1),(209,1215,'/demo/mini-fan.jpg',1),(210,1216,'/demo/kettle.jpg',1),(211,1217,'/demo/basketball.jpg',1),(212,1218,'/demo/badminton.jpg',1),(213,1219,'/demo/hoodie.jpg',1),(214,1220,'/demo/cet-books.jpg',1),(215,1221,'/demo/storage-box.jpg',1),(216,1222,'/demo/book-calculus.png',1),(217,1223,'/demo/book-calculus.png',1),(218,1224,'/demo/book-calculus.png',1),(219,1225,'/demo/book-calculus.png',1),(220,1226,'/demo/book-calculus.png',1),(221,1227,'/demo/cet-books.jpg',1),(222,1228,'/demo/cet-books.jpg',1),(223,1229,'/demo/book-calculus.png',1),(224,1230,'/demo/book-calculus.png',1),(225,1231,'/demo/book-data-structure.png',1),(226,1232,'/demo/book-data-structure.png',1),(227,1233,'/demo/book-network.png',1),(228,1234,'/demo/cet-books.jpg',1),(229,1235,'/demo/book-network.png',1),(230,1236,'/demo/book-network.png',1),(231,1237,'/demo/book-data-structure.png',1);
 /*!40000 ALTER TABLE `item_images` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -359,7 +357,7 @@ CREATE TABLE `item_status_logs` (
   KEY `idx_item_logs_item_time` (`item_id`,`changed_at`),
   CONSTRAINT `fk_item_logs_item` FOREIGN KEY (`item_id`) REFERENCES `items` (`item_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_item_logs_user` FOREIGN KEY (`changed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -368,7 +366,6 @@ CREATE TABLE `item_status_logs` (
 
 LOCK TABLES `item_status_logs` WRITE;
 /*!40000 ALTER TABLE `item_status_logs` DISABLE KEYS */;
-INSERT INTO `item_status_logs` VALUES (5,99,'on_sale','reserved',2,'2026-11-16 20:32:29'),(6,99,'reserved','on_sale',2,'2026-11-16 20:32:34'),(7,85,'on_sale','reserved',2,'2026-11-18 10:55:54'),(8,76,'on_sale','reserved',2,'2026-11-18 10:56:06'),(9,94,'on_sale','reserved',7,'2026-11-18 13:00:20'),(10,94,'reserved','on_sale',7,'2026-11-18 13:00:20'),(11,99,'on_sale','reserved',2,'2026-11-18 13:38:45'),(12,99,'reserved','on_sale',2,'2026-11-18 13:38:51');
 /*!40000 ALTER TABLE `item_status_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -411,7 +408,7 @@ CREATE TABLE `items` (
   CONSTRAINT `chk_items_original_price` CHECK (((`original_price` is null) or (`original_price` >= 0))),
   CONSTRAINT `chk_items_price` CHECK ((`price` >= 0)),
   CONSTRAINT `chk_items_view_count` CHECK ((`view_count` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1238 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -420,7 +417,7 @@ CREATE TABLE `items` (
 
 LOCK TABLES `items` WRITE;
 /*!40000 ALTER TABLE `items` DISABLE KEYS */;
-INSERT INTO `items` VALUES (66,6,1,NULL,'normal','高数、数据结构、计算机网络 三本教材打包','三门课都用得上，无缺页，少量笔记，打包出更划算。',45.00,133.00,'good',1,NULL,'桃园','on_sale',57,1,'2026-11-15 15:03:20','2026-11-16 13:19:58'),(67,6,1,1,'book','高等数学（第七版）上册 九成新','只翻过前两章，无笔记无划线，可小刀。',18.00,45.00,'like_new',1,NULL,'桃园','on_sale',128,0,'2026-11-14 15:03:20','2026-11-15 15:03:19'),(68,7,1,2,'book','数据结构（C 语言版）','期末复习用完，书角轻微磨损，内容完整。',15.00,39.00,'good',0,NULL,'北区教学区','on_sale',74,0,'2026-11-13 15:03:20','2026-11-15 15:03:19'),(69,7,1,3,'book','计算机网络（第 8 版）','上课只用了半学期，保存得很好。',22.00,59.00,'like_new',1,NULL,'南区教学区','on_sale',43,0,'2026-11-12 15:03:20','2026-11-15 15:03:19'),(70,6,2,NULL,'normal','罗技 M720 无线鼠标','功能正常，送电池，宿舍搬东西出了。',95.00,199.00,'good',1,NULL,'桃园','on_sale',67,1,'2026-11-11 15:03:20','2026-11-19 16:16:08'),(71,7,3,NULL,'normal','宿舍折叠小桌板','桌面无划痕，搬宿舍带不走，自提。',25.00,69.00,'good',0,NULL,'李园','on_sale',39,0,'2026-11-10 15:03:20','2026-11-15 15:03:19'),(72,6,3,NULL,'normal','小米 LED 台灯','三档亮度，充电正常，适合宿舍书桌。',35.00,89.00,'like_new',1,NULL,'橘园','on_sale',51,0,'2026-11-09 15:03:20','2026-11-19 16:16:07'),(73,7,4,NULL,'normal','阿迪达斯双肩包','容量大，能放 15 寸电脑，已预订。',60.00,199.00,'good',1,NULL,'北区教学区','reserved',33,0,'2026-11-08 15:03:20','2026-11-15 15:03:19'),(74,6,5,NULL,'normal','瑜伽垫 加厚防滑','用了几次，已清洁，附收纳绑带。',20.00,59.00,'like_new',0,NULL,'第一运动场','on_sale',27,0,'2026-11-07 15:03:20','2026-11-15 15:03:19'),(75,2,3,NULL,'normal','保温杯 500ml','保温效果正常，已售出，仅用于状态展示。',15.00,49.00,'good',0,NULL,'楠园','sold',19,0,'2026-11-06 15:03:20','2026-11-15 15:03:19'),(76,2,2,NULL,'normal','头戴式无线耳机 降噪','用了一学期，耳罩无破损，续航正常，附收纳袋。',120.00,399.00,'good',1,NULL,'桃园','reserved',49,0,'2026-11-15 15:03:20','2026-11-18 10:56:06'),(77,6,2,NULL,'normal','87 键机械键盘 茶轴','键帽有轻微使用痕迹，所有按键正常，送拔键器。',85.00,219.00,'like_new',1,NULL,'北区教学区','on_sale',34,0,'2026-11-13 15:03:20','2026-11-16 13:24:55'),(78,7,3,NULL,'normal','宿舍静音小风扇','两档风力，声音小，扇叶已清洁，毕业出。',20.00,49.00,'good',0,NULL,'李园','on_sale',58,0,'2026-11-11 15:03:20','2026-11-15 15:03:19'),(79,2,3,NULL,'normal','不锈钢电热水壶 1.5L','烧水正常，壶身有水渍，已除垢。',28.00,69.00,'good',1,NULL,'橘园','on_sale',22,0,'2026-11-09 15:03:20','2026-11-15 15:03:19'),(80,6,5,NULL,'normal','标准 7 号篮球','室外场用了一学期，纹路还清楚，气足。',45.00,129.00,'fair',1,NULL,'第一运动场','on_sale',37,0,'2026-11-07 15:03:20','2026-11-15 15:03:19'),(81,7,5,NULL,'normal','羽毛球拍一对 送球','两支拍子，手柄有使用痕迹，送三个球。',35.00,99.00,'good',1,NULL,'第三运动场','on_sale',29,0,'2026-11-14 15:03:20','2026-11-15 15:03:19'),(82,6,4,NULL,'normal','灰色连帽卫衣 L 码','洗过两次，无起球，版型宽松，适合 175 左右。',40.00,129.00,'like_new',1,NULL,'梅园','on_sale',46,0,'2026-11-12 15:03:20','2026-11-15 15:03:19'),(83,2,1,NULL,'normal','四级真题 + 词汇书 打包','真题只做了两套，词汇书有少量笔记，打包出。',25.00,78.00,'good',0,NULL,'中心图书馆','on_sale',51,0,'2026-11-10 15:03:20','2026-11-15 15:03:19'),(84,7,6,NULL,'normal','宿舍折叠收纳箱 大号','可折叠，容量大，边角有轻微磨损，不影响使用。',18.00,45.00,'good',1,NULL,'杏园','on_sale',26,0,'2026-11-08 15:03:20','2026-11-15 15:03:19'),(85,2,1,1,'book','高等数学（第七版）上册 有少量笔记','重点章节有铅笔笔记，可擦除，书页完整。',12.00,45.00,'fair',1,NULL,'李园','reserved',33,0,'2026-11-16 17:36:09','2026-11-18 10:55:54'),(86,6,1,1,'book','高等数学（第七版）上册 已预订','已被同学预订，用于展示已预订状态。',16.00,45.00,'good',0,NULL,'橘园','reserved',22,0,'2026-11-12 17:36:09','2026-11-16 17:36:09'),(87,7,1,56,'book','高等数学（第七版）下册 几乎全新','买来没怎么翻，无笔记无划线。',17.00,39.00,'like_new',1,NULL,'桃园','on_sale',22,0,'2026-11-15 17:36:09','2026-11-19 16:41:30'),(88,2,1,56,'book','高等数学（第七版）下册 已售出','已售出，仅用于状态展示，不计入在售数。',13.00,39.00,'good',0,NULL,'梅园','sold',13,0,'2026-11-07 17:36:09','2026-11-18 10:55:44'),(89,6,1,57,'book','高等数学（第八版）上册 全新未拆','买重复了，塑封还在，未拆封。',29.00,49.00,'new',0,NULL,'中心图书馆','on_sale',48,0,'2026-11-14 17:36:09','2026-11-16 21:30:25'),(90,2,1,58,'book','大学物理（第四版）上册 九成新','课后题没写过，书脊平整，无缺页。',20.00,48.00,'good',1,NULL,'北区教学区','on_sale',27,0,'2026-11-13 17:36:09','2026-11-18 12:58:37'),(91,7,1,58,'book','大学物理（第四版）上册 少量划线','公式部分有荧光笔划线，不影响阅读。',24.00,48.00,'good',0,NULL,'南区教学区','on_sale',17,0,'2026-11-11 17:36:09','2026-11-16 17:36:09'),(92,6,1,59,'book','概率论与数理统计（第五版）','考研复习用书，笔记集中在最后几章。',14.00,36.00,'good',1,NULL,'李园','on_sale',35,0,'2026-11-10 17:36:09','2026-11-16 17:36:09'),(93,2,1,59,'book','概率论与数理统计（第五版） 暂不出','暂时下架，仅用于展示已下架状态。',10.00,36.00,'fair',1,NULL,'楠园','off_shelf',10,0,'2026-11-06 17:36:09','2026-11-18 10:55:33'),(94,7,1,60,'book','离散数学（第六版） 期末用书','期末复习用完，书内干净，附一张公式纸。',19.00,35.00,'like_new',1,NULL,'竹园','on_sale',26,1,'2026-11-15 17:36:09','2026-11-19 16:41:27'),(95,6,1,61,'book','数据库系统概论（第五版）','数据库课程教材，重点章节有标签贴。',21.00,42.00,'good',1,NULL,'桃园','on_sale',29,0,'2026-11-12 17:36:09','2026-11-16 17:36:09'),(96,2,1,62,'book','软件工程导论（第六版） 划线较多','专业课教材，划线和批注较多，价格便宜出。',15.00,39.50,'fair',1,NULL,'杏园','on_sale',14,0,'2026-11-09 17:36:09','2026-11-16 17:36:09'),(97,7,1,64,'book','马克思主义基本原理（2023 年版）','公共课教材，几乎没翻，无笔记。',8.00,23.00,'good',0,NULL,'中心图书馆','on_sale',19,0,'2026-11-14 17:36:09','2026-11-16 17:36:09'),(98,6,1,63,'book','操作系统（第四版） 计算机专业课','计算机专业课教材，书角轻微磨损，内容完整。',18.00,45.00,'like_new',1,NULL,'北区教学区','on_sale',23,0,'2026-11-13 17:36:09','2026-11-16 17:36:09'),(99,2,1,3,'book','计算机网络（第 8 版） 第二本','同款第二本，保存良好，适合备用。',20.00,59.00,'good',1,NULL,'南区教学区','on_sale',30,0,'2026-11-16 17:36:09','2026-11-19 19:35:18'),(100,6,1,2,'book','数据结构（C 语言版） 已预订','已被预订，仅用于展示状态，不计入在售数。',17.00,39.00,'like_new',0,NULL,'北区教学区','reserved',11,0,'2026-11-11 17:36:09','2026-11-16 17:36:09');
+INSERT INTO `items` VALUES (1203,6,1,NULL,'normal','高数、数据结构、计算机网络 三本教材打包','三门课都用得上，无缺页，少量笔记，打包出更划算。',45.00,133.00,'good',1,NULL,'桃园','on_sale',56,1,'2026-11-28 15:46:14','2026-11-28 15:46:14'),(1204,6,1,1,'book','高等数学（第七版）上册 九成新','只翻过前两章，无笔记无划线，可小刀。',18.00,45.00,'like_new',1,NULL,'桃园','on_sale',128,0,'2026-11-27 15:46:14','2026-11-28 15:46:14'),(1205,7,1,2,'book','数据结构（C 语言版）','期末复习用完，书角轻微磨损，内容完整。',15.00,39.00,'good',0,NULL,'北区教学区','on_sale',74,0,'2026-11-26 15:46:14','2026-11-28 15:46:14'),(1206,7,1,3,'book','计算机网络（第 8 版）','上课只用了半学期，保存得很好。',22.00,59.00,'like_new',1,NULL,'南区教学区','on_sale',43,0,'2026-11-25 15:46:14','2026-11-28 15:46:14'),(1207,6,2,NULL,'normal','罗技 M720 无线鼠标','功能正常，送电池，宿舍搬东西出了。',95.00,199.00,'good',1,NULL,'桃园','on_sale',64,1,'2026-11-24 15:46:14','2026-11-28 15:46:14'),(1208,7,3,NULL,'normal','宿舍折叠小桌板','桌面无划痕，搬宿舍带不走，自提。',25.00,69.00,'good',0,NULL,'李园','on_sale',39,0,'2026-11-23 15:46:14','2026-11-28 15:46:14'),(1209,6,3,NULL,'normal','小米 LED 台灯','三档亮度，充电正常，适合宿舍书桌。',35.00,89.00,'like_new',1,NULL,'橘园','on_sale',51,1,'2026-11-22 15:46:14','2026-11-28 15:46:14'),(1210,7,4,NULL,'normal','阿迪达斯双肩包','容量大，能放 15 寸电脑，已预订。',60.00,199.00,'good',1,NULL,'北区教学区','reserved',33,0,'2026-11-21 15:46:14','2026-11-28 15:46:14'),(1211,6,5,NULL,'normal','瑜伽垫 加厚防滑','用了几次，已清洁，附收纳绑带。',20.00,59.00,'like_new',0,NULL,'第一运动场','on_sale',27,0,'2026-11-20 15:46:14','2026-11-28 15:46:14'),(1212,2,3,NULL,'normal','保温杯 500ml','保温效果正常，已售出，仅用于状态展示。',15.00,49.00,'good',0,NULL,'楠园','sold',19,0,'2026-11-19 15:46:14','2026-11-28 15:46:14'),(1213,2,2,NULL,'normal','头戴式无线耳机 降噪','用了一学期，耳罩无破损，续航正常，附收纳袋。',120.00,399.00,'good',1,NULL,'桃园','on_sale',41,0,'2026-11-28 15:46:14','2026-11-28 15:46:14'),(1214,6,2,NULL,'normal','87 键机械键盘 茶轴','键帽有轻微使用痕迹，所有按键正常，送拔键器。',85.00,219.00,'like_new',1,NULL,'北区教学区','on_sale',33,0,'2026-11-26 15:46:14','2026-11-28 15:46:14'),(1215,7,3,NULL,'normal','宿舍静音小风扇','两档风力，声音小，扇叶已清洁，毕业出。',20.00,49.00,'good',0,NULL,'李园','on_sale',58,0,'2026-11-24 15:46:14','2026-11-28 15:46:14'),(1216,2,3,NULL,'normal','不锈钢电热水壶 1.5L','烧水正常，壶身有水渍，已除垢。',28.00,69.00,'good',1,NULL,'橘园','on_sale',22,0,'2026-11-22 15:46:14','2026-11-28 15:46:14'),(1217,6,5,NULL,'normal','标准 7 号篮球','室外场用了一学期，纹路还清楚，气足。',45.00,129.00,'fair',1,NULL,'第一运动场','on_sale',37,0,'2026-11-20 15:46:14','2026-11-28 15:46:14'),(1218,7,5,NULL,'normal','羽毛球拍一对 送球','两支拍子，手柄有使用痕迹，送三个球。',35.00,99.00,'good',1,NULL,'第三运动场','on_sale',29,0,'2026-11-27 15:46:14','2026-11-28 15:46:14'),(1219,6,4,NULL,'normal','灰色连帽卫衣 L 码','洗过两次，无起球，版型宽松，适合 175 左右。',40.00,129.00,'like_new',1,NULL,'梅园','on_sale',46,0,'2026-11-25 15:46:14','2026-11-28 15:46:14'),(1220,2,1,NULL,'normal','四级真题 + 词汇书 打包','真题只做了两套，词汇书有少量笔记，打包出。',25.00,78.00,'good',0,NULL,'中心图书馆','on_sale',51,0,'2026-11-23 15:46:14','2026-11-28 15:46:14'),(1221,7,6,NULL,'normal','宿舍折叠收纳箱 大号','可折叠，容量大，边角有轻微磨损，不影响使用。',18.00,45.00,'good',1,NULL,'杏园','on_sale',26,0,'2026-11-21 15:46:14','2026-11-28 15:46:14'),(1222,2,1,1,'book','高等数学（第七版）上册 有少量笔记','重点章节有铅笔笔记，可擦除，书页完整。',12.00,45.00,'fair',1,NULL,'李园','on_sale',31,0,'2026-11-28 15:46:14','2026-11-28 15:46:14'),(1223,6,1,1,'book','高等数学（第七版）上册 已预订','已被同学预订，用于展示已预订状态。',16.00,45.00,'good',0,NULL,'橘园','reserved',22,0,'2026-11-24 15:46:14','2026-11-28 15:46:14'),(1224,7,1,56,'book','高等数学（第七版）下册 几乎全新','买来没怎么翻，无笔记无划线。',17.00,39.00,'like_new',1,NULL,'桃园','on_sale',18,0,'2026-11-27 15:46:14','2026-11-28 15:46:14'),(1225,2,1,56,'book','高等数学（第七版）下册 已售出','已售出，仅用于状态展示，不计入在售数。',13.00,39.00,'good',0,NULL,'梅园','sold',12,0,'2026-11-19 15:46:14','2026-11-28 15:46:14'),(1226,6,1,57,'book','高等数学（第八版）上册 全新未拆','买重复了，塑封还在，未拆封。',29.00,49.00,'new',0,NULL,'中心图书馆','on_sale',44,0,'2026-11-26 15:46:14','2026-11-28 15:46:14'),(1227,2,1,58,'book','大学物理（第四版）上册 九成新','课后题没写过，书脊平整，无缺页。',20.00,48.00,'good',1,NULL,'北区教学区','on_sale',26,0,'2026-11-25 15:46:14','2026-11-28 15:46:14'),(1228,7,1,58,'book','大学物理（第四版）上册 少量划线','公式部分有荧光笔划线，不影响阅读。',24.00,48.00,'good',0,NULL,'南区教学区','on_sale',17,0,'2026-11-23 15:46:14','2026-11-28 15:46:14'),(1229,6,1,59,'book','概率论与数理统计（第五版）','考研复习用书，笔记集中在最后几章。',14.00,36.00,'good',1,NULL,'李园','on_sale',35,0,'2026-11-22 15:46:14','2026-11-28 15:46:14'),(1230,2,1,59,'book','概率论与数理统计（第五版） 暂不出','暂时下架，仅用于展示已下架状态。',10.00,36.00,'fair',1,NULL,'楠园','off_shelf',9,0,'2026-11-18 15:46:14','2026-11-28 15:46:14'),(1231,7,1,60,'book','离散数学（第六版） 期末用书','期末复习用完，书内干净，附一张公式纸。',19.00,35.00,'like_new',1,NULL,'竹园','on_sale',21,0,'2026-11-27 15:46:14','2026-11-28 15:46:14'),(1232,6,1,61,'book','数据库系统概论（第五版）','数据库课程教材，重点章节有标签贴。',21.00,42.00,'good',1,NULL,'桃园','on_sale',29,0,'2026-11-24 15:46:14','2026-11-28 15:46:14'),(1233,2,1,62,'book','软件工程导论（第六版） 划线较多','专业课教材，划线和批注较多，价格便宜出。',15.00,39.50,'fair',1,NULL,'杏园','on_sale',14,0,'2026-11-21 15:46:14','2026-11-28 15:46:14'),(1234,7,1,64,'book','马克思主义基本原理（2023 年版）','公共课教材，几乎没翻，无笔记。',8.00,23.00,'good',0,NULL,'中心图书馆','on_sale',19,0,'2026-11-26 15:46:14','2026-11-28 15:46:14'),(1235,6,1,63,'book','操作系统（第四版） 计算机专业课','计算机专业课教材，书角轻微磨损，内容完整。',18.00,45.00,'like_new',1,NULL,'北区教学区','on_sale',23,0,'2026-11-25 15:46:14','2026-11-28 15:46:14'),(1236,2,1,3,'book','计算机网络（第 8 版） 第二本','同款第二本，保存良好，适合备用。',20.00,59.00,'good',1,NULL,'南区教学区','on_sale',16,0,'2026-11-28 15:46:14','2026-11-28 15:46:14'),(1237,6,1,2,'book','数据结构（C 语言版） 已预订','已被预订，仅用于展示状态，不计入在售数。',17.00,39.00,'like_new',0,NULL,'北区教学区','reserved',11,0,'2026-11-23 15:46:14','2026-11-28 15:46:14');
 /*!40000 ALTER TABLE `items` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -465,7 +462,7 @@ CREATE TABLE `messages` (
   CONSTRAINT `fk_messages_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`conversation_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_messages_is_read` CHECK ((`is_read` in (0,1)))
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5030 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -474,7 +471,6 @@ CREATE TABLE `messages` (
 
 LOCK TABLES `messages` WRITE;
 /*!40000 ALTER TABLE `messages` DISABLE KEYS */;
-INSERT INTO `messages` VALUES (4,5,2,'text','小宝贝',0,'2026-11-16 20:42:05');
 /*!40000 ALTER TABLE `messages` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -569,7 +565,7 @@ CREATE TABLE `runner_profiles` (
 
 LOCK TABLES `runner_profiles` WRITE;
 /*!40000 ALTER TABLE `runner_profiles` DISABLE KEYS */;
-INSERT INTO `runner_profiles` VALUES (2,0,'now','[\"桃园\", \"楠园\", \"中心图书馆\", \"李园\", \"橘园\", \"北区图书馆\", \"北区其他\"]','[]','[]',NULL,7.00,'图书馆和桃园附近，小件大件都可',0),(6,1,'now','[\"南区教学区\", \"中心图书馆\", \"南区其他\"]','[]','[]',NULL,6.00,'下午和晚饭后顺路带单',0),(7,1,'now','[\"桃园\", \"李园\", \"北区教学区\"]','[]','[]',NULL,5.00,'饭点在线，小件优先',0);
+INSERT INTO `runner_profiles` VALUES (2,1,'now','[\"桃园\", \"楠园\", \"中心图书馆\"]','[]','[]',NULL,7.00,'图书馆和桃园附近，小件大件都可',0),(6,1,'now','[\"南区教学区\", \"中心图书馆\", \"南区其他\"]','[]','[]',NULL,6.00,'下午和晚饭后顺路带单',0),(7,1,'now','[\"桃园\", \"李园\", \"北区教学区\"]','[]','[]',NULL,5.00,'饭点在线，小件优先',0);
 /*!40000 ALTER TABLE `runner_profiles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -595,7 +591,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `uk_users_student_no` (`student_no`),
   CONSTRAINT `chk_users_credit` CHECK ((`credit_score` between 0 and 100))
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -604,7 +600,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (2,'2023001','$2b$10$C6ORgo3Bz9nAryZAs47UA.vtSPhYBQa43FDy6Sl39MolYvyMTrTCq','林小满',NULL,NULL,'计算机与信息科学学院','13800000001',60,'active','2026-11-09 21:10:52'),(6,'2023002','$2b$10$C6ORgo3Bz9nAryZAs47UA.vtSPhYBQa43FDy6Sl39MolYvyMTrTCq','陈子航',NULL,NULL,'数学与统计学院','13800000002',62,'active','2026-11-10 19:22:50'),(7,'2023003','$2b$10$C6ORgo3Bz9nAryZAs47UA.vtSPhYBQa43FDy6Sl39MolYvyMTrTCq','周雨桐',NULL,NULL,'外国语学院','13800000003',61,'active','2026-11-10 19:22:50');
+INSERT INTO `users` VALUES (2,'2023001','$2b$10$AAONDirTJnVqe/kPHhljkuQr2IljWywqJh91P/6.vwOyWYKRZHakK','林小满',NULL,NULL,'计算机与信息科学学院','13800000001',60,'active','2026-11-09 21:10:52'),(6,'2023002','$2b$10$AAONDirTJnVqe/kPHhljkuQr2IljWywqJh91P/6.vwOyWYKRZHakK','陈子航',NULL,NULL,'数学与统计学院','13800000002',62,'active','2026-11-10 19:22:50'),(7,'2023003','$2b$10$AAONDirTJnVqe/kPHhljkuQr2IljWywqJh91P/6.vwOyWYKRZHakK','周雨桐',NULL,NULL,'外国语学院','13800000003',61,'active','2026-11-10 19:22:50');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1160,4 +1156,4 @@ USE `campus_service`;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-20 14:43:36
+-- Dump completed on 2026-11-28 15:46:14
