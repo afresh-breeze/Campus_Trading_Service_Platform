@@ -130,5 +130,6 @@
   <text x="460" y="1536" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" fill="#1f2937">结束</text>
 
   <text x="40" y="1608" font-size="12" fill="#806E5C">注：买家不搜索时从首页卡片直接进入商品详情，不经过搜索结果页；已预订从首页与搜索隐藏，详情仍可查看；sold 为终态。</text>
-  <text x="40" y="1630" font-size="12" fill="#806E5C">卖家：on_sale 可标记 reserved 或 off_shelf；off_shelf 可重新上架；reserved 只能取消预订回 on_sale 或标记 sold。</text>
+  <text x="40" y="1630" font-size="12" fill="#806E5C">卖家：on_sale 可标记 reserved、sold 或 off_shelf；off_shelf 可重新上架；reserved 只能取消预订回 on_sale 或标记 sold。</text>
+  <text x="40" y="1652" font-size="12" fill="#806E5C">状态操作只在商品详情页执行；我的发布/我的收藏是只读列表，只按状态筛选。</text>
 </svg>

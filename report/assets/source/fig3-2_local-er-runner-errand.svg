@@ -177,7 +177,11 @@
 <ellipse cx="1358.4354733614255" cy="213.68823122763317" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
 <ellipse cx="1358.4354733614255" cy="213.68823122763317" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
 <text x="1358.4354733614255" y="214.68823122763317" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可接规格</text>
-<line x1="348.1410041599603" y1="858.8355332741025" x2="684.4" y2="1085" stroke="#4B5563" stroke-width="1.4"/>
-<ellipse cx="720" cy="1085" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
-<text x="720" y="1086" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可见性</text>
+<line x1="311.01" y1="858.84" x2="452.9" y2="1077.9" stroke="#4B5563" stroke-width="1.4"/>
+<ellipse cx="464" cy="1095" rx="35.58" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="464" y="1096" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">可见性</text>
+<line x1="333.83" y1="858.84" x2="554.1" y2="996.1" stroke="#4B5563" stroke-width="1.4"/>
+<ellipse cx="578" cy="1011" rx="42.44" ry="18" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+<ellipse cx="578" cy="1011" rx="35.44" ry="13" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="578" y="1012" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="400" fill="#1f2937">物品图片</text>
 </svg>

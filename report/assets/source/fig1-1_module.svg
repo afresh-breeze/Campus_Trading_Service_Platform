@@ -2,7 +2,7 @@
   <rect x="0" y="0" width="1120" height="830" fill="#F4F1E7"/>
 
   <text x="40" y="58" font-size="30" font-weight="700" fill="#3D2B1F">校园交易服务平台 · 系统功能模块图</text>
-  <text x="40" y="86" font-size="13" fill="#806E5C">20 个页面　|　5 个功能模块　|　40 个后端接口　|　14 张数据库表</text>
+  <text x="40" y="86" font-size="13" fill="#806E5C">20 个页面　|　5 个功能模块　|　43 个后端接口　|　14 张数据库表</text>
   <line x1="40" y1="98" x2="760" y2="98" stroke="#E6A874" stroke-width="2"/>
   <text x="40" y="126" font-size="13" fill="#806E5C">三层结构：表现层（小程序端）→ 服务层（Express REST API）→ 数据层（MySQL 8.0）</text>
   <text x="40" y="147" font-size="13" fill="#806E5C">页面按模块分组；登录注册只负责身份，二手、代取、聊天按业务闭环组织，个人中心承载个人数据入口</text>
@@ -79,7 +79,7 @@
 
   <rect x="60" y="522" width="238" height="84" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.4"/>
   <text x="179" y="548" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">REST API</text>
-  <text x="179" y="572" text-anchor="middle" font-size="12" fill="#475569">40 个接口</text>
+  <text x="179" y="572" text-anchor="middle" font-size="12" fill="#475569">43 个接口</text>
   <text x="179" y="592" text-anchor="middle" font-size="11.5" fill="#64748B">统一响应 {code, message, data}</text>
 
   <rect x="310" y="522" width="238" height="84" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.4"/>
